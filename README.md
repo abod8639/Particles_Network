@@ -29,13 +29,15 @@ A highly optimized Flutter package that creates an interactive particle network 
 ## Image 
 ![image](https://github.com/abod8639/Particles_Network/raw/main/assets/image.png)
 
+### touchActivation
+![](assets/image.png)
 ## Getting started
 
 Add this package to your Flutter project by adding the following to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  particles_network: ^1.5.1
+  particles_network: ^1.5.2
 ```
 
 ## Usage
