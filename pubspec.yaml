@@ -1,6 +1,7 @@
 name: particles_network
-description: "A new Flutter package project."
-version: 0.0.1
+description: "A new Flutter package project particles_network "
+version: 0.0.2
+repository: https://github.com/abod8639/Particles_Network
 homepage:
 
 environment:
