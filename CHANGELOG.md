@@ -1,4 +1,4 @@
-## 0.0.1
+## [0.0.3] - 2025-05-04
 
 Initial release of the Particles Network package with the following features:
 
