@@ -7,8 +7,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:particles_network/Painter/optimizednetworkpainter.dart';
-import 'package:particles_network/model/particlemodel.dart';
+import 'package:particles_network/Painter/OptimizedNetworkPainter.dart';
+import 'package:particles_network/model/ParticleModel.dart';
 
 /// OptimizedParticleNetwork is the main widget that creates an interactive particle system.
 /// It manages the particle creation, animation, and touch interactions.
