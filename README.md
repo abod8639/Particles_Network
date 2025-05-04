@@ -57,11 +57,13 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
+        backgroundColor: Colors.black,
         body: OptimizedParticleNetwork(
-          particleCount: 50,          // Number of particles
-          maxSpeed: 0.5,             // Maximum particle speed
-          maxSize: 3.5,              // Maximum particle size
-          lineDistance: 100,         // Maximum distance for connecting lines
+          touchActivation: true,         // to Activate touch
+          particleCount: 80,            // Number of particles
+          maxSpeed: 0.5,                // Maximum particle speed
+          maxSize: 3.5,                 // Maximum particle size
+          lineDistance: 200,            // Maximum distance for connecting lines
           particleColor: Colors.white,
           lineColor: const Color(0xFF4CFFA7),
           touchColor: Colors.amber,
@@ -70,6 +72,7 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
 ```
 
 ## Customization
