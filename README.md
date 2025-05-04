@@ -11,6 +11,7 @@ and the Flutter guide for
 [developing packages and plugins](https://flutter.dev/to/develop-packages).
 -->
 
+
 # particles_network
 
 A highly optimized Flutter package that creates an interactive particle network effect with smooth animations and touch interactions. The package creates a visually appealing network of particles connected by lines that respond to touch input.

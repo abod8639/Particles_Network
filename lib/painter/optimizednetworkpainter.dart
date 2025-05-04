@@ -24,7 +24,7 @@ class OptimizedNetworkPainter extends CustomPainter {
   final Color touchColor;
 
   /// bool for Activation touch
-  final touchActivation;
+  final bool touchActivation;
 
   /// Cache for storing distances between particles to avoid recalculation
   /// Uses string keys in the format "particle1Index-particle2Index"
@@ -38,6 +38,7 @@ class OptimizedNetworkPainter extends CustomPainter {
   /// [particleColor] Color of particles
   /// [lineColor] Color of connecting lines
   /// [touchColor] Color of touch interaction lines
+  /// [touchActivation]  touch interaction Activation
   OptimizedNetworkPainter({
     required this.particles,
     required this.touchPoint,

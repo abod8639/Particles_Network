@@ -46,6 +46,7 @@ class OptimizedParticleNetwork extends StatefulWidget {
   /// [particleColor] sets the color of particles (default: white)
   /// [lineColor] sets the color of connecting lines (default: teal)
   /// [touchColor] sets the color of touch interaction lines (default: amber)
+  /// [touchActivation] sets the touch Activation (default: true)
   const OptimizedParticleNetwork({
     super.key,
     this.particleCount = 50,
