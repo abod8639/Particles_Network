@@ -26,7 +26,7 @@ A highly optimized Flutter package that creates an interactive particle network 
 - ⚡ Memory-efficient with distance caching
 
 ## Image 
-![image](assets/image.png)
+![image](https://github.com/abod8639/Particles_Network/raw/main/assets/image.png)
 
 ## Getting started
 
