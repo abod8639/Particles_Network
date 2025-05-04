@@ -23,6 +23,9 @@ class OptimizedNetworkPainter extends CustomPainter {
   /// Color of lines created by touch interactions
   final Color touchColor;
 
+  /// bool for Activation touch
+  final touchActivation;
+
   /// Cache for storing distances between particles to avoid recalculation
   /// Uses string keys in the format "particle1Index-particle2Index"
   final Map<String, double> _distanceCache = {};
@@ -42,6 +45,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     required this.particleColor,
     required this.lineColor,
     required this.touchColor,
+    required this.touchActivation,
   });
 
   /// Generates a unique cache key for two particle indices
@@ -81,7 +85,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     _drawParticleConnections(canvas, linePaint, grid);
 
     // Handle and draw touch interactions
-    if (touchPoint != null) {
+    if (touchPoint != null && touchActivation) {
       _drawTouchInteractions(canvas, linePaint);
     }
 

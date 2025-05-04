@@ -34,6 +34,9 @@ class OptimizedParticleNetwork extends StatefulWidget {
   /// Color of lines created when touching the system
   final Color touchColor;
 
+  /// bool for Activation touch
+  final bool touchActivation;
+
   /// Creates a new particle network system
   ///
   /// [particleCount] determines how many particles to create (default: 50)
@@ -52,6 +55,7 @@ class OptimizedParticleNetwork extends StatefulWidget {
     this.particleColor = Colors.white,
     this.lineColor = Colors.teal,
     this.touchColor = Colors.amber,
+    this.touchActivation = true,
   });
 
   @override
@@ -142,6 +146,7 @@ class _OptimizedParticleNetworkState extends State<OptimizedParticleNetwork>
       builder: (_, constraints) {
         _generateParticles(constraints.biggest);
         return GestureDetector(
+          // trackpadScrollCausesScale: true,
           // Handle touch interactions
           onPanDown: (d) => _touchPoint = d.localPosition,
           onPanUpdate: (d) => _touchPoint = d.localPosition,
@@ -152,6 +157,7 @@ class _OptimizedParticleNetworkState extends State<OptimizedParticleNetwork>
             builder: (context, frame, child) {
               return CustomPaint(
                 painter: OptimizedNetworkPainter(
+                  touchActivation: widget.touchActivation,
                   particles: _particles,
                   touchPoint: _touchPoint,
                   lineDistance: widget.lineDistance,
