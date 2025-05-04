@@ -1,5 +1,5 @@
 import 'package:flutter/rendering.dart';
-import 'package:particles_network/model/ParticleModel.dart';
+import 'package:particles_network/model/particlemodel.dart';
 
 /// A highly optimized CustomPainter that draws the particle network effect.
 /// This painter is responsible for rendering particles and the connecting lines between them,
