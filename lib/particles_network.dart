@@ -12,7 +12,7 @@ import 'package:particles_network/painter/optimizednetworkpainter.dart';
 
 /// OptimizedParticleNetwork is the main widget that creates an interactive particle system.
 /// It manages the particle creation, animation, and touch interactions.
-class OptimizedParticleNetwork extends StatefulWidget {
+class ParticleNetwork extends StatefulWidget {
   /// The number of particles to create in the system
   final int particleCount;
 
@@ -47,7 +47,7 @@ class OptimizedParticleNetwork extends StatefulWidget {
   /// [lineColor] sets the color of connecting lines (default: teal)
   /// [touchColor] sets the color of touch interaction lines (default: amber)
   /// [touchActivation] sets the touch Activation (default: true)
-  const OptimizedParticleNetwork({
+  const ParticleNetwork({
     super.key,
     this.particleCount = 50,
     this.maxSpeed = 0.5,
@@ -60,13 +60,12 @@ class OptimizedParticleNetwork extends StatefulWidget {
   });
 
   @override
-  State<OptimizedParticleNetwork> createState() =>
-      _OptimizedParticleNetworkState();
+  State<ParticleNetwork> createState() => _ParticleNetworkState();
 }
 
 /// The state class for OptimizedParticleNetwork that handles the animation
 /// and particle system logic
-class _OptimizedParticleNetworkState extends State<OptimizedParticleNetwork>
+class _ParticleNetworkState extends State<ParticleNetwork>
     with SingleTickerProviderStateMixin {
   /// List of all particles in the system
   final List<Particle> _particles = [];

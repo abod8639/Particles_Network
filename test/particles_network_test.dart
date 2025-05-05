@@ -6,14 +6,14 @@ import 'package:particles_network/particles_network.dart';
 /// Test suite for the Particles Network package
 /// Tests core functionality, particle behavior, and widget rendering
 void main() {
-  group('OptimizedParticleNetwork Widget Tests', () {
+  group('ParticleNetwork Widget Tests', () {
     testWidgets('Widget creates with default parameters', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(home: Scaffold(body: OptimizedParticleNetwork())),
+        const MaterialApp(home: Scaffold(body: ParticleNetwork())),
       );
 
       // Verify widget exists in tree
-      expect(find.byType(OptimizedParticleNetwork), findsOneWidget);
+      expect(find.byType(ParticleNetwork), findsOneWidget);
     });
 
     testWidgets('Widget respects custom parameters', (tester) async {
@@ -25,7 +25,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: OptimizedParticleNetwork(
+            body: ParticleNetwork(
               particleCount: particleCount,
               maxSpeed: maxSpeed,
               maxSize: maxSize,
@@ -39,7 +39,7 @@ void main() {
       );
 
       // Verify widget exists
-      expect(find.byType(OptimizedParticleNetwork), findsOneWidget);
+      expect(find.byType(ParticleNetwork), findsOneWidget);
     });
   });
 
