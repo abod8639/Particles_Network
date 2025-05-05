@@ -23,8 +23,9 @@ A highly optimized Flutter package that creates an interactive particle network 
 - 🔗 Dynamic line connections between nearby particles
 - 👆 Interactive touch response with particle attraction
 - 🎯 Smooth particle movement with natural physics
-- 📱 Responsive to screen size changes
-- ⚡ Memory-efficient with distance caching
+- 📱 Responsive to screen size changes for consistent layout across devices
+- ⚡ Memory-efficient with smart distance caching and compact typed arrays (e.g. Uint16List)
+- 🧠 Optimized data structures: fast hashing, minimal allocations, reduced garbage
 
 ## Image 
 ![image](https://github.com/abod8639/Particles_Network/raw/main/assets/image.png)
