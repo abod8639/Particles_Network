@@ -61,7 +61,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       home: Scaffold(
         backgroundColor: Colors.black,
-        body: OptimizedParticleNetwork(
+        body: ParticleNetwork(
           touchActivation: true,         // to Activate touch
           particleCount: 80,            // Number of particles
           maxSpeed: 0.5,                // Maximum particle speed
