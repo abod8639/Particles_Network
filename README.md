@@ -28,10 +28,10 @@ A highly optimized Flutter package that creates an interactive particle network 
 - 🧠 Optimized data structures: fast hashing, minimal allocations, reduced garbage
 
 ## Image 
-![image](https://github.com/abod8639/Particles_Network/raw/main/assets/image.png)
+![](assets/image.png)
 
 ### touchActivation
-![](assets/image.png)
+![image](https://github.com/abod8639/my_clock/blob/main/assets/gif/c49ae41c72134b67b31d54593d3414f8.gif?raw=true)
 ## Getting started
 
 Add this package to your Flutter project by adding the following to your `pubspec.yaml`:
