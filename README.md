@@ -11,12 +11,29 @@ and the Flutter guide for
 [developing packages and plugins](https://flutter.dev/to/develop-packages).
 -->
 
+<!-- markdownlint-disable MD013 -->
+<!-- <p align="center">
+  <a href="https://docs.flutter.dev/packages-and-plugins/favorites">
+    <img alt="Flutter favorite" width="100px" src="https://github.com/flame-engine/flame/assets/744771/aa5d5acd-e82b-48bc-ad81-2ab146d72ecb">
+  </a>
+</p> -->
+<p align="center">
+  <a href="https://github.com/abod8639/Particles_Network">
+    <img alt="Flutter favorite" width="200px" src="assets/Picsart_25-05-10_12-57-34-680.png">
+  </a>
+</p>
 
+
+
+---
+## Documentation
+ 
 # particles_network
 
 A highly optimized Flutter package that creates an interactive particle network effect with smooth animations and touch interactions. The package creates a visually appealing network of particles connected by lines that respond to touch input.
 
 ## Features
+
 
 - 🚀 Highly optimized rendering using spatial partitioning
 - 🎨 Customizable particle appearance (color, size, count)
@@ -28,6 +45,7 @@ A highly optimized Flutter package that creates an interactive particle network 
 - 🧠 Optimized data structures: fast hashing, minimal allocations, reduced garbage
 
 ## Image 
+
 ![image](assets/image.png)
 
 ### touchActivation
@@ -44,6 +62,7 @@ dependencies:
 ## Usage
 
 Here's a simple example of how to use the Particles Network widget:
+
 
 ```dart
 import 'package:flutter/material.dart';
@@ -80,6 +99,7 @@ class MyApp extends StatelessWidget {
 
 ## Customization
 
+
 The `OptimizedParticleNetwork` widget accepts several parameters for customization:
 
  - `particleCount`: Number of particles in the system (default: 50).
@@ -94,6 +114,7 @@ The `OptimizedParticleNetwork` widget accepts several parameters for customizati
 - `touchColor`: Color of lines created by touch interaction (default: amber)
 
 ## Performance Optimization
+
 
 The package uses several optimization techniques:
 
