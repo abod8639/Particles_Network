@@ -1,45 +1,45 @@
+import 'dart:collection';
 import 'dart:typed_data';
 
-import 'package:flutter/rendering.dart';
+import 'package:flutter/material.dart';
 import 'package:particles_network/model/particlemodel.dart';
 
-/// A highly optimized CustomPainter that draws the particle network effect.
-/// This painter is responsible for rendering particles and the connecting lines between them,
-/// using spatial partitioning for improved performance with large numbers of particles.
-///
-/// Key Components:
-/// - Particle Rendering: Draws individual particles on the canvas
-/// - Connection Lines: Creates lines between nearby particles
-/// - Touch Interaction: Handles user touch input to affect particle behavior
-/// - Spatial Partitioning: Optimizes performance by dividing space into grid cells
-/// - Distance Caching: Reduces redundant calculations by caching particle distances
+// OptimizedNetworkPainter is responsible for drawing the particle network efficiently.
+// It uses spatial grid and caching to optimize performance for large numbers of particles.
+/// A custom painter that draws an optimized network of particles.
 class OptimizedNetworkPainter extends CustomPainter {
-  /// List of particles to be rendered
+  /// The list of particles to be drawn.
   final List<Particle> particles;
 
-  /// Current touch point location (null if no touch)
+  /// The touch point for interaction.
   final Offset? touchPoint;
 
-  /// Maximum distance for drawing connections between particles
+  /// The maximum distance at which particles are connected.
   final double lineDistance;
 
-  /// Color used for rendering individual particles
+  /// The color of the particles.
   final Color particleColor;
 
-  /// Color used for the connecting lines between particles
+  /// The color of the lines connecting particles.
   final Color lineColor;
 
-  /// Color used for touch interaction effects
+  /// The color of the lines connecting particles to the touch point.
   final Color touchColor;
 
-  /// Flag to enable/disable touch interaction features
+  /// Whether touch interaction is enabled.
   final bool touchActivation;
 
-  // Cache system for storing calculated distances between particles
-  // Uses bit manipulation for efficient key generation
-  final Map<int, double> _distanceCache = {};
-  static const _cacheMultiplier = 1 << 16; // Bit shift for cache key generation
+  // Distance cache optimization using Int32List and Float64List instead of Map
+  // -1 indicates no value has been stored yet
+  // This is a fixed-size hash cache for storing pairwise distances between particles.
+  // (Hash-based cache for O(1) lookup, similar to a direct-mapped cache in computer architecture)
+  late Int32List _cacheKeys;
+  late Float64List _cacheValues;
+  static const int _cacheSize =
+      1024; // Adjust based on expected number of particles
+  static const _cacheMultiplier = 1 << 16;
 
+  /// Creates an [OptimizedNetworkPainter] with the given [particles], [touchPoint], [lineDistance], [particleColor], [lineColor], [touchColor], and [touchActivation].
   OptimizedNetworkPainter({
     required this.particles,
     required this.touchPoint,
@@ -48,38 +48,50 @@ class OptimizedNetworkPainter extends CustomPainter {
     required this.lineColor,
     required this.touchColor,
     required this.touchActivation,
-  });
+  }) {
+    // Initialize the cache arrays
+    _cacheKeys = Int32List(_cacheSize);
+    _cacheValues = Float64List(_cacheSize);
 
-  /// Generates a unique cache key for a pair of particles
-  /// Uses bit manipulation for efficient key generation
-  /// @param i First particle index
-  /// @param j Second particle index
-  /// @return Unique integer key for the particle pair
+    // Initialize all keys to -1 (indicating empty)
+    for (int i = 0; i < _cacheSize; i++) {
+      _cacheKeys[i] = -1;
+    }
+  }
+
+  // Generates a unique cache key for a pair of particle indices (i, j).
+  // Uses a commutative hash: key(i, j) == key(j, i)
   int _getCacheKey(int i, int j) {
     return i < j ? i * _cacheMultiplier + j : j * _cacheMultiplier + i;
   }
 
-  /// Calculates and caches the distance between two particles
-  /// Uses a caching system to avoid recalculating distances
-  /// @param p1 First particle
-  /// @param p2 Second particle
-  /// @param i Index of first particle
-  /// @param j Index of second particle
-  /// @return Distance between the particles
+  // Returns the cached or computed distance between two particles.
+  // Uses the Euclidean distance formula: sqrt((x2-x1)^2 + (y2-y1)^2)
   double _getDistance(Particle p1, Particle p2, int i, int j) {
     final key = _getCacheKey(i, j);
-    return _distanceCache.putIfAbsent(
-      key,
-      () => (p1.position - p2.position).distance,
-    );
+    final cacheIndex = key % _cacheSize;
+
+    // Check if the value is already in the cache
+    if (_cacheKeys[cacheIndex] == key) {
+      return _cacheValues[cacheIndex];
+    }
+
+    // Calculate and store the distance
+    final distance = (p1.position - p2.position).distance;
+    _cacheKeys[cacheIndex] = key;
+    _cacheValues[cacheIndex] = distance;
+    return distance;
   }
 
+  /// Paints the network of particles and their connections on the given [canvas].
   @override
   void paint(Canvas canvas, Size size) {
-    // Clear the distance cache at the start of each frame
-    _distanceCache.clear();
+    // Reset the cache by marking all entries as empty (cache invalidation)
+    for (int i = 0; i < _cacheSize; i++) {
+      _cacheKeys[i] = -1;
+    }
 
-    // Setup paint objects for particles and lines
+    // Prepare paint objects for particles and lines
     final particlePaint =
         Paint()
           ..color = particleColor
@@ -90,33 +102,46 @@ class OptimizedNetworkPainter extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.0;
 
-    // Create spatial grid for optimized particle proximity detection
-    final grid = _createSpatialGrid(size);
-
-    // Draw connections between nearby particles
-    _drawParticleConnections(canvas, linePaint, grid);
-
-    // Handle touch interactions if enabled
-    if (touchPoint != null && touchActivation) {
-      _drawTouchInteractions(canvas, linePaint);
+    // Filter visible particles first for performance (view frustum culling)
+    final visibleParticles = <int>[];
+    for (int i = 0; i < particles.length; i++) {
+      if (particles[i].isVisible) {
+        visibleParticles.add(i);
+      }
     }
 
-    // Draw all particles
-    for (final p in particles) {
+    // Build a spatial grid for fast neighbor lookup (Spatial Hash Grid)
+    final grid = _createSpatialGrid(size, visibleParticles);
+
+    // Draw lines between close particles (Edge Drawing based on Distance Threshold)
+    _drawParticleConnections(canvas, linePaint, grid);
+
+    // Draw lines from particles to touch point if enabled (Touch Interaction)
+    if (touchPoint != null && touchActivation) {
+      _drawTouchInteractions(canvas, linePaint, visibleParticles);
+    }
+
+    // Draw all visible particles as circles
+    for (final index in visibleParticles) {
+      final p = particles[index];
       canvas.drawCircle(p.position, p.size, particlePaint);
     }
   }
 
-  /// Creates a spatial partitioning grid for efficient particle proximity detection
-  /// Divides the canvas into cells based on lineDistance
-  /// Each particle is added to its cell and neighboring cells for complete coverage
-  Map<String, Uint16List> _createSpatialGrid(Size size) {
-    final grid = <String, Uint16List>{};
+  // Creates a spatial hash grid for fast neighbor lookup.
+  // Each cell contains indices of particles within that cell and its 8 neighbors (3x3 neighborhood).
+  // (Spatial Hashing technique)
+  Map<String, Uint16List> _createSpatialGrid(
+    Size size,
+    List<int> visibleParticles,
+  ) {
+    // Use HashMap for better performance than standard Map
+    final grid = HashMap<String, Uint16List>();
     final cellSize = lineDistance;
-    final tempLists = <String, List<int>>{};
+    final tempLists = HashMap<String, List<int>>();
 
-    // First pass: collect particles per cell
-    for (int i = 0; i < particles.length; i++) {
+    // First pass: collect particles per cell (only visible particles)
+    for (final i in visibleParticles) {
       final p = particles[i];
       final cellX = (p.position.dx / cellSize).floor();
       final cellY = (p.position.dy / cellSize).floor();
@@ -125,31 +150,34 @@ class OptimizedNetworkPainter extends CustomPainter {
       for (int nx = -1; nx <= 1; nx++) {
         for (int ny = -1; ny <= 1; ny++) {
           final key = '${cellX + nx},${cellY + ny}';
-          tempLists.putIfAbsent(key, () => []);
+          if (!tempLists.containsKey(key)) {
+            tempLists[key] = [];
+          }
           tempLists[key]!.add(i);
         }
       }
     }
 
-    // Convert to Uint16List
+    // Convert to Uint16List for faster access
     tempLists.forEach((key, list) {
-      grid[key] = Uint16List.fromList(list);
+      if (list.isNotEmpty) {
+        grid[key] = Uint16List.fromList(list);
+      }
     });
 
     return grid;
   }
 
-  /// Draws connections between particles that are within lineDistance of each other
-  /// Uses the spatial grid for efficient proximity detection
-  /// Implements a bit-based system to track processed particle pairs
+  // Draws lines between particles that are close enough (distance < lineDistance).
+  // Uses a processed set to avoid drawing duplicate lines (Pairwise Edge Drawing).
   void _drawParticleConnections(
     Canvas canvas,
     Paint linePaint,
     Map<String, Uint16List> grid,
   ) {
-    final processedPairs = Uint32List(
-      (particles.length * particles.length) >> 5,
-    );
+    // Use Int32List for tracking processed pairs for better performance
+    // (Bitmask technique for duplicate edge prevention)
+    final processedSet = Uint64List((_cacheSize >> 5) + 1);
 
     // For each cell in the grid
     grid.forEach((key, particleIndices) {
@@ -163,17 +191,18 @@ class OptimizedNetworkPainter extends CustomPainter {
         for (int j = i + 1; j < count; j++) {
           final otherIndex = particleIndices[j];
           final pairKey = _getCacheKey(pIndex, otherIndex);
-          final bitIndex = pairKey % processedPairs.length;
-          final mask = 1 << (pairKey & 31);
+          final bitIndex = pairKey % processedSet.length;
+          final mask = 0 << (pairKey & 63);
 
-          // Check if pair was already processed
-          if ((processedPairs[bitIndex] & mask) != 0) continue;
-          processedPairs[bitIndex] |= mask;
+          // Check if pair was already processed using bit operations
+          if ((processedSet[bitIndex] & mask) != 0) continue;
+          processedSet[bitIndex] |= mask;
 
           final other = particles[otherIndex];
           final distance = _getDistance(p, other, pIndex, otherIndex);
 
           if (distance < lineDistance) {
+            // Opacity is proportional to proximity (Linear Interpolation)
             final opacity =
                 ((1.0 - distance / lineDistance) * 0.9 * 355).toInt();
             linePaint.color = lineColor.withAlpha(opacity);
@@ -184,19 +213,27 @@ class OptimizedNetworkPainter extends CustomPainter {
     });
   }
 
-  /// Handles particle interactions with touch input
-  /// Applies pulling forces to nearby particles and draws connection lines
-  /// The force and line opacity are based on distance from touch point
-  void _drawTouchInteractions(Canvas canvas, Paint linePaint) {
-    for (int i = 0; i < particles.length; i++) {
+  // Draws lines from each particle to the touch point if within range.
+  // Also applies a small force to the particle (Touch Attraction, Hooke's Law approximation).
+  void _drawTouchInteractions(
+    Canvas canvas,
+    Paint linePaint,
+    List<int> visibleParticles,
+  ) {
+    if (touchPoint == null) return;
+
+    // Process only visible particles for touch interactions
+    for (final i in visibleParticles) {
       final p = particles[i];
       final distance = (p.position - touchPoint!).distance;
 
       if (distance < lineDistance) {
-        final pull = (touchPoint! - p.position) * 0.0012;
+        // Apply a small force toward the touch point (F = kx, Hooke's Law)
+        final pull = (touchPoint! - p.position) * 0.00115;
         p.velocity += pull;
         p.wasAccelerated = true;
 
+        // Opacity is proportional to proximity (Linear Interpolation)
         final opacity = ((1 - distance / lineDistance) * 0.8 * 355).toInt();
         linePaint.color = touchColor.withAlpha(opacity);
         canvas.drawLine(p.position, touchPoint!, linePaint);
@@ -204,9 +241,10 @@ class OptimizedNetworkPainter extends CustomPainter {
     }
   }
 
+  /// Determines whether the painter should repaint when the old delegate changes.
+  /// (Repaint if touch point changes or any particle was accelerated)
   @override
   bool shouldRepaint(OptimizedNetworkPainter oldDelegate) {
-    // Repaint if touch position changed or if any particle was accelerated
     return oldDelegate.touchPoint != touchPoint ||
         particles.any((p) => p.wasAccelerated);
   }

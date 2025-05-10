@@ -1,8 +1,3 @@
-/// A Flutter package that creates an interactive particle network effect.
-/// This library provides a customizable particle system that creates connecting lines
-/// between particles and responds to touch input.
-library;
-
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -10,113 +5,90 @@ import 'package:flutter/scheduler.dart';
 import 'package:particles_network/model/particlemodel.dart';
 import 'package:particles_network/painter/optimizednetworkpainter.dart';
 
-/// OptimizedParticleNetwork is the main widget that creates an interactive particle system.
-/// It manages the particle creation, animation, and touch interactions.
+// ParticleNetwork is a customizable widget that displays an animated network of particles.
+// It supports touch interaction, color customization, and performance optimizations.
 class ParticleNetwork extends StatefulWidget {
-  /// The number of particles to create in the system
+  // Number of particles to display in the network.
   final int particleCount;
-
-  /// Maximum speed at which particles can move
+  // Maximum speed for each particle.
   final double maxSpeed;
-
-  /// Maximum size of individual particles
+  // Maximum size (radius) for each particle.
   final double maxSize;
-
-  /// Maximum distance at which particles will create connecting lines
+  // Maximum distance to draw a line between two particles.
   final double lineDistance;
-
-  /// Color of the particles
+  // Color of the particles.
   final Color particleColor;
-
-  /// Color of the lines connecting particles
+  // Color of the lines connecting particles.
   final Color lineColor;
-
-  /// Color of lines created when touching the system
+  // Color of the lines when interacting with touch.
   final Color touchColor;
-
-  /// bool for Activation touch
+  // Enable or disable touch interaction.
   final bool touchActivation;
 
-  /// Creates a new particle network system
-  ///
-  /// [particleCount] determines how many particles to create (default: 50)
-  /// [maxSpeed] sets the maximum velocity of particles (default: 0.5)
-  /// [maxSize] sets the maximum particle size (default: 3.5)
-  /// [lineDistance] sets the maximum distance for particle connections (default: 180)
-  /// [particleColor] sets the color of particles (default: white)
-  /// [lineColor] sets the color of connecting lines (default: teal)
-  /// [touchColor] sets the color of touch interaction lines (default: amber)
-  /// [touchActivation] sets the touch Activation (default: true)
   const ParticleNetwork({
     super.key,
     this.particleCount = 50,
+    this.touchActivation = true,
     this.maxSpeed = 0.5,
     this.maxSize = 3.5,
-    this.lineDistance = 100,
+    this.lineDistance = 180,
     this.particleColor = Colors.white,
-    this.lineColor = Colors.teal,
+    this.lineColor = Colors.greenAccent,
     this.touchColor = Colors.amber,
-    this.touchActivation = true,
   });
 
   @override
   State<ParticleNetwork> createState() => _ParticleNetworkState();
 }
 
-/// The state class for OptimizedParticleNetwork that handles the animation
-/// and particle system logic
+// State class for ParticleNetwork. Handles animation, particle updates, and touch events.
 class _ParticleNetworkState extends State<ParticleNetwork>
     with SingleTickerProviderStateMixin {
-  /// List of all particles in the system
+  // List of all particles in the network.
   final List<Particle> _particles = [];
-
-  /// Random number generator for particle properties
+  // Random number generator for initial positions and velocities.
   final Random _random = Random();
-
-  /// Current touch point location
+  // Current touch point, if any.
   Offset? _touchPoint;
-
-  /// Ticker for animations
+  // Animation ticker for driving the particle updates.
   late final Ticker _ticker;
-
-  /// Current size of the widget
+  // Current size of the widget area.
   Size _currentSize = Size.zero;
 
-  /// Notifier for frame updates to trigger repaints efficiently
+  // Using ValueNotifier instead of setState to update rendering only
   final ValueNotifier<int> _frameNotifier = ValueNotifier<int>(0);
 
   @override
   void initState() {
     super.initState();
-    // Create a ticker for smooth animation
+    // Start the animation ticker. Each tick updates the particles and triggers a repaint.
     _ticker = createTicker((elapsed) {
+      // Update new frame without calling setState
       _updateParticles();
       _frameNotifier.value = elapsed.inMilliseconds;
     })..start();
   }
 
-  /// Updates the position of all particles in the system
+  // Update all particles' positions and states for the current frame.
   void _updateParticles() {
     for (final p in _particles) {
       p.update(_currentSize);
     }
   }
 
-  /// Generates particles when the widget size changes
-  /// This ensures particles are properly distributed in the available space
+  // Generate or regenerate particles when the widget size changes.
   void _generateParticles(Size size) {
     if (size != _currentSize) {
       _currentSize = size;
       _particles.clear();
       if (size.width > 0 && size.height > 0) {
         for (int i = 0; i < widget.particleCount; i++) {
-          // Create random velocity vector
+          // Assign random velocity and position to each particle.
           final velocity = Offset(
             (_random.nextDouble() - 0.5) * widget.maxSpeed,
             (_random.nextDouble() - 0.5) * widget.maxSpeed,
           );
 
-          // Create new particle with random position
           _particles.add(
             Particle(
               color: widget.particleColor,
@@ -135,6 +107,7 @@ class _ParticleNetworkState extends State<ParticleNetwork>
 
   @override
   void dispose() {
+    // Dispose of the ticker and notifier to avoid memory leaks.
     _ticker.dispose();
     _frameNotifier.dispose();
     super.dispose();
@@ -142,12 +115,12 @@ class _ParticleNetworkState extends State<ParticleNetwork>
 
   @override
   Widget build(BuildContext context) {
+    // Use LayoutBuilder to get the available size and regenerate particles if needed.
     return LayoutBuilder(
       builder: (_, constraints) {
         _generateParticles(constraints.biggest);
         return GestureDetector(
-          // trackpadScrollCausesScale: true,
-          // Handle touch interactions
+          // Update touch point for interaction.
           onPanDown: (d) => _touchPoint = d.localPosition,
           onPanUpdate: (d) => _touchPoint = d.localPosition,
           onPanEnd: (_) => _touchPoint = null,
@@ -155,6 +128,7 @@ class _ParticleNetworkState extends State<ParticleNetwork>
           child: ValueListenableBuilder<int>(
             valueListenable: _frameNotifier,
             builder: (context, frame, child) {
+              // CustomPaint draws the animated particle network.
               return CustomPaint(
                 painter: OptimizedNetworkPainter(
                   touchActivation: widget.touchActivation,
