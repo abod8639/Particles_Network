@@ -8,6 +8,25 @@ import 'package:particles_network/particles_network.dart';
 /// Test suite for the Particles Network package
 /// Tests core functionality, particle behavior, and widget rendering
 void main() {
+  test('decayVelocity returns smooth interpolated velocity', () {
+    final currentVelocity = const Offset(4, 0);
+    final defaultVelocity = const Offset(1, 0);
+    final currentSpeed = currentVelocity.distance;
+    final defaultSpeed = defaultVelocity.distance;
+
+    final result = decayVelocity(
+      currentVelocity: currentVelocity,
+      defaultVelocity: defaultVelocity,
+      currentSpeed: currentSpeed,
+      defaultSpeed: defaultSpeed,
+    );
+
+    // التحقق من أن النتيجة تقع بين currentVelocity و targetVelocity
+    expect(result.dx, lessThan(currentVelocity.dx));
+    expect(result.dx, greaterThan(defaultVelocity.dx));
+    expect(result.dy, 0); // لأن كل القيم في الاتجاه X فقط
+  });
+
   group('ParticleNetwork Widget Tests', () {
     testWidgets('Widget creates with default parameters', (tester) async {
       await tester.pumpWidget(

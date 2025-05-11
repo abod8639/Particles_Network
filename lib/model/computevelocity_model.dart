@@ -27,19 +27,31 @@ Offset computeVelocity(
   if ((currentSpeed - defaultSpeed).abs() < speedThreshold) {
     return defaultVelocity;
   } else {
-    // Decay factor controls how quickly the velocity returns to default (closer to 1.0 = slower)
-    const decayFactor = 0.985; //
-    // Scale factor adjusts the default velocity to match the current speed's direction
-    final scaleFactor = defaultSpeed / currentSpeed;
-
-    // Target velocity is the default velocity scaled to match the current speed
-    final targetVelocity = defaultVelocity * scaleFactor;
-    // Interpolation amount determines how much to blend between current and target velocity
-    const powrFactor = 0.989;
-    const interpolationAmount = powrFactor - decayFactor;
-
-    // Smoothly interpolate from currentVelocity to targetVelocity
-    return Offset.lerp(currentVelocity, targetVelocity, interpolationAmount) ??
-        currentVelocity;
+    return decayVelocity(
+      currentSpeed: defaultSpeed,
+      currentVelocity: currentVelocity,
+      defaultSpeed: defaultSpeed,
+      defaultVelocity: currentVelocity,
+    );
   }
+}
+
+Offset decayVelocity({
+  required Offset currentVelocity,
+  required Offset defaultVelocity,
+  required double currentSpeed,
+  required double defaultSpeed,
+}) {
+  const decayFactor = 0.985;
+  // Decay factor controls how quickly the velocity returns to default (closer to 1.0 = slower)
+  final scaleFactor = defaultSpeed / currentSpeed;
+  // Target velocity is the default velocity scaled to match the current speed
+  final targetVelocity = defaultVelocity * scaleFactor;
+  // Interpolation amount determines how much to blend between current and target velocity
+  const powrFactor = 0.989;
+  const interpolationAmount = powrFactor - decayFactor;
+
+  // Smoothly interpolate from currentVelocity to targetVelocity
+  return Offset.lerp(currentVelocity, targetVelocity, interpolationAmount) ??
+      currentVelocity;
 }
