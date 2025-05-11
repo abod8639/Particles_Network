@@ -11,12 +11,7 @@ and the Flutter guide for
 [developing packages and plugins](https://flutter.dev/to/develop-packages).
 -->
 
-<!-- markdownlint-disable MD013 -->
-<!-- <p align="center">
-  <a href="https://docs.flutter.dev/packages-and-plugins/favorites">
-    <img alt="Flutter favorite" width="100px" src="https://github.com/flame-engine/flame/assets/744771/aa5d5acd-e82b-48bc-ad81-2ab146d72ecb">
-  </a>
-</p> -->
+
 <p align="center">
   <a href="https://github.com/abod8639/Particles_Network">
     <img alt="Flutter favorite" width="200px" src="assets/Picsart_25-05-10_12-57-34-680.png">
@@ -26,7 +21,8 @@ and the Flutter guide for
 
 ![Pub Version](https://img.shields.io/pub/v/particles_network)
 ![Dart CI](https://github.com/abod8639/Particles_Network/actions/workflows/flutter-ci.yml/badge.svg)
-<!-- [![codecov](https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg)](https://codecov.io/gh/abod8639/Particles_Network) -->
+![Codecov](https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg)
+
 
 
 
