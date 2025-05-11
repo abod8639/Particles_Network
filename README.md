@@ -26,7 +26,7 @@ and the Flutter guide for
 
 ![Pub Version](https://img.shields.io/pub/v/particles_network)
 ![Dart CI](https://github.com/abod8639/Particles_Network/actions/workflows/flutter-ci.yml/badge.svg)
-[![codecov](https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg)](https://codecov.io/gh/abod8639/Particles_Network)
+<!-- [![codecov](https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg)](https://codecov.io/gh/abod8639/Particles_Network) -->
 
 
 
