@@ -85,7 +85,7 @@ class MyApp extends StatelessWidget {
           particleCount: 50,            // Number of particles
           maxSpeed: 0.5,                // Maximum particle speed
           maxSize: 3.5,                 // Maximum particle size
-          lineDistance: 200,            // Maximum distance for connecting lines
+          lineDistance: 150,            // Maximum distance for connecting lines
           particleColor: Colors.white,
           lineColor: const Color(0xFF4CFFA7),
           touchColor: Colors.amber,
@@ -102,10 +102,7 @@ class MyApp extends StatelessWidget {
 
 The `OptimizedParticleNetwork` widget accepts several parameters for customization:
 
- - `particleCount`: Number of particles in the system (default: 50).
-
-   ⚠️ If `particleCount` exceeds 400, there may be a noticeable drop in performance,
-   especially on low-end devices or when combined with large canvas sizes.
+- `particleCount`: Number of particles in the system (default: 50).
 - `maxSpeed`: Maximum velocity of particles (default: 0.5)
 - `maxSize`: Maximum size of particles (default: 3.5)
 - `lineDistance`: Maximum distance for drawing connecting lines (default: 100)
@@ -113,6 +110,10 @@ The `OptimizedParticleNetwork` widget accepts several parameters for customizati
 - `lineColor`: Color of connecting lines between particles (default: teal)
 - `touchColor`: Color of lines created by touch interaction (default: amber)
 
+- ⚠️ Performance Tip:
+To ensure optimal performance, maintain a good balance between particleCount and lineDistance.
+High values for both can significantly increase the number of line calculations, which may impact rendering speed.
+For example, if particleCount is high, consider reducing lineDistance, and vice versa.
 ## Performance Optimization
 
 
