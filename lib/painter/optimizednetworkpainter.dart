@@ -12,7 +12,7 @@ class OptimizedNetworkPainter extends CustomPainter {
   final List<Particle> particles;
 
   /// The touch point for interaction.
-  final Offset? touchPoint;
+  late Offset? touchPoint;
 
   /// The maximum distance at which particles are connected.
   final double lineDistance;
@@ -223,27 +223,22 @@ class OptimizedNetworkPainter extends CustomPainter {
     Paint linePaint,
     List<int> visibleParticles,
   ) {
-    if (touchPoint == null) return;
-    // Process only visible particles for touch interactions
+    final touch = touchPoint;
+    if (touch == null) return;
+
     for (final i in visibleParticles) {
       final p = particles[i];
-      final distance = (p.position - touchPoint!).distance;
+      final distance = (p.position - touch).distance;
 
       if (distance < lineDistance) {
-        // Apply a small force toward the touch point (F = kx, Hooke's Law)
         const force = 0.00115;
-        final pull = (touchPoint! - p.position) * force;
+        final pull = (touch - p.position) * force;
         p.velocity += pull;
         p.wasAccelerated = true;
 
-        // Opacity is proportional to proximity (Linear Interpolation)
-        final opacity =
-            ((1 - distance / lineDistance) * 1.1 * 255)
-                .toInt(); // Corrected opacity calculation
-        linePaint.color = touchColor.withAlpha(
-          opacity.clamp(0, 255),
-        ); // Clamped opacity
-        canvas.drawLine(p.position, touchPoint!, linePaint);
+        final opacity = ((1 - distance / lineDistance) * 1.1 * 255).toInt();
+        linePaint.color = touchColor.withAlpha(opacity.clamp(0, 255));
+        canvas.drawLine(p.position, touch, linePaint);
       }
     }
   }
