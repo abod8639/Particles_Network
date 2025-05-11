@@ -68,8 +68,8 @@ class OptimizedNetworkPainter extends CustomPainter {
   // Returns the cached or computed distance between two particles.
   // Uses the Euclidean distance formula: sqrt((x2-x1)^2 + (y2-y1)^2)
   double _getDistance(Particle p1, Particle p2, int i, int j) {
-    final key = _getCacheKey(i, j);
-    final cacheIndex = key % _cacheSize;
+    final int key = _getCacheKey(i, j);
+    final int cacheIndex = key % _cacheSize;
 
     // Check if the value is already in the cache
     if (_cacheKeys[cacheIndex] == key) {
@@ -77,7 +77,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     }
 
     // Calculate and store the distance
-    final distance = (p1.position - p2.position).distance;
+    final double distance = (p1.position - p2.position).distance;
     _cacheKeys[cacheIndex] = key;
     _cacheValues[cacheIndex] = distance;
     return distance;
@@ -103,7 +103,7 @@ class OptimizedNetworkPainter extends CustomPainter {
           ..strokeWidth = 1.0;
 
     // Filter visible particles first for performance (view frustum culling)
-    final visibleParticles = <int>[];
+    final List<int> visibleParticles = <int>[];
     for (int i = 0; i < particles.length; i++) {
       if (particles[i].isVisible) {
         visibleParticles.add(i);
@@ -111,7 +111,10 @@ class OptimizedNetworkPainter extends CustomPainter {
     }
 
     // Build a spatial grid for fast neighbor lookup (Spatial Hash Grid)
-    final grid = _createSpatialGrid(size, visibleParticles);
+    final Map<String, Uint16List> grid = _createSpatialGrid(
+      size,
+      visibleParticles,
+    );
 
     // Draw lines between close particles (Edge Drawing based on Distance Threshold)
     _drawParticleConnections(canvas, linePaint, grid);
@@ -122,8 +125,8 @@ class OptimizedNetworkPainter extends CustomPainter {
     }
 
     // Draw all visible particles as circles
-    for (final index in visibleParticles) {
-      final p = particles[index];
+    for (final int index in visibleParticles) {
+      final Particle p = particles[index];
       canvas.drawCircle(p.position, p.size, particlePaint);
     }
   }
@@ -136,20 +139,20 @@ class OptimizedNetworkPainter extends CustomPainter {
     List<int> visibleParticles,
   ) {
     // Use HashMap for better performance than standard Map
-    final grid = HashMap<String, Uint16List>();
-    final cellSize = lineDistance;
-    final tempLists = HashMap<String, List<int>>();
+    final HashMap<String, Uint16List> grid = HashMap<String, Uint16List>();
+    final double cellSize = lineDistance;
+    final HashMap<String, List<int>> tempLists = HashMap<String, List<int>>();
 
     // First pass: collect particles per cell (only visible particles)
     for (final i in visibleParticles) {
-      final p = particles[i];
-      final cellX = (p.position.dx / cellSize).floor();
-      final cellY = (p.position.dy / cellSize).floor();
+      final Particle p = particles[i];
+      final int cellX = (p.position.dx / cellSize).floor();
+      final int cellY = (p.position.dy / cellSize).floor();
 
       // Add particle to appropriate cells (3x3 neighborhood)
       for (int nx = -1; nx <= 1; nx++) {
         for (int ny = -1; ny <= 1; ny++) {
-          final key = '${cellX + nx},${cellY + ny}';
+          final String key = '${cellX + nx},${cellY + ny}';
           if (!tempLists.containsKey(key)) {
             tempLists[key] = [];
           }
@@ -218,15 +221,15 @@ class OptimizedNetworkPainter extends CustomPainter {
 
   // Draws lines from each particle to the touch point if within range.
   // Also applies a small force to the particle (Touch Attraction, Hooke's Law approximation).
+
   void _drawTouchInteractions(
     Canvas canvas,
     Paint linePaint,
     List<int> visibleParticles,
   ) {
-    final touch = touchPoint;
+    final Offset? touch = touchPoint;
     if (touch == null) return;
 
-    // منطق التأثير على الجسيمات فقط (قابل للاختبار)
     applyTouchInteraction(
       touch: touch,
       lineDistance: lineDistance,
@@ -234,13 +237,12 @@ class OptimizedNetworkPainter extends CustomPainter {
       visibleIndices: visibleParticles,
     );
 
-    // الجزء البصري
-    for (final i in visibleParticles) {
-      final p = particles[i];
-      final distance = (p.position - touch).distance;
+    for (final int i in visibleParticles) {
+      final Particle p = particles[i];
+      final double distance = (p.position - touch).distance;
 
       if (distance < lineDistance) {
-        final opacity = ((1 - distance / lineDistance) * 1.1 * 255).toInt();
+        final int opacity = ((1 - distance / lineDistance) * 1.1 * 255).toInt();
         linePaint.color = touchColor.withAlpha(opacity.clamp(0, 255));
         canvas.drawLine(p.position, touch, linePaint);
       }
@@ -256,20 +258,20 @@ class OptimizedNetworkPainter extends CustomPainter {
   }
 }
 
+////
 void applyTouchInteraction({
   required Offset touch,
   required double lineDistance,
   required List<Particle> particles,
   required List<int> visibleIndices,
 }) {
-  const force = 0.00115;
-
   for (final i in visibleIndices) {
-    final p = particles[i];
-    final distance = (p.position - touch).distance;
+    final Particle p = particles[i];
+    final double distance = (p.position - touch).distance;
+    const double force = 0.00115;
 
     if (distance < lineDistance) {
-      final pull = (touch - p.position) * force;
+      final Offset pull = (touch - p.position) * force;
       p.velocity += pull;
       p.wasAccelerated = true;
     }
