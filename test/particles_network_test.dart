@@ -21,10 +21,10 @@ void main() {
       defaultSpeed: defaultSpeed,
     );
 
-    // التحقق من أن النتيجة تقع بين currentVelocity و targetVelocity
+    // currentVelocity و targetVelocity
     expect(result.dx, lessThan(currentVelocity.dx));
     expect(result.dx, greaterThan(defaultVelocity.dx));
-    expect(result.dy, 0); // لأن كل القيم في الاتجاه X فقط
+    expect(result.dy, 0); // x
   });
 
   group('ParticleNetwork Widget Tests', () {

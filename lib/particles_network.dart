@@ -84,7 +84,7 @@ class _ParticleNetworkState extends State<ParticleNetwork>
       if (size.width > 0 && size.height > 0) {
         for (int i = 0; i < widget.particleCount; i++) {
           // Assign random velocity and position to each particle.
-          final velocity = Offset(
+          final Offset velocity = Offset(
             (_random.nextDouble() - 0.5) * widget.maxSpeed,
             (_random.nextDouble() - 0.5) * widget.maxSpeed,
           );

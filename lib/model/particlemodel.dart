@@ -69,7 +69,7 @@ class Particle {
       // Calculate current speed magnitude (Euclidean norm)
 
       // If speed is close enough to default, reset to default
-      const speedThreshold = 0.01;
+      const double speedThreshold = 0.01;
 
       velocity = computeVelocity(velocity, defaultVelocity, speedThreshold);
     }
@@ -95,7 +95,7 @@ class Particle {
     // Include a small margin to account for particles just outside the viewport
     // that might still have connections with visible particles
     // (Margin technique for spatial culling)
-    const margin = 100.0;
+    const double margin = 100.0;
     isVisible =
         position.dx >= -margin &&
         position.dx <= bounds.width + margin &&
