@@ -21,7 +21,7 @@ and the Flutter guide for
 
 ![Pub Version](https://img.shields.io/pub/v/particles_network)
 ![Dart CI](https://github.com/abod8639/Particles_Network/actions/workflows/flutter-ci.yml/badge.svg)
-![Codecov](https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg)
+<!-- ![Codecov](https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg) -->
 
 
 
@@ -57,7 +57,7 @@ Add this package to your Flutter project by adding the following to your `pubspe
 
 ```yaml
 dependencies:
-  particles_network: ^1.5.6
+  particles_network: ^1.5.7
 ```
 
 ## Usage
