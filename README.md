@@ -24,6 +24,11 @@ and the Flutter guide for
 </p>
 
 
+![Pub Version](https://img.shields.io/pub/v/particles_network)
+![Dart CI](https://github.com/abod8639/Particles_Network/actions/workflows/flutter-ci.yml/badge.svg)
+[![codecov](https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg)](https://codecov.io/gh/abod8639/Particles_Network)
+
+
 
 ---
 ## Documentation
@@ -139,6 +144,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 Contributions are welcome! Feel free to submit issues and pull requests.
 
-![Pub Version](https://img.shields.io/pub/v/particles_network)
-![Dart CI](https://github.com/abod8639/Particles_Network/actions/workflows/dart-ci.yml/badge.svg)
-![Codecov](https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg)
+
