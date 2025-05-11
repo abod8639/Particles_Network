@@ -1,0 +1,25 @@
+name: Dart CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dart-lang/setup-dart@v1
+      - name: Install dependencies
+        run: dart pub get
+      - name: Run tests
+        run: dart test
+      - name: Upload coverage to Codecov
+        if: always()
+        run: |
+          dart pub global activate coverage
+          dart test --coverage=coverage
+          dart pub global run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.info
+          bash <(curl -s https://codecov.io/bash)
