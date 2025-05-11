@@ -1,21 +1,21 @@
-name: Flutter CI
+name: Flutter Tests and Coverage
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [main]
   pull_request:
-    branches: [ "main" ]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
-      - uses: subosito/flutter-action@v2
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: '3.29.3'
 
       - name: Install dependencies
         run: flutter pub get
@@ -23,10 +23,15 @@ jobs:
       - name: Run tests with coverage
         run: flutter test --coverage
 
-      # - name: Upload coverage to Codecov
-      - name: Upload coverage to Codecov
+      - name: Debug coverage file
+        run: |
+          ls -lh coverage
+          cat coverage/lcov.info | head -n 20
+
+      - name: Upload to Codecov
         uses: codecov/codecov-action@v4
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ secrets.CODECOV_TOKEN }} # مطلوب إذا كان repo خاص
           files: coverage/lcov.info
-          fail_ci_if_error: true
+          flags: flutter
+          verbose: true
