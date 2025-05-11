@@ -250,6 +250,7 @@ class OptimizedNetworkPainter extends CustomPainter {
 
   /// Determines whether the painter should repaint when the old delegate changes.
   /// (Repaint if touch point changes or any particle was accelerated)
+  // @overrides
   @override
   bool shouldRepaint(OptimizedNetworkPainter oldDelegate) {
     return oldDelegate.touchPoint != touchPoint ||

@@ -1,3 +1,15 @@
+// particles_network: A Flutter library for rendering interactive particle networks.
+//
+// This library provides a customizable widget for displaying animated particles that move and interact within a network.
+// Each particle is represented as a node, and lines are drawn between nearby particles to create a dynamic, visually appealing network effect.
+// The library supports touch interactions, particle acceleration, and rendering optimizations for smooth performance.
+//
+// Usage:
+//   - Import the library and use the main widget in your Flutter app.
+//   - Customize particle count, color, size, and network behavior as needed.
+//
+// See the README for detailed usage instructions and examples.
+
 import 'dart:ui';
 
 // Particle class represents a single moving dot in the network.
@@ -53,33 +65,15 @@ class Particle {
     // Uses exponential decay ("Exponential Smoothing") to interpolate velocity.
     if (wasAccelerated) {
       // Calculate current speed magnitude (Euclidean norm)
-      final currentSpeed = velocity.distance;
-      final defaultSpeed = defaultVelocity.distance;
 
       // If speed is close enough to default, reset to default
       const speedThreshold = 0.01;
 
-      if ((currentSpeed - defaultSpeed).abs() < speedThreshold) {
-        velocity = defaultVelocity;
-        wasAccelerated = false;
-      } else {
-        // Gradually reduce velocity toward default (5% decay per frame)
-        // Formula: v = lerp(v, v_default, alpha), where alpha = 0.005
-        final decayFactor = 0.95; // 1 - decay rate
-        final scaleFactor =
-            currentSpeed != 0
-                ? defaultSpeed / currentSpeed
-                : 1.0; // Scale defaultVelocity to match direction
-        final targetVelocity = Offset(
-          defaultVelocity.dx * scaleFactor,
-          defaultVelocity.dy * scaleFactor,
-        );
-        // Linear interpolation (lerp) between current and target velocity
-        // Offset.lerp uses: v = v0 * (1-t) + v1 * t
-        velocity =
-            Offset.lerp(velocity, targetVelocity, 0.955 - decayFactor) ??
-            velocity;
-      }
+      velocity = computeVelocity(
+        currentVelocity: velocity,
+        defaultVelocity: defaultVelocity,
+        speedThreshold: speedThreshold,
+      );
     }
 
     // Handle screen boundaries (bounce effect)
@@ -109,5 +103,39 @@ class Particle {
         position.dx <= bounds.width + margin &&
         position.dy >= -margin &&
         position.dy <= bounds.height + margin;
+  }
+}
+
+// computeVelocity smoothly interpolates the particle's velocity back to its default value after acceleration.
+//
+// This function is used to gradually restore a particle's speed and direction to its original state
+// after it has been affected by an external force (e.g., user interaction).
+//
+// Parameters:
+//   - currentVelocity: The particle's current velocity vector.
+//   - defaultVelocity: The velocity vector to return to.
+//   - speedThreshold: The minimum difference in speed before snapping to defaultVelocity.
+//
+// Returns:
+//   - An Offset representing the new velocity, smoothly interpolated toward defaultVelocity.
+Offset computeVelocity({
+  required Offset currentVelocity,
+  required Offset defaultVelocity,
+  required double speedThreshold,
+}) {
+  final currentSpeed = currentVelocity.distance;
+  final defaultSpeed = defaultVelocity.distance;
+
+  if ((currentSpeed - defaultSpeed).abs() < speedThreshold) {
+    return defaultVelocity;
+  } else {
+    const decayFactor = 0.95;
+    final scaleFactor = currentSpeed != 0 ? defaultSpeed / currentSpeed : 1.0;
+    final targetVelocity = Offset(
+      defaultVelocity.dx * scaleFactor,
+      defaultVelocity.dy * scaleFactor,
+    );
+    return Offset.lerp(currentVelocity, targetVelocity, 0.955 - decayFactor) ??
+        currentVelocity;
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:particles_network/model/computevelocity_model.dart';
 import 'package:particles_network/model/particlemodel.dart';
 import 'package:particles_network/particles_network.dart';
 
@@ -101,4 +102,17 @@ void main() {
       expect(particle.wasAccelerated, true);
     });
   });
+
+  test(
+    'computeVelocity returns defaultVelocity when difference < threshold',
+    () {
+      final v = computeVelocity(
+        currentVelocity: Offset(1, 1),
+        defaultVelocity: Offset(1, 1),
+        speedThreshold: 0.1,
+      );
+      expect(v.dx, closeTo(1.0, 0.01));
+      expect(v.dy, closeTo(1.0, 0.01));
+    },
+  );
 }
