@@ -12,7 +12,7 @@ class OptimizedNetworkPainter extends CustomPainter {
   final List<Particle> particles;
 
   /// The touch point for interaction.
-  late Offset? touchPoint;
+  final Offset? touchPoint;
 
   /// The maximum distance at which particles are connected.
   final double lineDistance;
@@ -226,16 +226,20 @@ class OptimizedNetworkPainter extends CustomPainter {
     final touch = touchPoint;
     if (touch == null) return;
 
+    // منطق التأثير على الجسيمات فقط (قابل للاختبار)
+    applyTouchInteraction(
+      touch: touch,
+      lineDistance: lineDistance,
+      particles: particles,
+      visibleIndices: visibleParticles,
+    );
+
+    // الجزء البصري
     for (final i in visibleParticles) {
       final p = particles[i];
       final distance = (p.position - touch).distance;
 
       if (distance < lineDistance) {
-        const force = 0.00115;
-        final pull = (touch - p.position) * force;
-        p.velocity += pull;
-        p.wasAccelerated = true;
-
         final opacity = ((1 - distance / lineDistance) * 1.1 * 255).toInt();
         linePaint.color = touchColor.withAlpha(opacity.clamp(0, 255));
         canvas.drawLine(p.position, touch, linePaint);
@@ -249,5 +253,25 @@ class OptimizedNetworkPainter extends CustomPainter {
   bool shouldRepaint(OptimizedNetworkPainter oldDelegate) {
     return oldDelegate.touchPoint != touchPoint ||
         particles.any((p) => p.wasAccelerated);
+  }
+}
+
+void applyTouchInteraction({
+  required Offset touch,
+  required double lineDistance,
+  required List<Particle> particles,
+  required List<int> visibleIndices,
+}) {
+  const force = 0.00115;
+
+  for (final i in visibleIndices) {
+    final p = particles[i];
+    final distance = (p.position - touch).distance;
+
+    if (distance < lineDistance) {
+      final pull = (touch - p.position) * force;
+      p.velocity += pull;
+      p.wasAccelerated = true;
+    }
   }
 }

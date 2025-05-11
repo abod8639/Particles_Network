@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:particles_network/model/computevelocity_model.dart';
 import 'package:particles_network/model/particlemodel.dart';
+import 'package:particles_network/painter/optimizednetworkpainter.dart';
 import 'package:particles_network/particles_network.dart';
 
 /// Test suite for the Particles Network package
@@ -43,7 +44,41 @@ void main() {
       expect(find.byType(ParticleNetwork), findsOneWidget);
     });
   });
+  test('applyTouchInteraction affects close particles', () {
+    final particles = [
+      Particle(
+        position: Offset(100, 100),
+        velocity: Offset.zero,
+        color: Colors.white,
+        size: 2.0,
+      ), // close to touch
+      Particle(
+        position: Offset(300, 300),
+        velocity: Offset.zero,
+        color: Colors.white,
+        size: 2.0,
+      ), // far from touch
+    ];
 
+    final touchPoint = Offset(110, 110);
+    final visibleIndices = [0, 1];
+    final lineDistance = 50.0;
+
+    applyTouchInteraction(
+      touch: touchPoint,
+      lineDistance: lineDistance,
+      particles: particles,
+      visibleIndices: visibleIndices,
+    );
+
+    // Particle 0 should be affected
+    expect(particles[0].wasAccelerated, isTrue);
+    expect(particles[0].velocity.distance, greaterThan(0));
+
+    // Particle 1 should be unaffected
+    expect(particles[1].wasAccelerated, isFalse);
+    expect(particles[1].velocity, Offset.zero);
+  });
   group('Particle Model Tests', () {
     test('Particle updates position correctly', () {
       final particle = Particle(
