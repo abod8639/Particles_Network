@@ -36,7 +36,7 @@ Offset computeVelocity(
     final targetVelocity = defaultVelocity * scaleFactor;
     // Interpolation amount determines how much to blend between current and target velocity
     const powrFactor = 0.989;
-    final interpolationAmount = powrFactor - decayFactor;
+    const interpolationAmount = powrFactor - decayFactor;
 
     // Smoothly interpolate from currentVelocity to targetVelocity
     return Offset.lerp(currentVelocity, targetVelocity, interpolationAmount) ??

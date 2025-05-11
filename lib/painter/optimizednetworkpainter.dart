@@ -224,7 +224,6 @@ class OptimizedNetworkPainter extends CustomPainter {
     List<int> visibleParticles,
   ) {
     if (touchPoint == null) return;
-
     // Process only visible particles for touch interactions
     for (final i in visibleParticles) {
       final p = particles[i];
@@ -232,7 +231,8 @@ class OptimizedNetworkPainter extends CustomPainter {
 
       if (distance < lineDistance) {
         // Apply a small force toward the touch point (F = kx, Hooke's Law)
-        final pull = (touchPoint! - p.position) * 0.00115;
+        const force = 0.00115;
+        final pull = (touchPoint! - p.position) * force;
         p.velocity += pull;
         p.wasAccelerated = true;
 
