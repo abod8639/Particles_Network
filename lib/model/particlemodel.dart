@@ -57,22 +57,28 @@ class Particle {
       final defaultSpeed = defaultVelocity.distance;
 
       // If speed is close enough to default, reset to default
-      if ((currentSpeed - defaultSpeed).abs() < 0.05) {
+      const speedThreshold = 0.01;
+
+      if ((currentSpeed - defaultSpeed).abs() < speedThreshold) {
         velocity = defaultVelocity;
         wasAccelerated = false;
       } else {
         // Gradually reduce velocity toward default (5% decay per frame)
         // Formula: v = lerp(v, v_default, alpha), where alpha = 0.005
         final decayFactor = 0.95; // 1 - decay rate
-        final scaleFactor = defaultSpeed / currentSpeed;
-        // Scale defaultVelocity to match direction
+        final scaleFactor =
+            currentSpeed != 0
+                ? defaultSpeed / currentSpeed
+                : 1.0; // Scale defaultVelocity to match direction
         final targetVelocity = Offset(
           defaultVelocity.dx * scaleFactor,
           defaultVelocity.dy * scaleFactor,
         );
         // Linear interpolation (lerp) between current and target velocity
         // Offset.lerp uses: v = v0 * (1-t) + v1 * t
-        velocity = Offset.lerp(velocity, targetVelocity, 0.955 - decayFactor)!;
+        velocity =
+            Offset.lerp(velocity, targetVelocity, 0.955 - decayFactor) ??
+            velocity;
       }
     }
 

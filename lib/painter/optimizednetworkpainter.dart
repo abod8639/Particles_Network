@@ -204,8 +204,11 @@ class OptimizedNetworkPainter extends CustomPainter {
           if (distance < lineDistance) {
             // Opacity is proportional to proximity (Linear Interpolation)
             final opacity =
-                ((1.0 - distance / lineDistance) * 0.9 * 355).toInt();
-            linePaint.color = lineColor.withAlpha(opacity);
+                ((1.0 - distance / lineDistance) * 2.5 * 255)
+                    .toInt(); // Corrected opacity range
+            linePaint.color = lineColor.withAlpha(
+              opacity.clamp(0, 255),
+            ); // Clamped opacity
             canvas.drawLine(p.position, other.position, linePaint);
           }
         }
@@ -234,8 +237,12 @@ class OptimizedNetworkPainter extends CustomPainter {
         p.wasAccelerated = true;
 
         // Opacity is proportional to proximity (Linear Interpolation)
-        final opacity = ((1 - distance / lineDistance) * 0.8 * 355).toInt();
-        linePaint.color = touchColor.withAlpha(opacity);
+        final opacity =
+            ((1 - distance / lineDistance) * 1.1 * 255)
+                .toInt(); // Corrected opacity calculation
+        linePaint.color = touchColor.withAlpha(
+          opacity.clamp(0, 255),
+        ); // Clamped opacity
         canvas.drawLine(p.position, touchPoint!, linePaint);
       }
     }
