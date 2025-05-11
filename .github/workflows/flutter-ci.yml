@@ -28,4 +28,4 @@ jobs:
         with:
           files: coverage/lcov.info
           fail_ci_if_error: true
-          token: ${{ secrets.CODECOV_TOKEN }} # ← أضف هذا إذا كان الريبو private
+          # token: ${{ secrets.CODECOV_TOKEN }} # ← private
