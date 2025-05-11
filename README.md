@@ -85,7 +85,7 @@ class MyApp extends StatelessWidget {
           particleCount: 50,            // Number of particles
           maxSpeed: 0.5,                // Maximum particle speed
           maxSize: 3.5,                 // Maximum particle size
-          lineDistance: 150,            // Maximum distance for connecting lines
+          lineDistance: 200,            // Maximum distance for connecting lines
           particleColor: Colors.white,
           lineColor: const Color(0xFF4CFFA7),
           touchColor: Colors.amber,
@@ -138,3 +138,9 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Contributing
 
 Contributions are welcome! Feel free to submit issues and pull requests.
+
+<p 
+  <a href="https://github.com/abod8639/Particles_Network">
+  </a>
+       github 
+</p>
