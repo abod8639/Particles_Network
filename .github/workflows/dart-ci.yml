@@ -2,7 +2,7 @@
 # For more information, see:
 # https://github.com/dart-lang/setup-dart
 
-name: Dart CI
+name: Flutter CI
 
 on:
   push:
