@@ -49,7 +49,7 @@ class _ParticleNetworkState extends State<ParticleNetwork>
   // Random number generator for initial positions and velocities.
   final Random _random = Random();
   // Current touch point, if any.
-  Offset? _touchPoint;
+  Offset _touchPoint = Offset.infinite;
   // Animation ticker for driving the particle updates.
   late final Ticker _ticker;
   // Current size of the widget area.
@@ -123,8 +123,8 @@ class _ParticleNetworkState extends State<ParticleNetwork>
           // Update touch point for interaction.
           onPanDown: (d) => _touchPoint = d.localPosition,
           onPanUpdate: (d) => _touchPoint = d.localPosition,
-          onPanEnd: (_) => _touchPoint = null,
-          onPanCancel: () => _touchPoint = null,
+          onPanEnd: (_) => _touchPoint = Offset.infinite,
+          onPanCancel: () => _touchPoint = Offset.infinite,
           child: ValueListenableBuilder<int>(
             valueListenable: _frameNotifier,
             builder: (context, frame, child) {
