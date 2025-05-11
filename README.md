@@ -139,8 +139,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 Contributions are welcome! Feel free to submit issues and pull requests.
 
-<p 
-  <a href="https://github.com/abod8639/Particles_Network">
-  </a>
-       github 
-</p>
+![Pub Version](https://img.shields.io/pub/v/particles_network)
+![Dart CI](https://github.com/abod8639/Particles_Network/actions/workflows/dart-ci.yml/badge.svg)
+![Codecov](https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg)
