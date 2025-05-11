@@ -12,6 +12,8 @@
 //   - An Offset representing the new velocity, smoothly interpolated toward defaultVelocity.
 import 'dart:ui';
 
+// Computes a new velocity for a particle by smoothly interpolating its current velocity back toward a default velocity.
+// This is typically used to restore a particle's motion after it has been disturbed by an external force.
 Offset computeVelocity({
   required Offset currentVelocity,
   required Offset defaultVelocity,
