@@ -30,13 +30,13 @@ Offset computeVelocity(
     // Decay factor controls how quickly the velocity returns to default (closer to 1.0 = slower)
     const decayFactor = 0.985; //
     // Scale factor adjusts the default velocity to match the current speed's direction
-    final scaleFactor = currentSpeed != 0 ? defaultSpeed / currentSpeed : 1.0;
+    final scaleFactor = defaultSpeed / currentSpeed;
 
     // Target velocity is the default velocity scaled to match the current speed
     final targetVelocity = defaultVelocity * scaleFactor;
     // Interpolation amount determines how much to blend between current and target velocity
-    const pwerFactor = 0.989;
-    final interpolationAmount = pwerFactor - decayFactor;
+    const powrFactor = 0.989;
+    final interpolationAmount = powrFactor - decayFactor;
 
     // Smoothly interpolate from currentVelocity to targetVelocity
     return Offset.lerp(currentVelocity, targetVelocity, interpolationAmount) ??
