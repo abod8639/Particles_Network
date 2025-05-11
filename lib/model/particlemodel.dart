@@ -71,11 +71,7 @@ class Particle {
       // If speed is close enough to default, reset to default
       const speedThreshold = 0.01;
 
-      velocity = computeVelocity(
-        currentVelocity: velocity,
-        defaultVelocity: defaultVelocity,
-        speedThreshold: speedThreshold,
-      );
+      velocity = computeVelocity(velocity, defaultVelocity, speedThreshold);
     }
 
     // Handle screen boundaries (bounce effect)
@@ -107,5 +103,3 @@ class Particle {
         position.dy <= bounds.height + margin;
   }
 }
-
-

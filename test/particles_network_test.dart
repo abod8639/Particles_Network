@@ -105,11 +105,7 @@ void main() {
     test(
       'computeVelocity returns defaultVelocity when difference < threshold',
       () {
-        final v = computeVelocity(
-          currentVelocity: Offset(1, 1),
-          defaultVelocity: Offset(1, 1),
-          speedThreshold: 0.1,
-        );
+        final v = computeVelocity(Offset(1, 1), Offset(1, 1), 0.1);
         expect(v.dx, closeTo(1.0, 0.01));
         expect(v.dy, closeTo(1.0, 0.01));
       },

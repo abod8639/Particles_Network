@@ -14,11 +14,11 @@ import 'dart:ui';
 
 // Computes a new velocity for a particle by smoothly interpolating its current velocity back toward a default velocity.
 // This is typically used to restore a particle's motion after it has been disturbed by an external force.
-Offset computeVelocity({
-  required Offset currentVelocity,
-  required Offset defaultVelocity,
-  required double speedThreshold,
-}) {
+Offset computeVelocity(
+  Offset currentVelocity,
+  Offset defaultVelocity,
+  double speedThreshold,
+) {
   final currentSpeed = currentVelocity.distance;
   final defaultSpeed = defaultVelocity.distance;
 
