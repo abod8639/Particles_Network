@@ -1,4 +1,7 @@
-import 'dart:ui';
+// Added an explanation for the library
+// This library provides a Particle class to simulate particles in a network. Each particle has properties like position, velocity, color, and size. The library includes methods to update particle states, handle screen boundary collisions, and compute velocity with gradual decay. Additionally, a utility function is provided to create mock particles for testing purposes.
+
+import 'package:flutter/material.dart';
 
 // The Particle class represents a single particle in the particle network.
 // It contains properties for position, velocity, color, size, and visibility.
@@ -71,41 +74,52 @@ class Particle {
         position.dy >= -margin &&
         position.dy <= bounds.height + margin;
   }
+}
 
-  // Computes the velocity with gradual decay to return to the default velocity.
-  Offset computeVelocity(
-    Offset currentVelocity,
-    Offset defaultVelocity,
-    double speedThreshold,
-  ) {
-    // Calculate the magnitude (speed) of the current and default velocity vectors.
-    final currentSpeed = currentVelocity.distance;
-    final defaultSpeed = defaultVelocity.distance;
+// Computes the velocity with gradual decay to return to the default velocity.
+Offset computeVelocity(
+  Offset currentVelocity,
+  Offset defaultVelocity,
+  double speedThreshold,
+) {
+  // Calculate the magnitude (speed) of the current and default velocity vectors.
+  final currentSpeed = currentVelocity.distance;
+  final defaultSpeed = defaultVelocity.distance;
 
-    // If the difference in speed is less than the threshold, snap to the default velocity.
-    if ((currentSpeed - defaultSpeed).abs() < speedThreshold) {
-      return defaultVelocity;
-    } else {
-      // Decay factor controls how quickly the velocity returns to default.
-      const decayFactor = 0.985;
+  // If the difference in speed is less than the threshold, snap to the default velocity.
+  if ((currentSpeed - defaultSpeed).abs() < speedThreshold) {
+    return defaultVelocity;
+  } else {
+    // Decay factor controls how quickly the velocity returns to default.
+    const decayFactor = 0.985;
 
-      // Scale factor adjusts the default velocity to match the current speed's direction.
-      final scaleFactor = defaultSpeed / currentSpeed;
+    // Scale factor adjusts the default velocity to match the current speed's direction.
+    final scaleFactor = defaultSpeed / currentSpeed;
 
-      // Target velocity is the default velocity scaled to match the current speed.
-      final targetVelocity = defaultVelocity * scaleFactor;
+    // Target velocity is the default velocity scaled to match the current speed.
+    final targetVelocity = defaultVelocity * scaleFactor;
 
-      // Interpolation amount determines how much to blend between current and target velocity.
-      const powrFactor = 0.989;
-      final interpolationAmount = powrFactor - decayFactor;
+    // Interpolation amount determines how much to blend between current and target velocity.
+    const powrFactor = 0.989;
+    final interpolationAmount = powrFactor - decayFactor;
 
-      // Smoothly interpolate from currentVelocity to targetVelocity.
-      return Offset.lerp(
-            currentVelocity,
-            targetVelocity,
-            interpolationAmount,
-          ) ??
-          currentVelocity;
-    }
+    // Smoothly interpolate from currentVelocity to targetVelocity.
+    return Offset.lerp(currentVelocity, targetVelocity, interpolationAmount) ??
+        currentVelocity;
   }
+}
+
+// Added a utility function to create a mock particle for testing
+Particle createMockParticle({
+  Offset? position,
+  Offset? velocity,
+  Color? color,
+  double? size,
+}) {
+  return Particle(
+    position: position ?? Offset.zero,
+    velocity: velocity ?? Offset.zero,
+    color: color ?? Colors.white,
+    size: size ?? 1.0,
+  );
 }
