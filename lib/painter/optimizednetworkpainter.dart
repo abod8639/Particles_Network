@@ -216,11 +216,11 @@ class OptimizedNetworkPainter extends CustomPainter {
       visibleIndices: visibleParticles,
     );
 
-    _renderTouchInteractions(canvas, linePaint, visibleParticles, touch);
+    renderTouchInteractions(canvas, linePaint, visibleParticles, touch);
   }
 
   // Renders the visual representation of touch interactions.
-  void _renderTouchInteractions(
+  void renderTouchInteractions(
     Canvas canvas,
     Paint linePaint,
     List<int> visibleParticles,
