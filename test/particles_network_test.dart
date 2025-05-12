@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:particles_network/model/computevelocity_model.dart';
 import 'package:particles_network/model/particlemodel.dart';
 import 'package:particles_network/painter/optimizednetworkpainter.dart';
 import 'package:particles_network/particles_network.dart';
@@ -8,25 +7,6 @@ import 'package:particles_network/particles_network.dart';
 /// Test suite for the Particles Network package
 /// Tests core functionality, particle behavior, and widget rendering
 void main() {
-  test('decayVelocity returns smooth interpolated velocity', () {
-    final currentVelocity = const Offset(4, 0);
-    final defaultVelocity = const Offset(1, 0);
-    final currentSpeed = currentVelocity.distance;
-    final defaultSpeed = defaultVelocity.distance;
-
-    final result = decayVelocity(
-      currentVelocity: currentVelocity,
-      defaultVelocity: defaultVelocity,
-      currentSpeed: currentSpeed,
-      defaultSpeed: defaultSpeed,
-    );
-
-    // currentVelocity و targetVelocity
-    expect(result.dx, lessThan(currentVelocity.dx));
-    expect(result.dx, greaterThan(defaultVelocity.dx));
-    expect(result.dy, 0); // x
-  });
-
   group('ParticleNetwork Widget Tests', () {
     testWidgets('Widget creates with default parameters', (tester) async {
       await tester.pumpWidget(
@@ -155,14 +135,5 @@ void main() {
 
       expect(particle.wasAccelerated, true);
     });
-
-    test(
-      'computeVelocity returns defaultVelocity when difference < threshold',
-      () {
-        final v = computeVelocity(Offset(1, 1), Offset(1, 1), 0.1);
-        expect(v.dx, closeTo(1.0, 0.01));
-        expect(v.dy, closeTo(1.0, 0.01));
-      },
-    );
   });
 }

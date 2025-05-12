@@ -1,54 +1,30 @@
-// particles_network: A Flutter library for rendering interactive particle networks.
-//
-// This library provides a customizable widget for displaying animated particles that move and interact within a network.
-// Each particle is represented as a node, and lines are drawn between nearby particles to create a dynamic, visually appealing network effect.
-// The library supports touch interactions, particle acceleration, and rendering optimizations for smooth performance.
-//
-// Usage:
-//   - Import the library and use the main widget in your Flutter app.
-//   - Customize particle count, color, size, and network behavior as needed.
-//
-// See the README for detailed usage instructions and examples.
-
 import 'dart:ui';
 
-import 'package:particles_network/model/computevelocity_model.dart';
-
-// Particle class represents a single moving dot in the network.
-// It holds position, velocity, color, and size information.
-// It also manages its own visibility and acceleration state.
-
-/// Represents a single particle in the network, with position, velocity, color, and size.
+// The Particle class represents a single particle in the particle network.
+// It contains properties for position, velocity, color, size, and visibility.
 class Particle {
-  /// The current position of the particle (x, y coordinates).
-  /// Used for rendering and physics calculations.
+  // The current position of the particle.
   Offset position;
 
-  /// The current velocity of the particle (dx, dy per frame).
-  /// This determines the direction and speed of movement.
+  // The current velocity of the particle.
   Offset velocity;
 
-  /// Original velocity for returning to default speed after acceleration.
-  /// Used to restore the particle's speed after it is affected by touch.
+  // The default velocity of the particle, used to reset its speed.
   Offset defaultVelocity;
 
-  /// Flag to track if particle was affected by touch.
-  /// If true, the particle will gradually return to its default velocity.
+  // A flag indicating whether the particle was affected by touch interaction.
   bool wasAccelerated = false;
 
-  /// Flag to determine if particle is visible in viewport.
-  /// Used for rendering optimization.
+  // A flag indicating whether the particle is visible within the viewport.
   bool isVisible = true;
 
-  /// The color of the particle (used for drawing).
+  // The color of the particle.
   Color color;
 
-  /// The size (radius) of the particle.
+  // The size of the particle.
   double size;
 
-  /// Creates a [Particle] with the given position, velocity, color, and size.
-  ///
-  /// [defaultVelocity] is initialized to the initial velocity.
+  // Constructor to initialize the particle's properties.
   Particle({
     required this.position,
     required this.velocity,
@@ -56,50 +32,80 @@ class Particle {
     required this.size,
   }) : defaultVelocity = velocity;
 
-  /// Updates the particle's position, velocity, and visibility based on the given [bounds].
-  /// This method is called every frame.
+  // Updates the particle's position and velocity based on its current state.
   void update(Size bounds) {
-    // Move the particle by its velocity (Euler integration).
-    // Formula: position = position + velocity
+    // Update the position by adding the velocity.
     position += velocity;
 
-    // Gradually reduce velocity to default if particle was accelerated
-    // Uses exponential decay ("Exponential Smoothing") to interpolate velocity.
+    // If the particle was accelerated, gradually reduce its velocity to the default.
     if (wasAccelerated) {
-      // Calculate current speed magnitude (Euclidean norm)
-
-      // If speed is close enough to default, reset to default
-      const double speedThreshold = 0.01;
-
-      velocity = computeVelocity(velocity, defaultVelocity, speedThreshold);
+      velocity = computeVelocity(velocity, defaultVelocity, 0.01);
     }
 
-    // Handle screen boundaries (bounce effect)
-    // If the particle goes out of bounds, reverse its velocity (Elastic Collision)
-    if (position.dx < 0 || position.dx > bounds.width) {
-      velocity = Offset(-velocity.dx, velocity.dy); // Reflect X
-      defaultVelocity = Offset(-defaultVelocity.dx, defaultVelocity.dy);
-    }
-    if (position.dy < 0 || position.dy > bounds.height) {
-      velocity = Offset(velocity.dx, -velocity.dy); // Reflect Y
-      defaultVelocity = Offset(defaultVelocity.dx, -defaultVelocity.dy);
-    }
+    // Handle collisions with the screen boundaries.
+    handleScreenBoundaries(bounds);
 
-    // Update visibility status (for rendering optimization)
+    // Update the visibility status of the particle.
     updateVisibility(bounds);
   }
 
-  /// Updates the [isVisible] flag based on whether the particle is within the viewport [bounds].
-  /// Adds a margin to allow for off-screen connections.
+  // Handles collisions with the screen boundaries by reversing the velocity.
+  void handleScreenBoundaries(Size bounds) {
+    if (position.dx < 0 || position.dx > bounds.width) {
+      velocity = Offset(-velocity.dx, velocity.dy);
+      defaultVelocity = Offset(-defaultVelocity.dx, defaultVelocity.dy);
+    }
+    if (position.dy < 0 || position.dy > bounds.height) {
+      velocity = Offset(velocity.dx, -velocity.dy);
+      defaultVelocity = Offset(defaultVelocity.dx, -defaultVelocity.dy);
+    }
+  }
+
+  // Updates the visibility status of the particle based on its position.
   void updateVisibility(Size bounds) {
-    // Include a small margin to account for particles just outside the viewport
-    // that might still have connections with visible particles
-    // (Margin technique for spatial culling)
-    const double margin = 100.0;
+    // Include a margin to account for particles near the edges of the viewport.
+    const margin = 100.0;
     isVisible =
         position.dx >= -margin &&
         position.dx <= bounds.width + margin &&
         position.dy >= -margin &&
         position.dy <= bounds.height + margin;
+  }
+
+  // Computes the velocity with gradual decay to return to the default velocity.
+  Offset computeVelocity(
+    Offset currentVelocity,
+    Offset defaultVelocity,
+    double speedThreshold,
+  ) {
+    // Calculate the magnitude (speed) of the current and default velocity vectors.
+    final currentSpeed = currentVelocity.distance;
+    final defaultSpeed = defaultVelocity.distance;
+
+    // If the difference in speed is less than the threshold, snap to the default velocity.
+    if ((currentSpeed - defaultSpeed).abs() < speedThreshold) {
+      return defaultVelocity;
+    } else {
+      // Decay factor controls how quickly the velocity returns to default.
+      const decayFactor = 0.985;
+
+      // Scale factor adjusts the default velocity to match the current speed's direction.
+      final scaleFactor = defaultSpeed / currentSpeed;
+
+      // Target velocity is the default velocity scaled to match the current speed.
+      final targetVelocity = defaultVelocity * scaleFactor;
+
+      // Interpolation amount determines how much to blend between current and target velocity.
+      const powrFactor = 0.989;
+      final interpolationAmount = powrFactor - decayFactor;
+
+      // Smoothly interpolate from currentVelocity to targetVelocity.
+      return Offset.lerp(
+            currentVelocity,
+            targetVelocity,
+            interpolationAmount,
+          ) ??
+          currentVelocity;
+    }
   }
 }
