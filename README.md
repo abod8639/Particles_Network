@@ -57,7 +57,7 @@ Add this package to your Flutter project by adding the following to your `pubspe
 
 ```yaml
 dependencies:
-  particles_network: ^1.5.8
+  particles_network: ^1.5.9
 ```
 
 ## Usage
