@@ -177,5 +177,68 @@ void main() {
       await tester.tapAt(const Offset(50, 50));
       expect(state.touchPoint, Offset.infinite);
     });
+    /////
+
+    ////////////////
+    testWidgets('resets touchPoint to Offset.infinite on pan cancel', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ParticleNetwork(particleCount: 5, touchActivation: true),
+        ),
+      );
+
+      final state =
+          tester.state(find.byType(ParticleNetwork)) as ParticleNetworkState;
+
+      // تحقق من أن النقطة الابتدائية هي infinite (أي لا تفاعل)
+      expect(state.touchPoint, Offset.infinite);
+
+      // اسحب من (50,50) إلى (100,100) — هذا يشغل onPanUpdate
+      final gesture = await tester.startGesture(const Offset(50, 50));
+      await gesture.moveTo(const Offset(100, 100));
+
+      // الآن نلغي السحب باستخدام cancel
+      await gesture.cancel(); // هذا يُشغّل onPanCancel
+
+      // استخدم pump لتحديث الواجهة بشكل صريح
+      await tester.pump(); // نستخدم pump بدلاً من pumpAndSettle
+
+      // تحقق أن touchPoint تم تعيينه إلى Offset.infinite بعد الإلغاء
+      expect(state.touchPoint, Offset.infinite);
+    });
+  });
+
+  testWidgets('updates touchPoint on pan update when touchActivation is true', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ParticleNetwork(particleCount: 5, touchActivation: true),
+      ),
+    );
+
+    final state =
+        tester.state(find.byType(ParticleNetwork)) as ParticleNetworkState;
+    debugPrint(
+      'Initial touchPoint: ${state.touchPoint}',
+    ); // Debug initial state
+
+    // Perform the gesture
+    final gesture = await tester.startGesture(const Offset(50, 50));
+    await gesture.moveTo(const Offset(100, 100));
+    await gesture.up();
+
+    // Give time for the gesture to be processed
+    await tester.pump();
+    await tester.pump(
+      const Duration(milliseconds: 500),
+    ); // Longer delay for debugging
+
+    debugPrint(
+      'Current touchPoint: ${state.touchPoint}',
+    ); // Debug current state
+    expect(state.touchPoint, const Offset(100, 100));
   });
 }
