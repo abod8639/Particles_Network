@@ -6,6 +6,259 @@ import 'package:particles_network/particles_network.dart';
 /// Test suite for the Particles Network package
 /// Tests core functionality, particle behavior, and widget rendering
 void main() {
+  // 1. اختبار إنشاء الجسيم
+  group('Particle Constructor Tests', () {
+    test('Creates particle with correct initial properties', () {
+      final position = Offset(100, 100);
+      final velocity = Offset(2, 3);
+      final color = Colors.blue;
+      final size = 5.0;
+
+      final particle = Particle(
+        position: position,
+        velocity: velocity,
+        color: color,
+        size: size,
+      );
+
+      expect(particle.position, equals(position));
+      expect(particle.velocity, equals(velocity));
+      expect(particle.defaultVelocity, equals(velocity));
+      expect(particle.color, equals(color));
+      expect(particle.size, equals(size));
+      expect(particle.wasAccelerated, isFalse);
+      expect(particle.isVisible, isTrue);
+    });
+
+    test('Creates mock particle with default values', () {
+      final mockParticle = createMockParticle();
+
+      expect(mockParticle.position, equals(Offset.zero));
+      expect(mockParticle.velocity, equals(Offset.zero));
+      expect(mockParticle.color, equals(Colors.white));
+      expect(mockParticle.size, equals(1.0));
+    });
+
+    test('Creates mock particle with custom values', () {
+      final position = Offset(50, 50);
+      final velocity = Offset(1, 1);
+      final color = Colors.red;
+      final size = 2.0;
+
+      final mockParticle = createMockParticle(
+        position: position,
+        velocity: velocity,
+        color: color,
+        size: size,
+      );
+
+      expect(mockParticle.position, equals(position));
+      expect(mockParticle.velocity, equals(velocity));
+      expect(mockParticle.color, equals(color));
+      expect(mockParticle.size, equals(size));
+    });
+  });
+
+  // 2. اختبار تحديث موقع الجسيم
+  group('Particle Update Tests', () {
+    test('Updates position based on velocity', () {
+      final particle = Particle(
+        position: Offset(10, 10),
+        velocity: Offset(5, 5),
+        color: Colors.white,
+        size: 1.0,
+      );
+
+      final bounds = Size(800, 600);
+      particle.update(bounds);
+
+      expect(particle.position, equals(Offset(15, 15)));
+    });
+
+    test('Gradually reduces velocity when accelerated', () {
+      final particle = Particle(
+        position: Offset(100, 100),
+        velocity: Offset(10, 10),
+        color: Colors.white,
+        size: 1.0,
+      );
+
+      // ضبط السرعة الافتراضية لتكون أقل من السرعة الحالية
+      particle.defaultVelocity = Offset(2, 2);
+      particle.wasAccelerated = true;
+
+      final bounds = Size(800, 600);
+      particle.update(bounds);
+      const double sqrt2 = 1.4142;
+
+      // توقع أن تكون السرعة قد انخفضت لكن لا تزال أكبر من السرعة الافتراضية
+      expect(particle.velocity.distance, lessThan(10 * sqrt2));
+      expect(particle.velocity.distance, greaterThan(2 * sqrt2));
+    });
+  });
+
+  // 3. اختبار معالجة حدود الشاشة
+  group('Screen Boundaries Tests', () {
+    test('Reverses x-velocity when hitting left boundary', () {
+      final particle = Particle(
+        position: Offset(-5, 100), // خارج الحد الأيسر
+        velocity: Offset(-2, 3),
+        color: Colors.white,
+        size: 1.0,
+      );
+
+      final bounds = Size(800, 600);
+      particle.handleScreenBoundaries(bounds);
+
+      expect(particle.velocity.dx, equals(2)); // عكس اتجاه dx
+      expect(particle.velocity.dy, equals(3)); // بقاء dy كما هو
+      expect(
+        particle.defaultVelocity.dx,
+        equals(2),
+      ); // عكس اتجاه dx الافتراضي أيضاً
+      expect(particle.defaultVelocity.dy, equals(3));
+    });
+
+    test('Reverses x-velocity when hitting right boundary', () {
+      final particle = Particle(
+        position: Offset(805, 100), // خارج الحد الأيمن
+        velocity: Offset(2, 3),
+        color: Colors.white,
+        size: 1.0,
+      );
+
+      final bounds = Size(800, 600);
+      particle.handleScreenBoundaries(bounds);
+
+      expect(particle.velocity.dx, equals(-2)); // عكس اتجاه dx
+      expect(particle.velocity.dy, equals(3)); // بقاء dy كما هو
+    });
+
+    test('Reverses y-velocity when hitting top boundary', () {
+      final particle = Particle(
+        position: Offset(100, -5), // خارج الحد العلوي
+        velocity: Offset(2, -3),
+        color: Colors.white,
+        size: 1.0,
+      );
+
+      final bounds = Size(800, 600);
+      particle.handleScreenBoundaries(bounds);
+
+      expect(particle.velocity.dx, equals(2)); // بقاء dx كما هو
+      expect(particle.velocity.dy, equals(3)); // عكس اتجاه dy
+    });
+
+    test('Reverses y-velocity when hitting bottom boundary', () {
+      final particle = Particle(
+        position: Offset(100, 605), // خارج الحد السفلي
+        velocity: Offset(2, 3),
+        color: Colors.white,
+        size: 1.0,
+      );
+
+      final bounds = Size(800, 600);
+      particle.handleScreenBoundaries(bounds);
+
+      expect(particle.velocity.dx, equals(2)); // بقاء dx كما هو
+      expect(particle.velocity.dy, equals(-3)); // عكس اتجاه dy
+    });
+  });
+
+  // 4. اختبار تحديث حالة الرؤية
+  group('Visibility Update Tests', () {
+    test('Particle is visible when in bounds', () {
+      final particle = Particle(
+        position: Offset(100, 100),
+        velocity: Offset(2, 3),
+        color: Colors.white,
+        size: 1.0,
+      );
+
+      final bounds = Size(800, 600);
+      particle.updateVisibility(bounds);
+
+      expect(particle.isVisible, isTrue);
+    });
+
+    test('Particle is visible when slightly out of bounds (within margin)', () {
+      final particle = Particle(
+        position: Offset(-50, 100), // خارج الحدود قليلاً لكن ضمن الهامش
+        velocity: Offset(2, 3),
+        color: Colors.white,
+        size: 1.0,
+      );
+
+      final bounds = Size(800, 600);
+      particle.updateVisibility(bounds);
+
+      expect(particle.isVisible, isTrue);
+    });
+
+    test('Particle is not visible when far out of bounds', () {
+      final particle = Particle(
+        position: Offset(-150, 100), // خارج الحدود بشكل كبير
+        velocity: Offset(2, 3),
+        color: Colors.white,
+        size: 1.0,
+      );
+
+      final bounds = Size(800, 600);
+      particle.updateVisibility(bounds);
+
+      expect(particle.isVisible, isFalse);
+    });
+  });
+
+  // 5. اختبار دالة computeVelocity
+  group('Compute Velocity Tests', () {
+    test('Returns default velocity when speeds are close', () {
+      final currentVelocity = Offset(2.001, 3.001);
+      final defaultVelocity = Offset(2.000, 3.000);
+      final speedThreshold = 0.01;
+
+      final result = computeVelocity(
+        currentVelocity,
+        defaultVelocity,
+        speedThreshold,
+      );
+
+      expect(result, equals(defaultVelocity));
+    });
+
+    test('Gradually reduces velocity towards default', () {
+      final currentVelocity = Offset(10.0, 0.0);
+      final defaultVelocity = Offset(2.0, 0.0);
+      final speedThreshold = 0.01;
+
+      final result = computeVelocity(
+        currentVelocity,
+        defaultVelocity,
+        speedThreshold,
+      );
+
+      // توقع أن تكون السرعة قد انخفضت لكن لا تزال أكبر من السرعة الافتراضية
+      expect(result.dx, lessThan(10.0));
+      expect(result.dx, greaterThan(2.0));
+    });
+
+    test('Maintains direction when reducing speed', () {
+      final currentVelocity = Offset(10.0, 10.0);
+      final defaultVelocity = Offset(1.0, 1.0);
+      final speedThreshold = 0.01;
+
+      final result = computeVelocity(
+        currentVelocity,
+        defaultVelocity,
+        speedThreshold,
+      );
+
+      // التحقق من أن الاتجاه لم يتغير (نسبة dx إلى dy)
+      expect(result.dx / result.dy, closeTo(1.0, 0.00001));
+    });
+  });
+
+  // تعريف بسيط لثابت رياضي مستخدم في الاختبارات
   group('ParticleNetwork Widget Tests', () {
     testWidgets('Widget creates with default parameters', (tester) async {
       await tester.pumpWidget(
