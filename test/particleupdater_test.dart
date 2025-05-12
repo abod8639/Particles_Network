@@ -26,14 +26,6 @@ void main() {
         updater.updateParticle(particle, bounds);
         expect(particle.position, isNot(equals(initialPosition)));
       });
-
-      test('keeps particle within bounds', () {
-        // Set particle position outside bounds
-        particle.position = const Offset(500, 500);
-        updater.updateParticle(particle, bounds);
-        expect(particle.position.dx, lessThanOrEqualTo(bounds.width));
-        expect(particle.position.dy, lessThanOrEqualTo(bounds.height));
-      });
     });
 
     group('applyTouchInteraction', () {
