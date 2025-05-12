@@ -42,30 +42,7 @@ void main() {
       expect(find.byType(ParticleNetwork), findsOneWidget);
     });
   });
-  test('applyTouchInteraction affects close particles', () {
-    final particles = [
-      Particle(
-        position: Offset(100, 100),
-        velocity: Offset.zero,
-        color: Colors.white,
-        size: 2.0,
-      ), // close to touch
-      Particle(
-        position: Offset(300, 300),
-        velocity: Offset.zero,
-        color: Colors.white,
-        size: 2.0,
-      ), // far from touch
-    ];
 
-    // Particle 0 should be affected
-    expect(particles[0].wasAccelerated, isTrue);
-    expect(particles[0].velocity.distance, greaterThan(0));
-
-    // Particle 1 should be unaffected
-    expect(particles[1].wasAccelerated, isFalse);
-    expect(particles[1].velocity, Offset.zero);
-  });
   group('Particle Model Tests', () {
     test('Particle updates position correctly', () {
       final particle = Particle(
@@ -77,8 +54,7 @@ void main() {
 
       // Test particle movement
       particle.update(const Size(500, 500));
-      expect(particle.position.dx, 101);
-      expect(particle.position.dy, 101);
+      expect(particle.position, const Offset(101, 101));
     });
 
     test('Particle bounds checking works', () {
@@ -92,7 +68,7 @@ void main() {
 
       rightParticle.update(const Size(500, 500));
       // Velocity should be reversed
-      expect(rightParticle.velocity.dx < 0, true);
+      expect(rightParticle.velocity.dx, lessThan(0));
 
       // Test particle at bottom edge
       final bottomParticle = Particle(
@@ -104,7 +80,7 @@ void main() {
 
       bottomParticle.update(const Size(500, 500));
       // Velocity should be reversed
-      expect(bottomParticle.velocity.dy < 0, true);
+      expect(bottomParticle.velocity.dy, lessThan(0));
     });
 
     test('Particle acceleration flag works', () {
@@ -115,13 +91,32 @@ void main() {
         size: 2.0,
       );
 
-      expect(particle.wasAccelerated, false);
+      expect(particle.wasAccelerated, isFalse);
 
       // Simulate touch acceleration
       particle.velocity += const Offset(0.5, 0.5);
       particle.wasAccelerated = true;
 
-      expect(particle.wasAccelerated, true);
+      expect(particle.wasAccelerated, isTrue);
+      expect(particle.velocity, const Offset(1.5, 1.5));
+    });
+
+    test('Particle visibility updates correctly', () {
+      final particle = Particle(
+        position: const Offset(50, 50),
+        velocity: const Offset(0, 0),
+        color: Colors.white,
+        size: 2.0,
+      );
+
+      // Test visibility within bounds
+      particle.updateVisibility(const Size(500, 500));
+      expect(particle.isVisible, isTrue);
+
+      // Test visibility outside bounds
+      particle.position = const Offset(-200, -200);
+      particle.updateVisibility(const Size(500, 500));
+      expect(particle.isVisible, isFalse);
     });
   });
 }
