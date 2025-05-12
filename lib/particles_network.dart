@@ -82,24 +82,24 @@ class ParticleNetwork extends StatefulWidget {
   });
 
   @override
-  State<ParticleNetwork> createState() => _ParticleNetworkState();
+  State<ParticleNetwork> createState() => ParticleNetworkState();
 }
 
-class _ParticleNetworkState extends State<ParticleNetwork>
+class ParticleNetworkState extends State<ParticleNetwork>
     with SingleTickerProviderStateMixin {
-  final List<Particle> _particles = [];
-  late final Ticker _ticker;
-  Offset _touchPoint = Offset.infinite;
-  Size _currentSize = Size.zero;
-  final ValueNotifier<int> _frameNotifier = ValueNotifier<int>(0);
+  final List<Particle> particles = [];
+  late final Ticker ticker;
+  Offset touchPoint = Offset.infinite;
+  Size currentSize = Size.zero;
+  final ValueNotifier<int> frameNotifier = ValueNotifier<int>(0);
 
-  late final IParticleFactory _factory;
-  late final IParticleController _controller;
+  late final IParticleFactory factory;
+  late final IParticleController controller;
 
   @override
   void initState() {
     super.initState();
-    _factory =
+    factory =
         widget.particleFactory ??
         DefaultParticleFactory(
           random: Random(),
@@ -107,21 +107,21 @@ class _ParticleNetworkState extends State<ParticleNetwork>
           maxSize: widget.maxSize,
           color: widget.particleColor,
         );
-    _controller = widget.particleController ?? ParticleUpdater();
+    controller = widget.particleController ?? ParticleUpdater();
 
-    _ticker = createTicker((elapsed) {
-      _controller.updateParticles(_particles, _currentSize);
-      _frameNotifier.value = elapsed.inMilliseconds;
+    ticker = createTicker((elapsed) {
+      controller.updateParticles(particles, currentSize);
+      frameNotifier.value = elapsed.inMilliseconds;
     })..start();
   }
 
   void _generateParticles(Size size) {
-    if (size != _currentSize) {
-      _currentSize = size;
-      _particles.clear();
+    if (size != currentSize) {
+      currentSize = size;
+      particles.clear();
       if (size.width > 0 && size.height > 0) {
         for (int i = 0; i < widget.particleCount; i++) {
-          _particles.add(_factory.createParticle(size));
+          particles.add(factory.createParticle(size));
         }
       }
     }
@@ -129,8 +129,8 @@ class _ParticleNetworkState extends State<ParticleNetwork>
 
   @override
   void dispose() {
-    _ticker.dispose();
-    _frameNotifier.dispose();
+    ticker.dispose();
+    frameNotifier.dispose();
     super.dispose();
   }
 
@@ -140,18 +140,18 @@ class _ParticleNetworkState extends State<ParticleNetwork>
       builder: (_, constraints) {
         _generateParticles(constraints.biggest);
         return GestureDetector(
-          onPanDown: (d) => _touchPoint = d.localPosition,
-          onPanUpdate: (d) => _touchPoint = d.localPosition,
-          onPanEnd: (_) => _touchPoint = Offset.infinite,
-          onPanCancel: () => _touchPoint = Offset.infinite,
+          onPanDown: (d) => touchPoint = d.localPosition,
+          onPanUpdate: (d) => touchPoint = d.localPosition,
+          onPanEnd: (_) => touchPoint = Offset.infinite,
+          onPanCancel: () => touchPoint = Offset.infinite,
           child: ValueListenableBuilder<int>(
-            valueListenable: _frameNotifier,
+            valueListenable: frameNotifier,
             builder:
                 (_, __, ___) => CustomPaint(
                   painter: OptimizedNetworkPainter(
                     touchActivation: widget.touchActivation,
-                    particles: _particles,
-                    touchPoint: _touchPoint,
+                    particles: particles,
+                    touchPoint: touchPoint,
                     lineDistance: widget.lineDistance,
                     particleColor: widget.particleColor,
                     lineColor: widget.lineColor,

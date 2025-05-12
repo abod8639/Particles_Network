@@ -1,9 +1,8 @@
-// Mock implementations for testing
-import 'dart:ui';
-
+import 'package:flutter/material.dart';
 import 'package:particles_network/model/particlemodel.dart';
 import 'package:particles_network/particles_network.dart';
 
+// Mock implementations for testing
 class MockParticleFactory implements IParticleFactory {
   final Particle particleToReturn;
 
