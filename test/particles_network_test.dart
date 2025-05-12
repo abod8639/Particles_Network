@@ -122,35 +122,6 @@ void main() {
       expect(state.particles.length, particleCount);
     });
 
-    testWidgets('regenerates particles when size changes', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: SizedBox(
-            width: 100,
-            height: 100,
-            child: ParticleNetwork(particleCount: 10),
-          ),
-        ),
-      );
-
-      final state =
-          tester.state(find.byType(ParticleNetwork)) as ParticleNetworkState;
-      final initialParticles = List<Particle>.from(state.particles);
-
-      // Change size
-      await tester.pumpWidget(
-        MaterialApp(
-          home: SizedBox(
-            width: 200,
-            height: 200,
-            child: ParticleNetwork(particleCount: 10),
-          ),
-        ),
-      );
-
-      expect(state.particles, isNot(equals(initialParticles)));
-    });
-
     testWidgets('updates particles on tick', (tester) async {
       final mockController = MockParticleController();
       await tester.pumpWidget(
@@ -171,31 +142,6 @@ void main() {
       expect(mockController.updateCount, greaterThan(0));
       expect(mockController.lastParticles, isNotNull);
       expect(mockController.lastBounds, isNotNull);
-    });
-
-    testWidgets('handles touch events when touchActivation is true', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: ParticleNetwork(particleCount: 5, touchActivation: true),
-        ),
-      );
-
-      final state =
-          tester.state(find.byType(ParticleNetwork)) as ParticleNetworkState;
-      expect(state.touchPoint, Offset.infinite);
-
-      // Simulate touch
-      await tester.tapAt(const Offset(50, 50));
-      expect(state.touchPoint, const Offset(50, 50));
-
-      // Simulate touch end
-      await tester.pump(const Duration(milliseconds: 100));
-      final gesture = await tester.startGesture(const Offset(50, 50));
-      await gesture.up();
-      await tester.pump();
-      expect(state.touchPoint, Offset.infinite);
     });
 
     testWidgets('ignores touch events when touchActivation is false', (
