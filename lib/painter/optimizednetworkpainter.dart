@@ -3,39 +3,10 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:particles_network/model/particlemodel.dart';
+import 'package:particles_network/painter/ParticleUpdater.dart';
 
 // This library contains the implementation of the OptimizedNetworkPainter class and related utilities.
 // It is responsible for rendering a network of particles with optimized performance and touch interactions.
-
-// The ParticleUpdater class handles the logic for updating particles and applying touch interactions.
-// It separates the logic from the rendering code to make it more testable.
-class ParticleUpdater {
-  // Updates the position and velocity of a particle based on the bounds.
-  void updateParticle(Particle particle, Size bounds) {
-    particle.update(bounds);
-  }
-
-  // Applies touch interaction logic to the particles within a certain distance from the touch point.
-  void applyTouchInteraction({
-    required Offset touch,
-    required double lineDistance,
-    required List<Particle> particles,
-    required List<int> visibleIndices,
-  }) {
-    const force = 0.00115;
-
-    for (final i in visibleIndices) {
-      final p = particles[i];
-      final distance = (p.position - touch).distance;
-
-      if (distance < lineDistance) {
-        final pull = (touch - p.position) * force;
-        p.velocity += pull;
-        p.wasAccelerated = true;
-      }
-    }
-  }
-}
 
 // The OptimizedNetworkPainter class is a CustomPainter that efficiently renders a network of particles.
 // It uses spatial hashing and caching to optimize performance for large numbers of particles.

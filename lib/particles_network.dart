@@ -5,25 +5,67 @@ import 'package:flutter/scheduler.dart';
 import 'package:particles_network/model/particlemodel.dart';
 import 'package:particles_network/painter/optimizednetworkpainter.dart';
 
-// ParticleNetwork is a customizable widget that displays an animated network of particles.
-// It supports touch interaction, color customization, and performance optimizations.
-class ParticleNetwork extends StatefulWidget {
-  // Number of particles to display in the network.
-  final int particleCount;
-  // Maximum speed for each particle.
+abstract class IParticleFactory {
+  Particle createParticle(Size size);
+}
+
+abstract class IParticleController {
+  void updateParticles(List<Particle> particles, Size bounds);
+}
+
+class DefaultParticleFactory implements IParticleFactory {
+  final Random random;
   final double maxSpeed;
-  // Maximum size (radius) for each particle.
   final double maxSize;
-  // Maximum distance to draw a line between two particles.
+  final Color color;
+
+  DefaultParticleFactory({
+    required this.random,
+    required this.maxSpeed,
+    required this.maxSize,
+    required this.color,
+  });
+
+  @override
+  Particle createParticle(Size size) {
+    final velocity = Offset(
+      (random.nextDouble() - 0.5) * maxSpeed,
+      (random.nextDouble() - 0.5) * maxSpeed,
+    );
+    return Particle(
+      color: color,
+      position: Offset(
+        random.nextDouble() * size.width,
+        random.nextDouble() * size.height,
+      ),
+      velocity: velocity,
+      size: random.nextDouble() * maxSize + 1,
+    );
+  }
+}
+
+class ParticleUpdater implements IParticleController {
+  @override
+  void updateParticles(List<Particle> particles, Size bounds) {
+    for (final p in particles) {
+      p.update(bounds);
+    }
+  }
+}
+
+class ParticleNetwork extends StatefulWidget {
+  final int particleCount;
+  final double maxSpeed;
+  final double maxSize;
   final double lineDistance;
-  // Color of the particles.
   final Color particleColor;
-  // Color of the lines connecting particles.
   final Color lineColor;
-  // Color of the lines when interacting with touch.
   final Color touchColor;
-  // Enable or disable touch interaction.
   final bool touchActivation;
+
+  // Injected dependencies
+  final IParticleFactory? particleFactory;
+  final IParticleController? particleController;
 
   const ParticleNetwork({
     super.key,
@@ -35,71 +77,51 @@ class ParticleNetwork extends StatefulWidget {
     this.particleColor = Colors.white,
     this.lineColor = Colors.greenAccent,
     this.touchColor = Colors.amber,
+    this.particleFactory,
+    this.particleController,
   });
 
   @override
   State<ParticleNetwork> createState() => _ParticleNetworkState();
 }
 
-// State class for ParticleNetwork. Handles animation, particle updates, and touch events.
 class _ParticleNetworkState extends State<ParticleNetwork>
     with SingleTickerProviderStateMixin {
-  // List of all particles in the network.
   final List<Particle> _particles = [];
-  // Random number generator for initial positions and velocities.
-  final Random _random = Random();
-  // Current touch point, if any.
-  Offset _touchPoint = Offset.infinite;
-  // Animation ticker for driving the particle updates.
   late final Ticker _ticker;
-  // Current size of the widget area.
+  Offset _touchPoint = Offset.infinite;
   Size _currentSize = Size.zero;
-
-  // Using ValueNotifier instead of setState to update rendering only
   final ValueNotifier<int> _frameNotifier = ValueNotifier<int>(0);
+
+  late final IParticleFactory _factory;
+  late final IParticleController _controller;
 
   @override
   void initState() {
     super.initState();
-    // Start the animation ticker. Each tick updates the particles and triggers a repaint.
+    _factory =
+        widget.particleFactory ??
+        DefaultParticleFactory(
+          random: Random(),
+          maxSpeed: widget.maxSpeed,
+          maxSize: widget.maxSize,
+          color: widget.particleColor,
+        );
+    _controller = widget.particleController ?? ParticleUpdater();
+
     _ticker = createTicker((elapsed) {
-      // Update new frame without calling setState
-      _updateParticles();
+      _controller.updateParticles(_particles, _currentSize);
       _frameNotifier.value = elapsed.inMilliseconds;
     })..start();
   }
 
-  // Update all particles' positions and states for the current frame.
-  void _updateParticles() {
-    for (final p in _particles) {
-      p.update(_currentSize);
-    }
-  }
-
-  // Generate or regenerate particles when the widget size changes.
   void _generateParticles(Size size) {
     if (size != _currentSize) {
       _currentSize = size;
       _particles.clear();
       if (size.width > 0 && size.height > 0) {
         for (int i = 0; i < widget.particleCount; i++) {
-          // Assign random velocity and position to each particle.
-          final Offset velocity = Offset(
-            (_random.nextDouble() - 0.5) * widget.maxSpeed,
-            (_random.nextDouble() - 0.5) * widget.maxSpeed,
-          );
-
-          _particles.add(
-            Particle(
-              color: widget.particleColor,
-              position: Offset(
-                _random.nextDouble() * size.width,
-                _random.nextDouble() * size.height,
-              ),
-              velocity: velocity,
-              size: _random.nextDouble() * widget.maxSize + 1,
-            ),
-          );
+          _particles.add(_factory.createParticle(size));
         }
       }
     }
@@ -107,7 +129,6 @@ class _ParticleNetworkState extends State<ParticleNetwork>
 
   @override
   void dispose() {
-    // Dispose of the ticker and notifier to avoid memory leaks.
     _ticker.dispose();
     _frameNotifier.dispose();
     super.dispose();
@@ -115,35 +136,31 @@ class _ParticleNetworkState extends State<ParticleNetwork>
 
   @override
   Widget build(BuildContext context) {
-    // Use LayoutBuilder to get the available size and regenerate particles if needed.
     return LayoutBuilder(
       builder: (_, constraints) {
         _generateParticles(constraints.biggest);
         return GestureDetector(
-          // Update touch point for interaction.
           onPanDown: (d) => _touchPoint = d.localPosition,
           onPanUpdate: (d) => _touchPoint = d.localPosition,
           onPanEnd: (_) => _touchPoint = Offset.infinite,
           onPanCancel: () => _touchPoint = Offset.infinite,
           child: ValueListenableBuilder<int>(
             valueListenable: _frameNotifier,
-            builder: (context, frame, child) {
-              // CustomPaint draws the animated particle network.
-              return CustomPaint(
-                painter: OptimizedNetworkPainter(
-                  touchActivation: widget.touchActivation,
-                  particles: _particles,
-                  touchPoint: _touchPoint,
-                  lineDistance: widget.lineDistance,
-                  particleColor: widget.particleColor,
-                  lineColor: widget.lineColor,
-                  touchColor: widget.touchColor,
+            builder:
+                (_, __, ___) => CustomPaint(
+                  painter: OptimizedNetworkPainter(
+                    touchActivation: widget.touchActivation,
+                    particles: _particles,
+                    touchPoint: _touchPoint,
+                    lineDistance: widget.lineDistance,
+                    particleColor: widget.particleColor,
+                    lineColor: widget.lineColor,
+                    touchColor: widget.touchColor,
+                  ),
+                  isComplex: true,
+                  willChange: true,
+                  child: const SizedBox.expand(),
                 ),
-                isComplex: true,
-                willChange: true,
-                child: const SizedBox.expand(),
-              );
-            },
           ),
         );
       },

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:particles_network/model/particlemodel.dart';
@@ -5,7 +7,68 @@ import 'package:particles_network/particles_network.dart';
 
 /// Test suite for the Particles Network package
 /// Tests core functionality, particle behavior, and widget rendering
+///
+
+//////////////////////////////
 void main() {
+  group('DefaultParticleFactory', () {
+    test('creates particle within given size bounds', () {
+      final random = Random(42); // ثابت لاختبار متكرر
+      final factory = DefaultParticleFactory(
+        random: random,
+        maxSpeed: 1.0,
+        maxSize: 5.0,
+        color: Colors.red,
+      );
+
+      final size = Size(100, 100);
+      final particle = factory.createParticle(size);
+
+      expect(particle.position.dx, inInclusiveRange(0, size.width));
+      expect(particle.position.dy, inInclusiveRange(0, size.height));
+      expect(particle.size, inInclusiveRange(1, 6)); // لأن: random * 5 + 1
+      expect(particle.velocity.dx, inInclusiveRange(-0.5, 0.5));
+      expect(particle.velocity.dy, inInclusiveRange(-0.5, 0.5));
+      expect(particle.color, equals(Colors.red));
+    });
+  });
+
+  group('ParticleUpdater', () {
+    test('updates particles within bounds', () {
+      final particle = Particle(
+        color: Colors.blue,
+        position: Offset(10, 10),
+        velocity: Offset(2, 3),
+        size: 2,
+      );
+
+      final controller = ParticleUpdater();
+      final particles = [particle];
+      final bounds = Size(100, 100);
+
+      controller.updateParticles(particles, bounds);
+
+      expect(particle.position.dx, greaterThan(10));
+      expect(particle.position.dy, greaterThan(10));
+    });
+
+    test('bounces particle off horizontal wall', () {
+      final particle = Particle(
+        color: Colors.blue,
+        position: Offset(99, 10), // قريب من الحد الأيمن
+        velocity: Offset(5, 0),
+        size: 2,
+      );
+
+      final controller = ParticleUpdater();
+      final bounds = Size(100, 100);
+      controller.updateParticles([particle], bounds);
+
+      expect(particle.velocity.dx, lessThan(0)); // يجب أن ينعكس
+    });
+  });
+
+  ///////////////////////////////////////////////////////
   // 1. اختبار إنشاء الجسيم
   group('Particle Constructor Tests', () {
     test('Creates particle with correct initial properties', () {
