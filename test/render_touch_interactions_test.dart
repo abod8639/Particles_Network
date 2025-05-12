@@ -1,98 +1,108 @@
-import 'dart:ui';
+import 'package:flutter/widgets.dart'; // لاستخدام Offset
+import 'package:test/test.dart';
 
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
-
+// تعريف الجسيمات
 class Particle {
   final Offset position;
-  Particle(this.position);
+  Particle({required this.position});
 }
 
-class TestPainter extends CustomPainter {
-  final List<Particle> particles;
-  final Offset touch;
-  final double lineDistance;
-  final Color touchColor;
-  final Paint linePaint = Paint();
+// الكود الذي نختبره
+List<Map<String, dynamic>> calculateTouchInteractions(
+  List<Particle> particles,
+  Offset touchPoint,
+  double lineDistance,
+) {
+  final List<Map<String, dynamic>> interactions = [];
 
-  TestPainter({
-    required this.particles,
-    required this.touch,
-    required this.lineDistance,
-    required this.touchColor,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    renderTouchInteractions(
-      canvas,
-      linePaint,
-      List.generate(particles.length, (i) => i),
-      touch,
-    );
-  }
-
-  void renderTouchInteractions(
-    Canvas canvas,
-    Paint linePaint,
-    List<int> visibleParticles,
-    Offset touch,
-  ) {
-    for (final i in visibleParticles) {
-      final p = particles[i];
-      final distance = (p.position - touch).distance;
-
-      if (distance < lineDistance) {
-        final opacity = ((1 - distance / lineDistance) * 255).toInt();
-        linePaint.color = touchColor.withAlpha(opacity.clamp(0, 255));
-        canvas.drawLine(p.position, touch, linePaint);
-      }
+  for (final particle in particles) {
+    final distance = (particle.position - touchPoint).distance;
+    if (distance < lineDistance) {
+      interactions.add({'particle': particle, 'distance': distance});
     }
   }
 
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) {
-    return false;
-  }
+  return interactions;
 }
 
 void main() {
-  testWidgets('Test renderTouchInteractions', (WidgetTester tester) async {
-    // Define some particles
-    final particles = [
-      Particle(Offset(50, 50)),
-      Particle(Offset(100, 100)),
-      Particle(Offset(150, 150)),
-    ];
+  group('calculateTouchInteractions', () {
+    test('returns empty list when no particles are close to touchPoint', () {
+      // إعداد البيانات
+      final particles = [
+        Particle(position: Offset(100, 100)),
+        Particle(position: Offset(200, 200)),
+      ];
+      final touchPoint = Offset(10, 10);
+      final lineDistance = 5.0;
 
-    final touch = Offset(120, 120);
-    final lineDistance = 100.0;
-    final touchColor = Colors.red;
+      // استدعاء الدالة
+      final interactions = calculateTouchInteractions(
+        particles,
+        touchPoint,
+        lineDistance,
+      );
 
-    final painter = TestPainter(
-      particles: particles,
-      touch: touch,
-      lineDistance: lineDistance,
-      touchColor: touchColor,
-    );
+      // التحقق من أن القائمة فارغة
+      expect(interactions, isEmpty);
+    });
 
-    // Define the size for the canvas
-    final size = Size(400, 400);
+    test('returns correct particles within the lineDistance', () {
+      // إعداد البيانات
+      final particles = [
+        Particle(position: Offset(10, 10)),
+        Particle(position: Offset(30, 30)),
+        Particle(position: Offset(50, 50)),
+      ];
+      final touchPoint = Offset(20, 20);
+      final lineDistance = 15.0;
 
-    // Create the CustomPainter with a Canvas and Size
-    final recorder = PictureRecorder();
-    final canvas = Canvas(
-      recorder,
-      Rect.fromPoints(Offset(0, 0), Offset(size.width, size.height)),
-    );
+      // استدعاء الدالة
+      final interactions = calculateTouchInteractions(
+        particles,
+        touchPoint,
+        lineDistance,
+      );
 
-    // Test rendering
-    painter.paint(canvas, size);
+      // التحقق من النتائج
+      expect(interactions, hasLength(2)); // يجب أن يكون هناك تفاعل مع جسيمين
+      expect(
+        interactions[0]['distance'],
+        closeTo(14.14, 0.01),
+      ); // المسافة بين (10,10) و (20,20) تقريباً 14.14
+      expect(
+        interactions[1]['distance'],
+        closeTo(14.14, 0.01),
+      ); // المسافة بين (30,30) و (20,20) تقريباً 14.14
+    });
 
-    final picture = recorder.endRecording();
+    test('returns correct particles within the lineDistance', () {
+      // إعداد البيانات
+      final particles = [
+        Particle(position: Offset(10, 10)),
+        Particle(position: Offset(30, 30)),
+        Particle(position: Offset(50, 50)),
+      ];
+      final touchPoint = Offset(20, 20);
+      final lineDistance = 15.0;
 
-    // Now, we could examine the drawing or capture the picture and compare it to an expected result.
-    // This could be done by analyzing the output or using a tool to verify visual consistency.
-    expect(true, isTrue); // Placeholder for actual visual or data verification.
+      // استدعاء الدالة
+      final interactions = calculateTouchInteractions(
+        particles,
+        touchPoint,
+        lineDistance,
+      );
+
+      // التحقق من النتائج
+      expect(interactions, hasLength(2)); // يجب أن يكون هناك تفاعل مع جسيمين
+      expect(
+        interactions[0]['distance'],
+        closeTo(14.14, 0.01),
+      ); // المسافة بين (10,10) و (20,20) تقريباً 14.14
+      expect(
+        interactions[1]['distance'],
+        closeTo(14.14, 0.01),
+      ); // المسافة بين (30,30) و (20,20) تقريباً 14.14
+    });
   });
 }
