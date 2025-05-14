@@ -7,6 +7,40 @@ import 'package:particles_network/model/particlemodel.dart';
 import 'package:particles_network/particles_network.dart';
 
 void main() {
+  testWidgets('touchPoint updates onPanUpdate and resets onPanCancel', (
+    WidgetTester tester,
+  ) async {
+    // بناء الواجهة
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: ParticleNetwork(particleCount: 10, touchActivation: true),
+        ),
+      ),
+    );
+
+    // العثور على الحالة الداخلية للكائن ParticleNetwork
+    final stateFinder = find.byType(ParticleNetwork);
+    final state = tester.state<ParticleNetworkState>(stateFinder);
+
+    // التأكد أن القيمة الابتدائية هي Offset.infinite
+    expect(state.touchPoint, equals(Offset.infinite));
+
+    // تنفيذ حدث السحب (onPanUpdate)
+    final gesture = await tester.startGesture(const Offset(100, 150));
+    await tester.pump(); // تحديث واجهة المستخدم
+
+    expect(state.touchPoint.dx, closeTo(100, 1));
+    expect(state.touchPoint.dy, closeTo(150, 1));
+
+    // تنفيذ onPanCancel
+    await gesture.cancel();
+    await tester.pump();
+
+    // التأكد من رجوع touchPoint إلى Offset.infinite
+    expect(state.touchPoint, equals(Offset.infinite));
+  });
+
   testWidgets('Touch updates and cancels set the correct touchPoint', (
     WidgetTester tester,
   ) async {
