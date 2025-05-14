@@ -8,7 +8,10 @@ Transform your app's UI with a breathtaking, high-performance particle network a
   </a>
 </p>
 
-[![Pub Version](https://img.shields.io/pub/v/particles_network)](https://pub.dev/packages/particles_network) [![CI Status](https://github.com/abod8639/Particles_Network/actions/workflows/flutter-ci.yml/badge.svg)]() [![Codecov](https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg)]() ![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)
+ [![Pub Version](https://img.shields.io/pub/v/particles_network)](https://pub.dev/packages/particles_network)
+ [![CI Status](https://github.com/abod8639/Particles_Network/actions/workflows/flutter-ci.yml/badge.svg)]()
+![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)
+ [![Codecov](https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg)]() 
 
 ---
 
@@ -21,10 +24,11 @@ Transform your app's UI with a breathtaking, high-performance particle network a
 * 📱 **Responsive Layout**: Auto‑scales across devices, orientations, and screen sizes.
 * 🧠 **Resource Efficient**: Minimal allocations per frame, automatic cache cleanup, and optimized repainting.
 
-### 🖼️ Gallery
+## Image
 
 ![🖼️ Static Preview](assets/image.png)
 
+## Gif
 <p align="center">
   <img src="https://github.com/abod8639/my_clock/blob/main/assets/gif/c49ae41c72134b67b31d54593d3414f8.gif?raw=true" alt="✨ Touch Interaction Demo">
 </p>
