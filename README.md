@@ -23,12 +23,14 @@ and the Flutter guide for
 ![Dart CI](https://github.com/abod8639/Particles_Network/actions/workflows/flutter-ci.yml/badge.svg)
 ![Codecov](https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg)
 
+
+
 <!-- ![a](https://codecov.io/gh/abod8639/Particles_Network/graphs/icicle.svg?token=2HMWEEFN73) -->
 
 ---
 ## Documentation
  
-# particles_network
+# 🎯 What is particles_network ?
 
 A highly optimized Flutter package that creates an interactive particle network effect with smooth animations and touch interactions. The package creates a visually appealing network of particles connected by lines that respond to touch input.
 
@@ -50,7 +52,7 @@ A highly optimized Flutter package that creates an interactive particle network 
 
 ### touchActivation
 ![gif](https://github.com/abod8639/my_clock/blob/main/assets/gif/c49ae41c72134b67b31d54593d3414f8.gif?raw=true)
-## Getting started
+# 🚀 Getting started
 
 Add this package to your Flutter project by adding the following to your `pubspec.yaml`:
 
@@ -59,7 +61,7 @@ dependencies:
   particles_network: ^1.5.9
 ```
 
-## Usage
+## Usage 
 
 Here's a simple example of how to use the Particles Network widget:
 
