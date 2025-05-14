@@ -2,58 +2,14 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:particles_network/model/IParticle.dart';
 import 'package:particles_network/model/particlemodel.dart';
 import 'package:particles_network/painter/optimizednetworkpainter.dart';
 
-abstract class IParticleFactory {
-  Particle createParticle(Size size);
-}
-
-abstract class IParticleController {
-  void updateParticles(List<Particle> particles, Size bounds);
-}
-
-class DefaultParticleFactory implements IParticleFactory {
-  final Random random;
-  final double maxSpeed;
-  final double maxSize;
-  final Color color;
-
-  DefaultParticleFactory({
-    required this.random,
-    required this.maxSpeed,
-    required this.maxSize,
-    required this.color,
-  });
-
-  @override
-  Particle createParticle(Size size) {
-    final velocity = Offset(
-      (random.nextDouble() - 0.5) * maxSpeed,
-      (random.nextDouble() - 0.5) * maxSpeed,
-    );
-    return Particle(
-      color: color,
-      position: Offset(
-        random.nextDouble() * size.width,
-        random.nextDouble() * size.height,
-      ),
-      velocity: velocity,
-      size: random.nextDouble() * maxSize + 1,
-    );
-  }
-}
-
-class ParticleUpdater implements IParticleController {
-  @override
-  void updateParticles(List<Particle> particles, Size bounds) {
-    for (final p in particles) {
-      p.update(bounds);
-    }
-  }
-}
+import 'model/DefaultParticleFactory.dart';
 
 class ParticleNetwork extends StatefulWidget {
+  //
   final int particleCount;
   final double maxSpeed;
   final double maxSize;
@@ -62,6 +18,7 @@ class ParticleNetwork extends StatefulWidget {
   final Color lineColor;
   final Color touchColor;
   final bool touchActivation;
+  final double linewidth;
 
   // Injected dependencies
   final IParticleFactory? particleFactory;
@@ -75,10 +32,11 @@ class ParticleNetwork extends StatefulWidget {
     this.maxSize = 3.5,
     this.lineDistance = 180,
     this.particleColor = Colors.white,
-    this.lineColor = Colors.greenAccent,
+    this.lineColor = const Color.fromARGB(255, 100, 255, 180),
     this.touchColor = Colors.amber,
     this.particleFactory,
     this.particleController,
+    this.linewidth = 0.5,
   });
 
   @override
@@ -149,6 +107,8 @@ class ParticleNetworkState extends State<ParticleNetwork>
             builder:
                 (_, __, ___) => CustomPaint(
                   painter: OptimizedNetworkPainter(
+                    linewidth: widget.linewidth,
+                    particleCount: widget.particleCount,
                     touchActivation: widget.touchActivation,
                     particles: particles,
                     touchPoint: touchPoint,

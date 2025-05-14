@@ -33,6 +33,7 @@ class Particle {
     required this.velocity,
     required this.color,
     required this.size,
+    this.isVisible = true,
   }) : defaultVelocity = velocity;
 
   // Updates the particle's position and velocity based on its current state.

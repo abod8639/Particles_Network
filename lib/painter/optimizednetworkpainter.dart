@@ -1,46 +1,36 @@
-import 'dart:collection';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:particles_network/model/particlemodel.dart';
-import 'package:particles_network/painter/ParticleUpdater.dart';
+import 'package:particles_network/painter/ConnectionDrawer.dart';
+import 'package:particles_network/painter/DistanceCalculator.dart';
+import 'package:particles_network/painter/ParticleFilter.dart';
+import 'package:particles_network/painter/SpatialGridManager.dart';
+import 'package:particles_network/painter/TouchInteractionHandler.dart';
 
-// This library contains the implementation of the OptimizedNetworkPainter class and related utilities.
-// It is responsible for rendering a network of particles with optimized performance and touch interactions.
+// سيتم تقسيم OptimizedNetworkPainter إلى أجزاء صغيرة يمكن اختبارها
 
-// The OptimizedNetworkPainter class is a CustomPainter that efficiently renders a network of particles.
-// It uses spatial hashing and caching to optimize performance for large numbers of particles.
+/// المكون الرئيسي لرسم شبكة الجسيمات
 class OptimizedNetworkPainter extends CustomPainter {
-  // List of particles to be rendered.
   final List<Particle> particles;
-
-  // The touch point for interaction, if any.
   final Offset? touchPoint;
-
-  // Maximum distance for connecting particles with lines.
   final double lineDistance;
-
-  // Color of the particles.
   final Color particleColor;
-
-  // Color of the lines connecting particles.
   final Color lineColor;
-
-  // Color of the lines connecting particles to the touch point.
   final Color touchColor;
-
-  // Whether touch interaction is enabled.
   final bool touchActivation;
+  final int particleCount;
+  final double linewidth;
 
-  // Cache for storing pairwise distances between particles to avoid redundant calculations.
-  late Int32List _cacheKeys;
-  late Float64List _cacheValues;
-  static const int _cacheSize = 1024; // Size of the cache.
-  static const _cacheMultiplier =
-      1 << 16; // Multiplier for generating unique cache keys.
+  // مكونات محسّنة
+  late final DistanceCalculator _distanceCalculator;
+  late final ConnectionDrawer _connectionDrawer;
+  late final TouchInteractionHandler _touchHandler;
 
-  // Constructor to initialize the painter with the required properties.
+  // أدوات الرسم المُعاد استخدامها
+  late final Paint _particlePaint;
+  late final Paint _linePaint;
+
   OptimizedNetworkPainter({
+    required this.particleCount,
     required this.particles,
     required this.touchPoint,
     required this.lineDistance,
@@ -48,200 +38,180 @@ class OptimizedNetworkPainter extends CustomPainter {
     required this.lineColor,
     required this.touchColor,
     required this.touchActivation,
+    required this.linewidth,
   }) {
-    // Initialize the cache arrays.
-    _cacheKeys = Int32List(_cacheSize);
-    _cacheValues = Float64List(_cacheSize);
-
-    // Mark all cache entries as empty.
-    for (int i = 0; i < _cacheSize; i++) {
-      _cacheKeys[i] = -1;
-    }
-  }
-
-  // Generates a unique cache key for a pair of particle indices.
-  int _getCacheKey(int i, int j) {
-    return i < j ? i * _cacheMultiplier + j : j * _cacheMultiplier + i;
-  }
-
-  // Retrieves the cached or computed distance between two particles.
-  double _getDistance(Particle p1, Particle p2, int i, int j) {
-    final int key = _getCacheKey(i, j);
-    final int cacheIndex = key % _cacheSize;
-
-    // Check if the distance is already cached.
-    if (_cacheKeys[cacheIndex] == key) {
-      return _cacheValues[cacheIndex];
-    }
-
-    // Compute and cache the distance.
-    final double distance = (p1.position - p2.position).distance;
-    _cacheKeys[cacheIndex] = key;
-    _cacheValues[cacheIndex] = distance;
-    return distance;
-  }
-
-  // Paints the particle network on the canvas.
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Reset the cache.
-    for (int i = 0; i < _cacheSize; i++) {
-      _cacheKeys[i] = -1;
-    }
-
-    // Prepare paint objects for particles and lines.
-    final particlePaint =
+    // تهيئة أدوات الرسم مرة واحدة أثناء الإنشاء
+    _particlePaint =
         Paint()
           ..color = particleColor
           ..style = PaintingStyle.fill;
 
-    final linePaint =
+    _linePaint =
         Paint()
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.0;
+          ..strokeWidth = linewidth;
 
-    // Filter visible particles for rendering.
-    final List<int> visibleParticles = <int>[];
-    for (int i = 0; i < particles.length; i++) {
-      if (particles[i].isVisible) {
-        visibleParticles.add(i);
-      }
-    }
-
-    // Create a spatial grid for efficient neighbor lookup.
-    final Map<String, Uint16List> grid = _createSpatialGrid(
-      size,
-      visibleParticles,
-    );
-
-    // Draw connections between particles.
-    _drawParticleConnections(canvas, linePaint, grid);
-
-    // Draw touch interactions if enabled.
-    if (touchPoint != null && touchActivation) {
-      _drawTouchInteractions(canvas, linePaint, visibleParticles);
-    }
-
-    // Draw the particles.
-    for (final int index in visibleParticles) {
-      final Particle p = particles[index];
-      canvas.drawCircle(p.position, p.size, particlePaint);
-    }
-  }
-
-  // Creates a spatial grid for efficient neighbor lookup.
-  Map<String, Uint16List> _createSpatialGrid(
-    Size size,
-    List<int> visibleParticles,
-  ) {
-    final HashMap<String, Uint16List> grid = HashMap<String, Uint16List>();
-    final double cellSize = lineDistance;
-    final HashMap<String, List<int>> tempLists = HashMap<String, List<int>>();
-
-    for (final i in visibleParticles) {
-      final Particle p = particles[i];
-      final int cellX = (p.position.dx / cellSize).floor();
-      final int cellY = (p.position.dy / cellSize).floor();
-
-      for (int nx = -1; nx <= 1; nx++) {
-        for (int ny = -1; ny <= 1; ny++) {
-          final String key = '${cellX + nx},${cellY + ny}';
-          if (!tempLists.containsKey(key)) {
-            tempLists[key] = [];
-          }
-          tempLists[key]!.add(i);
-        }
-      }
-    }
-
-    tempLists.forEach((key, list) {
-      if (list.isNotEmpty) {
-        grid[key] = Uint16List.fromList(list);
-      }
-    });
-
-    return grid;
-  }
-
-  // Draws connections between particles that are close enough.
-  void _drawParticleConnections(
-    Canvas canvas,
-    Paint linePaint,
-    Map<String, Uint16List> grid,
-  ) {
-    final processedSet = Uint64List((_cacheSize >> 5) + 1);
-
-    grid.forEach((key, particleIndices) {
-      final count = particleIndices.length;
-
-      for (int i = 0; i < count; i++) {
-        final pIndex = particleIndices[i];
-        final p = particles[pIndex];
-
-        for (int j = i + 1; j < count; j++) {
-          final otherIndex = particleIndices[j];
-          final pairKey = _getCacheKey(pIndex, otherIndex);
-          final bitIndex = pairKey % processedSet.length;
-          final mask = 0 << (pairKey & 63);
-
-          if ((processedSet[bitIndex] & mask) != 0) continue;
-          processedSet[bitIndex] |= mask;
-
-          final other = particles[otherIndex];
-          final distance = _getDistance(p, other, pIndex, otherIndex);
-
-          if (distance < lineDistance) {
-            final opacity = ((1 - distance / lineDistance) * 0.4 * 255).toInt();
-            linePaint.color = lineColor.withAlpha(opacity.clamp(0, 255));
-            canvas.drawLine(p.position, other.position, linePaint);
-          }
-        }
-      }
-    });
-  }
-
-  // Draws touch interactions between particles and the touch point.
-  void _drawTouchInteractions(
-    Canvas canvas,
-    Paint linePaint,
-    List<int> visibleParticles,
-  ) {
-    final touch = touchPoint;
-    if (touch == null) return;
-
-    ParticleUpdater().applyTouchInteraction(
-      touch: touch,
-      lineDistance: lineDistance,
+    // تهيئة المكونات
+    _distanceCalculator = DistanceCalculator(particleCount);
+    _connectionDrawer = ConnectionDrawer(
       particles: particles,
-      visibleIndices: visibleParticles,
+      particleCount: particleCount,
+      lineDistance: lineDistance,
+      lineColor: lineColor,
+      linePaint: _linePaint,
+      distanceCalculator: _distanceCalculator,
     );
-
-    renderTouchInteractions(canvas, linePaint, visibleParticles, touch);
+    _touchHandler = TouchInteractionHandler(
+      particles: particles,
+      touchPoint: touchPoint,
+      lineDistance: lineDistance,
+      touchColor: touchColor,
+      linePaint: _linePaint,
+    );
   }
 
-  // Renders the visual representation of touch interactions.
-  void renderTouchInteractions(
-    Canvas canvas,
-    Paint linePaint,
-    List<int> visibleParticles,
-    Offset touch,
-  ) {
-    for (final i in visibleParticles) {
-      final p = particles[i];
-      final distance = (p.position - touch).distance;
+  @override
+  void paint(Canvas canvas, Size size) {
+    // مسح ذاكرة التخزين المؤقت
+    _distanceCalculator.clearCache();
 
-      if (distance < lineDistance) {
-        final opacity = ((1 - distance / lineDistance) * 255).toInt();
-        linePaint.color = touchColor.withAlpha(opacity.clamp(0, 255));
-        canvas.drawLine(p.position, touch, linePaint);
-      }
+    // الحصول على الجسيمات المرئية
+    final visibleParticles = ParticleFilter.getVisibleParticles(particles);
+
+    // إنشاء الشبكة المكانية للبحث السريع
+    final grid = SpatialGridManager.createOptimizedSpatialGrid(
+      particles,
+      visibleParticles,
+      lineDistance,
+    );
+
+    // رسم الاتصالات بين الجسيمات
+    _connectionDrawer.drawConnections(canvas, grid);
+
+    // معالجة تفاعل اللمس ورسمه
+    if (touchPoint != null && touchActivation) {
+      _touchHandler.applyTouchPhysics(visibleParticles);
+      _touchHandler.drawTouchLines(canvas, visibleParticles);
+    }
+
+    // رسم الجسيمات
+    _drawParticles(canvas, visibleParticles);
+  }
+
+  /// رسم الجسيمات الفردية
+  void _drawParticles(Canvas canvas, List<int> visibleParticles) {
+    for (final index in visibleParticles) {
+      final p = particles[index];
+      canvas.drawCircle(p.position, p.size, _particlePaint);
     }
   }
 
-  // Determines whether the painter should repaint.
   @override
   bool shouldRepaint(OptimizedNetworkPainter oldDelegate) {
     return oldDelegate.touchPoint != touchPoint ||
         particles.any((p) => p.wasAccelerated);
   }
 }
+
+
+
+// // فئات اختبار إضافية لاختبارات الوحدات
+
+// /// فئة وهمية للجسيمات لاستخدامها في الاختبارات
+// class MockParticle extends Particle {
+//   MockParticle(Offset position, {bool isVisible = true}) : super(position, isVisible: isVisible);
+// }
+
+// /// مساعد لإنشاء بيانات اختبار
+// class TestDataGenerator {
+//   /// إنشاء قائمة من الجسيمات الوهمية للاختبار
+//   static List<Particle> createMockParticles(int count, Size size) {
+//     final particles = <Particle>[];
+//     for (int i = 0; i < count; i++) {
+//       final x = (i * 10) % size.width;
+//       final y = ((i * 10) / size.width).floor() * 10;
+//       particles.add(MockParticle(Offset(x, y)));
+//     }
+//     return particles;
+//   }
+// }
+
+// /// فئة اختبار لحساب المسافة
+// class DistanceCalculatorTest {
+//   static void runTests() {
+//     test('حساب المسافة بين جسيمين', () {
+//       final calculator = DistanceCalculator(10);
+//       final p1 = MockParticle(const Offset(0, 0));
+//       final p2 = MockParticle(const Offset(3, 4));
+      
+//       final distance = calculator.calculateDistance(p1, p2);
+//       expect(distance, 5.0);
+//     });
+    
+//     test('ذاكرة التخزين المؤقت تعمل بشكل صحيح', () {
+//       final calculator = DistanceCalculator(10);
+//       final p1 = MockParticle(const Offset(0, 0));
+//       final p2 = MockParticle(const Offset(3, 4));
+      
+//       // المرة الأولى تحسب المسافة
+//       final distance1 = calculator.calculateDistance(p1, p2);
+//       // المرة الثانية يجب أن تستخدم التخزين المؤقت
+//       final distance2 = calculator.calculateDistance(p1, p2);
+      
+//       expect(distance1, 5.0);
+//       expect(distance2, 5.0);
+      
+//       calculator.clearCache();
+//       // بعد المسح، يجب أن يعاد الحساب
+//     });
+//   }
+// }
+
+// /// فئة اختبار لفلتر الجسيمات
+// class ParticleFilterTest {
+//   static void runTests() {
+//     test('يجب أن يعرض فقط الجسيمات المرئية', () {
+//       final particles = [
+//         MockParticle(const Offset(0, 0), isVisible: true),
+//         MockParticle(const Offset(10, 10), isVisible: false),
+//         MockParticle(const Offset(20, 20), isVisible: true),
+//       ];
+      
+//       final visibleParticles = ParticleFilter.getVisibleParticles(particles);
+      
+//       expect(visibleParticles.length, 2);
+//       expect(visibleParticles, [0, 2]);
+//     });
+//   }
+// }
+
+// /// فئة اختبار للشبكة المكانية
+// class SpatialGridManagerTest {
+//   static void runTests() {
+//     test('إنشاء شبكة مكانية بالحجم الصحيح', () {
+//       final particles = [
+//         MockParticle(const Offset(10, 10)),
+//         MockParticle(const Offset(20, 20)),
+//       ];
+//       final visibleParticles = [0, 1];
+//       final cellSize = 15.0;
+      
+//       final grid = SpatialGridManager.createOptimizedSpatialGrid(
+//         particles, 
+//         visibleParticles, 
+//         cellSize
+//       );
+      
+//       // يجب أن تحتوي الشبكة على خلايا تغطي كلا الجسيمين
+//       expect(grid.isNotEmpty, true);
+//     });
+//   }
+// }
+
+// // يمكن تشغيل اختبارات الوحدة هكذا:
+// void runAllTests() {
+//   DistanceCalculatorTest.runTests();
+//   ParticleFilterTest.runTests();
+//   SpatialGridManagerTest.runTests();
+//   // يمكن إضافة المزيد من الاختبارات هنا
+// }
