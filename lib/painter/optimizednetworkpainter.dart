@@ -6,29 +6,40 @@ import 'package:particles_network/painter/ParticleFilter.dart';
 import 'package:particles_network/painter/SpatialGridManager.dart';
 import 'package:particles_network/painter/TouchInteractionHandler.dart';
 
-// سيتم تقسيم OptimizedNetworkPainter إلى أجزاء صغيرة يمكن اختبارها
-
-/// المكون الرئيسي لرسم شبكة الجسيمات
+/// The core painter class that renders an optimized particle network visualization.
+/// 
+/// This class implements CustomPainter to efficiently render:
+/// 1. Individual particles as circles
+/// 2. Dynamic connections between nearby particles
+/// 3. Interactive touch effects
+///
+/// Performance Optimizations:
+/// - Spatial partitioning grid (O(1) neighbor lookup)
+/// - Cached distance calculations
+/// - Batched drawing operations
+/// - Selective repainting
 class OptimizedNetworkPainter extends CustomPainter {
-  final List<Particle> particles;
-  final Offset? touchPoint;
-  final double lineDistance;
-  final Color particleColor;
-  final Color lineColor;
-  final Color touchColor;
-  final bool touchActivation;
-  final int particleCount;
-  final double linewidth;
+  // Configuration properties
+  final List<Particle> particles;          // All particles in the system
+  final Offset? touchPoint;                // Current touch position (nullable)
+  final double lineDistance;               // Max connection distance in pixels
+  final Color particleColor;               // Base particle color
+  final Color lineColor;                   // Connection line color
+  final Color touchColor;                  // Touch interaction color
+  final bool touchActivation;              // Whether touch is enabled
+  final int particleCount;                 // Total particle count
+  final double linewidth;                  // Connection line width
 
-  // مكونات محسّنة
-  late final DistanceCalculator _distanceCalculator;
-  late final ConnectionDrawer _connectionDrawer;
-  late final TouchInteractionHandler _touchHandler;
+  // Optimized sub-components
+  late final DistanceCalculator _distanceCalculator;  // Manages distance math
+  late final ConnectionDrawer _connectionDrawer;      // Handles line drawing
+  late final TouchInteractionHandler _touchHandler;   // Manages touch effects
 
-  // أدوات الرسم المُعاد استخدامها
-  late final Paint _particlePaint;
-  late final Paint _linePaint;
+  // Reusable painting objects
+  late final Paint _particlePaint;         // Configured once for all particles
+  late final Paint _linePaint;             // Configured once for all lines
 
+  /// Creates a new particle network painter
   OptimizedNetworkPainter({
     required this.particleCount,
     required this.particles,
@@ -40,18 +51,17 @@ class OptimizedNetworkPainter extends CustomPainter {
     required this.touchActivation,
     required this.linewidth,
   }) {
-    // تهيئة أدوات الرسم مرة واحدة أثناء الإنشاء
-    _particlePaint =
-        Paint()
-          ..color = particleColor
-          ..style = PaintingStyle.fill;
+    // Initialize particle paint (optimized to do this once)
+    _particlePaint = Paint()
+      ..color = particleColor
+      ..style = PaintingStyle.fill;
 
-    _linePaint =
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = linewidth;
+    // Initialize line paint with stroke configuration
+    _linePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = linewidth;
 
-    // تهيئة المكونات
+    // Initialize sub-components with dependency injection
     _distanceCalculator = DistanceCalculator(particleCount);
     _connectionDrawer = ConnectionDrawer(
       particles: particles,
@@ -72,146 +82,55 @@ class OptimizedNetworkPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // مسح ذاكرة التخزين المؤقت
+    // Clear previous frame's distance cache
     _distanceCalculator.clearCache();
 
-    // الحصول على الجسيمات المرئية
+    // Step 1: Filter visible particles (O(n) operation)
     final visibleParticles = ParticleFilter.getVisibleParticles(particles);
 
-    // إنشاء الشبكة المكانية للبحث السريع
+    // Step 2: Create spatial grid for efficient proximity checks (O(n))
+    // Grid cell size = lineDistance ensures we only need to check adjacent cells
     final grid = SpatialGridManager.createOptimizedSpatialGrid(
       particles,
       visibleParticles,
-      lineDistance,
+      lineDistance, // Cell size matches connection distance
     );
 
-    // رسم الاتصالات بين الجسيمات
+    // Step 3: Draw connections between nearby particles (O(m) where m = connections)
+    // Uses the grid to only check adjacent cells
     _connectionDrawer.drawConnections(canvas, grid);
 
-    // معالجة تفاعل اللمس ورسمه
+    // Step 4: Handle touch interactions if active (O(k) where k = nearby particles)
     if (touchPoint != null && touchActivation) {
+      // Physics formula: F = k/d (inverse distance force)
       _touchHandler.applyTouchPhysics(visibleParticles);
+      
+      // Line opacity formula: α = 255 * (1 - d/d_max)
       _touchHandler.drawTouchLines(canvas, visibleParticles);
     }
 
-    // رسم الجسيمات
+    // Step 5: Draw all visible particles (O(v) where v = visible particles)
     _drawParticles(canvas, visibleParticles);
   }
 
-  /// رسم الجسيمات الفردية
+  /// Draws individual particles as circles
+  /// 
+  /// Uses pre-allocated Paint object for efficiency
+  /// Only draws visible particles to save rendering time
   void _drawParticles(Canvas canvas, List<int> visibleParticles) {
     for (final index in visibleParticles) {
       final p = particles[index];
+      // Circle equation: (x-x₀)² + (y-y₀)² = r²
       canvas.drawCircle(p.position, p.size, _particlePaint);
     }
   }
 
   @override
   bool shouldRepaint(OptimizedNetworkPainter oldDelegate) {
+    // Only repaint when:
+    // 1. Touch position changes, or
+    // 2. Any particle was accelerated (position changed)
     return oldDelegate.touchPoint != touchPoint ||
         particles.any((p) => p.wasAccelerated);
   }
 }
-
-
-
-// // فئات اختبار إضافية لاختبارات الوحدات
-
-// /// فئة وهمية للجسيمات لاستخدامها في الاختبارات
-// class MockParticle extends Particle {
-//   MockParticle(Offset position, {bool isVisible = true}) : super(position, isVisible: isVisible);
-// }
-
-// /// مساعد لإنشاء بيانات اختبار
-// class TestDataGenerator {
-//   /// إنشاء قائمة من الجسيمات الوهمية للاختبار
-//   static List<Particle> createMockParticles(int count, Size size) {
-//     final particles = <Particle>[];
-//     for (int i = 0; i < count; i++) {
-//       final x = (i * 10) % size.width;
-//       final y = ((i * 10) / size.width).floor() * 10;
-//       particles.add(MockParticle(Offset(x, y)));
-//     }
-//     return particles;
-//   }
-// }
-
-// /// فئة اختبار لحساب المسافة
-// class DistanceCalculatorTest {
-//   static void runTests() {
-//     test('حساب المسافة بين جسيمين', () {
-//       final calculator = DistanceCalculator(10);
-//       final p1 = MockParticle(const Offset(0, 0));
-//       final p2 = MockParticle(const Offset(3, 4));
-      
-//       final distance = calculator.calculateDistance(p1, p2);
-//       expect(distance, 5.0);
-//     });
-    
-//     test('ذاكرة التخزين المؤقت تعمل بشكل صحيح', () {
-//       final calculator = DistanceCalculator(10);
-//       final p1 = MockParticle(const Offset(0, 0));
-//       final p2 = MockParticle(const Offset(3, 4));
-      
-//       // المرة الأولى تحسب المسافة
-//       final distance1 = calculator.calculateDistance(p1, p2);
-//       // المرة الثانية يجب أن تستخدم التخزين المؤقت
-//       final distance2 = calculator.calculateDistance(p1, p2);
-      
-//       expect(distance1, 5.0);
-//       expect(distance2, 5.0);
-      
-//       calculator.clearCache();
-//       // بعد المسح، يجب أن يعاد الحساب
-//     });
-//   }
-// }
-
-// /// فئة اختبار لفلتر الجسيمات
-// class ParticleFilterTest {
-//   static void runTests() {
-//     test('يجب أن يعرض فقط الجسيمات المرئية', () {
-//       final particles = [
-//         MockParticle(const Offset(0, 0), isVisible: true),
-//         MockParticle(const Offset(10, 10), isVisible: false),
-//         MockParticle(const Offset(20, 20), isVisible: true),
-//       ];
-      
-//       final visibleParticles = ParticleFilter.getVisibleParticles(particles);
-      
-//       expect(visibleParticles.length, 2);
-//       expect(visibleParticles, [0, 2]);
-//     });
-//   }
-// }
-
-// /// فئة اختبار للشبكة المكانية
-// class SpatialGridManagerTest {
-//   static void runTests() {
-//     test('إنشاء شبكة مكانية بالحجم الصحيح', () {
-//       final particles = [
-//         MockParticle(const Offset(10, 10)),
-//         MockParticle(const Offset(20, 20)),
-//       ];
-//       final visibleParticles = [0, 1];
-//       final cellSize = 15.0;
-      
-//       final grid = SpatialGridManager.createOptimizedSpatialGrid(
-//         particles, 
-//         visibleParticles, 
-//         cellSize
-//       );
-      
-//       // يجب أن تحتوي الشبكة على خلايا تغطي كلا الجسيمين
-//       expect(grid.isNotEmpty, true);
-//     });
-//   }
-// }
-
-// // يمكن تشغيل اختبارات الوحدة هكذا:
-// void runAllTests() {
-//   DistanceCalculatorTest.runTests();
-//   ParticleFilterTest.runTests();
-//   SpatialGridManagerTest.runTests();
-//   // يمكن إضافة المزيد من الاختبارات هنا
-// }
