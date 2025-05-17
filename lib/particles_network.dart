@@ -6,14 +6,14 @@ import 'package:flutter/material.dart';
 // Importing scheduler for animation tickers
 import 'package:flutter/scheduler.dart';
 // Importing particle interface
-import 'package:particles_network/model/IParticle.dart';
+import 'package:particles_network/model/ip_article.dart';
 // Importing particle model
 import 'package:particles_network/model/particlemodel.dart';
 // Importing custom painter for optimized network rendering
 import 'package:particles_network/painter/optimizednetworkpainter.dart';
 
 // Importing default particle factory implementation
-import 'model/DefaultParticleFactory.dart';
+import 'model/default_particle_factory.dart';
 
 /// A Flutter widget that renders an interactive particle network visualization.
 ///
@@ -71,7 +71,7 @@ class ParticleNetwork extends StatefulWidget {
   /// Creates a ParticleNetwork widget with customizable parameters
   const ParticleNetwork({
     super.key,
-    this.particleCount = 50,
+    this.particleCount = 60,
     this.touchActivation = true,
     this.maxSpeed = 0.5,
     this.maxSize = 3.5,

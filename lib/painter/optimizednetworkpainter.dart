@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:particles_network/model/particlemodel.dart';
-import 'package:particles_network/painter/ConnectionDrawer.dart';
-import 'package:particles_network/painter/DistanceCalculator.dart';
-import 'package:particles_network/painter/ParticleFilter.dart';
-import 'package:particles_network/painter/SpatialGridManager.dart';
-import 'package:particles_network/painter/TouchInteractionHandler.dart';
+import 'package:particles_network/painter/connection_drawer.dart';
+import 'package:particles_network/painter/distance_calculator.dart';
+import 'package:particles_network/painter/particle_filter.dart';
+import 'package:particles_network/painter/spatial_gridManager.dart';
+import 'package:particles_network/painter/touch_Interaction_handler.dart';
 
 /// The core painter class that renders an optimized particle network visualization.
-/// 
+///
 /// This class implements CustomPainter to efficiently render:
 /// 1. Individual particles as circles
 /// 2. Dynamic connections between nearby particles
@@ -20,24 +20,24 @@ import 'package:particles_network/painter/TouchInteractionHandler.dart';
 /// - Selective repainting
 class OptimizedNetworkPainter extends CustomPainter {
   // Configuration properties
-  final List<Particle> particles;          // All particles in the system
-  final Offset? touchPoint;                // Current touch position (nullable)
-  final double lineDistance;               // Max connection distance in pixels
-  final Color particleColor;               // Base particle color
-  final Color lineColor;                   // Connection line color
-  final Color touchColor;                  // Touch interaction color
-  final bool touchActivation;              // Whether touch is enabled
-  final int particleCount;                 // Total particle count
-  final double linewidth;                  // Connection line width
+  final List<Particle> particles; // All particles in the system
+  final Offset? touchPoint; // Current touch position (nullable)
+  final double lineDistance; // Max connection distance in pixels
+  final Color particleColor; // Base particle color
+  final Color lineColor; // Connection line color
+  final Color touchColor; // Touch interaction color
+  final bool touchActivation; // Whether touch is enabled
+  final int particleCount; // Total particle count
+  final double linewidth; // Connection line width
 
   // Optimized sub-components
-  late final DistanceCalculator _distanceCalculator;  // Manages distance math
-  late final ConnectionDrawer _connectionDrawer;      // Handles line drawing
-  late final TouchInteractionHandler _touchHandler;   // Manages touch effects
+  late final DistanceCalculator _distanceCalculator; // Manages distance math
+  late final ConnectionDrawer _connectionDrawer; // Handles line drawing
+  late final TouchInteractionHandler _touchHandler; // Manages touch effects
 
   // Reusable painting objects
-  late final Paint _particlePaint;         // Configured once for all particles
-  late final Paint _linePaint;             // Configured once for all lines
+  late final Paint _particlePaint; // Configured once for all particles
+  late final Paint _linePaint; // Configured once for all lines
 
   /// Creates a new particle network painter
   OptimizedNetworkPainter({
@@ -52,14 +52,16 @@ class OptimizedNetworkPainter extends CustomPainter {
     required this.linewidth,
   }) {
     // Initialize particle paint (optimized to do this once)
-    _particlePaint = Paint()
-      ..color = particleColor
-      ..style = PaintingStyle.fill;
+    _particlePaint =
+        Paint()
+          ..color = particleColor
+          ..style = PaintingStyle.fill;
 
     // Initialize line paint with stroke configuration
-    _linePaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = linewidth;
+    _linePaint =
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = linewidth;
 
     // Initialize sub-components with dependency injection
     _distanceCalculator = DistanceCalculator(particleCount);
@@ -104,7 +106,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     if (touchPoint != null && touchActivation) {
       // Physics formula: F = k/d (inverse distance force)
       _touchHandler.applyTouchPhysics(visibleParticles);
-      
+
       // Line opacity formula: α = 255 * (1 - d/d_max)
       _touchHandler.drawTouchLines(canvas, visibleParticles);
     }
@@ -114,7 +116,7 @@ class OptimizedNetworkPainter extends CustomPainter {
   }
 
   /// Draws individual particles as circles
-  /// 
+  ///
   /// Uses pre-allocated Paint object for efficiency
   /// Only draws visible particles to save rendering time
   void _drawParticles(Canvas canvas, List<int> visibleParticles) {

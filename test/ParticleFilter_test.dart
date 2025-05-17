@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:particles_network/model/particlemodel.dart';
-import 'package:particles_network/painter/ParticleFilter.dart';
+import 'package:particles_network/painter/particle_filter.dart';
 
 /// فئة اختبارية للجسيمات لتسهيل التحقق
 class TestParticle extends Particle {

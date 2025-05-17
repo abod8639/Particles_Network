@@ -4,10 +4,10 @@ import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
-import 'package:particles_network/model/GridCell.dart';
+import 'package:particles_network/model/drid_cell.dart';
 import 'package:particles_network/model/particlemodel.dart';
-import 'package:particles_network/painter/ConnectionDrawer.dart';
-import 'package:particles_network/painter/DistanceCalculator.dart';
+import 'package:particles_network/painter/connection_drawer.dart';
+import 'package:particles_network/painter/distance_calculator.dart';
 
 import 'mocks/mock_canvas.mocks.dart';
 

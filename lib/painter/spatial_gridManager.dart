@@ -1,6 +1,6 @@
 // ملف: spatial_grid_manager.dart
 
-import 'package:particles_network/model/GridCell.dart';
+import 'package:particles_network/model/drid_cell.dart';
 import 'package:particles_network/model/particlemodel.dart';
 
 /// فئة للتقسيم المكاني للجسيمات

@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:particles_network/model/IParticle.dart';
+import 'package:particles_network/model/ip_article.dart';
 import 'package:particles_network/model/particlemodel.dart';
 
 /// Default implementation of IParticleFactory that creates randomly configured particles

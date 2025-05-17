@@ -109,7 +109,7 @@ class MyApp extends StatelessWidget {
 * 🧩 **Spatial Partitioning**: Particles are binned into grid cells to limit neighbor searches.
 * 🗂️ **Distance Caching**: Recent proximity checks are cached each frame to avoid redundant calculations.
 * 🖌️ **Efficient Repaints**: CustomPainter’s `shouldRepaint` ensures redraws only when parameters change.
-* 🧼 **Memory Management**: Typed arrays (e.g., `Uint16List`) and frame‑scoped caches prevent memory churn.
+* 🧼 **Memory Management**: Typed arrays and frame‑scoped caches prevent memory churn.
 
 ---
 

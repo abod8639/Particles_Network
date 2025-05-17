@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:particles_network/model/DefaultParticleFactory.dart';
+import 'package:particles_network/model/default_particle_factory.dart';
 import 'package:particles_network/model/particlemodel.dart';
 import 'package:particles_network/particles_network.dart';
 
