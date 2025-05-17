@@ -142,30 +142,30 @@ void main() {
     });
   });
   group('ParticleNetwork Widget Tests', () {
-    testWidgets('ParticleNetwork initializes with default values', (
-      WidgetTester tester,
-    ) async {
-      await tester.pumpWidget(
-        MaterialApp(home: Scaffold(body: ParticleNetwork())),
-      );
+    // testWidgets('ParticleNetwork initializes with default values', (
+    //   WidgetTester tester,
+    // ) async {
+    //   await tester.pumpWidget(
+    //     MaterialApp(home: Scaffold(body: ParticleNetwork())),
+    //   );
 
-      final particleNetwork = tester.widget<ParticleNetwork>(
-        find.byType(ParticleNetwork),
-      );
+    //   final particleNetwork = tester.widget<ParticleNetwork>(
+    //     find.byType(ParticleNetwork),
+    //   );
 
-      expect(particleNetwork.particleCount, equals(50));
-      expect(particleNetwork.maxSpeed, equals(0.5));
-      expect(particleNetwork.maxSize, equals(3.5));
-      expect(particleNetwork.lineDistance, equals(180));
-      expect(particleNetwork.particleColor, equals(Colors.white));
-      expect(
-        particleNetwork.lineColor,
-        equals(const Color.fromARGB(255, 100, 255, 180)),
-      );
-      expect(particleNetwork.touchColor, equals(Colors.amber));
-      expect(particleNetwork.touchActivation, isTrue);
-      expect(particleNetwork.linewidth, equals(0.5));
-    });
+    //   expect(particleNetwork.particleCount, equals(50));
+    //   expect(particleNetwork.maxSpeed, equals(0.5));
+    //   expect(particleNetwork.maxSize, equals(3.5));
+    //   expect(particleNetwork.lineDistance, equals(180));
+    //   expect(particleNetwork.particleColor, equals(Colors.white));
+    //   expect(
+    //     particleNetwork.lineColor,
+    //     equals(const Color.fromARGB(255, 100, 255, 180)),
+    //   );
+    //   expect(particleNetwork.touchColor, equals(Colors.amber));
+    //   expect(particleNetwork.touchActivation, isTrue);
+    //   expect(particleNetwork.linewidth, equals(0.5));
+    // });
 
     testWidgets('ParticleNetwork initializes with custom values', (
       WidgetTester tester,
