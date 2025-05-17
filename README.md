@@ -30,18 +30,24 @@ Transform your app's UI with a breathtaking, high-performance particle network a
 
 ## Gif
 <p align="center">
-  <img src="https://github.com/abod8639/my_clock/blob/main/assets/gif/c49ae41c72134b67b31d54593d3414f8.gif?raw=true" alt="✨ Touch Interaction Demo">
+  <img src="https://github.com/abod8639/flutter_habit_tracker/blob/main/assets/gif/c49ae41c72134b67b31d54593d3414f8.gif?raw=true" alt="✨ Touch Interaction Demo">
 </p>
 
 ---
 
 ## 🚀 Installation
 
+### direct
+```
+flutter pub add particles_network
+```
+### OR
+
 Add `particles_network` to your project's `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  particles_network: ^1.6.0
+  particles_network: ^1.6.1
 ```
 
 Run:
