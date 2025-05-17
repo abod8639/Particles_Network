@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:particles_network/model/drid_cell.dart';
 import 'package:particles_network/model/particlemodel.dart';
-import 'package:particles_network/painter/spatial_gridManager.dart';
+import 'package:particles_network/painter/spatial_grid_manager.dart';
 
 void main() {
   test('GridCell toString returns expected format', () {

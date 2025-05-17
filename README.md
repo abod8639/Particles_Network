@@ -13,6 +13,8 @@ Transform your app's UI with a breathtaking, high-performance particle network a
 ![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)
  [![Codecov](https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg)]() 
 
+
+[![pub points](https://img.shields.io/pub/points/device_info_plus?color=2E8B57&label=pub%20points)](https://pub.dev/packages/particles_network/score)
 ---
 
 ### ✨ Key Features
@@ -47,7 +49,7 @@ Add `particles_network` to your project's `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  particles_network: ^1.6.1
+  particles_network: ^1.6.2
 ```
 
 Run:

@@ -3,8 +3,8 @@ import 'package:particles_network/model/particlemodel.dart';
 import 'package:particles_network/painter/connection_drawer.dart';
 import 'package:particles_network/painter/distance_calculator.dart';
 import 'package:particles_network/painter/particle_filter.dart';
-import 'package:particles_network/painter/spatial_gridManager.dart';
-import 'package:particles_network/painter/touch_Interaction_handler.dart';
+import 'package:particles_network/painter/spatial_grid_manager.dart';
+import 'package:particles_network/painter/touch_interaction_handler.dart';
 
 /// The core painter class that renders an optimized particle network visualization.
 ///
