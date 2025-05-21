@@ -4,7 +4,7 @@ Transform your app's UI with a breathtaking, high-performance particle network a
 
 <p align="center">
   <a href="https://github.com/abod8639/Particles_Network">
-    <img alt="particles_network demo" width="200" src="assets/Picsart_25-05-10_12-57-34-680.png">
+    <img alt="particles_network demo" width="300" src="assets/Picsart_25-05-10_12-57-34-680.png">
   </a>
 </p>
 
@@ -12,9 +12,7 @@ Transform your app's UI with a breathtaking, high-performance particle network a
  [![CI Status](https://github.com/abod8639/Particles_Network/actions/workflows/flutter-ci.yml/badge.svg)]()
 ![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)
  [![Codecov](https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg)]() 
-
-
-[![pub points](https://img.shields.io/pub/points/device_info_plus?color=2E8B57&label=pub%20points)](https://pub.dev/packages/particles_network/score)
+[![pub points](https://img.shields.io/pub/points/device_info_plus?color=0F80C1&label=pub%20points)](https://pub.dev/packages/particles_network/score)
 ---
 
 ### ✨ Key Features
@@ -49,7 +47,7 @@ Add `particles_network` to your project's `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  particles_network: ^1.6.2
+  particles_network: ^1.6.3
 ```
 
 Run:
@@ -81,7 +79,7 @@ class MyApp extends StatelessWidget {
           touchActivation: true,       // Enable touch interaction
           particleCount: 60,           // Number of particles
           maxSpeed: 0.7,               // Max particle velocity
-          maxSize: 4.0,                // Max particle size
+          maxSize: 3.5,                // Max particle size
           lineDistance: 180,           // Connection radius
           particleColor: Colors.white,
           lineColor: const Color(0xFF4CFFA7),

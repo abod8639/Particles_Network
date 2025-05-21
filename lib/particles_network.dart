@@ -75,7 +75,7 @@ class ParticleNetwork extends StatefulWidget {
     this.touchActivation = true,
     this.maxSpeed = 0.5,
     this.maxSize = 3.5,
-    this.lineDistance = 180,
+    this.lineDistance = 100,
     this.particleColor = Colors.white,
     this.lineColor = const Color.fromARGB(255, 100, 255, 180),
     this.touchColor = Colors.amber,

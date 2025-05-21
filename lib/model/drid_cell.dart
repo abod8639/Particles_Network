@@ -45,7 +45,7 @@ class GridCell {
   /// Uses bitwise XOR (^) which provides good distribution for grid coordinates:
   /// hash = x.hashCode ^ y.hashCode
   @override
-  int get hashCode => x.hashCode ^ y.hashCode;
+  int get hashCode => Object.hash(x, y);
 
   /// Human-readable string representation for debugging
   ///
