@@ -58,10 +58,10 @@ class ParticleNetwork extends StatefulWidget {
   /// Stroke width of connection lines in pixels [default: 0.5]
   final double linewidth;
 
-  // Dependency injection points:
-
   /// Whether the painting logic is complex (affects repaint strategy) [default: false]
   final bool isComplex;
+
+  // Dependency injection points:
 
   /// Custom particle factory (optional)
   /// If null, uses DefaultParticleFactory

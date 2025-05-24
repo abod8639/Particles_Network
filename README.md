@@ -13,6 +13,12 @@ Transform your app's UI with a breathtaking, high-performance particle network a
 ![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)
  [![Codecov](https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg)]() 
 [![pub points](https://img.shields.io/pub/points/device_info_plus?color=0F80C1&label=pub%20points)](https://pub.dev/packages/particles_network/score)
+<p align="left">
+  <a href="https://github.com/abod8639/Particles_Network">
+    <img alt="particles_network demo" width="80" src="https://github.com/fluttercommunity/plus_plugins/raw/main/assets/flutter-favorite-badge.png">
+  </a>
+</p>
+
 ---
 
 ### ✨ Key Features
@@ -47,7 +53,7 @@ Add `particles_network` to your project's `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  particles_network: ^1.6.3
+  particles_network: ^1.6.4
 ```
 
 Run:
@@ -76,6 +82,7 @@ class MyApp extends StatelessWidget {
       home: Scaffold(
         backgroundColor: Colors.black,
         body: ParticleNetwork(
+          isComplex: false,            // This reduces complex calculations
           touchActivation: true,       // Enable touch interaction
           particleCount: 60,           // Number of particles
           maxSpeed: 0.7,               // Max particle velocity
@@ -105,6 +112,7 @@ class MyApp extends StatelessWidget {
 | `lineColor`       | `Color`  | `Colors.teal`  | Color of connecting lines            |
 | `touchActivation` | `bool`   | `false`        | Enable touch-based attraction        |
 | `touchColor`      | `Color`  | `Colors.amber` | Color of lines created by touch      |
+| `isComplex`       | `bool`   | `false`        | This reduces complex calculations    |
 
 > ⚠️ **Performance Tip**: Increase `particleCount` with caution. Pair high counts with lower `lineDistance` to maintain frame rate.
 

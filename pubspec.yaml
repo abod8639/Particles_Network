@@ -2,7 +2,7 @@ name: particles_network
 description: >
   A performant and customizable interactive particle network widget for Flutter.
   Ideal for background animations, landing pages, and visual effects.
-version: 1.6.3
+version: 1.6.4
 repository: https://github.com/abod8639/Particles_Network.git
 homepage: https://github.com/abod8639/Particles_Network
 
@@ -28,3 +28,7 @@ flutter:
   # assets:
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
+
+screenshots:
+  - description: The equatable package logo.
+    path: assets/Picsart_25-05-10_12-57-34-680.png
