@@ -23,6 +23,7 @@ class ConnectionDrawer {
   final double lineDistance; // Maximum connection distance
   final Color lineColor; // Base color for connections
   final Paint linePaint; // Pre-configured paint object
+  final bool isComplex; // Flag for complex drawing logic
   final DistanceCalculator
   distanceCalculator; // For optimized distance calculations
 
@@ -33,6 +34,7 @@ class ConnectionDrawer {
     required this.lineColor,
     required this.linePaint,
     required this.distanceCalculator,
+    required this.isComplex,
   });
 
   /// Draws connection lines between particles within the specified distance
@@ -56,6 +58,8 @@ class ConnectionDrawer {
     // Tracks processed particle pairs to avoid duplicate drawing
     final processed = <int>{};
 
+    final int factor = isComplex ? 2 : 1;
+    final int adjustedParticleCountBase = particleCount ~/ factor;
     // Process each grid cell
     grid.forEach((_, particleIndices) {
       // Compare each particle with others in the same cell
@@ -68,7 +72,7 @@ class ConnectionDrawer {
           final otherIndex = particleIndices[j];
 
           // Create unique pair key regardless of order
-          final int pairKey = pIndex * particleCount + otherIndex;
+          final int pairKey = pIndex * adjustedParticleCountBase + otherIndex;
 
           // Skip if already processed
           if (!processed.add(pairKey)) continue;

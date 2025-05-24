@@ -37,6 +37,7 @@ void main() {
       final linePaint = Paint();
       final distanceCalculator = DistanceCalculator(10);
       final drawer = ConnectionDrawer(
+        isComplex: false,
         particles: particles,
         particleCount: 2,
         lineDistance: 10.0,
@@ -66,6 +67,7 @@ void main() {
       final linePaint = Paint();
       final distanceCalculator = DistanceCalculator(10);
       final drawer = ConnectionDrawer(
+        isComplex: false,
         particles: particles,
         particleCount: 2,
         lineDistance: 10.0,

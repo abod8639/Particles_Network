@@ -129,7 +129,7 @@ class MyApp extends StatelessWidget {
 
 ## 🤝 Contributing
 
-Contributions, issues, and feature requests are welcome! Feel free to open a pull request or issue on GitHub.
+Contributions, issues, and feature requests are welcome! Feel free to open a pull request or issue on [Github](https://github.com/abod8639/Particles_Network).
 
 ---
 

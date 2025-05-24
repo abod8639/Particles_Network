@@ -23,6 +23,7 @@ void main() {
       final p = MockParticle(position: Offset(0, 0));
 
       final oldPainter = OptimizedNetworkPainter(
+        isComplex: false,
         particleCount: 1,
         particles: [p],
         touchPoint: const Offset(0, 0),
@@ -35,6 +36,7 @@ void main() {
       );
 
       final newPainter = OptimizedNetworkPainter(
+        isComplex: false,
         particleCount: 1,
         particles: [p],
         touchPoint: const Offset(5, 5), // تغيرت نقطة اللمس
@@ -54,6 +56,7 @@ void main() {
       final p2 = MockParticle(position: Offset(10, 10));
 
       final oldPainter = OptimizedNetworkPainter(
+        isComplex: false,
         particleCount: 2,
         particles: [p, p2],
         touchPoint: null,
@@ -69,6 +72,7 @@ void main() {
       p2.accelerate();
 
       final newPainter = OptimizedNetworkPainter(
+        isComplex: false,
         particleCount: 2,
         particles: [p, p2],
         touchPoint: null,
@@ -87,6 +91,7 @@ void main() {
       final p = MockParticle(position: Offset(0, 0));
 
       final painter1 = OptimizedNetworkPainter(
+        isComplex: false,
         particleCount: 1,
         particles: [p],
         touchPoint: null,
@@ -99,6 +104,7 @@ void main() {
       );
 
       final painter2 = OptimizedNetworkPainter(
+        isComplex: false,
         particleCount: 1,
         particles: [p],
         touchPoint: null,

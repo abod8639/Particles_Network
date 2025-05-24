@@ -60,6 +60,9 @@ class ParticleNetwork extends StatefulWidget {
 
   // Dependency injection points:
 
+  /// Whether the painting logic is complex (affects repaint strategy) [default: false]
+  final bool isComplex;
+
   /// Custom particle factory (optional)
   /// If null, uses DefaultParticleFactory
   final IParticleFactory? particleFactory;
@@ -82,6 +85,7 @@ class ParticleNetwork extends StatefulWidget {
     this.particleFactory,
     this.particleController,
     this.linewidth = 0.5,
+    this.isComplex = false,
   });
 
   @override
@@ -169,6 +173,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
             builder:
                 (_, __, ___) => CustomPaint(
                   painter: OptimizedNetworkPainter(
+                    isComplex: widget.isComplex,
                     linewidth: widget.linewidth,
                     particleCount: widget.particleCount,
                     touchActivation: widget.touchActivation,

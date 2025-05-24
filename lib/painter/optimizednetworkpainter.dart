@@ -1,45 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:particles_network/model/particlemodel.dart';
+import 'package:particles_network/painter/ParticleFilter.dart';
+import 'package:particles_network/painter/SpatialGridManager.dart';
 import 'package:particles_network/painter/connection_drawer.dart';
 import 'package:particles_network/painter/distance_calculator.dart';
-import 'package:particles_network/painter/particle_filter.dart';
-import 'package:particles_network/painter/spatial_grid_manager.dart';
 import 'package:particles_network/painter/touch_interaction_handler.dart';
 
-/// The core painter class that renders an optimized particle network visualization.
+/// The main painter class for rendering an optimized particle network
 ///
 /// This class implements CustomPainter to efficiently render:
-/// 1. Individual particles as circles
-/// 2. Dynamic connections between nearby particles
-/// 3. Interactive touch effects
+/// - Individual particles as circles
+/// - Connection lines between nearby particles
+/// - Touch interaction effects
 ///
-/// Performance Optimizations:
-/// - Spatial partitioning grid (O(1) neighbor lookup)
-/// - Cached distance calculations
-/// - Batched drawing operations
-/// - Selective repainting
+/// Optimization Techniques:
+/// 1. Spatial partitioning using grid cells
+/// 2. Distance calculation caching
+/// 3. Visible particle filtering
+/// 4. Batched drawing operations
 class OptimizedNetworkPainter extends CustomPainter {
   // Configuration properties
   final List<Particle> particles; // All particles in the system
   final Offset? touchPoint; // Current touch position (nullable)
-  final double lineDistance; // Max connection distance in pixels
-  final Color particleColor; // Base particle color
-  final Color lineColor; // Connection line color
-  final Color touchColor; // Touch interaction color
-  final bool touchActivation; // Whether touch is enabled
-  final int particleCount; // Total particle count
-  final double linewidth; // Connection line width
+  final double lineDistance; // Max connection distance (in pixels)
+  final Color particleColor; // Base color for particles
+  final Color lineColor; // Color for connection lines
+  final Color touchColor; // Color for touch interactions
+  final bool touchActivation; // Whether touch effects are enabled
+  final int particleCount; // Total particle count (for pre-allocation)
+  final double linewidth; // Width of connection lines
+  final bool isComplex; // Debug mode flag
 
   // Optimized sub-components
-  late final DistanceCalculator _distanceCalculator; // Manages distance math
-  late final ConnectionDrawer _connectionDrawer; // Handles line drawing
-  late final TouchInteractionHandler _touchHandler; // Manages touch effects
+  late final DistanceCalculator
+  _distanceCalculator; // Manages distance calculations
+  late final ConnectionDrawer _connectionDrawer; // Handles connection drawing
+  late final TouchInteractionHandler
+  _touchHandler; // Manages touch interactions
 
   // Reusable painting objects
-  late final Paint _particlePaint; // Configured once for all particles
-  late final Paint _linePaint; // Configured once for all lines
+  late final Paint _particlePaint; // Paint config for particles
+  late final Paint _linePaint; // Paint config for connections
 
-  /// Creates a new particle network painter
+  /// Constructor with dependency initialization
   OptimizedNetworkPainter({
     required this.particleCount,
     required this.particles,
@@ -50,6 +53,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     required this.touchColor,
     required this.touchActivation,
     required this.linewidth,
+    required this.isComplex,
   }) {
     // Initialize particle paint (optimized to do this once)
     _particlePaint =
@@ -66,6 +70,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     // Initialize sub-components with dependency injection
     _distanceCalculator = DistanceCalculator(particleCount);
     _connectionDrawer = ConnectionDrawer(
+      isComplex: isComplex,
       particles: particles,
       particleCount: particleCount,
       lineDistance: lineDistance,
@@ -87,43 +92,48 @@ class OptimizedNetworkPainter extends CustomPainter {
     // Clear previous frame's distance cache
     _distanceCalculator.clearCache();
 
-    // Step 1: Filter visible particles (O(n) operation)
+    // Step 1: Filter visible particles (viewport culling)
     final visibleParticles = ParticleFilter.getVisibleParticles(particles);
 
-    // Step 2: Create spatial grid for efficient proximity checks (O(n))
-    // Grid cell size = lineDistance ensures we only need to check adjacent cells
+    // Step 2: Create spatial grid for efficient proximity checks
+    // Spatial Complexity: O(n) where n = visibleParticles.length
+    // Uses a grid with cellSize = lineDistance for optimal neighbor finding
     final grid = SpatialGridManager.createOptimizedSpatialGrid(
       particles,
       visibleParticles,
       lineDistance, // Cell size matches connection distance
     );
 
-    // Step 3: Draw connections between nearby particles (O(m) where m = connections)
-    // Uses the grid to only check adjacent cells
+    // Step 3: Draw connections between nearby particles
+    // Uses the grid to only check adjacent cells (O(1) neighbor access)
     _connectionDrawer.drawConnections(canvas, grid);
 
-    // Step 4: Handle touch interactions if active (O(k) where k = nearby particles)
+    // Step 4: Handle touch interactions if active
     if (touchPoint != null && touchActivation) {
-      // Physics formula: F = k/d (inverse distance force)
+      // Applies physics: F = k/d (inverse distance force)
       _touchHandler.applyTouchPhysics(visibleParticles);
-
-      // Line opacity formula: α = 255 * (1 - d/d_max)
+      // Draws touch lines with distance-based opacity: α = 1 - d/d_max
       _touchHandler.drawTouchLines(canvas, visibleParticles);
     }
 
-    // Step 5: Draw all visible particles (O(v) where v = visible particles)
+    // Step 5: Draw all visible particles
     _drawParticles(canvas, visibleParticles);
   }
 
   /// Draws individual particles as circles
   ///
-  /// Uses pre-allocated Paint object for efficiency
-  /// Only draws visible particles to save rendering time
+  /// Optimizations:
+  /// - Uses pre-allocated Paint object
+  /// - Only draws visible particles
+  /// - Simple drawCircle operation (hardware accelerated)
   void _drawParticles(Canvas canvas, List<int> visibleParticles) {
     for (final index in visibleParticles) {
       final p = particles[index];
-      // Circle equation: (x-x₀)² + (y-y₀)² = r²
-      canvas.drawCircle(p.position, p.size, _particlePaint);
+      canvas.drawCircle(
+        p.position,
+        p.size, // Particle radius
+        _particlePaint,
+      );
     }
   }
 
