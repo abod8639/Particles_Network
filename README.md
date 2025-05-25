@@ -53,7 +53,7 @@ Add `particles_network` to your project's `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  particles_network: ^1.6.4
+  particles_network: ^1.6.5
 ```
 
 Run:
