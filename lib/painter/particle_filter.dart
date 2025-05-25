@@ -1,7 +1,7 @@
 import 'package:particles_network/model/particlemodel.dart';
 
 /// Class to identify visible particles
-class ParticleFilter {
+class Particlefilter {
   /// Filters and returns a list of indices of visible particles
   static List<int> getVisibleParticles(List<Particle> particles) {
     // Initialize an empty list to store indices of visible particles

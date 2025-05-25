@@ -15,7 +15,7 @@ Transform your app's UI with a breathtaking, high-performance particle network a
 [![pub points](https://img.shields.io/pub/points/device_info_plus?color=0F80C1&label=pub%20points)](https://pub.dev/packages/particles_network/score)
 <p align="left">
   <a href="https://github.com/abod8639/Particles_Network">
-    <img alt="particles_network demo" width="80" src="https://github.com/fluttercommunity/plus_plugins/raw/main/assets/flutter-favorite-badge.png">
+    <img alt="particles_network demo" width="100" src="https://github.com/fluttercommunity/plus_plugins/raw/main/assets/flutter-favorite-badge.png">
   </a>
 </p>
 

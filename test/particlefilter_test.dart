@@ -26,7 +26,7 @@ void main() {
         TestParticle(position: Offset.zero, isVisible: true), // index 4
       ];
 
-      final visibleIndices = ParticleFilter.getVisibleParticles(particles);
+      final visibleIndices = Particlefilter.getVisibleParticles(particles);
 
       // التأكد أن النتيجة هي فقط الجسيمات الظاهرة
       expect(visibleIndices, equals([0, 2, 4]));
@@ -38,7 +38,7 @@ void main() {
         TestParticle(position: Offset.zero, isVisible: false),
       ];
 
-      final visibleIndices = ParticleFilter.getVisibleParticles(particles);
+      final visibleIndices = Particlefilter.getVisibleParticles(particles);
 
       // التأكد أنه لا توجد جسيمات ظاهرة
       expect(visibleIndices, isEmpty);
@@ -50,7 +50,7 @@ void main() {
         (i) => TestParticle(position: Offset.zero, isVisible: true),
       );
 
-      final visibleIndices = ParticleFilter.getVisibleParticles(particles);
+      final visibleIndices = Particlefilter.getVisibleParticles(particles);
 
       // التأكد أن جميع الجسيمات الظاهرة
       expect(visibleIndices, equals([0, 1, 2, 3, 4]));

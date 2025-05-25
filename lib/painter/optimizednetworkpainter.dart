@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:particles_network/model/particlemodel.dart';
 import 'package:particles_network/painter/ParticleFilter.dart';
-import 'package:particles_network/painter/SpatialGridManager.dart';
 import 'package:particles_network/painter/connection_drawer.dart';
 import 'package:particles_network/painter/distance_calculator.dart';
+import 'package:particles_network/painter/spatiall_grid_manager.dart';
 import 'package:particles_network/painter/touch_interaction_handler.dart';
 
 /// The main painter class for rendering an optimized particle network
