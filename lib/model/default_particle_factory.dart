@@ -40,7 +40,7 @@ class DefaultParticleFactory implements IParticleFactory {
     // Generate random velocity vector components:
     // (random.nextDouble() - 0.5) creates values in [-0.5, 0.5]
     // Multiplying by 2*maxSpeed gives range [-maxSpeed, maxSpeed]
-    final velocity = Offset(
+    final Offset velocity = Offset(
       (random.nextDouble() - 0.5) * maxSpeed,
       (random.nextDouble() - 0.5) * maxSpeed,
     );

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:particles_network/model/drid_cell.dart';
 import 'package:particles_network/model/particlemodel.dart';
-import 'package:particles_network/painter/ParticleFilter.dart';
 import 'package:particles_network/painter/connection_drawer.dart';
 import 'package:particles_network/painter/distance_calculator.dart';
+import 'package:particles_network/painter/particle_filter.dart';
 import 'package:particles_network/painter/spatiall_grid_manager.dart';
 import 'package:particles_network/painter/touch_interaction_handler.dart';
 
@@ -93,16 +94,19 @@ class OptimizedNetworkPainter extends CustomPainter {
     _distanceCalculator.clearCache();
 
     // Step 1: Filter visible particles (viewport culling)
-    final visibleParticles = ParticleFilter.getVisibleParticles(particles);
+    final List<int> visibleParticles = ParticleFilter.getVisibleParticles(
+      particles,
+    );
 
     // Step 2: Create spatial grid for efficient proximity checks
     // Spatial Complexity: O(n) where n = visibleParticles.length
     // Uses a grid with cellSize = lineDistance for optimal neighbor finding
-    final grid = SpatialGridManager.createOptimizedSpatialGrid(
-      particles,
-      visibleParticles,
-      lineDistance, // Cell size matches connection distance
-    );
+    final Map<GridCell, List<int>> grid =
+        SpatialGridManager.createOptimizedSpatialGrid(
+          particles,
+          visibleParticles,
+          lineDistance, // Cell size matches connection distance
+        );
 
     // Step 3: Draw connections between nearby particles
     // Uses the grid to only check adjacent cells (O(1) neighbor access)
@@ -128,7 +132,7 @@ class OptimizedNetworkPainter extends CustomPainter {
   /// - Simple drawCircle operation (hardware accelerated)
   void _drawParticles(Canvas canvas, List<int> visibleParticles) {
     for (final index in visibleParticles) {
-      final p = particles[index];
+      final Particle p = particles[index];
       canvas.drawCircle(
         p.position,
         p.size, // Particle radius

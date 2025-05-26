@@ -36,23 +36,23 @@ class SpatialGridManager {
     double cellSize,
   ) {
     // Initialize empty grid using GridCell as key and List<int> as value
-    final grid = <GridCell, List<int>>{};
+    final Map<GridCell, List<int>> grid = <GridCell, List<int>>{};
 
     // Process each visible particle
     for (final i in visibleParticles) {
-      final p = particles[i];
+      final Particle p = particles[i];
 
       // Calculate home cell coordinates using floor division
       // This converts continuous position to discrete grid coordinates
-      final cellX = (p.position.dx / cellSize).floor();
-      final cellY = (p.position.dy / cellSize).floor();
+      final int cellX = (p.position.dx / cellSize).floor();
+      final int cellY = (p.position.dy / cellSize).floor();
 
       // Add particle to 3x3 neighborhood of cells (home cell + 8 neighbors)
       // This ensures we'll find all nearby particles when checking adjacent cells
       for (int nx = -1; nx <= 1; nx++) {
         for (int ny = -1; ny <= 1; ny++) {
           // Create cell coordinate by applying neighborhood offset
-          final cell = GridCell(cellX + nx, cellY + ny);
+          final GridCell cell = GridCell(cellX + nx, cellY + ny);
 
           // Add particle index to this cell's list
           // putIfAbsent creates new list if cell doesn't exist yet

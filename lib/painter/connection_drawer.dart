@@ -56,7 +56,7 @@ class ConnectionDrawer {
   ///   k = average particles per cell (typically small due to spatial partitioning)
   void drawConnections(Canvas canvas, Map<GridCell, List<int>> grid) {
     // Tracks processed particle pairs to avoid duplicate drawing
-    final processed = <int>{};
+    final Set<int> processed = <int>{};
 
     final int factor = isComplex ? 2 : 1;
     final int adjustedParticleCountBase = particleCount ~/ factor;
@@ -64,12 +64,12 @@ class ConnectionDrawer {
     grid.forEach((_, particleIndices) {
       // Compare each particle with others in the same cell
       for (int i = 0; i < particleIndices.length; i++) {
-        final pIndex = particleIndices[i];
-        final p = particles[pIndex];
+        final int pIndex = particleIndices[i];
+        final Particle p = particles[pIndex];
 
         // Only check particles after current to avoid duplicate pairs
         for (int j = i + 1; j < particleIndices.length; j++) {
-          final otherIndex = particleIndices[j];
+          final int otherIndex = particleIndices[j];
 
           // Create unique pair key regardless of order
           final int pairKey = pIndex * adjustedParticleCountBase + otherIndex;
@@ -77,10 +77,13 @@ class ConnectionDrawer {
           // Skip if already processed
           if (!processed.add(pairKey)) continue;
 
-          final other = particles[otherIndex];
+          final Particle other = particles[otherIndex];
 
           // Get distance (uses cached value if available)
-          final distance = distanceCalculator.calculateDistance(p, other);
+          final double distance = distanceCalculator.calculateDistance(
+            p,
+            other,
+          );
 
           // Constant for opacity scaling (currently 1 = full effect)
           const double fursOpacity = 1;
@@ -89,7 +92,7 @@ class ConnectionDrawer {
           if (distance < lineDistance) {
             // Calculate opacity based on normalized distance (0 to 1)
             // Then scale by fursOpacity and convert to 0-255 range
-            final opacity =
+            final int opacity =
                 ((1 - distance / lineDistance) * fursOpacity * 255).toInt();
 
             // Update paint with new alpha value

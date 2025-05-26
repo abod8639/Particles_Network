@@ -57,7 +57,7 @@ class ParticleUpdater implements IParticleController {
   @override
   void updateParticles(List<Particle> particles, Size bounds) {
     // Process each particle using basic Euler integration
-    for (final p in particles) {
+    for (final Particle p in particles) {
       p.update(bounds);
     }
 

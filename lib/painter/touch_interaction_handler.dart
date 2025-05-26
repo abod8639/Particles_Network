@@ -36,11 +36,11 @@ class TouchInteractionHandler {
   /// Applies touch physics to visible particles
   /// [visibleParticles] - List of indices of currently visible particles
   void applyTouchPhysics(List<int> visibleParticles) {
-    final touch = touchPoint;
+    final Offset? touch = touchPoint;
     if (touch == null) return; // Exit if no current touch
 
     for (final i in visibleParticles) {
-      final p = particles[i];
+      final Particle p = particles[i];
       // Calculate distance from particle to touch point
       final distance = (p.position - touch).distance - test;
 
@@ -48,7 +48,7 @@ class TouchInteractionHandler {
       if (distance < lineDistance) {
         const double force = 0.00111; // Strength of the pull effect
         // Calculate pull vector towards touch point
-        final pull = (touch - p.position) * force;
+        final Offset pull = (touch - p.position) * force;
         // Apply the pull to particle's velocity
         p.velocity += pull;
         // Mark particle as accelerated for visual feedback
@@ -61,7 +61,7 @@ class TouchInteractionHandler {
   /// [canvas] - The canvas to draw on
   /// [visibleParticles] - List of indices of currently visible particles
   void drawTouchLines(Canvas canvas, List<int> visibleParticles) {
-    final touch = touchPoint;
+    final Offset? touch = touchPoint;
     if (touch == null) return; // Exit if no current touch
 
     for (final i in visibleParticles) {
@@ -72,7 +72,7 @@ class TouchInteractionHandler {
       // Only draw lines for particles within the connection distance
       if (distance < lineDistance) {
         // Calculate line opacity based on distance (further = more transparent)
-        final opacity = ((1 - distance / lineDistance) * 255).toInt();
+        final int opacity = ((1 - distance / lineDistance) * 255).toInt();
         // Update paint color with calculated opacity
         linePaint.color = touchColor.withAlpha(opacity.clamp(0, 255));
         // Draw line from particle to touch point

@@ -43,7 +43,7 @@ class DistanceCalculator {
   double calculateDistance(Particle p1, Particle p2) {
     // Generate cache key using bitwise XOR of hash codes
     // This ensures key is identical regardless of parameter order
-    final key = p1.hashCode ^ p2.hashCode;
+    final int key = p1.hashCode ^ p2.hashCode;
 
     // Use Dart's putIfAbsent for thread-safe cache population
     return _cache.putIfAbsent(key, () {

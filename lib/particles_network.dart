@@ -10,7 +10,7 @@ import 'package:particles_network/model/ip_article.dart';
 // Importing particle model
 import 'package:particles_network/model/particlemodel.dart';
 // Importing custom painter for optimized network rendering
-import 'package:particles_network/painter/optimizednetworkpainter.dart';
+import 'package:particles_network/painter/optimized_network_painter.dart';
 
 // Importing default particle factory implementation
 import 'model/default_particle_factory.dart';
