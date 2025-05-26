@@ -26,7 +26,7 @@ class ParticleFilter {
   ///
   /// [particles] - The complete collection of particles to filter
   ///
-  /// Returns: A List<int> containing the indices of all visible particles
+  /// Returns: A List int containing the indices of all visible particles
   ///          in the original list. These indices can be used for efficient
   ///          access to the visible particles without creating new particle objects.
   ///
