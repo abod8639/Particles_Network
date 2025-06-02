@@ -1,7 +1,7 @@
 // File: spatial_grid_manager.dart
 
 // Importing the GridCell model for spatial partitioning
-import 'package:particles_network/model/drid_cell.dart';
+import 'package:particles_network/model/grid_cell.dart';
 // Importing the Particle model
 import 'package:particles_network/model/particlemodel.dart';
 

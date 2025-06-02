@@ -1,6 +1,6 @@
 import 'dart:ui';
 
-import 'package:particles_network/model/drid_cell.dart';
+import 'package:particles_network/model/grid_cell.dart';
 import 'package:particles_network/model/particlemodel.dart';
 import 'package:particles_network/painter/distance_calculator.dart';
 

@@ -1,35 +1,8 @@
 import 'dart:math' as math;
 
+import 'package:particles_network/model/rectangle.dart';
+
 /// Represents a rectangular boundary in 2D space with utility methods
-class Rectangle {
-  final double x, y, width, height;
-
-  const Rectangle(this.x, this.y, this.width, this.height);
-
-  bool contains(double px, double py) {
-    return px >= x && px <= x + width && py >= y && py <= y + height;
-  }
-
-  bool intersects(Rectangle other) {
-    return !(other.x >= x + width ||
-        other.x + other.width <= x ||
-        other.y >= y + height ||
-        other.y + other.height <= y);
-  }
-
-  bool intersectsCircle(double cx, double cy, double radius) {
-    final closestX = math.max(x, math.min(cx, x + width));
-    final closestY = math.max(y, math.min(cy, y + height));
-
-    final distanceX = cx - closestX;
-    final distanceY = cy - closestY;
-
-    return (distanceX * distanceX + distanceY * distanceY) <= (radius * radius);
-  }
-
-  @override
-  String toString() => 'Rectangle(x: $x, y: $y, w: $width, h: $height)';
-}
 
 /// Represents a particle with its index and positionQuadTreeParticle
 class QuadTreeParticle {
@@ -343,11 +316,11 @@ class CompressedQuadTreeNode {
   }
 
   /// Memory optimization: Remove empty children
-  void _optimizeMemory() {
+  void optimizeMemory() {
     children.removeWhere((_, child) => child.particles.isEmpty && child.isLeaf);
 
     for (final child in children.values) {
-      child._optimizeMemory();
+      child.optimizeMemory();
     }
   }
 
@@ -365,91 +338,5 @@ class CompressedQuadTreeNode {
     for (final particle in allParticles) {
       insert(particle);
     }
-  }
-}
-
-/// Main Compressed QuadTree class
-class CompressedQuadTree {
-  late CompressedQuadTreeNode _root;
-  final Rectangle boundary;
-
-  CompressedQuadTree(this.boundary) {
-    _root = CompressedQuadTreeNode(boundary);
-  }
-
-  CompressedQuadTreeNode get root => _root;
-
-  bool insert(QuadTreeParticle particle) {
-    return _root.insert(particle);
-  }
-
-  void buildFromParticles(
-    List<dynamic> particles, // Using dynamic to match original interface
-    List<int> visibleParticles,
-  ) {
-    clear();
-
-    for (final i in visibleParticles) {
-      if (i < particles.length) {
-        final p = particles[i];
-        // Assuming particles have position.dx and position.dy properties
-        insert(QuadTreeParticle(i, p.position.dx, p.position.dy));
-      }
-    }
-
-    // Optimize memory after bulk insertion
-    _root._optimizeMemory();
-  }
-
-  List<int> queryRange(Rectangle range) {
-    return _root.queryRange(range).map((p) => p.index).toList();
-  }
-
-  List<int> queryCircle(double centerX, double centerY, double radius) {
-    return _root
-        .queryCircle(centerX, centerY, radius)
-        .map((p) => p.index)
-        .toList();
-  }
-
-  List<int> findNearbyParticles(double x, double y, double searchRadius) {
-    return queryCircle(x, y, searchRadius);
-  }
-
-  List<int> getAllParticleIndices() {
-    return _root.getAllParticles().map((p) => p.index).toList();
-  }
-
-  void clear() {
-    _root.clear();
-  }
-
-  /// Enhanced statistics with compression metrics
-  Map<String, dynamic> getStats() {
-    return _root.getStats();
-  }
-
-  /// Memory optimization
-  void optimize() {
-    _root._optimizeMemory();
-  }
-
-  /// Rebalance the entire tree
-  void rebalance() {
-    _root.rebalance();
-  }
-
-  /// Check if tree needs rebalancing based on compression metrics
-  bool needsRebalancing() {
-    final stats = getStats();
-    final compressionRatio = stats['compressionRatio'] as double;
-    final sparsityRatio = stats['sparsityRatio'] as double;
-
-    // Rebalance if compression is too low or sparsity is too high
-    return compressionRatio < 0.1 || sparsityRatio > 0.7;
-  }
-
-  void rebuild(List<dynamic> particles, List<int> visibleParticles) {
-    buildFromParticles(particles, visibleParticles);
   }
 }

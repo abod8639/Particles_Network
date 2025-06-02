@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:particles_network/model/drid_cell.dart';
+import 'package:particles_network/model/grid_cell.dart';
 import 'package:particles_network/model/particlemodel.dart';
 import 'package:particles_network/painter/spatiall_grid_manager.dart';
 

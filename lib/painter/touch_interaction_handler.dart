@@ -3,6 +3,7 @@ import 'dart:ui';
 
 // Importing the particle model
 import 'package:particles_network/model/particlemodel.dart';
+// import 'package:test1/model/particlemodel.dart';
 
 /// Class that handles touch interactions with particles
 class TouchInteractionHandler {
@@ -39,10 +40,10 @@ class TouchInteractionHandler {
     final Offset? touch = touchPoint;
     if (touch == null) return; // Exit if no current touch
 
-    for (final i in visibleParticles) {
+    for (final int i in visibleParticles) {
       final Particle p = particles[i];
       // Calculate distance from particle to touch point
-      final distance = (p.position - touch).distance - test;
+      final double distance = (p.position - touch).distance - test;
 
       // Only affect particles within the interaction distance
       if (distance < lineDistance) {
@@ -64,10 +65,10 @@ class TouchInteractionHandler {
     final Offset? touch = touchPoint;
     if (touch == null) return; // Exit if no current touch
 
-    for (final i in visibleParticles) {
-      final p = particles[i];
+    for (final int i in visibleParticles) {
+      final Particle p = particles[i];
       // Calculate distance from particle to touch point
-      final distance = (p.position - touch).distance - test;
+      final double distance = (p.position - touch).distance - test;
 
       // Only draw lines for particles within the connection distance
       if (distance < lineDistance) {

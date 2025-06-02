@@ -3,8 +3,8 @@
 // Importing the GridCell model for spatial partitioning
 // Importing the Particle model
 
-import 'package:test/test/test1/model/drid_cell.dart';
-import 'package:test/test/test1/model/particlemodel.dart';
+import 'package:particles_network/model/grid_cell.dart';
+import 'package:particles_network/model/particlemodel.dart';
 
 /// Class for spatial partitioning of particles using an optimized grid system
 ///

@@ -2,9 +2,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:particles_network/model/particlemodel.dart';
+import 'package:particles_network/model/rectangle.dart';
 import 'package:particles_network/painter/distance_calculator.dart';
 import 'package:particles_network/painter/particle_filter.dart';
 import 'package:particles_network/painter/touch_interaction_handler.dart';
+import 'package:particles_network/quad_tree/compressed_quad_tree.dart';
 import 'package:particles_network/quad_tree/quadtree.dart';
 
 /// The main painter class for rendering an optimized particle network
@@ -66,13 +68,11 @@ class OptimizedNetworkPainter extends CustomPainter {
     // Get viewport dimensions for QuadTree initialization
     final mw = MediaQuery.of(context).size.width + 10;
     final mh = MediaQuery.of(context).size.height + 10;
-    final minfinity = double.infinity;
-    final w = Size(minfinity, minfinity).width;
-    final h = Size(minfinity, minfinity).height;
+
     // final s = Size(width, height)
 
     // Initialize QuadTree with viewport bounds
-    _quadTree = CompressedQuadTree(Rectangle(-5, -5, w, h));
+    _quadTree = CompressedQuadTree(Rectangle(-5, -5, mw, mh));
     // _quadTree = CompressedQuadTree(Rectangle(-5, -5, minfinity, minfinity));
 
     // Initialize particle paint
