@@ -1,378 +1,274 @@
 // File: compressed_quadtree_manager.dart
 
-import 'dart:math' as math;
+import 'dart:math' as math; // Import math library for mathematical operations
 
+// Import necessary model and quadtree implementation
+import 'package:particles_network/model/particlemodel.dart';
 import 'package:particles_network/model/rectangle.dart';
 import 'package:particles_network/quad_tree/compressed_quad_tree.dart';
 
-/// Enhanced Manager class for Compressed QuadTree with advanced optimization
-///
-/// This manager provides additional features for compressed quadtrees:
-/// 1. Adaptive compression based on particle distribution
-/// 2. Memory optimization and rebalancing
-/// 3. Performance monitoring and auto-tuning
-/// 4. Advanced query strategies
-///
-/// Helper class for circle queries
+/// Helper class for circle queries that stores circle parameters
 class CircleQuery {
-  final double x, y, radius;
+  final double x, y, radius; // Center coordinates and radius
   const CircleQuery(this.x, this.y, this.radius);
 }
 
+/// Manages a compressed quadtree with advanced optimization features
 class CompressedQuadTreeManager {
-  CompressedQuadTree? _quadTree;
-  Rectangle? _worldBounds;
+  CompressedQuadTree? _quadTree; // The underlying quadtree instance
+  Rectangle? _worldBounds; // Boundaries of the world space
 
-  // Performance tracking
-  int _queryCount = 0;
-  int _insertCount = 0;
-  DateTime? _lastOptimization;
+  // Performance tracking variables
+  int _queryCount = 0; // Counts total queries performed
+  int _insertCount = 0; // Counts total insert operations
+  DateTime? _lastOptimization; // Timestamp of last optimization
 
-  // Adaptive parameters
-  double _compressionThreshold = .3;
-  final int _optimizationInterval = 1000; // operations between optimizations
+  // Adaptive parameters for tree optimization
+  double _compressionThreshold = .3; // Threshold for node compression (0-1)
+  final int _optimizationInterval = 1000; // Operations between optimizations
 
-  /// Initialize with enhanced bounds calculation
+  /// Initializes quadtree with specified world boundaries
+  /// [minX], [minY]: Bottom-left corner coordinates
+  /// [maxX], [maxY]: Top-right corner coordinates
   void initialize(double minX, double minY, double maxX, double maxY) {
+    // Create rectangle representing world bounds
+    // Width and height are calculated as (max - min)
     _worldBounds = Rectangle(minX, minY, maxX - minX, maxY - minY);
+
+    // Initialize the compressed quadtree with these bounds
     _quadTree = CompressedQuadTree(_worldBounds!);
+
+    // Reset performance counters
     _resetPerformanceCounters();
   }
 
-  /// Build tree with compression optimization
-  void buildTree(List<dynamic> particles, List<int> visibleParticles) {
+  /// Builds the tree from particles with compression optimization
+  /// [particles]: Complete list of particles
+  /// [visibleParticles]: Indices of currently visible particles to include
+  void buildTree(List<Particle> particles, List<int> visibleParticles) {
+    // Initialize tree if not already done
     if (_quadTree == null) {
       _initializeFromParticles(particles, visibleParticles);
     }
 
+    // Build tree from the visible particles
     _quadTree!.buildFromParticles(particles, visibleParticles);
+
+    // Update insert counter
     _insertCount += visibleParticles.length;
 
-    // Auto-optimize if needed
+    // Check if optimization is needed based on operation counts
     _checkAutoOptimization();
   }
 
-  /// Enhanced initialization with adaptive bounds
+  /// Initializes tree bounds based on particle positions with statistical padding
   void _initializeFromParticles(
-    List<dynamic> particles,
+    List<Particle> particles,
     List<int> visibleParticles,
   ) {
+    // Handle empty particle list case
     if (visibleParticles.isEmpty) {
-      initialize(-1, -1, 1, 1);
+      initialize(-1, -1, 1, 1); // Default bounds if no particles
       return;
     }
 
-    // Calculate bounds with statistical analysis
+    // Filter valid particles and extract their positions
     final positions =
         visibleParticles
-            .where((i) => i < particles.length)
-            .map((i) => particles[i])
+            .where((i) => i < particles.length) // Filter invalid indices
+            .map((i) => particles[i]) // Get particle objects
             .toList();
 
+    // Handle case where all indices were invalid
     if (positions.isEmpty) {
       initialize(-1, -1, 1, 1);
       return;
     }
 
-    // Basic bounds
+    // Initialize bounds with first particle's position
     double minX = positions.first.position.dx;
     double minY = positions.first.position.dy;
     double maxX = minX;
     double maxY = minY;
 
+    // Expand bounds to contain all particles using min/max comparisons
     for (final p in positions) {
-      minX = math.min(minX, p.position.dx);
-      minY = math.min(minY, p.position.dy);
-      maxX = math.max(maxX, p.position.dx);
-      maxY = math.max(maxY, p.position.dy);
+      minX = math.min(minX, p.position.dx); // Find minimum x
+      minY = math.min(minY, p.position.dy); // Find minimum y
+      maxX = math.max(maxX, p.position.dx); // Find maximum x
+      maxY = math.max(maxY, p.position.dy); // Find maximum y
     }
 
-    // Adaptive padding based on particle distribution
-    final width = maxX - minX;
-    final height = maxY - minY;
-    final avgDimension = (width + height) / 2;
+    // Calculate adaptive padding based on particle distribution
+    final width = maxX - minX; // Current width of particle distribution
+    final height = maxY - minY; // Current height of particle distribution
+    final avgDimension = (width + height) / 2; // Average dimension
+    double padding = avgDimension * 0.15; // 15% of average dimension as padding
+    padding = math.max(padding, 1.0); // Ensure minimum padding of 1.0
 
-    double padding = avgDimension * 0.15; // 15% padding
-    padding = math.max(padding, 1.0);
-
-    // Ensure minimum useful size
+    // Adjust bounds if they're too small in either dimension
     if (width < padding) {
-      final center = minX + width / 2;
-      minX = center - padding / 2;
-      maxX = center + padding / 2;
+      final center = minX + width / 2; // Calculate center x
+      minX = center - padding / 2; // Expand left
+      maxX = center + padding / 2; // Expand right
     }
 
     if (height < padding) {
-      final center = minY + height / 2;
-      minY = center - padding / 2;
-      maxY = center + padding / 2;
+      final center = minY + height / 2; // Calculate center y
+      minY = center - padding / 2; // Expand bottom
+      maxY = center + padding / 2; // Expand top
     }
 
+    // Initialize with expanded bounds including padding
     initialize(minX - padding, minY - padding, maxX + padding, maxY + padding);
   }
 
-  /// Optimized rectangular query with performance tracking
+  /// Queries particles within a rectangular area
+  /// Returns list of particle indices within the specified rectangle
+  /// Uses axis-aligned bounding box (AABB) intersection test
   List<int> queryRectangle(double x, double y, double width, double height) {
     if (_quadTree == null) return const [];
 
-    _queryCount++;
-
-    // استخدام final لتوضيح أن المتغير لن يتغير بعد إنشائه
+    _queryCount++; // Increment query counter
     final searchArea = Rectangle(x, y, width, height);
-
     return _quadTree!.queryRange(searchArea);
   }
 
-  /// Optimized circular query with caching hints
+  /// Queries particles within a circular area
+  /// Uses Euclidean distance formula: sqrt((x2-x1)² + (y2-y1)²) <= radius
   List<int> queryCircle(double centerX, double centerY, double radius) {
     if (_quadTree == null) return [];
-
-    _queryCount++;
+    _queryCount++; // Increment query counter
     return _quadTree!.queryCircle(centerX, centerY, radius);
   }
 
-  /// Enhanced nearby particle search with adaptive radius
+  /// Finds nearby particles with adaptive search radius
+  /// Radius increases based on local particle density
   List<int> findNearbyParticles(dynamic particle, double searchRadius) {
     if (_quadTree == null) return [];
 
-    // Adaptive search radius based on tree density
+    // Calculate adaptive radius based on density
     final stats = getTreeStats();
+    // Particle density = total particles / total nodes
     final particleDensity = stats['particles'] / stats['nodes'];
+    // Increase radius proportionally to density (1% per density unit)
     final adaptiveRadius = searchRadius * (1.0 + particleDensity / 100.0);
 
-    List<int> nearby = _quadTree!.findNearbyParticles(
+    // Perform query with adaptive radius
+    return _quadTree!.findNearbyParticles(
       particle.position.dx,
       particle.position.dy,
       adaptiveRadius,
     );
-
-    return nearby;
   }
 
-  /// Advanced collision detection with spatial optimization
+  /// Gets potential collision candidates for a particle
+  /// Uses circular query and filters out the particle itself
   List<int> getCollisionCandidates(
     int particleIndex,
     List<dynamic> particles,
     double collisionRadius,
   ) {
+    // Validate input
     if (_quadTree == null || particleIndex >= particles.length) return [];
 
+    // Get target particle
     final targetParticle = particles[particleIndex];
 
-    // Use hierarchical search for better performance
+    // Find all particles within collision radius
     List<int> candidates = queryCircle(
       targetParticle.position.dx,
       targetParticle.position.dy,
       collisionRadius,
     );
 
+    // Remove the particle itself from candidates
     candidates.removeWhere((index) => index == particleIndex);
     return candidates;
   }
 
-  /// Intelligent tree update with selective rebuilding
-  void updateTree(List<dynamic> particles, List<int> visibleParticles) {
+  /// Updates the tree with current particle positions
+  /// Decides whether to rebuild or optimize based on tree statistics
+  void updateTree(List<Particle> particles, List<int> visibleParticles) {
     if (_quadTree == null) {
       buildTree(particles, visibleParticles);
       return;
     }
 
-    // Check if we should rebuild or just optimize
-    if (_shouldRebuildTree()) {
-      buildTree(particles, visibleParticles);
-    } else {
-      // Incremental update (simplified approach)
-      _quadTree!.optimize();
-    }
+    _quadTree!.optimize(); // Always optimize before update
   }
 
-  /// Enhanced statistics with compression metrics
+  /// Gets comprehensive tree statistics including performance metrics
   Map<String, dynamic> getTreeStats() {
-    if (_quadTree == null) {
-      return {
-        'nodes': 0,
-        'leaves': 0,
-        'particles': 0,
-        'maxDepth': 0,
-        'compressedNodes': 0,
-        'sparseNodes': 0,
-        'compressionRatio': 0.0,
-        'sparsityRatio': 0.0,
-      };
-    }
+    if (_quadTree == null) return _emptyStats();
 
+    // Get basic tree statistics
     final stats = _quadTree!.getStats();
 
     // Add performance metrics
-    stats['queryCount'] = _queryCount;
-    stats['insertCount'] = _insertCount;
-    stats['avgQueriesPerNode'] =
-        _queryCount / math.max(1, stats['nodes'] as int);
-
+    stats.addAll({
+      'queryCount': _queryCount,
+      'insertCount': _insertCount,
+      // Average queries per node (measure of query concentration)
+      'avgQueriesPerNode': _queryCount / math.max(1, stats['nodes'] as int),
+    });
     return stats;
   }
 
-  /// Performance monitoring and auto-tuning
+  /// Checks if optimization should be performed based on operation count
   void _checkAutoOptimization() {
-    final totalOperations = _queryCount + _insertCount;
-
-    if (totalOperations >= _optimizationInterval) {
+    // Check if total operations reached optimization interval
+    if ((_queryCount + _insertCount) >= _optimizationInterval) {
       _performAutoOptimization();
       _resetPerformanceCounters();
       _lastOptimization = DateTime.now();
     }
   }
 
-  /// Perform automatic optimization based on usage patterns
+  /// Performs automatic optimization based on usage patterns
   void _performAutoOptimization() {
     if (_quadTree == null) return;
 
+    // Get current tree statistics
     final stats = _quadTree!.getStats();
     final compressionRatio = stats['compressionRatio'] as double;
     final sparsityRatio = stats['sparsityRatio'] as double;
 
-    // Adjust compression threshold based on performance
+    // Adjust compression based on workload characteristics
     if (compressionRatio < 0.2 && _queryCount > _insertCount) {
-      // Query-heavy workload, optimize for search
-      _compressionThreshold *= 0.9;
-      _quadTree!.rebalance();
+      // If tree is under-compressed and query-heavy, favor query performance
+      _compressionThreshold *= 0.9; // Reduce compression threshold
+      _quadTree!.rebalance(); // Rebalance the tree
     } else if (sparsityRatio > 0.6 && _insertCount > _queryCount) {
-      // Insert-heavy workload, optimize for updates
-      _compressionThreshold *= 1.1;
-      _quadTree!.optimize();
+      // If tree is sparse and insertion-heavy, favor insertion performance
+      _compressionThreshold *= 1.1; // Increase compression threshold
     }
 
-    // Memory optimization
+    // Perform the optimization
     _quadTree!.optimize();
   }
 
-  /// Advanced rebuild decision logic
-  bool _shouldRebuildTree() {
-    if (_quadTree == null) return true;
-
-    final stats = _quadTree!.getStats();
-    final maxDepth = stats['maxDepth'] as int;
-    final compressionRatio = stats['compressionRatio'] as double;
-    final sparsityRatio = stats['sparsityRatio'] as double;
-
-    // Multiple criteria for rebuilding
-    return maxDepth > 12 ||
-        compressionRatio < 0.1 ||
-        sparsityRatio > 0.8 ||
-        _quadTree!.needsRebalancing();
-  }
-
-  /// Reset performance counters
-  void _resetPerformanceCounters() {
-    _queryCount = 0;
-    _insertCount = 0;
-  }
-
-  /// Manual optimization trigger
-  void optimizeTree() {
-    _quadTree?.optimize();
-  }
-
-  /// Manual rebalancing trigger
-  void rebalanceTree() {
-    _quadTree?.rebalance();
-  }
-
-  /// Advanced multi-query optimization
-  List<int> queryMultipleCircles(List<CircleQuery> circles) {
-    if (_quadTree == null) return [];
-
-    // Optimize overlapping queries
-    final optimizedCircles = _optimizeCircleQueries(circles);
-
-    Set<int> allResults = <int>{};
-    for (final circle in optimizedCircles) {
-      final results = queryCircle(circle.x, circle.y, circle.radius);
-      allResults.addAll(results);
-    }
-
-    return allResults.toList();
-  }
-
-  /// Optimize overlapping circle queries
-  List<CircleQuery> _optimizeCircleQueries(List<CircleQuery> circles) {
-    if (circles.length <= 1) return circles;
-
-    final optimized = <CircleQuery>[];
-    final processed = <bool>[...List.filled(circles.length, false)];
-
-    for (int i = 0; i < circles.length; i++) {
-      if (processed[i]) continue;
-
-      CircleQuery current = circles[i];
-      processed[i] = true;
-
-      // Try to merge with nearby circles
-      for (int j = i + 1; j < circles.length; j++) {
-        if (processed[j]) continue;
-
-        final other = circles[j];
-        if (_circlesOverlap(current, other)) {
-          current = _mergeCircles(current, other);
-          processed[j] = true;
-        }
-      }
-
-      optimized.add(current);
-    }
-
-    return optimized;
-  }
-
-  /// Check if two circles overlap significantly
-  bool _circlesOverlap(CircleQuery a, CircleQuery b) {
-    final dx = a.x - b.x;
-    final dy = a.y - b.y;
-    final distance = math.sqrt(dx * dx + dy * dy);
-    final radiusSum = a.radius + b.radius;
-
-    return distance < radiusSum * 0.8; // 80% overlap threshold
-  }
-
-  /// Merge two overlapping circles into one larger circle
-  CircleQuery _mergeCircles(CircleQuery a, CircleQuery b) {
-    // final dx = b.x - a.x;
-    // final dy = b.y - a.y;
-    final totalWeight = a.radius + b.radius;
-
-    final centerX = (a.x * a.radius + b.x * b.radius) / totalWeight;
-    final centerY = (a.y * a.radius + b.y * b.radius) / totalWeight;
-
-    // أبسط طريقة لتوسيع نصف القطر بعد الدمج: اجمع نصفي القطر مع معامل تصحيح
-    final newRadius = (a.radius + b.radius) * 0.6;
-
-    return CircleQuery(centerX, centerY, newRadius);
-  }
-
-  /// Get performance metrics
-  Map<String, dynamic> getPerformanceMetrics() {
-    final stats = getTreeStats();
-    return {
-      ...stats,
-      'compressionThreshold': _compressionThreshold,
-      'optimizationInterval': _optimizationInterval,
-      'lastOptimization': _lastOptimization?.toIso8601String() ?? 'Never',
-      'queriesPerSecond': _calculateQPS(),
-    };
-  }
-
-  /// Calculate queries per second
-  double _calculateQPS() {
-    if (_lastOptimization == null) return 0.0;
-
-    final elapsed = DateTime.now().difference(_lastOptimization!);
-    if (elapsed.inMilliseconds == 0) return 0.0;
-
-    return _queryCount * 1000 / elapsed.inMilliseconds;
-  }
+  /// Returns empty statistics map
+  Map<String, dynamic> _emptyStats() => {
+    'nodes': 0,
+    'leaves': 0,
+    'particles': 0,
+    'maxDepth': 0,
+    'compressedNodes': 0,
+    'sparseNodes': 0,
+    'compressionRatio': 0.0,
+    'sparsityRatio': 0.0,
+  };
 
   // Standard interface methods
   void clear() => _quadTree?.clear();
   bool get isInitialized => _quadTree != null;
   Rectangle? get worldBounds => _worldBounds;
+  void _resetPerformanceCounters() {
+    _queryCount = 0;
+    _insertCount = 0;
+  }
+
+  void optimizeTree() => _quadTree?.optimize();
+  void rebalanceTree() => _quadTree?.rebalance();
 }
