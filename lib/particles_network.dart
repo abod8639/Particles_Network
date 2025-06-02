@@ -5,11 +5,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 // Importing scheduler for animation tickers
 import 'package:flutter/scheduler.dart';
-// Importing particle interface
 import 'package:particles_network/model/ip_article.dart';
-// Importing particle model
 import 'package:particles_network/model/particlemodel.dart';
-// Importing custom painter for optimized network rendering
 import 'package:particles_network/painter/optimized_network_painter.dart';
 
 // Importing default particle factory implementation
@@ -61,6 +58,10 @@ class ParticleNetwork extends StatefulWidget {
   /// Whether the painting logic is complex (affects repaint strategy) [default: false]
   final bool isComplex;
 
+  final bool fill;
+
+  final bool drawnetwork;
+
   // Dependency injection points:
 
   /// Custom particle factory (optional)
@@ -77,7 +78,7 @@ class ParticleNetwork extends StatefulWidget {
     this.particleCount = 60,
     this.touchActivation = true,
     this.maxSpeed = 0.5,
-    this.maxSize = 3.5,
+    this.maxSize = 1.5,
     this.lineDistance = 100,
     this.particleColor = Colors.white,
     this.lineColor = const Color.fromARGB(255, 100, 255, 180),
@@ -86,14 +87,16 @@ class ParticleNetwork extends StatefulWidget {
     this.particleController,
     this.linewidth = 0.5,
     this.isComplex = false,
+    this.fill = true,
+    this.drawnetwork = true,
   });
 
   @override
-  State<ParticleNetwork> createState() => ParticleNetworkState();
+  State<ParticleNetwork> createState() => ParticleNetwork1State();
 }
 
 /// The stateful logic and animation controller for the ParticleNetwork widget
-class ParticleNetworkState extends State<ParticleNetwork>
+class ParticleNetwork1State extends State<ParticleNetwork>
     with SingleTickerProviderStateMixin {
   // Core data structures:
   final List<Particle> particles = []; // All particles in the system
@@ -127,7 +130,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
     // Animation loop (runs at ~60fps when visible)
     ticker = createTicker((elapsed) {
       controller.updateParticles(particles, currentSize);
-      frameNotifier.value = elapsed.inMilliseconds; // Trigger repaint
+      frameNotifier.value = elapsed.inMicroseconds; // Trigger repaint
     })..start();
   }
 
@@ -157,7 +160,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
-      builder: (_, constraints) {
+      builder: (context, constraints) {
         // Regenerate particles if size changed
         _generateParticles(constraints.biggest);
 
@@ -171,8 +174,12 @@ class ParticleNetworkState extends State<ParticleNetwork>
           child: ValueListenableBuilder<int>(
             valueListenable: frameNotifier,
             builder:
-                (_, __, ___) => CustomPaint(
+                (context, __, ___) => CustomPaint(
                   painter: OptimizedNetworkPainter(
+                    // showQuadTree: false,
+                    drawnetwork: widget.drawnetwork,
+                    fill: widget.fill,
+                    context: context,
                     isComplex: widget.isComplex,
                     linewidth: widget.linewidth,
                     particleCount: widget.particleCount,

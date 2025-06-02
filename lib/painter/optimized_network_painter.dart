@@ -1,11 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
-import 'package:particles_network/model/drid_cell.dart';
 import 'package:particles_network/model/particlemodel.dart';
-import 'package:particles_network/painter/connection_drawer.dart';
 import 'package:particles_network/painter/distance_calculator.dart';
 import 'package:particles_network/painter/particle_filter.dart';
-import 'package:particles_network/painter/spatiall_grid_manager.dart';
 import 'package:particles_network/painter/touch_interaction_handler.dart';
+import 'package:particles_network/quad_tree/quadtree.dart';
 
 /// The main painter class for rendering an optimized particle network
 ///
@@ -15,10 +15,11 @@ import 'package:particles_network/painter/touch_interaction_handler.dart';
 /// - Touch interaction effects
 ///
 /// Optimization Techniques:
-/// 1. Spatial partitioning using grid cells
+/// 1. Spatial partitioning using QuadTree
 /// 2. Distance calculation caching
 /// 3. Visible particle filtering
 /// 4. Batched drawing operations
+/// 5. Conditional rendering based on visibility
 class OptimizedNetworkPainter extends CustomPainter {
   // Configuration properties
   final List<Particle> particles; // All particles in the system
@@ -31,15 +32,17 @@ class OptimizedNetworkPainter extends CustomPainter {
   final int particleCount; // Total particle count (for pre-allocation)
   final double linewidth; // Width of connection lines
   final bool isComplex; // Debug mode flag
+  final BuildContext context; // Build context for media queries
+  final bool fill; // Whether to fill particles or stroke them
+  final bool drawnetwork; // Whether to draw connection lines
+  final bool showQuadTree; // Whether to visualize QuadTree structure
 
   // Optimized sub-components
-  late final DistanceCalculator
-  _distanceCalculator; // Manages distance calculations
-  late final ConnectionDrawer _connectionDrawer; // Handles connection drawing
-  late final TouchInteractionHandler
-  _touchHandler; // Manages touch interactions
+  late final DistanceCalculator _distanceCalculator;
+  late final TouchInteractionHandler _touchHandler;
+  late final CompressedQuadTree _quadTree; // Changed to CompressedQuadTree
 
-  // Reusable painting objects
+  // Reusable painting objects (initialized once for performance)
   late final Paint _particlePaint; // Paint config for particles
   late final Paint _linePaint; // Paint config for connections
 
@@ -55,30 +58,38 @@ class OptimizedNetworkPainter extends CustomPainter {
     required this.touchActivation,
     required this.linewidth,
     required this.isComplex,
+    required this.context,
+    required this.fill,
+    required this.drawnetwork,
+    this.showQuadTree = false, // Default to false
   }) {
-    // Initialize particle paint (optimized to do this once)
+    // Get viewport dimensions for QuadTree initialization
+    final mw = MediaQuery.of(context).size.width + 10;
+    final mh = MediaQuery.of(context).size.height + 10;
+    final minfinity = double.infinity;
+    final w = Size(minfinity, minfinity).width;
+    final h = Size(minfinity, minfinity).height;
+    // final s = Size(width, height)
+
+    // Initialize QuadTree with viewport bounds
+    _quadTree = CompressedQuadTree(Rectangle(-5, -5, w, h));
+    // _quadTree = CompressedQuadTree(Rectangle(-5, -5, minfinity, minfinity));
+
+    // Initialize particle paint
     _particlePaint =
         Paint()
-          ..color = particleColor
-          ..style = PaintingStyle.fill;
+          ..style = fill ? PaintingStyle.fill : PaintingStyle.stroke
+          ..color = particleColor;
 
     // Initialize line paint with stroke configuration
     _linePaint =
         Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = linewidth;
+          ..style = fill ? PaintingStyle.stroke : PaintingStyle.fill
+          ..strokeWidth = linewidth
+          ..color = lineColor; // Added line color
 
     // Initialize sub-components with dependency injection
     _distanceCalculator = DistanceCalculator(particleCount);
-    _connectionDrawer = ConnectionDrawer(
-      isComplex: isComplex,
-      particles: particles,
-      particleCount: particleCount,
-      lineDistance: lineDistance,
-      lineColor: lineColor,
-      linePaint: _linePaint,
-      distanceCalculator: _distanceCalculator,
-    );
     _touchHandler = TouchInteractionHandler(
       particles: particles,
       touchPoint: touchPoint,
@@ -90,63 +101,140 @@ class OptimizedNetworkPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Clear previous frame's distance cache
     _distanceCalculator.clearCache();
 
-    // Step 1: Filter visible particles (viewport culling)
     final List<int> visibleParticles = ParticleFilter.getVisibleParticles(
       particles,
     );
 
-    // Step 2: Create spatial grid for efficient proximity checks
-    // Spatial Complexity: O(n) where n = visibleParticles.length
-    // Uses a grid with cellSize = lineDistance for optimal neighbor finding
-    final Map<GridCell, List<int>> grid =
-        SpatialGridManager.createOptimizedSpatialGrid(
-          particles,
-          visibleParticles,
-          lineDistance, // Cell size matches connection distance
+    _quadTree.clear();
+    if (drawnetwork) {
+      for (int i = 0; i < visibleParticles.length; i++) {
+        final particle = particles[visibleParticles[i]];
+        _quadTree.insert(
+          QuadTreeParticle(
+            visibleParticles[i],
+            particle.position.dx,
+            particle.position.dy,
+          ),
         );
-
-    // Step 3: Draw connections between nearby particles
-    // Uses the grid to only check adjacent cells (O(1) neighbor access)
-    _connectionDrawer.drawConnections(canvas, grid);
-
-    // Step 4: Handle touch interactions if active
-    if (touchPoint != null && touchActivation) {
-      // Applies physics: F = k/d (inverse distance force)
-      _touchHandler.applyTouchPhysics(visibleParticles);
-      // Draws touch lines with distance-based opacity: α = 1 - d/d_max
-      _touchHandler.drawTouchLines(canvas, visibleParticles);
+      }
     }
 
-    // Step 5: Draw all visible particles
-    _drawParticles(canvas, visibleParticles);
+    if (drawnetwork) {
+      _drawConnections(canvas, visibleParticles);
+    }
+
+    if (touchPoint != null && touchActivation) {
+      _touchHandler.drawTouchLines(canvas, visibleParticles);
+      _touchHandler.applyTouchPhysics(visibleParticles);
+      _drawParticles(canvas, visibleParticles);
+    }
+
+    // Optional: Draw QuadTree visualization for debugging
+    //   if (showQuadTree) {
+    //     final quadTreePainter = QuadTreePainter(_quadTree);
+    //     quadTreePainter.paint(canvas, size);
+    //   }
   }
 
   /// Draws individual particles as circles
   ///
   /// Optimizations:
-  /// - Uses pre-allocated Paint object
-  /// - Only draws visible particles
+  /// - Uses pre-allocated Paint object (avoids object creation each frame)
+  /// - Only draws visible particles (reduced draw calls)
   /// - Simple drawCircle operation (hardware accelerated)
   void _drawParticles(Canvas canvas, List<int> visibleParticles) {
     for (final index in visibleParticles) {
       final Particle p = particles[index];
       canvas.drawCircle(
-        p.position,
+        p.position, // Center point
         p.size, // Particle radius
-        _particlePaint,
+        _particlePaint, // Pre-configured paint
       );
     }
   }
 
+  /// Draw connections between nearby particles using QuadTree
+  ///
+  /// Algorithm:
+  /// 1. For each particle, query nearby particles using QuadTree
+  /// 2. Calculate distance to each nearby particle
+  /// 3. Draw line if within max distance, with opacity based on distance
+  ///
+  /// Optimizations:
+  /// - Uses QuadTree for O(log n) proximity queries instead of O(n²)
+  /// - Distance calculation caching
+  /// - Skips duplicate connections (i < j)
+  /// - Distance-based opacity creates visual depth
+  void _drawConnections(Canvas canvas, List<int> visibleParticles) {
+    int maxLinesPerDenseParticle = 3; //
+    int denseThreshold = lineDistance ~/ 3; //
+
+    for (final index in visibleParticles) {
+      final Particle particle = particles[index];
+
+      final List<int> nearbyParticles = _quadTree.findNearbyParticles(
+        particle.position.dx,
+        particle.position.dy,
+        lineDistance,
+      );
+
+      // 👇 نحذف الجسيمات ذات الفهرس الأقل لتجنب تكرار الخطوط
+      final filteredNearby = nearbyParticles.where((i) => i > index).toList();
+
+      // 👇 نحسب المسافة بين الجسيم الحالي وكل جسيم قريب
+      final List<_ConnectionCandidate> connections =
+          filteredNearby
+              .map(
+                (i) => _ConnectionCandidate(
+                  index: i,
+                  distance: _calculateDistance(
+                    particle.position,
+                    particles[i].position,
+                  ),
+                ),
+              )
+              .where((c) => c.distance <= lineDistance)
+              .toList();
+
+      // 👇 إذا كانت المنطقة كثيفة نرسم فقط أقرب الخطوط
+      if (connections.length > denseThreshold) {
+        connections.sort((a, b) => a.distance.compareTo(b.distance));
+        connections.removeRange(maxLinesPerDenseParticle, connections.length);
+      }
+
+      for (final connection in connections) {
+        final nearbyParticle = particles[connection.index];
+        final int opacity =
+            ((1 - connection.distance / lineDistance) * 255).toInt();
+        _linePaint.color = lineColor.withAlpha(opacity.clamp(0, 255));
+        canvas.drawLine(particle.position, nearbyParticle.position, _linePaint);
+      }
+    }
+  }
+
+  /// Calculate distance between two points with caching
+  double _calculateDistance(Offset p1, Offset p2) {
+    // Use Euclidean distance
+    final dx = p1.dx - p2.dx;
+    final dy = p1.dy - p2.dy;
+    return math.sqrt(dx * dx + dy * dy);
+  }
+
   @override
   bool shouldRepaint(OptimizedNetworkPainter oldDelegate) {
-    // Only repaint when:
-    // 1. Touch position changes, or
-    // 2. Any particle was accelerated (position changed)
     return oldDelegate.touchPoint != touchPoint ||
-        particles.any((p) => p.wasAccelerated);
+        particles.any((p) => p.wasAccelerated) ||
+        oldDelegate.lineDistance != lineDistance ||
+        oldDelegate.particleColor != particleColor ||
+        oldDelegate.lineColor != lineColor;
   }
+}
+
+class _ConnectionCandidate {
+  final int index;
+  final double distance;
+
+  _ConnectionCandidate({required this.index, required this.distance});
 }
