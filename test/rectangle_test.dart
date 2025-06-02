@@ -11,6 +11,26 @@ void main() {
       expect(rect.height, equals(40));
     });
 
+    group('edge getters', () {
+      const rect = Rectangle(10, 20, 30, 40);
+
+      test('right returns correct x-coordinate of right edge', () {
+        expect(rect.right, equals(40)); // 10 + 30
+      });
+
+      test('bottom returns correct y-coordinate of bottom edge', () {
+        expect(rect.bottom, equals(60)); // 20 + 40
+      });
+
+      test('left returns x-coordinate', () {
+        expect(rect.left, equals(10));
+      });
+
+      test('top returns y-coordinate', () {
+        expect(rect.top, equals(20));
+      });
+    });
+
     group('contains', () {
       const rect = Rectangle(0, 0, 100, 100);
 
