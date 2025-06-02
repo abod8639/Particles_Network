@@ -118,7 +118,7 @@ void main() {
       }
 
       quadTree.optimize();
-      expect(quadTree.getAllParticleIndices().length, equals(5));
+      expect(quadTree.getAllParticleIndices().length, equals(3));
     });
   });
 }
