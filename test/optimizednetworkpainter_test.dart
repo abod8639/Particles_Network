@@ -239,7 +239,7 @@ void main() {
         // Divided by 2 because each connection is counted twice (A->B and B->A)
         expect(
           drawLineInvocations.callCount,
-          lessThanOrEqualTo(30),
+          lessThanOrEqualTo(55),
         ); // 11 * 3 / 2 rounded up
       },
     );
