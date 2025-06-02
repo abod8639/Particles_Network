@@ -92,11 +92,11 @@ class ParticleNetwork extends StatefulWidget {
   });
 
   @override
-  State<ParticleNetwork> createState() => ParticleNetwork1State();
+  State<ParticleNetwork> createState() => ParticleNetworkState();
 }
 
 /// The stateful logic and animation controller for the ParticleNetwork widget
-class ParticleNetwork1State extends State<ParticleNetwork>
+class ParticleNetworkState extends State<ParticleNetwork>
     with SingleTickerProviderStateMixin {
   // Core data structures:
   final List<Particle> particles = []; // All particles in the system
