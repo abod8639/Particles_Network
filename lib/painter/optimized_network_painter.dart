@@ -182,10 +182,8 @@ class OptimizedNetworkPainter extends CustomPainter {
         lineDistance,
       );
 
-      // 👇 نحذف الجسيمات ذات الفهرس الأقل لتجنب تكرار الخطوط
       final filteredNearby = nearbyParticles.where((i) => i > index).toList();
 
-      // 👇 نحسب المسافة بين الجسيم الحالي وكل جسيم قريب
       final List<_ConnectionCandidate> connections =
           filteredNearby
               .map(
