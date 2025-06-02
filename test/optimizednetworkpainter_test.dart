@@ -153,57 +153,60 @@ void main() {
       verify(mockCanvas.drawLine(any, any, any)).called(greaterThan(0));
     });
 
-    testWidgets('limits connections in dense areas and ensures closest connections are kept', (tester) async {
-      await setUpTest(tester);
+    testWidgets(
+      'limits connections in dense areas and ensures closest connections are kept',
+      (tester) async {
+        await setUpTest(tester);
 
-      // Create a cluster of particles close together - vary distances for sorting test
-      final centerParticle = MockParticle(position: const Offset(100, 100));
-      final surroundingParticles = List.generate(6, (i) {
-        final angle = i * (math.pi / 3); // Distribute in circle
-        // Vary distances (10, 20, 30 pixels) to test sorting
-        final distance = 10.0 + (i % 3) * 10; 
-        return MockParticle(
-          position: Offset(
-            100 + distance * math.cos(angle),
-            100 + distance * math.sin(angle),
-          ),
+        // Create a cluster of particles close together - vary distances for sorting test
+        final centerParticle = MockParticle(position: const Offset(100, 100));
+        final surroundingParticles = List.generate(6, (i) {
+          final angle = i * (math.pi / 3); // Distribute in circle
+          // Vary distances (10, 20, 30 pixels) to test sorting
+          final distance = 10.0 + (i % 3) * 10;
+          return MockParticle(
+            position: Offset(
+              100 + distance * math.cos(angle),
+              100 + distance * math.sin(angle),
+            ),
+          );
+        });
+
+        final painter = OptimizedNetworkPainter(
+          context: testContext,
+          drawnetwork: true,
+          fill: true,
+          isComplex: false,
+          particleCount: 7, // Center + 6 surrounding
+          particles: [centerParticle, ...surroundingParticles],
+          touchPoint: null,
+          lineDistance: 100, // Large enough to connect all particles
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          touchColor: Colors.red,
+          touchActivation: true,
+          linewidth: 1.0,
         );
-      });
 
-      final painter = OptimizedNetworkPainter(
-        context: testContext,
-        drawnetwork: true,
-        fill: true,
-        isComplex: false,
-        particleCount: 7, // Center + 6 surrounding
-        particles: [centerParticle, ...surroundingParticles],
-        touchPoint: null,
-        lineDistance: 100, // Large enough to connect all particles
-        particleColor: Colors.white,
-        lineColor: Colors.grey,
-        touchColor: Colors.red,
-        touchActivation: true,
-        linewidth: 1.0,
-      );
+        painter.paint(mockCanvas, testScreenSize);
 
-      painter.      paint(mockCanvas, testScreenSize);
+        // Verify that:
+        // 1. drawLine is called a limited number of times
+        // 2. Closest connections are kept (particles at 10px should be connected)
+        // 3. Furthest connections are dropped (particles at 30px should not be connected)
+        //
+        // Since denseThreshold = lineDistance ~/ 3 and maxLinesPerDenseParticle = 3,
+        // we expect only 3 connections per particle (closest ones) despite having 6 nearby particles
+        final drawLineInvocations = verify(mockCanvas.drawLine(any, any, any));
+        expect(
+          drawLineInvocations.callCount,
+          lessThanOrEqualTo(21),
+        ); // 7 particles * 3 max connections
 
-      // Verify that:
-      // 1. drawLine is called a limited number of times
-      // 2. Closest connections are kept (particles at 10px should be connected)
-      // 3. Furthest connections are dropped (particles at 30px should not be connected)
-      // 
-      // Since denseThreshold = lineDistance ~/ 3 and maxLinesPerDenseParticle = 3,
-      // we expect only 3 connections per particle (closest ones) despite having 6 nearby particles
-      final drawLineInvocations = verify(mockCanvas.drawLine(any, any, any));
-      expect(
-        drawLineInvocations.callCount,
-        lessThanOrEqualTo(21),
-      ); // 7 particles * 3 max connections
-      
-      // Verify that closest connections are kept by checking that particles
-      // at distance=10 are always connected before particles at distance=30
-    });
+        // Verify that closest connections are kept by checking that particles
+        // at distance=10 are always connected before particles at distance=30
+      },
+    );
 
     testWidgets(
       'limits and sorts connections when density threshold is exceeded',
