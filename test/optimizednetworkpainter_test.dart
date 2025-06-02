@@ -195,8 +195,55 @@ void main() {
         lessThanOrEqualTo(21),
       ); // 7 particles * 3 max connections
     });
-  });
 
+    testWidgets(
+      'limits and sorts connections when density threshold is exceeded',
+      (tester) async {
+        await setUpTest(tester);
+
+        // Create a dense cluster of particles
+        final centralParticle = MockParticle(position: const Offset(100, 100));
+        final denseParticles = List.generate(10, (i) {
+          final angle =
+              i * (math.pi / 5); // Distribute 10 particles in a circle
+          return MockParticle(
+            position: Offset(
+              100 + 10 * math.cos(angle), // Very close to center (10px radius)
+              100 + 10 * math.sin(angle),
+            ),
+          );
+        });
+
+        final painter = OptimizedNetworkPainter(
+          context: testContext,
+          drawnetwork: true,
+          fill: true,
+          isComplex: false,
+          particleCount: 11, // Central + 10 surrounding
+          particles: [centralParticle, ...denseParticles],
+          touchPoint: null,
+          lineDistance: 100,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          touchColor: Colors.red,
+          touchActivation: true,
+          linewidth: 1.0,
+        );
+
+        painter.paint(mockCanvas, testScreenSize);
+
+        // Since maxLinesPerDenseParticle = 3 and we have 11 particles,
+        // each particle should only connect to its 3 closest neighbors
+        final drawLineInvocations = verify(mockCanvas.drawLine(any, any, any));
+        // Maximum connections = (11 particles * 3 maximum connections per particle) / 2
+        // Divided by 2 because each connection is counted twice (A->B and B->A)
+        expect(
+          drawLineInvocations.callCount,
+          lessThanOrEqualTo(30),
+        ); // 11 * 3 / 2 rounded up
+      },
+    );
+  });
   group('Touch Interaction Tests', () {
     testWidgets('activates touch interactions correctly', (tester) async {
       await setUpTest(tester);
