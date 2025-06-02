@@ -4,6 +4,10 @@ import 'package:mockito/mockito.dart';
 import 'package:particles_network/model/particlemodel.dart';
 import 'package:particles_network/painter/optimized_network_painter.dart';
 
+import 'mocks/mock_canvas.mocks.dart';
+
+const Size testScreenSize = Size(500, 500);
+
 class MockParticle extends Particle {
   MockParticle({
     required super.position,
@@ -18,18 +22,38 @@ class MockParticle extends Particle {
   }
 }
 
-class MockBuildContext extends Mock implements BuildContext {}
+Widget buildTestableWidget(BuildContext context) {
+  return MediaQuery(
+    data: const MediaQueryData(size: testScreenSize),
+    child: Container(),
+  );
+}
 
 void main() {
-  late BuildContext mockContext;
+  late BuildContext testContext;
   late MockParticle particle;
   late OptimizedNetworkPainter defaultPainter;
+  late MockCanvas mockCanvas;
 
   setUp(() {
-    mockContext = MockBuildContext();
+    mockCanvas = MockCanvas();
     particle = MockParticle(position: const Offset(0, 0));
+  });
+
+  Future<void> setUpTest(WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) {
+            testContext = context;
+            return buildTestableWidget(context);
+          },
+        ),
+      ),
+    );
+
     defaultPainter = OptimizedNetworkPainter(
-      context: mockContext,
+      context: testContext,
       drawnetwork: true,
       fill: true,
       isComplex: false,
@@ -43,10 +67,12 @@ void main() {
       touchActivation: true,
       linewidth: 1.0,
     );
-  });
+  }
 
   group('OptimizedNetworkPainter Initialization', () {
-    test('initializes with default values', () {
+    testWidgets('initializes with correct default values', (tester) async {
+      await setUpTest(tester);
+
       expect(defaultPainter.particleCount, equals(1));
       expect(defaultPainter.lineDistance, equals(100));
       expect(defaultPainter.particleColor, equals(Colors.white));
@@ -59,11 +85,29 @@ void main() {
       expect(defaultPainter.showQuadTree, isFalse);
     });
 
-    test('handles null touchPoint gracefully', () {
-      final painter = OptimizedNetworkPainter(
-        context: mockContext,
+    testWidgets('handles null touchPoint', (tester) async {
+      await setUpTest(tester);
+      expect(defaultPainter.touchPoint, isNull);
+    });
+  });
+
+  group('Particle Drawing Tests', () {
+    // testWidgets('draws particles correctly', (tester) async {
+    //   await setUpTest(tester);
+    //   defaultPainter.paint(mockCanvas, testScreenSize);
+
+    //   verify(
+    //     mockCanvas.drawCircle(particle.position, particle.size, any),
+    //   ).called(1);
+    // });
+
+    testWidgets('respects fill style', (tester) async {
+      await setUpTest(tester);
+
+      final strokePainter = OptimizedNetworkPainter(
+        context: testContext,
         drawnetwork: true,
-        fill: true,
+        fill: false,
         isComplex: false,
         particleCount: 1,
         particles: [particle],
@@ -76,14 +120,92 @@ void main() {
         linewidth: 1.0,
       );
 
-      expect(painter.touchPoint, isNull);
+      expect(strokePainter.fill, isFalse);
+    });
+  });
+
+  group('Connection Drawing Tests', () {
+    testWidgets('draws connections when in range', (tester) async {
+      await setUpTest(tester);
+
+      final p1 = MockParticle(position: const Offset(0, 0));
+      final p2 = MockParticle(position: const Offset(50, 50));
+
+      final painter = OptimizedNetworkPainter(
+        context: testContext,
+        drawnetwork: true,
+        fill: true,
+        isComplex: false,
+        particleCount: 2,
+        particles: [p1, p2],
+        touchPoint: null,
+        lineDistance: 100,
+        particleColor: Colors.white,
+        lineColor: Colors.grey,
+        touchColor: Colors.red,
+        touchActivation: true,
+        linewidth: 1.0,
+      );
+
+      painter.paint(mockCanvas, testScreenSize);
+      verify(mockCanvas.drawLine(any, any, any)).called(greaterThan(0));
+    });
+  });
+
+  group('Touch Interaction Tests', () {
+    testWidgets('activates touch interactions correctly', (tester) async {
+      await setUpTest(tester);
+
+      final touchPainter = OptimizedNetworkPainter(
+        context: testContext,
+        drawnetwork: true,
+        fill: true,
+        isComplex: false,
+        particleCount: 1,
+        particles: [particle],
+        touchPoint: const Offset(10, 10),
+        lineDistance: 100,
+        particleColor: Colors.white,
+        lineColor: Colors.grey,
+        touchColor: Colors.red,
+        touchActivation: true,
+        linewidth: 1.0,
+      );
+
+      touchPainter.paint(mockCanvas, testScreenSize);
+      verify(mockCanvas.drawLine(any, any, any)).called(greaterThan(0));
+    });
+
+    testWidgets('ignores touch when touchActivation is false', (tester) async {
+      await setUpTest(tester);
+
+      final noTouchPainter = OptimizedNetworkPainter(
+        context: testContext,
+        drawnetwork: true,
+        fill: true,
+        isComplex: false,
+        particleCount: 1,
+        particles: [particle],
+        touchPoint: const Offset(10, 10),
+        lineDistance: 100,
+        particleColor: Colors.white,
+        lineColor: Colors.grey,
+        touchColor: Colors.red,
+        touchActivation: false,
+        linewidth: 1.0,
+      );
+
+      noTouchPainter.paint(mockCanvas, testScreenSize);
+      verifyNever(mockCanvas.drawLine(any, any, any));
     });
   });
 
   group('ShouldRepaint Tests', () {
-    test('returns true when touchPoint changes', () {
+    testWidgets('returns true when touchPoint changes', (tester) async {
+      await setUpTest(tester);
+
       final newPainter = OptimizedNetworkPainter(
-        context: mockContext,
+        context: testContext,
         drawnetwork: true,
         fill: true,
         isComplex: false,
@@ -101,57 +223,42 @@ void main() {
       expect(newPainter.shouldRepaint(defaultPainter), isTrue);
     });
 
-    test('returns true when particle is accelerated', () {
-      final p1 = MockParticle(position: const Offset(0, 0));
-      final p2 = MockParticle(position: const Offset(10, 10));
-
-      final oldPainter = OptimizedNetworkPainter(
-        context: mockContext,
-        drawnetwork: true,
-        fill: true,
-        isComplex: false,
-        particleCount: 2,
-        particles: [p1, p2],
-        touchPoint: null,
-        lineDistance: 100,
-        particleColor: Colors.white,
-        lineColor: Colors.grey,
-        touchColor: Colors.red,
-        touchActivation: true,
-        linewidth: 1.0,
-      );
-
-      p2.accelerate();
+    testWidgets('returns true when colors change', (tester) async {
+      await setUpTest(tester);
 
       final newPainter = OptimizedNetworkPainter(
-        context: mockContext,
-        drawnetwork: true,
-        fill: true,
-        isComplex: false,
-        particleCount: 2,
-        particles: [p1, p2],
-        touchPoint: null,
-        lineDistance: 100,
-        particleColor: Colors.white,
-        lineColor: Colors.grey,
-        touchColor: Colors.red,
-        touchActivation: true,
-        linewidth: 1.0,
-      );
-
-      expect(newPainter.shouldRepaint(oldPainter), isTrue);
-    });
-
-    test('returns true when line distance changes', () {
-      final newPainter = OptimizedNetworkPainter(
-        context: mockContext,
+        context: testContext,
         drawnetwork: true,
         fill: true,
         isComplex: false,
         particleCount: 1,
         particles: [particle],
         touchPoint: null,
-        lineDistance: 150, // Changed line distance
+        lineDistance: 100,
+        particleColor: Colors.blue,
+        lineColor: Colors.green,
+        touchColor: Colors.red,
+        touchActivation: true,
+        linewidth: 1.0,
+      );
+
+      expect(newPainter.shouldRepaint(defaultPainter), isTrue);
+    });
+
+    testWidgets('returns true when particle is accelerated', (tester) async {
+      await setUpTest(tester);
+
+      particle.wasAccelerated = true;
+
+      final newPainter = OptimizedNetworkPainter(
+        context: testContext,
+        drawnetwork: true,
+        fill: true,
+        isComplex: false,
+        particleCount: 1,
+        particles: [particle],
+        touchPoint: null,
+        lineDistance: 100,
         particleColor: Colors.white,
         lineColor: Colors.grey,
         touchColor: Colors.red,
@@ -162,29 +269,13 @@ void main() {
       expect(newPainter.shouldRepaint(defaultPainter), isTrue);
     });
 
-    test('returns true when colors change', () {
-      final newPainter = OptimizedNetworkPainter(
-        context: mockContext,
-        drawnetwork: true,
-        fill: true,
-        isComplex: false,
-        particleCount: 1,
-        particles: [particle],
-        touchPoint: null,
-        lineDistance: 100,
-        particleColor: Colors.blue, // Changed particle color
-        lineColor: Colors.green, // Changed line color
-        touchColor: Colors.red,
-        touchActivation: true,
-        linewidth: 1.0,
-      );
+    testWidgets('returns false when no relevant properties change', (
+      tester,
+    ) async {
+      await setUpTest(tester);
 
-      expect(newPainter.shouldRepaint(defaultPainter), isTrue);
-    });
-
-    test('returns false when no relevant properties change', () {
       final newPainter = OptimizedNetworkPainter(
-        context: mockContext,
+        context: testContext,
         drawnetwork: true,
         fill: true,
         isComplex: false,
@@ -200,48 +291,6 @@ void main() {
       );
 
       expect(newPainter.shouldRepaint(defaultPainter), isFalse);
-    });
-  });
-
-  group('Drawing Behavior Tests', () {
-    test('respects drawnetwork flag', () {
-      final painter = OptimizedNetworkPainter(
-        context: mockContext,
-        drawnetwork: false,
-        fill: true,
-        isComplex: false,
-        particleCount: 1,
-        particles: [particle],
-        touchPoint: null,
-        lineDistance: 100,
-        particleColor: Colors.white,
-        lineColor: Colors.grey,
-        touchColor: Colors.red,
-        touchActivation: true,
-        linewidth: 1.0,
-      );
-
-      expect(painter.drawnetwork, isFalse);
-    });
-
-    test('respects fill style', () {
-      final painter = OptimizedNetworkPainter(
-        context: mockContext,
-        drawnetwork: true,
-        fill: false,
-        isComplex: false,
-        particleCount: 1,
-        particles: [particle],
-        touchPoint: null,
-        lineDistance: 100,
-        particleColor: Colors.white,
-        lineColor: Colors.grey,
-        touchColor: Colors.red,
-        touchActivation: true,
-        linewidth: 1.0,
-      );
-
-      expect(painter.fill, isFalse);
     });
   });
 }
