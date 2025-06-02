@@ -1,5 +1,5 @@
 import 'package:particles_network/model/rectangle.dart';
-import 'package:particles_network/quad_tree/quadtree.dart';
+import 'package:particles_network/quad_tree/compressed_quad_tree_node.dart';
 
 /// Main Compressed QuadTree class
 class CompressedQuadTree {

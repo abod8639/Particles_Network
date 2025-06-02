@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:particles_network/model/rectangle.dart';
 import 'package:particles_network/quad_tree/compressed_quad_tree.dart';
-import 'package:particles_network/quad_tree/quadtree.dart';
+import 'package:particles_network/quad_tree/compressed_quad_tree_node.dart';
 
 void main() {
   late CompressedQuadTree quadTree;

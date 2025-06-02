@@ -65,30 +65,55 @@ class CompressedQuadTreeNode {
       return true;
     }
 
-    // Check if we should compress this path before subdividing
+    // At max capacity, check the distribution of particles including the new one
     if (isLeaf && depth < maxDepth) {
-      _subdivideWithCompression();
+      final allParticles = [...particles, particle];
+      
+      // Group all particles by quadrant
+      final Map<Quadrant, List<QuadTreeParticle>> groups = {};
+      for (final p in allParticles) {
+        final quad = _getQuadrant(p.x, p.y);
+        groups.putIfAbsent(quad, () => []).add(p);
+      }
+
+      // Find dominant quadrant
+      var maxCount = 0;
+      Quadrant? dominantQuad;
+      for (final entry in groups.entries) {
+        if (entry.value.length > maxCount) {
+          maxCount = entry.value.length;
+          dominantQuad = entry.key;
+        }
+      }
+
+      // If all particles are in one quadrant, use path compression
+      if (dominantQuad != null && maxCount == allParticles.length) {
+        final childBoundary = _getChildBoundary(dominantQuad);
+        final childPath = compressedPath?.extend(dominantQuad) ??
+            CompressedPath([dominantQuad], depth + 1);
+        
+        children[dominantQuad] = CompressedQuadTreeNode(
+          childBoundary,
+          depth + 1,
+          childPath,
+        );
+
+        // Move all particles to the child
+        for (final p in allParticles) {
+          children[dominantQuad]!.insert(p);
+        }
+        particles.clear();
+        return true;
+      } else {
+        // Normal subdivision if particles are spread out
+        _subdivideNormal();
+      }
     }
 
     // Try to insert into appropriate child
     if (!isLeaf) {
       final targetQuadrant = _getQuadrant(particle.x, particle.y);
-      if (children.containsKey(targetQuadrant)) {
-        return children[targetQuadrant]!.insert(particle);
-      } else {
-        // Create compressed child if needed
-        final childBoundary = _getChildBoundary(targetQuadrant);
-        final childPath =
-            compressedPath?.extend(targetQuadrant) ??
-            CompressedPath([targetQuadrant], depth + 1);
-
-        children[targetQuadrant] = CompressedQuadTreeNode(
-          childBoundary,
-          depth + 1,
-          childPath,
-        );
-        return children[targetQuadrant]!.insert(particle);
-      }
+      return children[targetQuadrant]?.insert(particle) ?? false;
     }
 
     // Fallback: store in current node if max depth reached
@@ -96,44 +121,7 @@ class CompressedQuadTreeNode {
     return true;
   }
 
-  /// Subdivide with path compression optimization
-  void _subdivideWithCompression() {
-    if (particles.length < minParticlesForCompression) {
-      // Don't compress if we have too few particles
-      _subdivideNormal();
-      return;
-    }
 
-    // Group particles by quadrant to identify compression opportunities
-    final Map<Quadrant, List<QuadTreeParticle>> quadrantGroups = {};
-
-    for (final particle in particles) {
-      final quad = _getQuadrant(particle.x, particle.y);
-      quadrantGroups.putIfAbsent(quad, () => []).add(particle);
-    }
-
-    // Create children only for quadrants that have particles
-    for (final entry in quadrantGroups.entries) {
-      final quadrant = entry.key;
-      final quadParticles = entry.value;
-
-      final childBoundary = _getChildBoundary(quadrant);
-      final childPath =
-          compressedPath?.extend(quadrant) ??
-          CompressedPath([quadrant], depth + 1);
-
-      final child = CompressedQuadTreeNode(childBoundary, depth + 1, childPath);
-
-      // Add particles to child
-      for (final particle in quadParticles) {
-        child.insert(particle);
-      }
-
-      children[quadrant] = child;
-    }
-
-    particles.clear();
-  }
 
   /// Normal subdivision (creates all 4 children)
   void _subdivideNormal() {

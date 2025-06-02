@@ -7,7 +7,7 @@ import 'package:particles_network/painter/distance_calculator.dart';
 import 'package:particles_network/painter/particle_filter.dart';
 import 'package:particles_network/painter/touch_interaction_handler.dart';
 import 'package:particles_network/quad_tree/compressed_quad_tree.dart';
-import 'package:particles_network/quad_tree/quadtree.dart';
+import 'package:particles_network/quad_tree/compressed_quad_tree_node.dart';
 
 /// The main painter class for rendering an optimized particle network
 ///
