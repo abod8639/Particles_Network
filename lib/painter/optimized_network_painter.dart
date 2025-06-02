@@ -66,13 +66,15 @@ class OptimizedNetworkPainter extends CustomPainter {
     this.showQuadTree = false, // Default to false
   }) {
     // Get viewport dimensions for QuadTree initialization
-    final mw = MediaQuery.of(context).size.width + 10;
-    final mh = MediaQuery.of(context).size.height + 10;
+    // final mw = MediaQuery.of(context).size.width + 10;
+    // final mh = double.infinity ;
 
     // final s = Size(width, height)
 
     // Initialize QuadTree with viewport bounds
-    _quadTree = CompressedQuadTree(Rectangle(-5, -5, mw, mh));
+    _quadTree = CompressedQuadTree(
+      Rectangle(-5, -5, double.infinity, double.infinity),
+    );
     // _quadTree = CompressedQuadTree(Rectangle(-5, -5, minfinity, minfinity));
 
     // Initialize particle paint
