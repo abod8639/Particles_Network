@@ -51,20 +51,35 @@ void main() {
       test('returns true for circle intersecting rectangle', () {
         expect(rect.intersectsCircle(50, 50, 10), isTrue); // Circle inside
         expect(rect.intersectsCircle(0, 0, 10), isTrue); // Circle at corner
-        expect(rect.intersectsCircle(-5, 50, 10), isTrue); // Circle intersecting from left
-        expect(rect.intersectsCircle(50, 105, 10), isTrue); // Circle intersecting from bottom
+        expect(
+          rect.intersectsCircle(-5, 50, 10),
+          isTrue,
+        ); // Circle intersecting from left
+        expect(
+          rect.intersectsCircle(50, 105, 10),
+          isTrue,
+        ); // Circle intersecting from bottom
       });
 
       test('returns false for circle not intersecting rectangle', () {
         expect(rect.intersectsCircle(-20, 50, 10), isFalse); // Circle far left
-        expect(rect.intersectsCircle(50, 120, 10), isFalse); // Circle far bottom
-        expect(rect.intersectsCircle(-15, -15, 10), isFalse); // Circle at corner but not touching
+        expect(
+          rect.intersectsCircle(50, 120, 10),
+          isFalse,
+        ); // Circle far bottom
+        expect(
+          rect.intersectsCircle(-15, -15, 10),
+          isFalse,
+        ); // Circle at corner but not touching
       });
     });
 
     test('toString returns correct string representation', () {
       const rect = Rectangle(10, 20, 30, 40);
-      expect(rect.toString(), equals('Rectangle(x: 10.0, y: 20.0, w: 30.0, h: 40.0)'));
+      expect(
+        rect.toString(),
+        equals('Rectangle(x: 10.0, y: 20.0, w: 30.0, h: 40.0)'),
+      );
     });
   });
 }
