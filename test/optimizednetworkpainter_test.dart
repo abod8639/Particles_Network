@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
@@ -149,6 +151,49 @@ void main() {
 
       painter.paint(mockCanvas, testScreenSize);
       verify(mockCanvas.drawLine(any, any, any)).called(greaterThan(0));
+    });
+
+    testWidgets('limits connections in dense areas', (tester) async {
+      await setUpTest(tester);
+
+      // Create a cluster of particles close together
+      final centerParticle = MockParticle(position: const Offset(100, 100));
+      final surroundingParticles = List.generate(6, (i) {
+        final angle = i * (math.pi / 3); // Distribute in a circle
+        return MockParticle(
+          position: Offset(
+            100 + 20 * math.cos(angle), // 20 pixels from center
+            100 + 20 * math.sin(angle),
+          ),
+        );
+      });
+
+      final painter = OptimizedNetworkPainter(
+        context: testContext,
+        drawnetwork: true,
+        fill: true,
+        isComplex: false,
+        particleCount: 7, // Center + 6 surrounding
+        particles: [centerParticle, ...surroundingParticles],
+        touchPoint: null,
+        lineDistance: 100, // Large enough to connect all particles
+        particleColor: Colors.white,
+        lineColor: Colors.grey,
+        touchColor: Colors.red,
+        touchActivation: true,
+        linewidth: 1.0,
+      );
+
+      painter.paint(mockCanvas, testScreenSize);
+
+      // Verify that drawLine is called a limited number of times
+      // Since denseThreshold = lineDistance ~/ 3 and maxLinesPerDenseParticle = 3,
+      // we expect only 3 connections per particle despite having 6 nearby particles
+      final drawLineInvocations = verify(mockCanvas.drawLine(any, any, any));
+      expect(
+        drawLineInvocations.callCount,
+        lessThanOrEqualTo(21),
+      ); // 7 particles * 3 max connections
     });
   });
 

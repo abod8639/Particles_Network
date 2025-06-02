@@ -198,7 +198,6 @@ class OptimizedNetworkPainter extends CustomPainter {
               .where((c) => c.distance <= lineDistance)
               .toList();
 
-      // 👇 إذا كانت المنطقة كثيفة نرسم فقط أقرب الخطوط
       if (connections.length > denseThreshold) {
         connections.sort((a, b) => a.distance.compareTo(b.distance));
         connections.removeRange(maxLinesPerDenseParticle, connections.length);

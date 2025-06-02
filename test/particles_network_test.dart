@@ -142,31 +142,6 @@ void main() {
     });
   });
   group('ParticleNetwork Widget Tests', () {
-    // testWidgets('ParticleNetwork initializes with default values', (
-    //   WidgetTester tester,
-    // ) async {
-    //   await tester.pumpWidget(
-    //     MaterialApp(home: Scaffold(body: ParticleNetwork())),
-    //   );
-
-    //   final particleNetwork = tester.widget<ParticleNetwork>(
-    //     find.byType(ParticleNetwork),
-    //   );
-
-    //   expect(particleNetwork.particleCount, equals(50));
-    //   expect(particleNetwork.maxSpeed, equals(0.5));
-    //   expect(particleNetwork.maxSize, equals(3.5));
-    //   expect(particleNetwork.lineDistance, equals(180));
-    //   expect(particleNetwork.particleColor, equals(Colors.white));
-    //   expect(
-    //     particleNetwork.lineColor,
-    //     equals(const Color.fromARGB(255, 100, 255, 180)),
-    //   );
-    //   expect(particleNetwork.touchColor, equals(Colors.amber));
-    //   expect(particleNetwork.touchActivation, isTrue);
-    //   expect(particleNetwork.linewidth, equals(0.5));
-    // });
-
     testWidgets('ParticleNetwork initializes with custom values', (
       WidgetTester tester,
     ) async {
@@ -213,13 +188,40 @@ void main() {
         MaterialApp(home: Scaffold(body: ParticleNetwork())),
       );
 
-      // Simulate touch down
-      await tester.tapAt(const Offset(100, 100));
+      final stateFinder = find.byType(ParticleNetwork);
+      final state = tester.state<ParticleNetworkState>(stateFinder);
+
+      // Test initial state
+      expect(state.touchPoint, equals(Offset.infinite));
+
+      // Test onPanUpdate
+      final gesture = await tester.startGesture(const Offset(100, 100));
+      await tester.pump();
+      await tester.dragFrom(const Offset(100, 100), const Offset(50, 50));
+      await tester.pump();
+      expect(state.touchPoint, isNot(equals(Offset.infinite)));
+
+      // Test onPanCancel
+      await gesture.cancel();
+      await tester.pump();
+      expect(state.touchPoint, equals(Offset.infinite));
+
+      // Simulate another gesture with exact position check
+      final gesture2 = await tester.startGesture(const Offset(75, 75));
       await tester.pump();
 
-      // Simulate touch up
-      await tester.pump(const Duration(milliseconds: 100));
+      // Move to specific position
+      await gesture2.moveTo(const Offset(125, 125));
       await tester.pump();
+
+      // Verify exact position update
+      expect(state.touchPoint.dx, equals(125));
+      expect(state.touchPoint.dy, equals(125));
+
+      // End gesture and verify reset
+      await gesture2.up();
+      await tester.pump();
+      expect(state.touchPoint, equals(Offset.infinite));
     });
 
     testWidgets('ParticleNetwork uses custom particle factory when provided', (

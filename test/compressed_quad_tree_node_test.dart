@@ -41,14 +41,14 @@ void main() {
 
     test('subdivision occurs when maxParticles exceeded', () {
       // Insert more than maxParticles (2) particles in same quadrant
-      final p1 = QuadTreeParticle(1, 25, 25);  // NW
-      final p2 = QuadTreeParticle(2, 20, 20);  // NW
-      final p3 = QuadTreeParticle(3, 15, 15);  // NW
+      final p1 = QuadTreeParticle(1, 25, 25); // NW
+      final p2 = QuadTreeParticle(2, 20, 20); // NW
+      final p3 = QuadTreeParticle(3, 15, 15); // NW
 
       quadTree.insert(p1);
       quadTree.insert(p2);
-      expect(quadTree.isLeaf, isTrue);  // Still a leaf with 2 particles
-      
+      expect(quadTree.isLeaf, isTrue); // Still a leaf with 2 particles
+
       quadTree.insert(p3);
       expect(quadTree.isLeaf, isFalse); // Should subdivide
     });
@@ -58,10 +58,10 @@ void main() {
     test('compression occurs with sufficient particles', () {
       // Insert enough particles to trigger compression in NW quadrant
       final particles = [
-        QuadTreeParticle(1, 10, 10),  // NW
-        QuadTreeParticle(2, 15, 15),  // NW
-        QuadTreeParticle(3, 20, 20),  // NW
-        QuadTreeParticle(4, 25, 25),  // NW
+        QuadTreeParticle(1, 10, 10), // NW
+        QuadTreeParticle(2, 15, 15), // NW
+        QuadTreeParticle(3, 20, 20), // NW
+        QuadTreeParticle(4, 25, 25), // NW
       ];
 
       for (var i = 0; i < particles.length; i++) {
@@ -70,15 +70,27 @@ void main() {
         print('isLeaf: ${quadTree.isLeaf}');
         print('children count: ${quadTree.children.length}');
         if (!quadTree.isLeaf) {
-          print('child quadrants: ${quadTree.children.keys.map((q) => q.name).join(', ')}');
+          print(
+            'child quadrants: ${quadTree.children.keys.map((q) => q.name).join(', ')}',
+          );
         }
       }
 
-      expect(quadTree.isLeaf, isFalse, reason: 'Tree should not be a leaf after compression');
-      expect(quadTree.children.length, equals(1), 
-             reason: 'Should only have NW quadrant due to compression');
-      expect(quadTree.children.keys.first, equals(Quadrant.northWest),
-             reason: 'Should contain only NW quadrant');
+      expect(
+        quadTree.isLeaf,
+        isFalse,
+        reason: 'Tree should not be a leaf after compression',
+      );
+      expect(
+        quadTree.children.length,
+        equals(1),
+        reason: 'Should only have NW quadrant due to compression',
+      );
+      expect(
+        quadTree.children.keys.first,
+        equals(Quadrant.northWest),
+        reason: 'Should contain only NW quadrant',
+      );
     });
   });
 
@@ -91,7 +103,7 @@ void main() {
 
       final queryBoundary = Rectangle(0, 0, 50, 50);
       final result = quadTree.queryRange(queryBoundary);
-      
+
       expect(result.length, equals(1));
       expect(result.first.index, equals(1));
     });
@@ -105,7 +117,7 @@ void main() {
       quadTree.insert(p2);
 
       final result = quadTree.queryCircle(0, 0, 20);
-      
+
       expect(result.length, equals(1));
       expect(result.first.index, equals(1));
     });
@@ -119,7 +131,7 @@ void main() {
       quadTree.insert(p2);
 
       final stats = quadTree.getStats();
-      
+
       expect(stats['nodes'], isPositive);
       expect(stats['particles'], equals(2));
       expect(stats['leaves'], isPositive);
@@ -131,10 +143,10 @@ void main() {
       final p2 = QuadTreeParticle(2, 75, 75);
       quadTree.insert(p1);
       quadTree.insert(p2);
-      
+
       quadTree.clear();
       quadTree.optimizeMemory();
-      
+
       expect(quadTree.isLeaf, isTrue);
       expect(quadTree.particles, isEmpty);
     });
@@ -151,6 +163,43 @@ void main() {
       final afterStats = quadTree.getStats();
 
       expect(afterStats['particles'], equals(beforeStats['particles']));
+    });
+  });
+
+  group('CompressedPath', () {
+    test('initial construction is correct', () {
+      final path = [Quadrant.northWest, Quadrant.northEast];
+      final compressed = CompressedPath(path, 2);
+
+      expect(compressed.path, equals(path));
+      expect(compressed.depth, equals(2));
+    });
+
+    test('extend method creates new path correctly', () {
+      final initial = CompressedPath([Quadrant.northWest], 1);
+      final extended = initial.extend(Quadrant.northEast);
+
+      expect(extended.path.length, equals(2));
+      expect(extended.path[0], equals(Quadrant.northWest));
+      expect(extended.path[1], equals(Quadrant.northEast));
+      expect(extended.depth, equals(2));
+
+      // Original should be unchanged
+      expect(initial.path.length, equals(1));
+      expect(initial.depth, equals(1));
+    });
+
+    test('toString returns correct format', () {
+      final path = CompressedPath([
+        Quadrant.northWest,
+        Quadrant.southEast,
+        Quadrant.northEast,
+      ], 3);
+
+      expect(
+        path.toString(),
+        equals('Path: northWest->southEast->northEast (depth: 3)'),
+      );
     });
   });
 }

@@ -68,7 +68,7 @@ class CompressedQuadTreeNode {
     // At max capacity, check the distribution of particles including the new one
     if (isLeaf && depth < maxDepth) {
       final allParticles = [...particles, particle];
-      
+
       // Group all particles by quadrant
       final Map<Quadrant, List<QuadTreeParticle>> groups = {};
       for (final p in allParticles) {
@@ -89,9 +89,10 @@ class CompressedQuadTreeNode {
       // If all particles are in one quadrant, use path compression
       if (dominantQuad != null && maxCount == allParticles.length) {
         final childBoundary = _getChildBoundary(dominantQuad);
-        final childPath = compressedPath?.extend(dominantQuad) ??
+        final childPath =
+            compressedPath?.extend(dominantQuad) ??
             CompressedPath([dominantQuad], depth + 1);
-        
+
         children[dominantQuad] = CompressedQuadTreeNode(
           childBoundary,
           depth + 1,
@@ -120,8 +121,6 @@ class CompressedQuadTreeNode {
     particles.add(particle);
     return true;
   }
-
-
 
   /// Normal subdivision (creates all 4 children)
   void _subdivideNormal() {

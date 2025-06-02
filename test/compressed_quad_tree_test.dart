@@ -103,6 +103,37 @@ void main() {
     });
   });
 
+  group('Root Access', () {
+    test('should return root node', () {
+      expect(quadTree.root, isA<CompressedQuadTreeNode>());
+      expect(quadTree.root.boundary, equals(boundary));
+    });
+  });
+
+  group('Rebuild', () {
+    test('should rebuild tree with new particles', () {
+      // Initial build
+      final initialParticles = [_MockParticle(10, 10), _MockParticle(20, 20)];
+      final initialVisible = [0, 1];
+      quadTree.buildFromParticles(initialParticles, initialVisible);
+      expect(quadTree.getAllParticleIndices(), containsAll([0, 1]));
+
+      // Rebuild with new particles
+      final newParticles = [
+        _MockParticle(30, 30),
+        _MockParticle(40, 40),
+        _MockParticle(50, 50),
+      ];
+      final newVisible = [0, 1, 2];
+      quadTree.rebuild(newParticles, newVisible);
+
+      // Verify rebuild results
+      final indices = quadTree.getAllParticleIndices();
+      expect(indices.length, equals(3));
+      expect(indices, containsAll([0, 1, 2]));
+    });
+  });
+
   group('Memory Management', () {
     test('should clear tree', () {
       quadTree.insert(QuadTreeParticle(1, 50, 50));
