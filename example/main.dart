@@ -17,10 +17,10 @@ class MyApp extends StatelessWidget {
         backgroundColor: Colors.black,
         body: ParticleNetwork(
           touchActivation: true, // to Activate touch
-          particleCount: 50, // Number of particles
+          particleCount: 100, // Number of particles
           maxSpeed: 0.5, // Maximum particle speed
           maxSize: 3.5, // Maximum particle size
-          lineDistance: 200, // Maximum distance for connecting lines
+          lineDistance: 100, // Maximum distance for connecting lines
           particleColor: Colors.white,
           lineColor: Colors.greenAccent,
           touchColor: Colors.amber,

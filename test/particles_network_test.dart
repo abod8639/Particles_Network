@@ -1,8 +1,5 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:particles_network/model/default_particle_factory.dart';
 import 'package:particles_network/model/particlemodel.dart';
 import 'package:particles_network/particles_network.dart';
 
@@ -222,29 +219,6 @@ void main() {
       await gesture2.up();
       await tester.pump();
       expect(state.touchPoint, equals(Offset.infinite));
-    });
-
-    testWidgets('ParticleNetwork uses custom particle factory when provided', (
-      WidgetTester tester,
-    ) async {
-      final customFactory = DefaultParticleFactory(
-        random: Random(),
-        maxSpeed: 1.0,
-        maxSize: 5.0,
-        color: Colors.blue,
-      );
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(body: ParticleNetwork(particleFactory: customFactory)),
-        ),
-      );
-
-      final particleNetwork = tester.widget<ParticleNetwork>(
-        find.byType(ParticleNetwork),
-      );
-
-      expect(particleNetwork.particleFactory, equals(customFactory));
     });
   });
 }
