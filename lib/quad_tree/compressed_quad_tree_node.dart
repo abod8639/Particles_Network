@@ -1,27 +1,26 @@
-import 'dart:math' as math;
+import 'dart:math' as math; // For mathematical operations
 
 import 'package:particles_network/model/rectangle.dart';
 
-/// Represents a rectangular boundary in 2D space with utility methods
-
-/// Represents a particle with its index and positionQuadTreeParticle
+/// Represents a particle with index and 2D coordinates
 class QuadTreeParticle {
-  final int index;
-  final double x, y;
+  final int index; // Unique identifier for the particle
+  final double x, y; // Spatial coordinates
 
   const QuadTreeParticle(this.index, this.x, this.y);
 }
 
-/// Enum to represent quadrant directions
+/// Enum representing the four quadrants in 2D space
 enum Quadrant { northWest, northEast, southWest, southEast }
 
-/// Compressed path representation for path compression
+/// Represents a compressed path in the quadtree for optimization
 class CompressedPath {
-  final List<Quadrant> path;
-  final int depth;
+  final List<Quadrant> path; // Sequence of quadrant traversals
+  final int depth; // Depth in the tree
 
   const CompressedPath(this.path, this.depth);
 
+  /// Extends the path with a new quadrant
   CompressedPath extend(Quadrant quad) {
     return CompressedPath([...path, quad], depth + 1);
   }
@@ -31,52 +30,56 @@ class CompressedPath {
       'Path: ${path.map((q) => q.name).join('->')} (depth: $depth)';
 }
 
-/// A compressed node in the QuadTree data structure
+/// A node in the compressed quadtree data structure
 class CompressedQuadTreeNode {
-  static const int maxParticles = 2;
-  static const int maxDepth = 13;
-  static const int minParticlesForCompression =
-      3; // Minimum particles to justify compression
+  // Configuration constants
+  static const int maxParticles =
+      2; // Maximum particles per node before splitting
+  static const int maxDepth = 13; // Maximum recursion depth
+  static const int minParticlesForCompression = 3; // Threshold for compression
 
+  // Spatial boundaries of this node
   final Rectangle boundary;
-  final int depth;
-  final CompressedPath? compressedPath; // Path compression information
+  final int depth; // Current depth in the tree
+  final CompressedPath? compressedPath; // Compression information
 
-  // Storage options
-  final List<QuadTreeParticle> particles = [];
+  // Data storage
+  final List<QuadTreeParticle> particles = []; // Particles in this node
+  final Map<Quadrant, CompressedQuadTreeNode> children = {}; // Child nodes
 
-  // Children - using a Map for sparse representation
-  final Map<Quadrant, CompressedQuadTreeNode> children = {};
-
-  // Compression flags
+  // Status flags
   bool get isCompressed => compressedPath != null;
   bool get isLeaf => children.isEmpty;
   bool get hasOnlyOneChild => children.length == 1;
 
+  /// Constructor with boundary, depth and optional compression path
   CompressedQuadTreeNode(this.boundary, [this.depth = 0, this.compressedPath]);
 
-  /// Insert particle with path compression optimization
+  /// Inserts a particle into the tree with path compression optimization
+  /// Returns true if insertion was successful
   bool insert(QuadTreeParticle particle) {
+    // First check if particle is within this node's boundary
     if (!boundary.contains(particle.x, particle.y)) return false;
 
-    // If we can store here and don't need subdivision
+    // If we have capacity and this is a leaf node, store here
     if (particles.length < maxParticles && isLeaf) {
       particles.add(particle);
       return true;
     }
 
-    // At max capacity, check the distribution of particles including the new one
+    // At capacity but not at max depth - consider subdivision
     if (isLeaf && depth < maxDepth) {
+      // Temporary collection of all particles including new one
       final allParticles = [...particles, particle];
 
-      // Group all particles by quadrant
+      // Group particles by which quadrant they would fall into
       final Map<Quadrant, List<QuadTreeParticle>> groups = {};
       for (final p in allParticles) {
         final quad = _getQuadrant(p.x, p.y);
         groups.putIfAbsent(quad, () => []).add(p);
       }
 
-      // Find dominant quadrant
+      // Find the quadrant with most particles (dominant quadrant)
       var maxCount = 0;
       Quadrant? dominantQuad;
       for (final entry in groups.entries) {
@@ -88,6 +91,7 @@ class CompressedQuadTreeNode {
 
       // If all particles are in one quadrant, use path compression
       if (dominantQuad != null && maxCount == allParticles.length) {
+        // Create compressed child node
         final childBoundary = _getChildBoundary(dominantQuad);
         final childPath =
             compressedPath?.extend(dominantQuad) ??
@@ -99,19 +103,19 @@ class CompressedQuadTreeNode {
           childPath,
         );
 
-        // Move all particles to the child
+        // Move all particles to the compressed child
         for (final p in allParticles) {
           children[dominantQuad]!.insert(p);
         }
         particles.clear();
         return true;
       } else {
-        // Normal subdivision if particles are spread out
+        // Normal subdivision if particles are distributed
         _subdivideNormal();
       }
     }
 
-    // Try to insert into appropriate child
+    // Try to insert into appropriate child if not leaf
     if (!isLeaf) {
       final targetQuadrant = _getQuadrant(particle.x, particle.y);
       return children[targetQuadrant]?.insert(particle) ?? false;
@@ -122,14 +126,14 @@ class CompressedQuadTreeNode {
     return true;
   }
 
-  /// Normal subdivision (creates all 4 children)
+  /// Performs normal subdivision into 4 quadrants
   void _subdivideNormal() {
     final halfWidth = boundary.width / 2;
     final halfHeight = boundary.height / 2;
     final x = boundary.x;
     final y = boundary.y;
 
-    // Create all four children
+    // Create all four child quadrants
     children[Quadrant.northWest] = CompressedQuadTreeNode(
       Rectangle(x, y, halfWidth, halfHeight),
       depth + 1,
@@ -147,9 +151,8 @@ class CompressedQuadTreeNode {
       depth + 1,
     );
 
-    // Redistribute particles
+    // Redistribute particles to children
     final remainingParticles = <QuadTreeParticle>[];
-
     for (final particle in particles) {
       bool inserted = false;
       for (final child in children.values) {
@@ -163,22 +166,25 @@ class CompressedQuadTreeNode {
       }
     }
 
+    // Keep only particles that couldn't be inserted in children
     particles.clear();
     particles.addAll(remainingParticles);
   }
 
-  /// Get quadrant for a point
+  /// Determines which quadrant a point belongs to
   Quadrant _getQuadrant(double x, double y) {
+    // Calculate midpoint of this node's boundary
     final midX = boundary.x + boundary.width / 2;
     final midY = boundary.y + boundary.height / 2;
 
+    // Determine quadrant based on position relative to midpoint
     if (x <= midX && y <= midY) return Quadrant.northWest;
     if (x > midX && y <= midY) return Quadrant.northEast;
     if (x <= midX && y > midY) return Quadrant.southWest;
     return Quadrant.southEast;
   }
 
-  /// Get boundary for a child quadrant
+  /// Gets the boundary rectangle for a child quadrant
   Rectangle _getChildBoundary(Quadrant quadrant) {
     final halfWidth = boundary.width / 2;
     final halfHeight = boundary.height / 2;
@@ -197,13 +203,14 @@ class CompressedQuadTreeNode {
     }
   }
 
-  /// Query range with compression awareness
+  /// Queries particles within a rectangular area
   List<QuadTreeParticle> queryRange(
     Rectangle range, [
     List<QuadTreeParticle>? found,
   ]) {
     found ??= [];
 
+    // First check if query rectangle intersects this node's boundary
     if (!boundary.intersects(range)) return found;
 
     // Check particles in this node
@@ -213,7 +220,7 @@ class CompressedQuadTreeNode {
       }
     }
 
-    // Query existing children only (sparse representation)
+    // Recursively query children
     for (final child in children.values) {
       child.queryRange(range, found);
     }
@@ -221,7 +228,7 @@ class CompressedQuadTreeNode {
     return found;
   }
 
-  /// Query circle with compression awareness
+  /// Queries particles within a circular area
   List<QuadTreeParticle> queryCircle(
     double centerX,
     double centerY,
@@ -230,8 +237,10 @@ class CompressedQuadTreeNode {
   ]) {
     found ??= [];
 
+    // First check if circle intersects this node's boundary
     if (!boundary.intersectsCircle(centerX, centerY, radius)) return found;
 
+    // Pre-calculate squared radius for efficient comparison
     final radiusSquared = radius * radius;
 
     // Check particles in this node
@@ -243,7 +252,7 @@ class CompressedQuadTreeNode {
       }
     }
 
-    // Query existing children only
+    // Recursively query children
     for (final child in children.values) {
       child.queryCircle(centerX, centerY, radius, found);
     }
@@ -251,7 +260,7 @@ class CompressedQuadTreeNode {
     return found;
   }
 
-  /// Get all particles including compressed paths
+  /// Collects all particles in this subtree
   List<QuadTreeParticle> getAllParticles([
     List<QuadTreeParticle>? allParticles,
   ]) {
@@ -265,27 +274,31 @@ class CompressedQuadTreeNode {
     return allParticles;
   }
 
-  /// Clear with compression cleanup
+  /// Clears all particles and children from this node
   void clear() {
     particles.clear();
     children.clear();
   }
 
-  /// Get comprehensive statistics including compression info
+  /// Gathers statistics about the tree structure
   Map<String, dynamic> getStats() {
-    int nodeCount = 1;
+    int nodeCount = 1; // Count this node
     int leafCount = isLeaf ? 1 : 0;
     int particleCount = particles.length;
-    int maxDepth = depth;
+    int currentMaxDepth = depth;
     int compressedNodes = isCompressed ? 1 : 0;
     int sparseNodes = children.length < 4 && !isLeaf ? 1 : 0;
 
+    // Aggregate statistics from children
     for (final child in children.values) {
       final childStats = child.getStats();
       nodeCount += childStats['nodes'] as int;
       leafCount += childStats['leaves'] as int;
       particleCount += childStats['particles'] as int;
-      maxDepth = math.max(maxDepth, childStats['maxDepth'] as int);
+      currentMaxDepth = math.max(
+        currentMaxDepth,
+        childStats['maxDepth'] as int,
+      );
       compressedNodes += childStats['compressedNodes'] as int;
       sparseNodes += childStats['sparseNodes'] as int;
     }
@@ -294,7 +307,7 @@ class CompressedQuadTreeNode {
       'nodes': nodeCount,
       'leaves': leafCount,
       'particles': particleCount,
-      'maxDepth': maxDepth,
+      'maxDepth': currentMaxDepth,
       'compressedNodes': compressedNodes,
       'sparseNodes': sparseNodes,
       'compressionRatio': compressedNodes / nodeCount,
@@ -302,16 +315,18 @@ class CompressedQuadTreeNode {
     };
   }
 
-  /// Memory optimization: Remove empty children
+  /// Optimizes memory usage by removing empty leaf nodes
   void optimizeMemory() {
+    // Remove empty leaf children
     children.removeWhere((_, child) => child.particles.isEmpty && child.isLeaf);
 
+    // Recursively optimize children
     for (final child in children.values) {
       child.optimizeMemory();
     }
   }
 
-  /// Advanced: Rebalance tree with compression
+  /// Rebalances the tree by rebuilding its structure
   void rebalance() {
     if (isLeaf) return;
 
@@ -321,7 +336,7 @@ class CompressedQuadTreeNode {
     // Clear current structure
     clear();
 
-    // Reinsert with new compression strategy
+    // Rebuild with optimal structure
     for (final particle in allParticles) {
       insert(particle);
     }
