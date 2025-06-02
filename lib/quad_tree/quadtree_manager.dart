@@ -21,10 +21,10 @@ class CompressedQuadTreeManager {
   // Performance tracking variables
   int _queryCount = 0; // Counts total queries performed
   int _insertCount = 0; // Counts total insert operations
-  DateTime? _lastOptimization; // Timestamp of last optimization
+  DateTime? lastOptimization; // Timestamp of last optimization
 
   // Adaptive parameters for tree optimization
-  double _compressionThreshold = .3; // Threshold for node compression (0-1)
+  double compressionThreshold = .3; // Threshold for node compression (0-1)
   final int _optimizationInterval = 1000; // Operations between optimizations
 
   /// Initializes quadtree with specified world boundaries
@@ -221,7 +221,7 @@ class CompressedQuadTreeManager {
     if ((_queryCount + _insertCount) >= _optimizationInterval) {
       _performAutoOptimization();
       _resetPerformanceCounters();
-      _lastOptimization = DateTime.now();
+      lastOptimization = DateTime.now();
     }
   }
 
@@ -237,11 +237,11 @@ class CompressedQuadTreeManager {
     // Adjust compression based on workload characteristics
     if (compressionRatio < 0.2 && _queryCount > _insertCount) {
       // If tree is under-compressed and query-heavy, favor query performance
-      _compressionThreshold *= 0.9; // Reduce compression threshold
+      compressionThreshold *= 0.9; // Reduce compression threshold
       _quadTree!.rebalance(); // Rebalance the tree
     } else if (sparsityRatio > 0.6 && _insertCount > _queryCount) {
       // If tree is sparse and insertion-heavy, favor insertion performance
-      _compressionThreshold *= 1.1; // Increase compression threshold
+      compressionThreshold *= 1.1; // Increase compression threshold
     }
 
     // Perform the optimization

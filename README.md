@@ -13,8 +13,11 @@ Transform your Flutter app's UI with a breathtaking, high-performance particle n
   [![Codecov](https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg)]()
   [![pub points](https://img.shields.io/pub/points/device_info_plus?color=0F80C1&label=pub%20points)](https://pub.dev/packages/particles_network/score)
 
+</div>
+
+<div align="lift">
   <a href="https://github.com/abod8639/Particles_Network">
-    <img alt="Flutter Favorite" width="100" src="https://github.com/fluttercommunity/plus_plugins/raw/main/assets/flutter-favorite-badge.png">
+    <img alt="Flutter Favorite" width="150" src="https://github.com/fluttercommunity/plus_plugins/raw/main/assets/flutter-favorite-badge.png">
   </a>
 </div>
 
@@ -53,7 +56,7 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  particles_network: ^1.7.0
+  particles_network: ^1.7.1
 ```
 
 Or use Flutter CLI:
@@ -216,7 +219,7 @@ This advanced spatial partitioning allows the particle system to efficiently han
 
 ## 🤝 Contributing
 
-We welcome contributions! See our [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions! See our [Contributing Guide](https://github.com/abod8639) for details.
 
 ## 📄 License
 
