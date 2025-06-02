@@ -205,12 +205,12 @@ class MockCanvas extends _i1.Mock implements _i2.Canvas {
         returnValueForMissingStub: null,
       );
 
-  @override
-  void drawRSuperellipse(RSuperellipse rsuperellipse, _i2.Paint paint) =>
-      super.noSuchMethod(
-        Invocation.method(#drawRSuperellipse, [rsuperellipse, paint]),
-        returnValueForMissingStub: null,
-      );
+  // @override
+  // void drawRSuperellipse(RSuperellipse rsuperellipse, _i2.Paint paint) =>
+  //     super.noSuchMethod(
+  //       Invocation.method(#drawRSuperellipse, [rsuperellipse, paint]),
+  //       returnValueForMissingStub: null,
+  //     );
 
   @override
   void drawOval(_i2.Rect? rect, _i2.Paint? paint) => super.noSuchMethod(
