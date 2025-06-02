@@ -5,6 +5,7 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:typed_data' as _i3;
 import 'dart:ui' as _i2;
+import 'dart:ui' show RSuperellipse;
 
 import 'package:mockito/mockito.dart' as _i1;
 
@@ -125,7 +126,7 @@ class MockCanvas extends _i1.Mock implements _i2.Canvas {
 
   @override
   void clipRSuperellipse(
-    _i2.RSuperellipse? rsuperellipse, {
+    RSuperellipse? rsuperellipse, {
     bool? doAntiAlias = true,
   }) => super.noSuchMethod(
     Invocation.method(
@@ -205,7 +206,7 @@ class MockCanvas extends _i1.Mock implements _i2.Canvas {
       );
 
   @override
-  void drawRSuperellipse(_i2.RSuperellipse rsuperellipse, _i2.Paint paint) =>
+  void drawRSuperellipse(RSuperellipse rsuperellipse, _i2.Paint paint) =>
       super.noSuchMethod(
         Invocation.method(#drawRSuperellipse, [rsuperellipse, paint]),
         returnValueForMissingStub: null,
