@@ -15,11 +15,7 @@ Transform your Flutter app's UI with a breathtaking, high-performance particle n
 
 </div>
 
-<div align="lift">
-  <a href="https://github.com/abod8639/Particles_Network">
-    <img alt="Flutter Favorite" width="150" src="https://github.com/fluttercommunity/plus_plugins/raw/main/assets/flutter-favorite-badge.png">
-  </a>
-</div>
+
 
 ## ✨ Features
 
@@ -56,7 +52,7 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  particles_network: ^1.7.1
+  particles_network: ^1.7.2
 ```
 
 Or use Flutter CLI:

@@ -19,12 +19,12 @@ extension CompressedQuadTreeManagerExtensions on CompressedQuadTreeManager {
 
     // Calculate particle density (particles per node)
     // math.max(1, stats['nodes']) prevents division by zero
-    final density = stats['particles'] / math.max(1, stats['nodes']);
+    final dynamic density = stats['particles'] / math.max(1, stats['nodes']);
 
     // Calculate adaptive radius:
     // - Base factor of 0.8 (minimum radius multiplier)
     // - Plus density/50 (increases radius with higher density)
-    final adaptiveRadius = radius * (0.8 + density / 50.0);
+    final double adaptiveRadius = radius * (0.8 + density / 50.0);
 
     // Perform circle query with adaptive radius
     return queryCircle(x, y, adaptiveRadius);
@@ -45,7 +45,7 @@ extension CompressedQuadTreeManagerExtensions on CompressedQuadTreeManager {
     // Calculate radius of circle that would inscribe the square:
     // radius = (sideLength * √2)/2 ≈ sideLength * 0.707
     // This covers the entire square area while being more efficient to query
-    final radius = sideLength * 0.707; // sqrt(2)/2 approximation
+    final double radius = sideLength * 0.707; // sqrt(2)/2 approximation
 
     // Perform circle query that approximates the square
     return queryCircle(centerX, centerY, radius);
@@ -61,7 +61,7 @@ extension CompressedQuadTreeManagerExtensions on CompressedQuadTreeManager {
     final results = <List<int>>[];
 
     // Optimize query order by spatial locality
-    final optimizedQueries = _optimizeBatchQueries(queries);
+    final List<CircleQuery> optimizedQueries = _optimizeBatchQueries(queries);
 
     // Process each optimized query
     for (final query in optimizedQueries) {
@@ -100,8 +100,8 @@ extension CompressedQuadTreeManagerExtensions on CompressedQuadTreeManager {
   int _zOrder(double x, double y) {
     // Convert coordinates to integers (16-bit precision)
     // & 0xFFFF ensures we only use 16 bits (0-65535)
-    final ix = (x * 1000).toInt() & 0xFFFF; // X coordinate
-    final iy = (y * 1000).toInt() & 0xFFFF; // Y coordinate
+    final int ix = (x * 1000).toInt() & 0xFFFF; // X coordinate
+    final int iy = (y * 1000).toInt() & 0xFFFF; // Y coordinate
 
     // Initialize Z-order value
     int z = 0;

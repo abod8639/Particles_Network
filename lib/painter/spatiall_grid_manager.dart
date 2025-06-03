@@ -39,7 +39,7 @@ class SpatialGridManager {
     final Map<GridCell, List<int>> grid = <GridCell, List<int>>{};
 
     // Process each visible particle
-    for (final i in visibleParticles) {
+    for (final int i in visibleParticles) {
       final Particle p = particles[i];
 
       // Calculate home cell coordinates using floor division

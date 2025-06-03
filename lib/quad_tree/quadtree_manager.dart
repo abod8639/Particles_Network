@@ -73,7 +73,7 @@ class CompressedQuadTreeManager {
     }
 
     // Filter valid particles and extract their positions
-    final positions =
+    final List<Particle> positions =
         visibleParticles
             .where((i) => i < particles.length) // Filter invalid indices
             .map((i) => particles[i]) // Get particle objects
@@ -100,21 +100,22 @@ class CompressedQuadTreeManager {
     }
 
     // Calculate adaptive padding based on particle distribution
-    final width = maxX - minX; // Current width of particle distribution
-    final height = maxY - minY; // Current height of particle distribution
-    final avgDimension = (width + height) / 2; // Average dimension
+    final double width = maxX - minX; // Current width of particle distribution
+    final double height =
+        maxY - minY; // Current height of particle distribution
+    final double avgDimension = (width + height) / 2; // Average dimension
     double padding = avgDimension * 0.15; // 15% of average dimension as padding
     padding = math.max(padding, 1.0); // Ensure minimum padding of 1.0
 
     // Adjust bounds if they're too small in either dimension
     if (width < padding) {
-      final center = minX + width / 2; // Calculate center x
+      final double center = minX + width / 2; // Calculate center x
       minX = center - padding / 2; // Expand left
       maxX = center + padding / 2; // Expand right
     }
 
     if (height < padding) {
-      final center = minY + height / 2; // Calculate center y
+      final double center = minY + height / 2; // Calculate center y
       minY = center - padding / 2; // Expand bottom
       maxY = center + padding / 2; // Expand top
     }
@@ -130,7 +131,7 @@ class CompressedQuadTreeManager {
     if (_quadTree == null) return const [];
 
     _queryCount++; // Increment query counter
-    final searchArea = Rectangle(x, y, width, height);
+    final Rectangle searchArea = Rectangle(x, y, width, height);
     return _quadTree!.queryRange(searchArea);
   }
 
@@ -144,7 +145,7 @@ class CompressedQuadTreeManager {
 
   /// Finds nearby particles with adaptive search radius
   /// Radius increases based on local particle density
-  List<int> findNearbyParticles(dynamic particle, double searchRadius) {
+  List<int> findNearbyParticles(Particle particle, double searchRadius) {
     if (_quadTree == null) return [];
 
     // Calculate adaptive radius based on density
@@ -166,14 +167,14 @@ class CompressedQuadTreeManager {
   /// Uses circular query and filters out the particle itself
   List<int> getCollisionCandidates(
     int particleIndex,
-    List<dynamic> particles,
+    List<Particle> particles,
     double collisionRadius,
   ) {
     // Validate input
     if (_quadTree == null || particleIndex >= particles.length) return [];
 
     // Get target particle
-    final targetParticle = particles[particleIndex];
+    final Particle targetParticle = particles[particleIndex];
 
     // Find all particles within collision radius
     List<int> candidates = queryCircle(
@@ -203,7 +204,7 @@ class CompressedQuadTreeManager {
     if (_quadTree == null) return _emptyStats();
 
     // Get basic tree statistics
-    final stats = _quadTree!.getStats();
+    final Map<String, dynamic> stats = _quadTree!.getStats();
 
     // Add performance metrics
     stats.addAll({
@@ -231,8 +232,8 @@ class CompressedQuadTreeManager {
 
     // Get current tree statistics
     final stats = _quadTree!.getStats();
-    final compressionRatio = stats['compressionRatio'] as double;
-    final sparsityRatio = stats['sparsityRatio'] as double;
+    final double compressionRatio = stats['compressionRatio'] as double;
+    final double sparsityRatio = stats['sparsityRatio'] as double;
 
     // Adjust compression based on workload characteristics
     if (compressionRatio < 0.2 && _queryCount > _insertCount) {

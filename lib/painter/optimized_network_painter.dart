@@ -173,7 +173,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     int maxLinesPerDenseParticle = 3; //
     int denseThreshold = lineDistance ~/ 3; //
 
-    for (final index in visibleParticles) {
+    for (final int index in visibleParticles) {
       final Particle particle = particles[index];
 
       final List<int> nearbyParticles = _quadTree.findNearbyParticles(
@@ -182,7 +182,8 @@ class OptimizedNetworkPainter extends CustomPainter {
         lineDistance,
       );
 
-      final filteredNearby = nearbyParticles.where((i) => i > index).toList();
+      final List<int> filteredNearby =
+          nearbyParticles.where((i) => i > index).toList();
 
       final List<_ConnectionCandidate> connections =
           filteredNearby
@@ -204,7 +205,7 @@ class OptimizedNetworkPainter extends CustomPainter {
       }
 
       for (final connection in connections) {
-        final nearbyParticle = particles[connection.index];
+        final Particle nearbyParticle = particles[connection.index];
         final int opacity =
             ((1 - connection.distance / lineDistance) * 255).toInt();
         _linePaint.color = lineColor.withAlpha(opacity.clamp(0, 255));
@@ -216,8 +217,8 @@ class OptimizedNetworkPainter extends CustomPainter {
   /// Calculate distance between two points with caching
   double _calculateDistance(Offset p1, Offset p2) {
     // Use Euclidean distance
-    final dx = p1.dx - p2.dx;
-    final dy = p1.dy - p2.dy;
+    final double dx = p1.dx - p2.dx;
+    final double dy = p1.dy - p2.dy;
     return math.sqrt(dx * dx + dy * dy);
   }
 

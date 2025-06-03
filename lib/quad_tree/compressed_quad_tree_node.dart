@@ -70,12 +70,12 @@ class CompressedQuadTreeNode {
     // At capacity but not at max depth - consider subdivision
     if (isLeaf && depth < maxDepth) {
       // Temporary collection of all particles including new one
-      final allParticles = [...particles, particle];
+      final List<QuadTreeParticle> allParticles = [...particles, particle];
 
       // Group particles by which quadrant they would fall into
       final Map<Quadrant, List<QuadTreeParticle>> groups = {};
       for (final p in allParticles) {
-        final quad = _getQuadrant(p.x, p.y);
+        final Quadrant quad = _getQuadrant(p.x, p.y);
         groups.putIfAbsent(quad, () => []).add(p);
       }
 
@@ -92,8 +92,8 @@ class CompressedQuadTreeNode {
       // If all particles are in one quadrant, use path compression
       if (dominantQuad != null && maxCount == allParticles.length) {
         // Create compressed child node
-        final childBoundary = _getChildBoundary(dominantQuad);
-        final childPath =
+        final Rectangle childBoundary = _getChildBoundary(dominantQuad);
+        final CompressedPath childPath =
             compressedPath?.extend(dominantQuad) ??
             CompressedPath([dominantQuad], depth + 1);
 
@@ -117,7 +117,7 @@ class CompressedQuadTreeNode {
 
     // Try to insert into appropriate child if not leaf
     if (!isLeaf) {
-      final targetQuadrant = _getQuadrant(particle.x, particle.y);
+      final Quadrant targetQuadrant = _getQuadrant(particle.x, particle.y);
       return children[targetQuadrant]?.insert(particle) ?? false;
     }
 
@@ -128,10 +128,10 @@ class CompressedQuadTreeNode {
 
   /// Performs normal subdivision into 4 quadrants
   void _subdivideNormal() {
-    final halfWidth = boundary.width / 2;
-    final halfHeight = boundary.height / 2;
-    final x = boundary.x;
-    final y = boundary.y;
+    final double halfWidth = boundary.width / 2;
+    final double halfHeight = boundary.height / 2;
+    final double x = boundary.x;
+    final double y = boundary.y;
 
     // Create all four child quadrants
     children[Quadrant.northWest] = CompressedQuadTreeNode(
@@ -174,8 +174,8 @@ class CompressedQuadTreeNode {
   /// Determines which quadrant a point belongs to
   Quadrant _getQuadrant(double x, double y) {
     // Calculate midpoint of this node's boundary
-    final midX = boundary.x + boundary.width / 2;
-    final midY = boundary.y + boundary.height / 2;
+    final double midX = boundary.x + boundary.width / 2;
+    final double midY = boundary.y + boundary.height / 2;
 
     // Determine quadrant based on position relative to midpoint
     if (x <= midX && y <= midY) return Quadrant.northWest;
@@ -186,10 +186,10 @@ class CompressedQuadTreeNode {
 
   /// Gets the boundary rectangle for a child quadrant
   Rectangle _getChildBoundary(Quadrant quadrant) {
-    final halfWidth = boundary.width / 2;
-    final halfHeight = boundary.height / 2;
-    final x = boundary.x;
-    final y = boundary.y;
+    final double halfWidth = boundary.width / 2;
+    final double halfHeight = boundary.height / 2;
+    final double x = boundary.x;
+    final double y = boundary.y;
 
     switch (quadrant) {
       case Quadrant.northWest:
@@ -214,14 +214,14 @@ class CompressedQuadTreeNode {
     if (!boundary.intersects(range)) return found;
 
     // Check particles in this node
-    for (final particle in particles) {
+    for (final QuadTreeParticle particle in particles) {
       if (range.contains(particle.x, particle.y)) {
         found.add(particle);
       }
     }
 
     // Recursively query children
-    for (final child in children.values) {
+    for (final CompressedQuadTreeNode child in children.values) {
       child.queryRange(range, found);
     }
 
@@ -245,15 +245,15 @@ class CompressedQuadTreeNode {
 
     // Check particles in this node
     for (final particle in particles) {
-      final dx = particle.x - centerX;
-      final dy = particle.y - centerY;
+      final double dx = particle.x - centerX;
+      final double dy = particle.y - centerY;
       if (dx * dx + dy * dy <= radiusSquared) {
         found.add(particle);
       }
     }
 
     // Recursively query children
-    for (final child in children.values) {
+    for (final CompressedQuadTreeNode child in children.values) {
       child.queryCircle(centerX, centerY, radius, found);
     }
 
@@ -267,7 +267,7 @@ class CompressedQuadTreeNode {
     allParticles ??= [];
     allParticles.addAll(particles);
 
-    for (final child in children.values) {
+    for (final CompressedQuadTreeNode child in children.values) {
       child.getAllParticles(allParticles);
     }
 
@@ -290,7 +290,7 @@ class CompressedQuadTreeNode {
     int sparseNodes = children.length < 4 && !isLeaf ? 1 : 0;
 
     // Aggregate statistics from children
-    for (final child in children.values) {
+    for (final CompressedQuadTreeNode child in children.values) {
       final childStats = child.getStats();
       nodeCount += childStats['nodes'] as int;
       leafCount += childStats['leaves'] as int;
@@ -321,7 +321,7 @@ class CompressedQuadTreeNode {
     children.removeWhere((_, child) => child.particles.isEmpty && child.isLeaf);
 
     // Recursively optimize children
-    for (final child in children.values) {
+    for (final CompressedQuadTreeNode child in children.values) {
       child.optimizeMemory();
     }
   }
@@ -337,7 +337,7 @@ class CompressedQuadTreeNode {
     clear();
 
     // Rebuild with optimal structure
-    for (final particle in allParticles) {
+    for (final QuadTreeParticle particle in allParticles) {
       insert(particle);
     }
   }
