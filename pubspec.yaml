@@ -7,7 +7,7 @@ repository: https://github.com/abod8639/Particles_Network.git
 homepage: https://github.com/abod8639/Particles_Network
 
 environment:
-  sdk: ^3.7.2
+  sdk: ^3.8.0
   flutter: 3.32.2
 
 dependencies:
