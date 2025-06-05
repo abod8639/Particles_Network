@@ -127,6 +127,61 @@ void main() {
   });
 
   group('Connection Drawing Tests', () {
+    testWidgets('correctly sorts and limits connections in dense areas', (
+      tester,
+    ) async {
+      await setUpTest(tester);
+
+      final centerParticle = MockParticle(position: const Offset(100, 100));
+      final surroundingParticles = List.generate(5, (i) {
+        final angle = (i * math.pi * 2) / 5; // Distribute in a circle
+        final distance = 10.0 * (i + 1); // Still keep increasing distances
+        return MockParticle(
+          position: Offset(
+            100 + distance * math.cos(angle),
+            100 + distance * math.sin(angle),
+          ),
+        );
+      });
+
+      final painter = OptimizedNetworkPainter(
+        context: testContext,
+        drawnetwork: true,
+        fill: true,
+        isComplex: false,
+        particleCount: 6,
+        particles: [centerParticle, ...surroundingParticles],
+        touchPoint: null,
+        lineDistance: 90,
+        particleColor: Colors.white,
+        lineColor: Colors.grey,
+        touchColor: Colors.red,
+        touchActivation: true,
+        linewidth: 1.0,
+      );
+
+      painter.paint(mockCanvas, testScreenSize);
+
+      final drawLineInvocations = verify(mockCanvas.drawLine(any, any, any));
+      expect(
+        drawLineInvocations.callCount,
+        equals(3),
+      ); // Only 3 closest connections
+
+      final calls = drawLineInvocations.captured;
+      final drawnDistances = <double>[];
+      for (int i = 0; i < calls.length; i += 3) {
+        final start = calls[i] as Offset;
+        final end = calls[i + 1] as Offset;
+        drawnDistances.add((end - start).distance);
+      }
+
+      drawnDistances.sort();
+      expect(drawnDistances[0], closeTo(10.0, 0.1));
+      expect(drawnDistances[1], closeTo(20.0, 0.1));
+      expect(drawnDistances[2], closeTo(30.0, 0.1));
+    });
+
     testWidgets('draws connections when in range', (tester) async {
       await setUpTest(tester);
 
