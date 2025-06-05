@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:particles_network/model/ConnectionCandidate.dart';
 import 'package:particles_network/model/particlemodel.dart';
 import 'package:particles_network/model/rectangle.dart';
 import 'package:particles_network/painter/distance_calculator.dart';
@@ -185,10 +186,10 @@ class OptimizedNetworkPainter extends CustomPainter {
       final List<int> filteredNearby =
           nearbyParticles.where((i) => i > index).toList();
 
-      final List<_ConnectionCandidate> connections =
+      final List<ConnectionCandidate> connections =
           filteredNearby
               .map(
-                (i) => _ConnectionCandidate(
+                (i) => ConnectionCandidate(
                   index: i,
                   distance: _calculateDistance(
                     particle.position,
@@ -230,11 +231,4 @@ class OptimizedNetworkPainter extends CustomPainter {
         oldDelegate.particleColor != particleColor ||
         oldDelegate.lineColor != lineColor;
   }
-}
-
-class _ConnectionCandidate {
-  final int index;
-  final double distance;
-
-  _ConnectionCandidate({required this.index, required this.distance});
 }
