@@ -68,7 +68,7 @@ class Particle {
   // Updates the visibility status of the particle based on its position.
   void updateVisibility(Size bounds) {
     // Include a margin to account for particles near the edges of the viewport.
-    const margin = 100.0;
+    const margin = 50.0;
     isVisible =
         position.dx >= -margin &&
         position.dx <= bounds.width + margin &&
