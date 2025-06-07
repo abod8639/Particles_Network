@@ -64,15 +64,15 @@ class Rectangle {
   bool intersectsCircle(double cx, double cy, double radius) {
     // Find closest x-coordinate on rectangle to circle center
     // Clamped between left and right edges
-    final closestX = math.max(x, math.min(cx, x + width));
+    final double closestX = math.max(x, math.min(cx, x + width));
 
     // Find closest y-coordinate on rectangle to circle center
     // Clamped between top and bottom edges
-    final closestY = math.max(y, math.min(cy, y + height));
+    final double closestY = math.max(y, math.min(cy, y + height));
 
     // Calculate distance components
-    final distanceX = cx - closestX;
-    final distanceY = cy - closestY;
+    final double distanceX = cx - closestX;
+    final double distanceY = cy - closestY;
 
     // Compare squared distance to squared radius
     return (distanceX * distanceX + distanceY * distanceY) <= (radius * radius);

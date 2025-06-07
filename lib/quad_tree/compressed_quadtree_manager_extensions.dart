@@ -80,8 +80,8 @@ extension CompressedQuadTreeManagerExtensions on CompressedQuadTreeManager {
   List<CircleQuery> _optimizeBatchQueries(List<CircleQuery> queries) {
     // Sort queries by spatial locality using Z-order approximation
     queries.sort((a, b) {
-      final za = _zOrder(a.x, a.y); // Calculate Z-order for point A
-      final zb = _zOrder(b.x, b.y); // Calculate Z-order for point B
+      final int za = _zOrder(a.x, a.y); // Calculate Z-order for point A
+      final int zb = _zOrder(b.x, b.y); // Calculate Z-order for point B
       return za.compareTo(zb); // Compare Z-order values
     });
 

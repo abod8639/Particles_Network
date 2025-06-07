@@ -194,33 +194,29 @@ class ParticleNetworkState extends State<ParticleNetwork>
           child: ValueListenableBuilder<int>(
             valueListenable: frameNotifier,
             // Rebuild only the CustomPaint when frameNotifier changes
-            builder:
-                (context, __, ___) => CustomPaint(
-                  painter: OptimizedNetworkPainter(
-                    // Configuration passed to the painter:
-                    drawnetwork:
-                        widget.drawnetwork, // Whether to draw connections
-                    fill: widget.fill, // Fill vs stroke particles
-                    context: context,
-                    isComplex: widget.isComplex, // Painting complexity hint
-                    linewidth: widget.linewidth, // Connection line thickness
-                    particleCount: widget.particleCount,
-                    touchActivation:
-                        widget.touchActivation, // Touch interaction
-                    particles: particles, // The particle data
-                    touchPoint: touchPoint, // Current touch position
-                    lineDistance:
-                        widget.lineDistance, // Max connection distance
-                    particleColor: widget.particleColor,
-                    lineColor: widget.lineColor,
-                    touchColor: widget.touchColor,
-                  ),
-                  // Performance optimization flags:
-                  isComplex:
-                      true, // Hint that painting is computationally intensive
-                  willChange: true, // Widget will change frequently (animation)
-                  child: const SizedBox.expand(), // Fill available space
-                ),
+            builder: (context, __, ___) => CustomPaint(
+              painter: OptimizedNetworkPainter(
+                // Configuration passed to the painter:
+                drawnetwork: widget.drawnetwork, // Whether to draw connections
+                fill: widget.fill, // Fill vs stroke particles
+                context: context,
+                isComplex: widget.isComplex, // Painting complexity hint
+                linewidth: widget.linewidth, // Connection line thickness
+                particleCount: widget.particleCount,
+                touchActivation: widget.touchActivation, // Touch interaction
+                particles: particles, // The particle data
+                touchPoint: touchPoint, // Current touch position
+                lineDistance: widget.lineDistance, // Max connection distance
+                particleColor: widget.particleColor,
+                lineColor: widget.lineColor,
+                touchColor: widget.touchColor,
+              ),
+              // Performance optimization flags:
+              isComplex:
+                  true, // Hint that painting is computationally intensive
+              willChange: true, // Widget will change frequently (animation)
+              child: const SizedBox.expand(), // Fill available space
+            ),
           ),
         );
       },

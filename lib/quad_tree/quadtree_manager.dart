@@ -73,11 +73,10 @@ class CompressedQuadTreeManager {
     }
 
     // Filter valid particles and extract their positions
-    final List<Particle> positions =
-        visibleParticles
-            .where((i) => i < particles.length) // Filter invalid indices
-            .map((i) => particles[i]) // Get particle objects
-            .toList();
+    final List<Particle> positions = visibleParticles
+        .where((i) => i < particles.length) // Filter invalid indices
+        .map((i) => particles[i]) // Get particle objects
+        .toList();
 
     // Handle case where all indices were invalid
     if (positions.isEmpty) {
