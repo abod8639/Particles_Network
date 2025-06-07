@@ -52,7 +52,7 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  particles_network: ^1.7.4
+  particles_network: ^1.7.7
 ```
 ```bash
 flutter pub get
