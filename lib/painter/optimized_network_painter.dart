@@ -79,17 +79,15 @@ class OptimizedNetworkPainter extends CustomPainter {
     // _quadTree = CompressedQuadTree(Rectangle(-5, -5, minfinity, minfinity));
 
     // Initialize particle paint
-    _particlePaint =
-        Paint()
-          ..style = fill ? PaintingStyle.fill : PaintingStyle.stroke
-          ..color = particleColor;
+    _particlePaint = Paint()
+      ..style = fill ? PaintingStyle.fill : PaintingStyle.stroke
+      ..color = particleColor;
 
     // Initialize line paint with stroke configuration
-    _linePaint =
-        Paint()
-          ..style = fill ? PaintingStyle.stroke : PaintingStyle.fill
-          ..strokeWidth = linewidth
-          ..color = lineColor; // Added line color
+    _linePaint = Paint()
+      ..style = fill ? PaintingStyle.stroke : PaintingStyle.fill
+      ..strokeWidth = linewidth
+      ..color = lineColor; // Added line color
 
     // Initialize sub-components with dependency injection
     _distanceCalculator = DistanceCalculator(particleCount);
@@ -171,8 +169,8 @@ class OptimizedNetworkPainter extends CustomPainter {
   /// - Skips duplicate connections (i < j)
   /// - Distance-based opacity creates visual depth
   void _drawConnections(Canvas canvas, List<int> visibleParticles) {
-    int maxLinesPerDenseParticle = 3; //
-    int denseThreshold = lineDistance ~/ 3; //
+    int maxLinesPerDenseParticle = isComplex ? 4 : 5; //
+    int denseThreshold = isComplex ? lineDistance ~/ 3 : lineDistance ~/ 1; //
 
     for (final int index in visibleParticles) {
       final Particle particle = particles[index];
@@ -183,22 +181,22 @@ class OptimizedNetworkPainter extends CustomPainter {
         lineDistance,
       );
 
-      final List<int> filteredNearby =
-          nearbyParticles.where((i) => i > index).toList();
+      final List<int> filteredNearby = nearbyParticles
+          .where((i) => i > index)
+          .toList();
 
-      final List<ConnectionCandidate> connections =
-          filteredNearby
-              .map(
-                (i) => ConnectionCandidate(
-                  index: i,
-                  distance: _calculateDistance(
-                    particle.position,
-                    particles[i].position,
-                  ),
-                ),
-              )
-              .where((c) => c.distance <= lineDistance)
-              .toList();
+      final List<ConnectionCandidate> connections = filteredNearby
+          .map(
+            (i) => ConnectionCandidate(
+              index: i,
+              distance: _calculateDistance(
+                particle.position,
+                particles[i].position,
+              ),
+            ),
+          )
+          .where((c) => c.distance <= lineDistance)
+          .toList();
 
       if (connections.length > denseThreshold) {
         connections.sort((a, b) => a.distance.compareTo(b.distance));
@@ -207,8 +205,8 @@ class OptimizedNetworkPainter extends CustomPainter {
 
       for (final connection in connections) {
         final Particle nearbyParticle = particles[connection.index];
-        final int opacity =
-            ((1 - connection.distance / lineDistance) * 255).toInt();
+        final int opacity = ((1 - connection.distance / lineDistance) * 255)
+            .toInt();
         _linePaint.color = lineColor.withAlpha(opacity.clamp(0, 255));
         canvas.drawLine(particle.position, nearbyParticle.position, _linePaint);
       }
