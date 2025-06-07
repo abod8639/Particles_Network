@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:particles_network/model/ConnectionCandidate.dart';
+import 'package:particles_network/model/connection_candidate.dart';
 import 'package:particles_network/model/particlemodel.dart';
 import 'package:particles_network/model/rectangle.dart';
 import 'package:particles_network/painter/distance_calculator.dart';
