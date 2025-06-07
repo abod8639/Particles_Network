@@ -54,8 +54,12 @@ Add to your `pubspec.yaml`:
 dependencies:
   particles_network: ^1.7.3
 ```
+```bash
+flutter pub get
+```
 
-Or use Flutter CLI:
+
+### Or use Flutter CLI:
 
 ```bash
 flutter pub add particles_network
