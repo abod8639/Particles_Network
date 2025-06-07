@@ -35,7 +35,7 @@ class OptimizedNetworkPainter extends CustomPainter {
   final int particleCount; // Total particle count (for pre-allocation)
   final double linewidth; // Width of connection lines
   final bool isComplex; // Debug mode flag
-  final BuildContext context; // Build context for media queries
+  // final BuildContext context; // Build context for media queries
   final bool fill; // Whether to fill particles or stroke them
   final bool drawnetwork; // Whether to draw connection lines
   final bool showQuadTree; // Whether to visualize QuadTree structure
@@ -61,7 +61,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     required this.touchActivation,
     required this.linewidth,
     required this.isComplex,
-    required this.context,
+    // required this.context,
     required this.fill,
     required this.drawnetwork,
     this.showQuadTree = false, // Default to false

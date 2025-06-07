@@ -55,7 +55,7 @@ void main() {
     );
 
     defaultPainter = OptimizedNetworkPainter(
-      context: testContext,
+      // context: testContext,
       drawnetwork: true,
       fill: true,
       isComplex: false,
@@ -107,7 +107,7 @@ void main() {
       await setUpTest(tester);
 
       final strokePainter = OptimizedNetworkPainter(
-        context: testContext,
+        // context: testContext,
         drawnetwork: true,
         fill: false,
         isComplex: false,
@@ -134,7 +134,7 @@ void main() {
       final p2 = MockParticle(position: const Offset(50, 50));
 
       final painter = OptimizedNetworkPainter(
-        context: testContext,
+        // context: testContext,
         drawnetwork: true,
         fill: true,
         isComplex: false,
@@ -173,7 +173,7 @@ void main() {
         });
 
         final painter = OptimizedNetworkPainter(
-          context: testContext,
+          // context: testContext,
           drawnetwork: true,
           fill: true,
           isComplex: false,
@@ -227,7 +227,7 @@ void main() {
         });
 
         final painter = OptimizedNetworkPainter(
-          context: testContext,
+          // context: testContext,
           drawnetwork: true,
           fill: true,
           isComplex: false,
@@ -261,7 +261,7 @@ void main() {
       await setUpTest(tester);
 
       final touchPainter = OptimizedNetworkPainter(
-        context: testContext,
+        // context: testContext,
         drawnetwork: true,
         fill: true,
         isComplex: false,
@@ -284,7 +284,7 @@ void main() {
       await setUpTest(tester);
 
       final noTouchPainter = OptimizedNetworkPainter(
-        context: testContext,
+        // context: testContext,
         drawnetwork: true,
         fill: true,
         isComplex: false,
@@ -309,7 +309,7 @@ void main() {
       await setUpTest(tester);
 
       final newPainter = OptimizedNetworkPainter(
-        context: testContext,
+        // context: testContext,
         drawnetwork: true,
         fill: true,
         isComplex: false,
@@ -331,7 +331,7 @@ void main() {
       await setUpTest(tester);
 
       final newPainter = OptimizedNetworkPainter(
-        context: testContext,
+        // context: testContext,
         drawnetwork: true,
         fill: true,
         isComplex: false,
@@ -355,7 +355,7 @@ void main() {
       particle.wasAccelerated = true;
 
       final newPainter = OptimizedNetworkPainter(
-        context: testContext,
+        // context: testContext,
         drawnetwork: true,
         fill: true,
         isComplex: false,
@@ -379,7 +379,7 @@ void main() {
       await setUpTest(tester);
 
       final newPainter = OptimizedNetworkPainter(
-        context: testContext,
+        // context: testContext,
         drawnetwork: true,
         fill: true,
         isComplex: false,
