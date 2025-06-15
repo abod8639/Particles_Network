@@ -32,7 +32,7 @@ Widget buildTestableWidget(BuildContext context) {
 }
 
 void main() {
-  late BuildContext testContext;
+  // late BuildContext testContext;
   late MockParticle particle;
   late OptimizedNetworkPainter defaultPainter;
   late MockCanvas mockCanvas;
@@ -47,7 +47,7 @@ void main() {
       MaterialApp(
         home: Builder(
           builder: (context) {
-            testContext = context;
+            // testContext = context;
             return buildTestableWidget(context);
           },
         ),

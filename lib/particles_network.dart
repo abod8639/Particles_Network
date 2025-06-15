@@ -199,7 +199,6 @@ class ParticleNetworkState extends State<ParticleNetwork>
                 // Configuration passed to the painter:
                 drawnetwork: widget.drawnetwork, // Whether to draw connections
                 fill: widget.fill, // Fill vs stroke particles
-                // context: context,
                 isComplex: widget.isComplex, // Painting complexity hint
                 linewidth: widget.linewidth, // Connection line thickness
                 particleCount: widget.particleCount,

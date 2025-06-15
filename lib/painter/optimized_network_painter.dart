@@ -46,8 +46,8 @@ class OptimizedNetworkPainter extends CustomPainter {
   late final CompressedQuadTree _quadTree; // Changed to CompressedQuadTree
 
   // Reusable painting objects (initialized once for performance)
-  late final Paint _particlePaint; // Paint config for particles
-  late final Paint _linePaint; // Paint config for connections
+  late final Paint particlePaint; // Paint config for particles
+  late final Paint linePaint; // Paint config for connections
 
   /// Constructor with dependency initialization
   OptimizedNetworkPainter({
@@ -74,17 +74,17 @@ class OptimizedNetworkPainter extends CustomPainter {
 
     // Initialize QuadTree with viewport bounds
     _quadTree = CompressedQuadTree(
-      Rectangle(-5, -5, double.infinity, double.infinity),
+      Rectangle(-5, -5, double.maxFinite, double.maxFinite),
     );
     // _quadTree = CompressedQuadTree(Rectangle(-5, -5, minfinity, minfinity));
 
     // Initialize particle paint
-    _particlePaint = Paint()
+    particlePaint = Paint()
       ..style = fill ? PaintingStyle.fill : PaintingStyle.stroke
       ..color = particleColor;
 
     // Initialize line paint with stroke configuration
-    _linePaint = Paint()
+    linePaint = Paint()
       ..style = fill ? PaintingStyle.stroke : PaintingStyle.fill
       ..strokeWidth = linewidth
       ..color = lineColor; // Added line color
@@ -96,7 +96,7 @@ class OptimizedNetworkPainter extends CustomPainter {
       touchPoint: touchPoint,
       lineDistance: lineDistance,
       touchColor: touchColor,
-      linePaint: _linePaint,
+      linePaint: linePaint,
     );
   }
 
@@ -151,7 +151,7 @@ class OptimizedNetworkPainter extends CustomPainter {
       canvas.drawCircle(
         p.position, // Center point
         p.size, // Particle radius
-        _particlePaint, // Pre-configured paint
+        particlePaint, // Pre-configured paint
       );
     }
   }
@@ -207,8 +207,8 @@ class OptimizedNetworkPainter extends CustomPainter {
         final Particle nearbyParticle = particles[connection.index];
         final int opacity = ((1 - connection.distance / lineDistance) * 255)
             .toInt();
-        _linePaint.color = lineColor.withAlpha(opacity.clamp(0, 255));
-        canvas.drawLine(particle.position, nearbyParticle.position, _linePaint);
+        linePaint.color = lineColor.withAlpha(opacity.clamp(0, 255));
+        canvas.drawLine(particle.position, nearbyParticle.position, linePaint);
       }
     }
   }
