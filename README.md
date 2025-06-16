@@ -11,9 +11,9 @@ Transform your Flutter app's UI with a breathtaking, high-performance particle n
   [![CI Status](https://github.com/abod8639/Particles_Network/actions/workflows/flutter-ci.yml/badge.svg)](https://github.com/abod8639/Particles_Network )
   ![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)
   ![Codecov](https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg)
+![PubLike](https://img.shields.io/pub/likes/particles_network)
   ![PubPoints](https://img.shields.io/pub/points/particles_network
   )
-![PubLike](https://img.shields.io/pub/likes/particles_network)
   
 
 </div>
@@ -55,7 +55,7 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  particles_network: ^1.7.8
+  particles_network: ^1.7.9
 ```
 ```bash
 flutter pub get
