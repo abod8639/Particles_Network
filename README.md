@@ -10,8 +10,11 @@ Transform your Flutter app's UI with a breathtaking, high-performance particle n
   [![Pub Version](https://img.shields.io/pub/v/particles_network)](https://pub.dev/packages/particles_network)
   [![CI Status](https://github.com/abod8639/Particles_Network/actions/workflows/flutter-ci.yml/badge.svg)](https://github.com/abod8639/Particles_Network )
   ![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)
-  [![Codecov](https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg)]()
-  [![pub points](https://img.shields.io/pub/points/device_info_plus?color=0F80C1&label=pub%20points)](https://pub.dev/packages/particles_network/score)
+  ![Codecov](https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg)
+  ![PubPoints](https://img.shields.io/pub/points/particles_network
+  )
+![PubLike](https://img.shields.io/pub/likes/particles_network)
+  
 
 </div>
 

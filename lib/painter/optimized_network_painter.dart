@@ -76,8 +76,6 @@ class OptimizedNetworkPainter extends CustomPainter {
     _quadTree = CompressedQuadTree(
       Rectangle(-5, -5, double.maxFinite, double.maxFinite),
     );
-    // _quadTree = CompressedQuadTree(Rectangle(-5, -5, minfinity, minfinity));
-
     // Initialize particle paint
     particlePaint = Paint()
       ..style = fill ? PaintingStyle.fill : PaintingStyle.stroke
