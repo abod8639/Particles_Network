@@ -92,7 +92,7 @@ class CompressedQuadTreeNode {
       // If all particles are in one quadrant, use path compression
       if (dominantQuad != null && maxCount == allParticles.length) {
         // Create compressed child node
-        final Rectangle childBoundary = _getChildBoundary(dominantQuad);
+        final Rectangle childBoundary = getChildBoundary(dominantQuad);
         final CompressedPath childPath =
             compressedPath?.extend(dominantQuad) ??
             CompressedPath([dominantQuad], depth + 1);
@@ -185,7 +185,7 @@ class CompressedQuadTreeNode {
   }
 
   /// Gets the boundary rectangle for a child quadrant
-  Rectangle _getChildBoundary(Quadrant quadrant) {
+  Rectangle getChildBoundary(Quadrant quadrant) {
     final double halfWidth = boundary.width / 2;
     final double halfHeight = boundary.height / 2;
     final double x = boundary.x;

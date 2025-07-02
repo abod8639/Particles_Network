@@ -3,6 +3,37 @@ import 'package:particles_network/model/rectangle.dart';
 import 'package:particles_network/quad_tree/compressed_quad_tree_node.dart';
 
 void main() {
+  group('Child Boundary Calculation', () {
+    test('returns correct boundary for each quadrant', () {
+      final node = CompressedQuadTreeNode(Rectangle(0, 0, 100, 100));
+      final halfWidth = 50.0;
+      final halfHeight = 50.0;
+
+      final nw = node.getChildBoundary(Quadrant.northWest);
+      expect(nw.x, 0);
+      expect(nw.y, 0);
+      expect(nw.width, halfWidth);
+      expect(nw.height, halfHeight);
+
+      final ne = node.getChildBoundary(Quadrant.northEast);
+      expect(ne.x, 50);
+      expect(ne.y, 0);
+      expect(ne.width, halfWidth);
+      expect(ne.height, halfHeight);
+
+      final sw = node.getChildBoundary(Quadrant.southWest);
+      expect(sw.x, 0);
+      expect(sw.y, 50);
+      expect(sw.width, halfWidth);
+      expect(sw.height, halfHeight);
+
+      final se = node.getChildBoundary(Quadrant.southEast);
+      expect(se.x, 50);
+      expect(se.y, 50);
+      expect(se.width, halfWidth);
+      expect(se.height, halfHeight);
+    });
+  });
   late CompressedQuadTreeNode quadTree;
 
   setUp(() {
