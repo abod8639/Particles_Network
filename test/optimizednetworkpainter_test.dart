@@ -56,7 +56,7 @@ void main() {
 
     defaultPainter = OptimizedNetworkPainter(
       // context: testContext,
-      drawnetwork: true,
+      drawNetwork: true,
       fill: true,
       isComplex: false,
       particleCount: 1,
@@ -67,7 +67,7 @@ void main() {
       lineColor: Colors.grey,
       touchColor: Colors.red,
       touchActivation: true,
-      linewidth: 1.0,
+      lineWidth: 1.0,
     );
   }
 
@@ -81,9 +81,9 @@ void main() {
       expect(defaultPainter.lineColor, equals(Colors.grey));
       expect(defaultPainter.touchColor, equals(Colors.red));
       expect(defaultPainter.touchActivation, isTrue);
-      expect(defaultPainter.linewidth, equals(1.0));
+      expect(defaultPainter.lineWidth, equals(1.0));
       expect(defaultPainter.fill, isTrue);
-      expect(defaultPainter.drawnetwork, isTrue);
+      expect(defaultPainter.drawNetwork, isTrue);
       expect(defaultPainter.showQuadTree, isFalse);
     });
 
@@ -108,7 +108,7 @@ void main() {
 
       final strokePainter = OptimizedNetworkPainter(
         // context: testContext,
-        drawnetwork: true,
+        drawNetwork: true,
         fill: false,
         isComplex: false,
         particleCount: 1,
@@ -119,7 +119,7 @@ void main() {
         lineColor: Colors.grey,
         touchColor: Colors.red,
         touchActivation: true,
-        linewidth: 1.0,
+        lineWidth: 1.0,
       );
 
       expect(strokePainter.fill, isFalse);
@@ -135,7 +135,7 @@ void main() {
 
       final painter = OptimizedNetworkPainter(
         // context: testContext,
-        drawnetwork: true,
+        drawNetwork: true,
         fill: true,
         isComplex: false,
         particleCount: 2,
@@ -146,7 +146,7 @@ void main() {
         lineColor: Colors.grey,
         touchColor: Colors.red,
         touchActivation: true,
-        linewidth: 1.0,
+        lineWidth: 1.0,
       );
 
       painter.paint(mockCanvas, testScreenSize);
@@ -174,7 +174,7 @@ void main() {
 
         final painter = OptimizedNetworkPainter(
           // context: testContext,
-          drawnetwork: true,
+          drawNetwork: true,
           fill: true,
           isComplex: false,
           particleCount: 7, // Center + 6 surrounding
@@ -185,7 +185,7 @@ void main() {
           lineColor: Colors.grey,
           touchColor: Colors.red,
           touchActivation: true,
-          linewidth: 1.0,
+          lineWidth: 1.0,
         );
 
         painter.paint(mockCanvas, testScreenSize);
@@ -228,7 +228,7 @@ void main() {
 
         final painter = OptimizedNetworkPainter(
           // context: testContext,
-          drawnetwork: true,
+          drawNetwork: true,
           fill: true,
           isComplex: false,
           particleCount: 11, // Central + 10 surrounding
@@ -239,7 +239,7 @@ void main() {
           lineColor: Colors.grey,
           touchColor: Colors.red,
           touchActivation: true,
-          linewidth: 1.0,
+          lineWidth: 1.0,
         );
 
         painter.paint(mockCanvas, testScreenSize);
@@ -262,7 +262,7 @@ void main() {
 
       final touchPainter = OptimizedNetworkPainter(
         // context: testContext,
-        drawnetwork: true,
+        drawNetwork: true,
         fill: true,
         isComplex: false,
         particleCount: 1,
@@ -273,7 +273,7 @@ void main() {
         lineColor: Colors.grey,
         touchColor: Colors.red,
         touchActivation: true,
-        linewidth: 1.0,
+        lineWidth: 1.0,
       );
 
       touchPainter.paint(mockCanvas, testScreenSize);
@@ -285,7 +285,7 @@ void main() {
 
       final noTouchPainter = OptimizedNetworkPainter(
         // context: testContext,
-        drawnetwork: true,
+        drawNetwork: true,
         fill: true,
         isComplex: false,
         particleCount: 1,
@@ -296,7 +296,7 @@ void main() {
         lineColor: Colors.grey,
         touchColor: Colors.red,
         touchActivation: false,
-        linewidth: 1.0,
+        lineWidth: 1.0,
       );
 
       noTouchPainter.paint(mockCanvas, testScreenSize);
@@ -310,7 +310,7 @@ void main() {
 
       final newPainter = OptimizedNetworkPainter(
         // context: testContext,
-        drawnetwork: true,
+        drawNetwork: true,
         fill: true,
         isComplex: false,
         particleCount: 1,
@@ -321,7 +321,7 @@ void main() {
         lineColor: Colors.grey,
         touchColor: Colors.red,
         touchActivation: true,
-        linewidth: 1.0,
+        lineWidth: 1.0,
       );
 
       expect(newPainter.shouldRepaint(defaultPainter), isTrue);
@@ -332,7 +332,7 @@ void main() {
 
       final newPainter = OptimizedNetworkPainter(
         // context: testContext,
-        drawnetwork: true,
+        drawNetwork: true,
         fill: true,
         isComplex: false,
         particleCount: 1,
@@ -343,7 +343,7 @@ void main() {
         lineColor: Colors.green,
         touchColor: Colors.red,
         touchActivation: true,
-        linewidth: 1.0,
+        lineWidth: 1.0,
       );
 
       expect(newPainter.shouldRepaint(defaultPainter), isTrue);
@@ -356,7 +356,7 @@ void main() {
 
       final newPainter = OptimizedNetworkPainter(
         // context: testContext,
-        drawnetwork: true,
+        drawNetwork: true,
         fill: true,
         isComplex: false,
         particleCount: 1,
@@ -367,7 +367,7 @@ void main() {
         lineColor: Colors.grey,
         touchColor: Colors.red,
         touchActivation: true,
-        linewidth: 1.0,
+        lineWidth: 1.0,
       );
 
       expect(newPainter.shouldRepaint(defaultPainter), isTrue);
@@ -380,7 +380,7 @@ void main() {
 
       final newPainter = OptimizedNetworkPainter(
         // context: testContext,
-        drawnetwork: true,
+        drawNetwork: true,
         fill: true,
         isComplex: false,
         particleCount: 1,
@@ -391,7 +391,7 @@ void main() {
         lineColor: Colors.grey,
         touchColor: Colors.red,
         touchActivation: true,
-        linewidth: 1.0,
+        lineWidth: 1.0,
       );
 
       expect(newPainter.shouldRepaint(defaultPainter), isFalse);

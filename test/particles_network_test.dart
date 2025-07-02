@@ -157,7 +157,7 @@ void main() {
               lineColor: customColor,
               touchColor: customColor,
               touchActivation: false,
-              linewidth: 1.0,
+              lineWidth: 1.0,
             ),
           ),
         ),
@@ -175,7 +175,7 @@ void main() {
       expect(particleNetwork.lineColor, equals(customColor));
       expect(particleNetwork.touchColor, equals(customColor));
       expect(particleNetwork.touchActivation, isFalse);
-      expect(particleNetwork.linewidth, equals(1.0));
+      expect(particleNetwork.lineWidth, equals(1.0));
     });
 
     testWidgets('ParticleNetwork handles touch events', (
