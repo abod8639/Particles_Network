@@ -1,74 +1,91 @@
-# 🌟 particles_network
 
-Transform your Flutter app's UI with a breathtaking, high-performance particle network animation that reacts to touch and adapts seamlessly to any screen size.
+
+# particles\_network
+
+Transform your Flutter app’s UI with a high-performance particle network animation that responds to touch and adapts seamlessly to any screen size.
 
 <div align="center">
   <a href="https://github.com/abod8639/Particles_Network">
     <img alt="particles_network demo" width="300" src="assets/Picsart_25-05-10_12-57-34-680.png">
   </a>
 
-  [![Pub Version](https://img.shields.io/pub/v/particles_network)](https://pub.dev/packages/particles_network)
-  [![CI Status](https://github.com/abod8639/Particles_Network/actions/workflows/flutter-ci.yml/badge.svg)](https://github.com/abod8639/Particles_Network )
-  ![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)
-  ![Codecov](https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg)
-![PubLike](https://img.shields.io/pub/likes/particles_network)
-  ![PubPoints](https://img.shields.io/pub/points/particles_network
-  )
-  
+  <br>
 
+  <a href="https://pub.dev/packages/particles_network">
+    <img alt="Pub Version" src="https://img.shields.io/pub/v/particles_network">
+  </a>
+  <a href="https://github.com/abod8639/Particles_Network/actions/workflows/flutter-ci.yml">
+    <img alt="CI Status" src="https://github.com/abod8639/Particles_Network/actions/workflows/flutter-ci.yml/badge.svg">
+  </a>
+  <a href="https://opensource.org/licenses/MIT">
+    <img alt="MIT License" src="https://img.shields.io/badge/license-MIT-blue.svg">
+  </a>
+  <a href="https://codecov.io/gh/abod8639/Particles_Network">
+    <img alt="Code Coverage" src="https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg">
+  </a>
+  <img alt="Pub Likes" src="https://img.shields.io/pub/likes/particles_network">
+  <img alt="Pub Points" src="https://img.shields.io/pub/points/particles_network">
 </div>
 
+---
 
+## Features
 
-## ✨ Features
+* **Ultra-High Performance**
 
-* 🚀 **Ultra-High Performance**
   * Advanced QuadTree spatial partitioning for O(log n) neighbor searches
   * Compressed QuadTree structure for optimal memory usage
   * Smart distance caching to minimize calculations
-  * Efficient memory management with frame-scoped caches
-  
-* 🎨 **Rich Customization**
+  * Efficient memory management with scoped caches
+
+* **Rich Customization**
+
   * Control particle count, speed, size, and colors
   * Adjust connection distance and line thickness
-  * Enable/disable touch interactions
-  
-* 🔄 **Responsive Design**
-  * Auto-adapts to any screen size or orientation
+  * Enable or disable touch interactions
+
+* **Responsive Design**
+
+  * Adapts to any screen size or orientation
   * Smooth animations at 60+ FPS
   * Touch-responsive with configurable effects
 
-## 🎬 Demo
+---
 
+## Demo
 
-![image](assets/image.png)
+![Demo](assets/image.png)
 
- 
- ## GIF
-<div align="lift">
-  <img src="https://github.com/abod8639/flutter_habit_tracker/blob/main/assets/gif/c49ae41c72134b67b31d54593d3414f8.gif?raw=true" alt="Touch Interaction Demo" width="300">
-</div>
+**GIF Preview:**
 
-## 📦 Installation
+<img src="https://github.com/abod8639/flutter_habit_tracker/blob/main/assets/gif/c49ae41c72134b67b31d54593d3414f8.gif?raw=true" alt="Touch Interaction Demo" width="300">
 
-Add to your `pubspec.yaml`:
+---
+
+## Installation
+
+Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  particles_network: ^1.7.9
+  particles_network: ^1.8.0
 ```
+
+Then run:
+
 ```bash
 flutter pub get
 ```
 
-
-### Or use Flutter CLI:
+Or use the CLI:
 
 ```bash
 flutter pub add particles_network
 ```
 
-## 🚀 Quick Start
+---
+
+## Quick Start
 
 ```dart
 import 'package:flutter/material.dart';
@@ -86,18 +103,18 @@ class MyApp extends StatelessWidget {
       home: Scaffold(
         backgroundColor: Colors.black,
         body: ParticleNetwork(
-          particleCount: 60,          // Number of particles
-          maxSpeed: 0.5,              // Maximum velocity
-          maxSize: 1.5,               // Particle size
-          lineWidth: 0.5,             // Connection line thickness
-          lineDistance: 100,          // Connection distance
+          particleCount: 60,
+          maxSpeed: 0.5,
+          maxSize: 1.5,
+          lineWidth: 0.5,
+          lineDistance: 100,
           particleColor: Colors.white,
           lineColor: const Color.fromARGB(255, 100, 255, 180),
-          touchColor: Colors.amber,   // Color on touch
-          touchActivation: true,      // Enable touch
-          drawNetwork: true,          // Show connections
-          fill: false,                // Outline particles
-          isComplex: false,           // Optimize performance
+          touchColor: Colors.amber,
+          touchActivation: true,
+          drawNetwork: true,
+          fill: false,
+          isComplex: false,
         ),
       ),
     );
@@ -105,93 +122,72 @@ class MyApp extends StatelessWidget {
 }
 ```
 
-See the complete tutorial [here](https://youtu.be/FZyFgUXCrHg).
+Full tutorial available [here](https://youtu.be/FZyFgUXCrHg).
 
-## ⚙️ Configuration
+---
 
-| Property          | Type     | Default        | Description                       |
-|-------------------|----------|----------------|-----------------------------------|
-| `particleCount`   | `int`    | `60`           | Number of particles in the system |
-| `maxSpeed`        | `double` | `0.5`          | Maximum particle velocity         |
-| `maxSize`         | `double` | `1.5`          | Maximum particle radius           |
-| `lineWidth`       | `double` | `0.5`          | Connection line thickness         |
-| `lineDistance`    | `double` | `100`          | Maximum connection distance       |
-| `particleColor`   | `Color`  | `Colors.white` | Particle color                    |
-| `lineColor`       | `Color`  | `Colors.teal`  | Connection line color             |
-| `touchColor`      | `Color`  | `Colors.amber` | Touch highlight color             |
-| `touchActivation` | `bool`   | `true`         | Enable touch interaction          |
-| `isComplex`       | `bool`   | `false`        | Optimize complex scenes           |
-| `fill`            | `bool`   | `true`         | Fill vs outline particles         |
-| `drawNetwork`     | `bool`   | `true`         | Show particle connections         |
+## Configuration Options
 
-## 🎯 Advanced Usage
+| Property          | Type     | Default        | Description                  |
+| ----------------- | -------- | -------------- | ---------------------------- |
+| `particleCount`   | `int`    | `60`           | Number of particles          |
+| `maxSpeed`        | `double` | `0.5`          | Maximum particle speed       |
+| `maxSize`         | `double` | `1.5`          | Maximum particle radius      |
+| `lineWidth`       | `double` | `0.5`          | Line thickness               |
+| `lineDistance`    | `double` | `100`          | Connection distance          |
+| `particleColor`   | `Color`  | `Colors.white` | Particle color               |
+| `lineColor`       | `Color`  | `Colors.teal`  | Connection line color        |
+| `touchColor`      | `Color`  | `Colors.amber` | Highlight color on touch     |
+| `touchActivation` | `bool`   | `true`         | Enables touch interaction    |
+| `isComplex`       | `bool`   | `false`        | Optimizes complex scenes     |
+| `fill`            | `bool`   | `true`         | Filled or outlined particles |
+| `drawNetwork`     | `bool`   | `true`         | Draw lines between particles |
+
+---
+
+## Advanced Usage
 
 ### Theme Integration
-
-Animate colors based on app theme:
 
 ```dart
 AnimatedBuilder(
   animation: Theme.of(context),
   builder: (context, _) => ParticleNetwork(
     particleColor: Theme.of(context).primaryColor,
-    lineColor: Theme.of(context).accentColor,
-    // ... other properties
+    lineColor: Theme.of(context).colorScheme.secondary,
+    // other configs...
   ),
 )
 ```
 
-### Custom Layout Integration
-
-Use as a background or overlay:
+### Background Usage
 
 ```dart
 Stack(
   children: [
-    ParticleNetwork(/* ... */),
-    YourContent(),
+    ParticleNetwork(/* configuration */),
+    YourAppContent(),
   ],
 )
 ```
 
 ### Performance Tips
 
-- Reduce `particleCount` and `lineDistance` for better performance on low-end devices
-- Set `isComplex: true` for scenes with many particles
-- Use `fill: false` for a lighter visual style that's also more performant
+* Reduce `particleCount` and `lineDistance` for weaker devices
+* Use `isComplex: true` for high-density scenes
+* Use `fill: false` for better performance and lighter visuals
 
-### Articles and videos
+---
 
-- [Particles Network Package || All Properties Explained + Custom Examples || Flutter Tutorial](https://youtu.be/FZyFgUXCrHg)
+## Technical Details
 
-## 🔧 Under the Hood
-
-- **QuadTree Implementation**: 
-  - Uses an optimized compressed QuadTree data structure
-  - Automatically subdivides space for O(log n) neighbor searches
-  - Path compression for reduced memory footprint
-  - Dynamic node consolidation for optimal tree structure
-- **Distance Caching**: Stores recent calculations to avoid redundant math
-- **Smart Repainting**: Uses Flutter's `shouldRepaint` for optimal rendering
-- **Memory Management**: 
-  - Employs typed arrays and scoped caches
-  - Compressed node representation for dense particle clusters
-  - Automatic tree rebalancing for optimal performance
-
-![image2](assets/250530_22h33m09s_screenshot.png)
-## 🔬 Technical Details
-
-### QuadTree Implementation
-
-The package uses a sophisticated compressed QuadTree data structure for spatial partitioning:
+The package uses an advanced **Compressed QuadTree** spatial data structure for efficient particle management.
 
 ```dart
-// Example of how particles are organized in the QuadTree
 final quadTree = CompressedQuadTreeNode(
   Rectangle(0, 0, screenWidth, screenHeight),
 );
 
-// Particles are automatically organized into quadrants
 particles.forEach((particle) => 
   quadTree.insert(QuadTreeParticle(
     particle.id, 
@@ -200,7 +196,6 @@ particles.forEach((particle) =>
   ))
 );
 
-// Efficient neighbor queries
 final nearbyParticles = quadTree.queryCircle(
   touchX, 
   touchY, 
@@ -208,35 +203,28 @@ final nearbyParticles = quadTree.queryCircle(
 );
 ```
 
-Key features of our QuadTree implementation:
+##  Technical Details
+![image2](assets/250530_22h33m09s_screenshot.png)
+* **O(log n)** insertion and query
+* Path compression to reduce memory for clustered particles
+* Smart node consolidation and rebalancing
+* Memory-efficient structure with typed arrays and sparse representation
 
-* 📈 **Logarithmic Performance**
-  - O(log n) insertion and query operations
-  - Automatic space subdivision based on particle density
-  - Efficient nearest neighbor searches
+---
 
-* 🗜️ **Path Compression**
-  - Reduces memory usage for clustered particles
-  - Automatically consolidates empty quadrants
-  - Dynamic depth adjustment based on particle distribution
+## Contributing
 
-* 🔄 **Dynamic Optimization**
-  - Automatic tree rebalancing for optimal structure
-  - Smart caching of frequent queries
-  - Memory-efficient sparse representation
+We welcome contributions! See the [contributing guide](https://github.com/abod8639) for more details.
 
-This advanced spatial partitioning allows the particle system to efficiently handle hundreds of particles while maintaining smooth 60+ FPS performance.
+## License
 
-## 🤝 Contributing
-
-We welcome contributions! See our [Contributing Guide](https://github.com/abod8639) for details.
-
-## 📄 License
-
-`particles_network` is available under the MIT License. See the [LICENSE](LICENSE) file.
+This package is released under the [MIT License](LICENSE).
 
 ---
 
 <div align="center">
-  Made with ❤️ by <a href="https://github.com/abod8639">Dexter</a>
+  Crafted with care and ❤️  by <a href="https://github.com/abod8639">Dexter</a>
 </div>
+
+---
+

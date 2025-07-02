@@ -241,7 +241,7 @@ class CompressedQuadTreeNode {
     if (!boundary.intersectsCircle(centerX, centerY, radius)) return found;
 
     // Pre-calculate squared radius for efficient comparison
-    final radiusSquared = radius * radius;
+    final double radiusSquared = radius * radius;
 
     // Check particles in this node
     for (final particle in particles) {

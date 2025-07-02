@@ -80,10 +80,7 @@ class ConnectionDrawer {
           final Particle other = particles[otherIndex];
 
           // Get distance (uses cached value if available)
-          final double distance = distanceCalculator.calculateDistance(
-            p,
-            other,
-          );
+          final double distance = distanceCalculator.betweenParticles(p, other);
 
           // Constant for opacity scaling (currently 1 = full effect)
           const double fursOpacity = 1;

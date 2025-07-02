@@ -1,4 +1,4 @@
-import 'dart:math' as math;
+// import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:particles_network/model/connection_candidate.dart';
@@ -35,7 +35,6 @@ class OptimizedNetworkPainter extends CustomPainter {
   final int particleCount; // Total particle count (for pre-allocation)
   final double lineWidth; // Width of connection lines
   final bool isComplex; // Debug mode flag
-  // final BuildContext context; // Build context for media queries
   final bool fill; // Whether to fill particles or stroke them
   final bool drawNetwork; // Whether to draw connection lines
   final bool showQuadTree; // Whether to visualize QuadTree structure
@@ -61,7 +60,6 @@ class OptimizedNetworkPainter extends CustomPainter {
     required this.touchActivation,
     required this.lineWidth,
     required this.isComplex,
-    // required this.context,
     required this.fill,
     required this.drawNetwork,
     this.showQuadTree = false, // Default to false
@@ -74,7 +72,12 @@ class OptimizedNetworkPainter extends CustomPainter {
 
     // Initialize QuadTree with viewport bounds
     _quadTree = CompressedQuadTree(
-      Rectangle(-5, -5, double.maxFinite, double.maxFinite),
+      Rectangle(
+        -5,
+        -5,
+        double.maxFinite,
+        double.maxFinite,
+      ), // Placeholder, will be updated in paint
     );
     // Initialize particle paint
     particlePaint = Paint()
@@ -88,7 +91,7 @@ class OptimizedNetworkPainter extends CustomPainter {
       ..color = lineColor; // Added line color
 
     // Initialize sub-components with dependency injection
-    _distanceCalculator = DistanceCalculator(particleCount);
+    _distanceCalculator = DistanceCalculator();
     _touchHandler = TouchInteractionHandler(
       particles: particles,
       touchPoint: touchPoint,
@@ -100,7 +103,7 @@ class OptimizedNetworkPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    _distanceCalculator.clearCache();
+    _distanceCalculator.reset();
 
     final List<int> visibleParticles = ParticleFilter.getVisibleParticles(
       particles,
@@ -109,7 +112,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     _quadTree.clear();
     if (drawNetwork) {
       for (int i = 0; i < visibleParticles.length; i++) {
-        final particle = particles[visibleParticles[i]];
+        final Particle particle = particles[visibleParticles[i]];
         _quadTree.insert(
           QuadTreeParticle(
             visibleParticles[i],
@@ -127,8 +130,10 @@ class OptimizedNetworkPainter extends CustomPainter {
     if (touchPoint != null && touchActivation) {
       _touchHandler.drawTouchLines(canvas, visibleParticles);
       _touchHandler.applyTouchPhysics(visibleParticles);
-      _drawParticles(canvas, visibleParticles);
     }
+
+    // Always draw particles at the end
+    _drawParticles(canvas, visibleParticles);
 
     // Optional: Draw QuadTree visualization for debugging
     //   if (showQuadTree) {
@@ -144,7 +149,7 @@ class OptimizedNetworkPainter extends CustomPainter {
   /// - Only draws visible particles (reduced draw calls)
   /// - Simple drawCircle operation (hardware accelerated)
   void _drawParticles(Canvas canvas, List<int> visibleParticles) {
-    for (final index in visibleParticles) {
+    for (final int index in visibleParticles) {
       final Particle p = particles[index];
       canvas.drawCircle(
         p.position, // Center point
@@ -187,7 +192,7 @@ class OptimizedNetworkPainter extends CustomPainter {
           .map(
             (i) => ConnectionCandidate(
               index: i,
-              distance: _calculateDistance(
+              distance: _distanceCalculator.betweenPoints(
                 particle.position,
                 particles[i].position,
               ),
@@ -209,14 +214,6 @@ class OptimizedNetworkPainter extends CustomPainter {
         canvas.drawLine(particle.position, nearbyParticle.position, linePaint);
       }
     }
-  }
-
-  /// Calculate distance between two points with caching
-  double _calculateDistance(Offset p1, Offset p2) {
-    // Use Euclidean distance
-    final double dx = p1.dx - p2.dx;
-    final double dy = p1.dy - p2.dy;
-    return math.sqrt(dx * dx + dy * dy);
   }
 
   @override

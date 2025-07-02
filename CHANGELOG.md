@@ -1,4 +1,4 @@
-## [1.7.9] 
+## [1.8.0] 
 
 Initial release of the Particles Network package with the following features:
 

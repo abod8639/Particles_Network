@@ -139,8 +139,8 @@ class CompressedQuadTree {
   /// sparsityRatio > 0.7 (tree is too sparse)
   bool needsRebalancing() {
     final stats = getStats();
-    final compressionRatio = stats['compressionRatio'] as double;
-    final sparsityRatio = stats['sparsityRatio'] as double;
+    final double compressionRatio = stats['compressionRatio'] as double;
+    final double sparsityRatio = stats['sparsityRatio'] as double;
 
     return compressionRatio < 0.1 || sparsityRatio > 0.7;
   }

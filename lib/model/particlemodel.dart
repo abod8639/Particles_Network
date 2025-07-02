@@ -44,6 +44,10 @@ class Particle {
     // If the particle was accelerated, gradually reduce its velocity to the default.
     if (wasAccelerated) {
       velocity = computeVelocity(velocity, defaultVelocity, 0.01);
+      // If velocity has returned to default, reset the accelerated flag.
+      if (velocity == defaultVelocity) {
+        wasAccelerated = false;
+      }
     }
 
     // Handle collisions with the screen boundaries.

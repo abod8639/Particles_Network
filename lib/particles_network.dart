@@ -45,7 +45,7 @@ class ParticleNetwork extends StatefulWidget {
   /// Maximum radius of particles in pixels [default: 1.5]
   /// Used for rendering particle size
   final double maxSize;
-  
+
   /// Stroke width of connection lines in pixels [default: 0.5]
   final double lineWidth;
 
@@ -143,7 +143,6 @@ class ParticleNetworkState extends State<ParticleNetwork>
       controller.updateParticles(particles, currentSize);
 
       // Trigger repaint by updating the frame counter
-      // This is more efficient than calling setState() for animations
       frameNotifier.value = elapsed.inMicroseconds;
     })..start(); // Start the animation loop immediately
   }
@@ -194,7 +193,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
           child: ValueListenableBuilder<int>(
             valueListenable: frameNotifier,
             // Rebuild only the CustomPaint when frameNotifier changes
-            builder: (context, __, ___) => CustomPaint(
+            builder: (_, _, _) => CustomPaint(
               painter: OptimizedNetworkPainter(
                 // Configuration passed to the painter:
                 drawNetwork: widget.drawNetwork, // Whether to draw connections
