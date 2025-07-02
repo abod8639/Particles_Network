@@ -33,11 +33,11 @@ class OptimizedNetworkPainter extends CustomPainter {
   final Color touchColor; // Color for touch interactions
   final bool touchActivation; // Whether touch effects are enabled
   final int particleCount; // Total particle count (for pre-allocation)
-  final double linewidth; // Width of connection lines
+  final double lineWidth; // Width of connection lines
   final bool isComplex; // Debug mode flag
   // final BuildContext context; // Build context for media queries
   final bool fill; // Whether to fill particles or stroke them
-  final bool drawnetwork; // Whether to draw connection lines
+  final bool drawNetwork; // Whether to draw connection lines
   final bool showQuadTree; // Whether to visualize QuadTree structure
 
   // Optimized sub-components
@@ -59,11 +59,11 @@ class OptimizedNetworkPainter extends CustomPainter {
     required this.lineColor,
     required this.touchColor,
     required this.touchActivation,
-    required this.linewidth,
+    required this.lineWidth,
     required this.isComplex,
     // required this.context,
     required this.fill,
-    required this.drawnetwork,
+    required this.drawNetwork,
     this.showQuadTree = false, // Default to false
   }) {
     // Get viewport dimensions for QuadTree initialization
@@ -84,7 +84,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     // Initialize line paint with stroke configuration
     linePaint = Paint()
       ..style = fill ? PaintingStyle.stroke : PaintingStyle.fill
-      ..strokeWidth = linewidth
+      ..strokeWidth = lineWidth
       ..color = lineColor; // Added line color
 
     // Initialize sub-components with dependency injection
@@ -107,7 +107,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     );
 
     _quadTree.clear();
-    if (drawnetwork) {
+    if (drawNetwork) {
       for (int i = 0; i < visibleParticles.length; i++) {
         final particle = particles[visibleParticles[i]];
         _quadTree.insert(
@@ -120,7 +120,7 @@ class OptimizedNetworkPainter extends CustomPainter {
       }
     }
 
-    if (drawnetwork) {
+    if (drawNetwork) {
       _drawConnections(canvas, visibleParticles);
     }
 

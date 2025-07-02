@@ -34,7 +34,7 @@ import 'model/default_particle_factory.dart';
 class ParticleNetwork extends StatefulWidget {
   // Configuration properties with default values:
 
-  /// Total number of particles in the visualization [default: 50]
+  /// Total number of particles in the visualization [default: 60]
   /// Affects performance: O(n) for updates, O(n²) for connection checks
   final int particleCount;
 
@@ -42,18 +42,21 @@ class ParticleNetwork extends StatefulWidget {
   /// Determines how fast particles move (velocity magnitude)
   final double maxSpeed;
 
-  /// Maximum radius of particles in pixels [default: 3.5]
+  /// Maximum radius of particles in pixels [default: 1.5]
   /// Used for rendering particle size
   final double maxSize;
+  
+  /// Stroke width of connection lines in pixels [default: 0.5]
+  final double lineWidth;
 
-  /// Maximum connection distance between particles in pixels [default: 180]
+  /// Maximum connection distance between particles in pixels [default: 100]
   /// Threshold for drawing connecting lines (Euclidean distance)
   final double lineDistance;
 
   /// Base color of all particles [default: Colors.white]
   final Color particleColor;
 
-  /// Color of connection lines between particles [default: Color(0xFF64FFB4)]
+  /// Color of connection lines between particles [default: Color.fromARGB(255, 100, 255, 180)]
   /// Lines are drawn with opacity based on distance (inverse linear interpolation)
   final Color lineColor;
 
@@ -65,9 +68,6 @@ class ParticleNetwork extends StatefulWidget {
   /// Adds gesture detection and touch response logic
   final bool touchActivation;
 
-  /// Stroke width of connection lines in pixels [default: 0.5]
-  final double linewidth;
-
   /// Whether the painting logic is complex (affects repaint strategy) [default: false]
   /// If true, Flutter may optimize repainting differently
   final bool isComplex;
@@ -76,23 +76,23 @@ class ParticleNetwork extends StatefulWidget {
   final bool fill;
 
   /// Whether to draw connecting lines between particles [default: true]
-  final bool drawnetwork;
+  final bool drawNetwork;
 
   /// Creates a ParticleNetwork widget with customizable parameters
   const ParticleNetwork({
     super.key,
     this.particleCount = 60,
-    this.touchActivation = true,
     this.maxSpeed = 0.5,
     this.maxSize = 1.5,
+    this.lineWidth = 0.5,
     this.lineDistance = 100,
     this.particleColor = Colors.white,
     this.lineColor = const Color.fromARGB(255, 100, 255, 180),
     this.touchColor = Colors.amber,
-    this.linewidth = 0.5,
+    this.touchActivation = true,
     this.isComplex = false,
     this.fill = true,
-    this.drawnetwork = true,
+    this.drawNetwork = true,
   });
 
   @override
@@ -197,10 +197,10 @@ class ParticleNetworkState extends State<ParticleNetwork>
             builder: (context, __, ___) => CustomPaint(
               painter: OptimizedNetworkPainter(
                 // Configuration passed to the painter:
-                drawnetwork: widget.drawnetwork, // Whether to draw connections
+                drawNetwork: widget.drawNetwork, // Whether to draw connections
                 fill: widget.fill, // Fill vs stroke particles
                 isComplex: widget.isComplex, // Painting complexity hint
-                linewidth: widget.linewidth, // Connection line thickness
+                lineWidth: widget.lineWidth, // Connection line thickness
                 particleCount: widget.particleCount,
                 touchActivation: widget.touchActivation, // Touch interaction
                 particles: particles, // The particle data
