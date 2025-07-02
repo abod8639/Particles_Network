@@ -87,14 +87,15 @@ class MyApp extends StatelessWidget {
         backgroundColor: Colors.black,
         body: ParticleNetwork(
           particleCount: 60,          // Number of particles
-          maxSpeed: 0.7,              // Maximum velocity
-          maxSize: 3.5,               // Particle size
-          lineDistance: 180,          // Connection distance
+          maxSpeed: 0.5,              // Maximum velocity
+          maxSize: 1.5,               // Particle size
+          lineWidth: 0.5,             // Connection line thickness
+          lineDistance: 100,          // Connection distance
           particleColor: Colors.white,
-          lineColor: const Color(0xFF4CFFA7),
-          touchColor: Colors.amber,    // Color on touch
+          lineColor: const Color.fromARGB(255, 100, 255, 180),
+          touchColor: Colors.amber,   // Color on touch
           touchActivation: true,      // Enable touch
-          drawnetwork: true,          // Show connections
+          drawNetwork: true,          // Show connections
           fill: false,                // Outline particles
           isComplex: false,           // Optimize performance
         ),
@@ -104,22 +105,24 @@ class MyApp extends StatelessWidget {
 }
 ```
 
+See the complete tutorial [here](https://youtu.be/FZyFgUXCrHg).
+
 ## ⚙️ Configuration
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `particleCount` | `int` | `50` | Number of particles in the system |
-| `maxSpeed` | `double` | `0.5` | Maximum particle velocity |
-| `maxSize` | `double` | `3.5` | Maximum particle radius |
-| `lineDistance` | `double` | `100` | Maximum connection distance |
-| `particleColor` | `Color` | `Colors.white` | Particle color |
-| `lineColor` | `Color` | `Colors.teal` | Connection line color |
-| `touchColor` | `Color` | `Colors.amber` | Touch highlight color |
-| `touchActivation` | `bool` | `false` | Enable touch interaction |
-| `drawnetwork` | `bool` | `true` | Show particle connections |
-| `fill` | `bool` | `true` | Fill vs outline particles |
-| `isComplex` | `bool` | `false` | Optimize complex scenes |
-| `linewidth` | `double` | `0.5` | Connection line thickness |
+| Property          | Type     | Default        | Description                       |
+|-------------------|----------|----------------|-----------------------------------|
+| `particleCount`   | `int`    | `60`           | Number of particles in the system |
+| `maxSpeed`        | `double` | `0.5`          | Maximum particle velocity         |
+| `maxSize`         | `double` | `1.5`          | Maximum particle radius           |
+| `lineWidth`       | `double` | `0.5`          | Connection line thickness         |
+| `lineDistance`    | `double` | `100`          | Maximum connection distance       |
+| `particleColor`   | `Color`  | `Colors.white` | Particle color                    |
+| `lineColor`       | `Color`  | `Colors.teal`  | Connection line color             |
+| `touchColor`      | `Color`  | `Colors.amber` | Touch highlight color             |
+| `touchActivation` | `bool`   | `true`         | Enable touch interaction          |
+| `isComplex`       | `bool`   | `false`        | Optimize complex scenes           |
+| `fill`            | `bool`   | `true`         | Fill vs outline particles         |
+| `drawNetwork`     | `bool`   | `true`         | Show particle connections         |
 
 ## 🎯 Advanced Usage
 
@@ -156,6 +159,10 @@ Stack(
 - Reduce `particleCount` and `lineDistance` for better performance on low-end devices
 - Set `isComplex: true` for scenes with many particles
 - Use `fill: false` for a lighter visual style that's also more performant
+
+### Articles and videos
+
+- [Particles Network Package || All Properties Explained + Custom Examples || Flutter Tutorial](https://youtu.be/FZyFgUXCrHg)
 
 ## 🔧 Under the Hood
 
