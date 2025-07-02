@@ -10,19 +10,15 @@ Transform your Flutter app’s UI with a high-performance particle network anima
   </a>
 
   <br>
-
   <a href="https://pub.dev/packages/particles_network">
-    <img alt="Pub Version" src="https://img.shields.io/pub/v/particles_network">
-  </a>
+    <img alt="Pub Version" src="https://img.shields.io/pub/v/particles_network"></a>
   <a href="https://github.com/abod8639/Particles_Network/actions/workflows/flutter-ci.yml">
-    <img alt="CI Status" src="https://github.com/abod8639/Particles_Network/actions/workflows/flutter-ci.yml/badge.svg">
-  </a>
+    <img alt="CI Status" src="https://github.com/abod8639/Particles_Network/actions/workflows/flutter-ci.yml/badge.svg"></a>
   <a href="https://opensource.org/licenses/MIT">
-    <img alt="MIT License" src="https://img.shields.io/badge/license-MIT-blue.svg">
-  </a>
-  <a href="https://codecov.io/gh/abod8639/Particles_Network">
-    <img alt="Code Coverage" src="https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg">
-  </a>
+    <img alt="MIT License" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
+  <a href="https://codecov.io/gh/abod8639/Particles_Network"></a>
+    <a href="https://codecov.io/gh/abod8639/Particles_Network">
+     <img alt="Code Coverage" src="https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg"></a>
   <img alt="Pub Likes" src="https://img.shields.io/pub/likes/particles_network">
   <img alt="Pub Points" src="https://img.shields.io/pub/points/particles_network">
 </div>
