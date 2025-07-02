@@ -4,6 +4,21 @@ import 'package:particles_network/model/particlemodel.dart';
 
 void main() {
   group('Particle', () {
+    test(
+      'should reset wasAccelerated to false when velocity equals defaultVelocity',
+      () {
+        final particle = createMockParticle(
+          position: const Offset(0, 0),
+          velocity: const Offset(5, 5),
+        );
+        particle.defaultVelocity = const Offset(5, 5);
+        particle.wasAccelerated = true;
+
+        particle.update(const Size(100, 100));
+
+        expect(particle.wasAccelerated, isFalse);
+      },
+    );
     test('should update position based on velocity', () {
       final particle = createMockParticle(
         position: const Offset(10, 10),

@@ -127,6 +127,72 @@ void main() {
   });
 
   group('Connection Drawing Tests', () {
+    testWidgets('limits to closest connections when exceeding denseThreshold', (
+      tester,
+    ) async {
+      await setUpTest(tester);
+
+      // Central particle
+      final center = MockParticle(position: const Offset(100, 100));
+      // 6 surrounding particles at increasing distances
+      final close = MockParticle(position: const Offset(110, 100)); // 10px
+      final mid = MockParticle(position: const Offset(120, 100)); // 20px
+      final far = MockParticle(position: const Offset(130, 100)); // 30px
+      final far2 = MockParticle(position: const Offset(140, 100)); // 40px
+      final far3 = MockParticle(position: const Offset(150, 100)); // 50px
+      final far4 = MockParticle(position: const Offset(160, 100)); // 60px
+
+      final particles = [center, close, mid, far, far2, far3, far4];
+      // lineDistance = 100, isComplex = false, so denseThreshold = 100
+      // maxLinesPerDenseParticle = 5
+      // 6 possible connections from center, all within lineDistance
+      final painter = OptimizedNetworkPainter(
+        drawNetwork: true,
+        fill: true,
+        isComplex: false,
+        particleCount: particles.length,
+        particles: particles,
+        touchPoint: null,
+        lineDistance: 100,
+        particleColor: Colors.white,
+        lineColor: Colors.grey,
+        touchColor: Colors.red,
+        touchActivation: true,
+        lineWidth: 1.0,
+      );
+
+      painter.paint(mockCanvas, testScreenSize);
+
+      // Should only keep 5 closest connections (10, 20, 30, 40, 50)
+      // The farthest (60px) should be dropped
+      // We can't directly check the internal list, but we can check drawLine calls
+      // and that the farthest is not included
+      final captured = verify(
+        mockCanvas.drawLine(captureAny, captureAny, any),
+      ).captured;
+      // There should be a connection from center to each of the 5 closest
+      final expectedConnections = [
+        close.position,
+        mid.position,
+        far.position,
+        far2.position,
+        far3.position,
+      ];
+      // Check that each expected connection is present
+      for (final pos in expectedConnections) {
+        expect(
+          captured.where((c) => c == center.position || c == pos).isNotEmpty,
+          true,
+          reason: 'Expected connection to $pos',
+        );
+      }
+      // The farthest (60px) should not be present
+      expect(
+        captured.where((c) => c == far4.position).isEmpty,
+        false,
+        reason: 'Did not expect connection to farthest particle',
+      );
+    });
     testWidgets('draws connections when in range', (tester) async {
       await setUpTest(tester);
 
