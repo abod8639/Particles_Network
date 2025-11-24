@@ -31,6 +31,11 @@ class CompressedPath {
 }
 
 /// A node in the compressed quadtree data structure
+/// 
+/// Optimizations:
+/// - Cached midpoint coordinates for faster quadrant determination
+/// - Pre-calculated child boundaries for faster subdivision
+/// - Lazy initialization of expensive calculations
 class CompressedQuadTreeNode {
   // Configuration constants
   static const int maxParticles =
@@ -42,6 +47,20 @@ class CompressedQuadTreeNode {
   final Rectangle boundary;
   final int depth; // Current depth in the tree
   final CompressedPath? compressedPath; // Compression information
+
+  // Cached calculations for performance
+  late final double midX = boundary.x + boundary.width / 2;
+  late final double midY = boundary.y + boundary.height / 2;
+  late final double halfWidth = boundary.width / 2;
+  late final double halfHeight = boundary.height / 2;
+  
+  // Pre-calculated child boundaries (lazy initialization)
+  late final Map<Quadrant, Rectangle> _childBoundaries = {
+    Quadrant.northWest: Rectangle(boundary.x, boundary.y, halfWidth, halfHeight),
+    Quadrant.northEast: Rectangle(boundary.x + halfWidth, boundary.y, halfWidth, halfHeight),
+    Quadrant.southWest: Rectangle(boundary.x, boundary.y + halfHeight, halfWidth, halfHeight),
+    Quadrant.southEast: Rectangle(boundary.x + halfWidth, boundary.y + halfHeight, halfWidth, halfHeight),
+  };
 
   // Data storage
   final List<QuadTreeParticle> particles = []; // Particles in this node
@@ -127,27 +146,23 @@ class CompressedQuadTreeNode {
   }
 
   /// Performs normal subdivision into 4 quadrants
+  /// Uses pre-calculated child boundaries for better performance
   void _subdivideNormal() {
-    final double halfWidth = boundary.width / 2;
-    final double halfHeight = boundary.height / 2;
-    final double x = boundary.x;
-    final double y = boundary.y;
-
-    // Create all four child quadrants
+    // Create all four child quadrants using cached boundaries
     children[Quadrant.northWest] = CompressedQuadTreeNode(
-      Rectangle(x, y, halfWidth, halfHeight),
+      _childBoundaries[Quadrant.northWest]!,
       depth + 1,
     );
     children[Quadrant.northEast] = CompressedQuadTreeNode(
-      Rectangle(x + halfWidth, y, halfWidth, halfHeight),
+      _childBoundaries[Quadrant.northEast]!,
       depth + 1,
     );
     children[Quadrant.southWest] = CompressedQuadTreeNode(
-      Rectangle(x, y + halfHeight, halfWidth, halfHeight),
+      _childBoundaries[Quadrant.southWest]!,
       depth + 1,
     );
     children[Quadrant.southEast] = CompressedQuadTreeNode(
-      Rectangle(x + halfWidth, y + halfHeight, halfWidth, halfHeight),
+      _childBoundaries[Quadrant.southEast]!,
       depth + 1,
     );
 
@@ -172,12 +187,9 @@ class CompressedQuadTreeNode {
   }
 
   /// Determines which quadrant a point belongs to
+  /// Uses cached midpoint coordinates for better performance
   Quadrant _getQuadrant(double x, double y) {
-    // Calculate midpoint of this node's boundary
-    final double midX = boundary.x + boundary.width / 2;
-    final double midY = boundary.y + boundary.height / 2;
-
-    // Determine quadrant based on position relative to midpoint
+    // Use pre-calculated midpoint coordinates
     if (x <= midX && y <= midY) return Quadrant.northWest;
     if (x > midX && y <= midY) return Quadrant.northEast;
     if (x <= midX && y > midY) return Quadrant.southWest;
@@ -185,22 +197,9 @@ class CompressedQuadTreeNode {
   }
 
   /// Gets the boundary rectangle for a child quadrant
+  /// Returns pre-calculated boundary for optimal performance
   Rectangle getChildBoundary(Quadrant quadrant) {
-    final double halfWidth = boundary.width / 2;
-    final double halfHeight = boundary.height / 2;
-    final double x = boundary.x;
-    final double y = boundary.y;
-
-    switch (quadrant) {
-      case Quadrant.northWest:
-        return Rectangle(x, y, halfWidth, halfHeight);
-      case Quadrant.northEast:
-        return Rectangle(x + halfWidth, y, halfWidth, halfHeight);
-      case Quadrant.southWest:
-        return Rectangle(x, y + halfHeight, halfWidth, halfHeight);
-      case Quadrant.southEast:
-        return Rectangle(x + halfWidth, y + halfHeight, halfWidth, halfHeight);
-    }
+    return _childBoundaries[quadrant]!;
   }
 
   /// Queries particles within a rectangular area

@@ -43,11 +43,7 @@ class Particle {
 
     // If the particle was accelerated, gradually reduce its velocity to the default.
     if (wasAccelerated) {
-      velocity = computeVelocity(velocity, defaultVelocity, 0.01);
-      // If velocity has returned to default, reset the accelerated flag.
-      if (velocity == defaultVelocity) {
-        wasAccelerated = false;
-      }
+      _updateAcceleratedVelocity();
     }
 
     // Handle collisions with the screen boundaries.
@@ -57,15 +53,36 @@ class Particle {
     updateVisibility(bounds);
   }
 
+  void _updateAcceleratedVelocity() {
+    velocity = computeVelocity(velocity, defaultVelocity, 0.01);
+    // If velocity has returned to default, reset the accelerated flag.
+    if (velocity == defaultVelocity) {
+      wasAccelerated = false;
+    }
+  }
+
   // Handles collisions with the screen boundaries by reversing the velocity.
   void handleScreenBoundaries(Size bounds) {
+    double dx = velocity.dx;
+    double dy = velocity.dy;
+    double defDx = defaultVelocity.dx;
+    double defDy = defaultVelocity.dy;
+    bool changed = false;
+
     if (position.dx < 0 || position.dx > bounds.width) {
-      velocity = Offset(-velocity.dx, velocity.dy);
-      defaultVelocity = Offset(-defaultVelocity.dx, defaultVelocity.dy);
+      dx = -dx;
+      defDx = -defDx;
+      changed = true;
     }
     if (position.dy < 0 || position.dy > bounds.height) {
-      velocity = Offset(velocity.dx, -velocity.dy);
-      defaultVelocity = Offset(defaultVelocity.dx, -defaultVelocity.dy);
+      dy = -dy;
+      defDy = -defDy;
+      changed = true;
+    }
+
+    if (changed) {
+      velocity = Offset(dx, dy);
+      defaultVelocity = Offset(defDx, defDy);
     }
   }
 
@@ -73,11 +90,15 @@ class Particle {
   void updateVisibility(Size bounds) {
     // Include a margin to account for particles near the edges of the viewport.
     const margin = 50.0;
+    // Use local variables to avoid repeated property access
+    final double px = position.dx;
+    final double py = position.dy;
+    
     isVisible =
-        position.dx >= -margin &&
-        position.dx <= bounds.width + margin &&
-        position.dy >= -margin &&
-        position.dy <= bounds.height + margin;
+        px >= -margin &&
+        px <= bounds.width + margin &&
+        py >= -margin &&
+        py <= bounds.height + margin;
   }
 }
 
@@ -87,7 +108,17 @@ Offset computeVelocity(
   Offset defaultVelocity,
   double speedThreshold,
 ) {
-  // Calculate the magnitude (speed) of the current and default velocity vectors.
+  // Calculate the squared magnitude to avoid expensive sqrt calls for threshold check
+  final double currentSpeedSq = currentVelocity.distanceSquared;
+  final double defaultSpeedSq = defaultVelocity.distanceSquared;
+  
+  // Approximation for speed difference check to avoid sqrt
+  // If squared difference is small enough, we can assume speeds are close
+  if ((currentSpeedSq - defaultSpeedSq).abs() < speedThreshold * speedThreshold) {
+    return defaultVelocity;
+  }
+
+  // Calculate actual speeds only when needed for scaling
   final double currentSpeed = currentVelocity.distance;
   final double defaultSpeed = defaultVelocity.distance;
 

@@ -143,7 +143,8 @@ class ParticleNetworkState extends State<ParticleNetwork>
       controller.updateParticles(particles, currentSize);
 
       // Trigger repaint by updating the frame counter
-      frameNotifier.value = elapsed.inMicroseconds;
+      // Using a simple increment is sufficient and avoids large numbers
+      frameNotifier.value++;
     })..start(); // Start the animation loop immediately
   }
 

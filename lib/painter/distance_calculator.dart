@@ -70,7 +70,7 @@ class DistanceCalculator {
       _cache = LinkedHashMap<int, double>();
 
   /// Maximum number of memoised distances before eviction.
-  final int maxEntries;
+  int maxEntries;
 
   /// Internal storage — maintains insertion order ⇒ O(1) LRU removal.
   final LinkedHashMap<int, double> _cache;
@@ -81,8 +81,13 @@ class DistanceCalculator {
 
   /// Returns the Euclidean distance between two [Particle]s using the cache.
   /// The XOR key is computed once here so we don’t hash twice.
-  double betweenParticles(Particle a, Particle b) =>
-      _cachedDistance(a.position, b.position, a.hashCode ^ b.hashCode);
+  double betweenParticles(Particle a, Particle b) {
+    // Symmetric key generation: ensure consistent order for (a,b) and (b,a)
+    final int h1 = a.hashCode;
+    final int h2 = b.hashCode;
+    final int key = h1 < h2 ? (h1 * 31 + h2) : (h2 * 31 + h1);
+    return _cachedDistance(a.position, b.position, key);
+  }
 
   /// Raw distance between two `Offset`s **without caching**. Useful for
   /// sporadic checks (e.g., pointer→particle) where caching adds no value.
@@ -92,6 +97,28 @@ class DistanceCalculator {
   /// Clears **all** cached entries in O(1). Call every frame if the entire
   /// swarm moves; otherwise let the cache span a few frames for better hits.
   void reset() => _cache.clear();
+
+  /// Updates the cache size based on particle count.
+  /// Recommended size is roughly (N * N) / 2 for full connectivity,
+  /// but we can cap it to avoid excessive memory usage.
+  void updateCacheSize(int particleCount) {
+    // Estimate needed pairs: N * (N-1) / 2
+    // We cap at 20,000 or user defined max to prevent OOM on huge counts
+    final int estimatedPairs = (particleCount * (particleCount - 1)) ~/ 2;
+    final int newMax = estimatedPairs.clamp(1000, 20000);
+    
+    if (maxEntries != newMax) {
+      maxEntries = newMax;
+      // If we shrank, trim the cache
+      if (_cache.length > maxEntries) {
+        // Remove oldest entries until we fit
+        final int toRemove = _cache.length - maxEntries;
+        for (int i = 0; i < toRemove; i++) {
+          _cache.remove(_cache.keys.first);
+        }
+      }
+    }
+  }
 
   //-------------------------------------------------------------------------
   // Implementation details
