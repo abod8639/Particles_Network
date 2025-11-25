@@ -67,7 +67,7 @@ Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  particles_network: ^1.8.0
+  particles_network: ^1.9.0
 ```
 
 Then run:
