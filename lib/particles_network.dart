@@ -158,9 +158,11 @@ class ParticleNetworkState extends State<ParticleNetwork>
   Future<void> _loadShader() async {
     try {
       final program = await ui.FragmentProgram.fromAsset('shaders/particles.frag');
-      setState(() {
-        _shader = program.fragmentShader();
-      });
+      if (mounted) {
+        setState(() {
+          _shader = program.fragmentShader();
+        });
+      }
     } catch (e) {
       debugPrint('Failed to load shader: $e');
     }

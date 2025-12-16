@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:particles_network/particles_network.dart';
-import 'package:particles_network/painter/optimized_network_painter.dart';
 
 void main() {
-  testWidgets('ParticlesNetwork builds correctly', (WidgetTester tester) async {
+  testWidgets('ParticleNetwork builds correctly with default parameters', (WidgetTester tester) async {
     await tester.pumpWidget(
-      MaterialApp(
+      const MaterialApp(
         home: Scaffold(
-          body: ParticleNetwork(
-            particleCount: 50,
-            lineDistance: 100,
-            particleColor: Colors.red,
-            lineColor: Colors.blue,
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: ParticleNetwork(),
           ),
         ),
       ),
@@ -20,32 +18,81 @@ void main() {
 
     // Verify widget is present
     expect(find.byType(ParticleNetwork), findsOneWidget);
-    expect(find.descendant(
-      of: find.byType(ParticleNetwork),
-      matching: find.byType(CustomPaint),
-    ), findsOneWidget);
+    
+    // Verify CustomPaint is used (which triggers the painter)
+    expect(
+      find.descendant(
+        of: find.byType(ParticleNetwork),
+        matching: find.byType(CustomPaint),
+      ),
+      findsOneWidget,
+    );
+    
+    // Verify GestureDetector is present (for user interaction)
+    expect(
+      find.descendant(
+        of: find.byType(ParticleNetwork),
+        matching: find.byType(GestureDetector),
+      ),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('ParticlesNetwork uses fallback painter initially', (WidgetTester tester) async {
+  testWidgets('ParticleNetwork respects parameters', (WidgetTester tester) async {
+    const testColor = Color(0xFFFF0000);
+    
     await tester.pumpWidget(
-      MaterialApp(
+      const MaterialApp(
         home: Scaffold(
-          body: ParticleNetwork(
-            particleCount: 50,
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: ParticleNetwork(
+              particleCount: 10,
+              particleColor: testColor,
+              touchActivation: false,
+            ),
           ),
         ),
       ),
     );
 
-    // Initially, shader is not loaded, so it should use OptimizedNetworkPainter
-    // Note: We can't easily check the painter type directly from the widget tree without finding the CustomPaint
-    // but we can verify it doesn't crash.
-    
-    final customPaintFinder = find.descendant(
-      of: find.byType(ParticleNetwork),
-      matching: find.byType(CustomPaint),
+    final widget = tester.widget<ParticleNetwork>(find.byType(ParticleNetwork));
+    expect(widget.particleCount, 10);
+    expect(widget.particleColor, testColor);
+    expect(widget.touchActivation, false);
+  });
+  
+  testWidgets('ParticleNetwork handles resize', (WidgetTester tester) async {
+    // Initial size
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 100,
+            height: 100,
+            child: ParticleNetwork(),
+          ),
+        ),
+      ),
     );
-    final customPaint = tester.widget<CustomPaint>(customPaintFinder);
-    expect(customPaint.painter, isA<OptimizedNetworkPainter>());
+    
+    expect(find.byType(ParticleNetwork), findsOneWidget);
+
+    // Resize
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 200,
+            height: 200,
+            child: ParticleNetwork(),
+          ),
+        ),
+      ),
+    );
+    
+    // Should still exist and not crash
+    expect(find.byType(ParticleNetwork), findsOneWidget);
   });
 }

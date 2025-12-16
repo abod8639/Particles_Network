@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:particles_network/model/particlemodel.dart';
 
 class ShaderNetworkPainter extends CustomPainter {
-  final FragmentShader shader;
+  final FragmentShader shader; 
   final List<Particle> particles;
   final double lineDistance;
   final Color particleColor;
