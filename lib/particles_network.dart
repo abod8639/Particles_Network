@@ -7,7 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:particles_network/model/ip_article.dart';
 import 'package:particles_network/model/particlemodel.dart';
+import 'dart:ui' as ui;
 import 'package:particles_network/painter/optimized_network_painter.dart';
+import 'package:particles_network/painter/shader_network_painter.dart';
+
 
 // Importing default particle factory implementation
 import 'model/default_particle_factory.dart';
@@ -122,6 +125,8 @@ class ParticleNetworkState extends State<ParticleNetwork>
   factory; // Creates particles with random properties
   late final IParticleController
   controller; // Updates particle positions each frame
+  ui.FragmentShader? _shader; // GLSL Shader
+
 
   @override
   void initState() {
@@ -146,7 +151,21 @@ class ParticleNetworkState extends State<ParticleNetwork>
       // Using a simple increment is sufficient and avoids large numbers
       frameNotifier.value++;
     })..start(); // Start the animation loop immediately
+
+    _loadShader();
   }
+
+  Future<void> _loadShader() async {
+    try {
+      final program = await ui.FragmentProgram.fromAsset('shaders/particles.frag');
+      setState(() {
+        _shader = program.fragmentShader();
+      });
+    } catch (e) {
+      debugPrint('Failed to load shader: $e');
+    }
+  }
+
 
   /// Generates or regenerates particles when size changes
   /// Uses the factory to create particles with:
@@ -195,7 +214,16 @@ class ParticleNetworkState extends State<ParticleNetwork>
             valueListenable: frameNotifier,
             // Rebuild only the CustomPaint when frameNotifier changes
             builder: (_, _, _) => CustomPaint(
-              painter: OptimizedNetworkPainter(
+              painter: _shader != null 
+                  ? ShaderNetworkPainter(
+                      shader: _shader!,
+                      particles: particles,
+                      lineDistance: widget.lineDistance,
+                      particleColor: widget.particleColor,
+                      lineColor: widget.lineColor,
+                      particleCount: widget.particleCount,
+                    )
+                  : OptimizedNetworkPainter(
                 // Configuration passed to the painter:
                 drawNetwork: widget.drawNetwork, // Whether to draw connections
                 fill: widget.fill, // Fill vs stroke particles
@@ -210,6 +238,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
                 lineColor: widget.lineColor,
                 touchColor: widget.touchColor,
               ),
+
               // Performance optimization flags:
               isComplex:
                   true, // Hint that painting is computationally intensive

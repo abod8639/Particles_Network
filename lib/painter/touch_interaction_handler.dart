@@ -87,7 +87,7 @@ class TouchInteractionHandler {
       final List<Offset> points = opacityBuckets[i];
       if (points.isNotEmpty) {
         final double bucketOpacity = (i + 1) / 10.0;
-        linePaint.color = touchColor.withOpacity(bucketOpacity);
+        linePaint.color = touchColor.withValues(alpha: bucketOpacity);
         canvas.drawPoints(PointMode.lines, points, linePaint);
       }
     }
@@ -136,8 +136,8 @@ class TouchInteractionHandler {
       final double distance = math.sqrt(dx * dx + dy * dy);
 
       if (distance < lineDistance) {
-        final int opacity = ((1 - distance / lineDistance) * 255).toInt();
-        linePaint.color = touchColor.withAlpha(opacity.clamp(0, 255));
+        final double opacityValue = (1 - distance / lineDistance).clamp(0.0, 1.0);
+        linePaint.color = touchColor.withValues(alpha: opacityValue);
         canvas.drawLine(p.position, touch, linePaint);
       }
     }

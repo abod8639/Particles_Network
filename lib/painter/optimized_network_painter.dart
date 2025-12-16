@@ -231,7 +231,7 @@ class OptimizedNetworkPainter extends CustomPainter {
         final double bucketOpacity = (bucketIndex + 1) / 10.0;
         
         // Update paint color with calculated opacity
-        linePaint.color = lineColor.withOpacity(bucketOpacity);
+        linePaint.color = lineColor.withValues(alpha: bucketOpacity);
         
         // Draw all lines in this bucket with a single call
         canvas.drawPoints(ui.PointMode.lines, points, linePaint);

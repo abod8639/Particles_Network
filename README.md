@@ -6,21 +6,29 @@ Transform your Flutter app’s UI with a high-performance particle network anima
 
 <div align="center">
   <a href="https://github.com/abod8639/Particles_Network">
-    <img alt="particles_network demo" width="300" src="assets/Picsart_25-05-10_12-57-34-680.png">
+    <img alt="particles_network demo" 
+         width="300"
+         src="assets/Picsart_25-05-10_12-57-34-680.png">
   </a>
 
   <br>
   <a href="https://pub.dev/packages/particles_network">
-    <img alt="Pub Version" src="https://img.shields.io/pub/v/particles_network"></a>
+    <img alt="Pub Version" 
+         src="https://img.shields.io/pub/v/particles_network"></a>
   <a href="https://github.com/abod8639/Particles_Network/actions/workflows/flutter-ci.yml">
-    <img alt="CI Status" src="https://github.com/abod8639/Particles_Network/actions/workflows/flutter-ci.yml/badge.svg"></a>
+    <img alt="CI Status" 
+    src="https://github.com/abod8639/Particles_Network/actions/workflows/flutter-ci.yml/badge.svg"></a>
   <a href="https://opensource.org/licenses/MIT">
-    <img alt="MIT License" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
+    <img alt="MIT License" 
+         src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
   <a href="https://codecov.io/gh/abod8639/Particles_Network"></a>
     <a href="https://codecov.io/gh/abod8639/Particles_Network">
-     <img alt="Code Coverage" src="https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg"></a>
-  <img alt="Pub Likes" src="https://img.shields.io/pub/likes/particles_network">
-  <img alt="Pub Points" src="https://img.shields.io/pub/points/particles_network">
+     <img alt="Code Coverage" 
+          src="https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg"></a>
+  <img alt="Pub Likes" 
+       src="https://img.shields.io/pub/likes/particles_network">
+  <img alt="Pub Points" 
+       src="https://img.shields.io/pub/points/particles_network">
 </div>
 
 ---
@@ -54,7 +62,8 @@ Transform your Flutter app’s UI with a high-performance particle network anima
 
 **GIF Preview:**
 
-<video width="300" height="600" autoplay loop muted>
+<video width="300" 
+       height="600" autoplay loop muted>
   <source src="assets/Screen_Recording_20251124_055354.mp4" type="video/mp4">
 </video>
 
@@ -142,7 +151,7 @@ class MyApp extends StatelessWidget {
 | `touchColor`      | `Color`  | `Colors.amber` | Highlight color on touch     |
 | `touchActivation` | `bool`   | `true`         | Enables touch interaction    |
 | `isComplex`       | `bool`   | `false`        | Optimizes complex scenes     |
-| `fill`             | `bool`   | `true`         | Filled or outlined particles |
+| `fill`            | `bool`   | `true`         | Filled or outlined particles |
 | `drawNetwork`     | `bool`   | `true`         | Draw lines between particles |
 
 ---
