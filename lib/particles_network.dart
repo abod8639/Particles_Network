@@ -81,6 +81,10 @@ class ParticleNetwork extends StatefulWidget {
   /// Whether to draw connecting lines between particles [default: true]
   final bool drawNetwork;
 
+  /// The path to the shader asset. Exposed for testing.
+  @visibleForTesting
+  final String shaderPath;
+
   /// Creates a ParticleNetwork widget with customizable parameters
   const ParticleNetwork({
     super.key,
@@ -96,6 +100,7 @@ class ParticleNetwork extends StatefulWidget {
     this.isComplex = false,
     this.fill = true,
     this.drawNetwork = true,
+    this.shaderPath = 'shaders/particles.frag',
   });
 
   @override
@@ -157,7 +162,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
 
   Future<void> _loadShader() async {
     try {
-      final program = await ui.FragmentProgram.fromAsset('shaders/particles.frag');
+      final program = await ui.FragmentProgram.fromAsset(widget.shaderPath);
       if (mounted) {
         setState(() {
           _shader = program.fragmentShader();
