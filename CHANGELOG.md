@@ -1,3 +1,5 @@
+# CHANGELOG
+
 ## [1.9.0] 
 
 Initial release of the Particles Network package with the following features:
@@ -10,3 +12,4 @@ Initial release of the Particles Network package with the following features:
 * Added automatic screen boundary handling
 * Added smooth particle physics and movement
 * Added documentation and examples
+* Improved rendering performance using GPU Fragment Shaders

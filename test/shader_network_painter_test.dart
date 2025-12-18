@@ -24,8 +24,6 @@ void main() {
       return;
     }
 
-    if (shader == null) return;
-
     final particles = [
       Particle(
           position: const Offset(10, 20),
