@@ -56,4 +56,15 @@ class ParticleFilter {
 
     return visibleParticles;
   }
+
+  static void fillVisibleParticles(List<Particle> particles, List<int> buffer) {
+    buffer.clear(); 
+    
+    final int len = particles.length;
+    for (int i = 0; i < len; i++) {
+      if (particles[i].isVisible) {
+        buffer.add(i);
+      }
+    }
+  }
 }
