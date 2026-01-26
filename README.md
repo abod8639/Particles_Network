@@ -62,7 +62,7 @@ Transform your Flutter app’s UI with a high-performance particle network anima
 **Video Preview:**
 
 
-<video src="assets/Screen_Recording_20251124_055354.mp4" controls="controls"  height="300" width="600">
+<video src="https://github.com/abod8639/Particles_Network/raw/main/assets/Screen_Recording_20251124_055354.mp4" controls="controls"  height="300" width="600">
 </video>
 
 <!-- <video width="300" 
