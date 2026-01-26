@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:particles_network/model/particlemodel.dart';
 import 'package:particles_network/model/rectangle.dart';
 import 'package:particles_network/quad_tree/compressed_quad_tree.dart';
 import 'package:particles_network/quad_tree/compressed_quad_tree_node.dart';
@@ -73,7 +74,7 @@ void main() {
       ];
       final visibleParticles = [0, 1, 2];
 
-      quadTree.buildFromParticles(particles, visibleParticles);
+      quadTree.buildFromParticles(particles.cast<Particle>(), visibleParticles);
 
       expect(quadTree.getAllParticleIndices().length, equals(3));
       expect(quadTree.getAllParticleIndices(), containsAll([0, 1, 2]));
@@ -115,7 +116,7 @@ void main() {
       // Initial build
       final initialParticles = [_MockParticle(10, 10), _MockParticle(20, 20)];
       final initialVisible = [0, 1];
-      quadTree.buildFromParticles(initialParticles, initialVisible);
+      quadTree.buildFromParticles(initialParticles.cast<Particle>(), initialVisible);
       expect(quadTree.getAllParticleIndices(), containsAll([0, 1]));
 
       // Rebuild with new particles
@@ -125,7 +126,7 @@ void main() {
         _MockParticle(50, 50),
       ];
       final newVisible = [0, 1, 2];
-      quadTree.rebuild(newParticles, newVisible);
+      quadTree.rebuild(newParticles.cast<Particle>(), newVisible);
 
       // Verify rebuild results
       final indices = quadTree.getAllParticleIndices();
