@@ -102,6 +102,7 @@ class OptimizedNetworkPainter extends CustomPainter {
       linePaint: linePaint,
     );
   }
+final List<List<Offset>> _opacityBuckets = List.generate(10, (_) => []);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -157,6 +158,9 @@ class OptimizedNetworkPainter extends CustomPainter {
     // Each bucket contains pairs of points: [start1, end1, start2, end2, ...]
     final List<List<Offset>> opacityBuckets = List.generate(10, (_) => []);
 
+    for (var bucket in _opacityBuckets) {
+      bucket.clear();
+    }
     // Process each visible particle
     for (final int particleIndex in visibleParticles) {
       final Particle particle = particles[particleIndex];
