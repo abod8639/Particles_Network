@@ -102,33 +102,41 @@ class OptimizedNetworkPainter extends CustomPainter {
       linePaint: linePaint,
     );
   }
+
 final List<List<Offset>> _opacityBuckets = List.generate(10, (_) => []);
 
   @override
-  void paint(Canvas canvas, Size size) {
-    
-    _distanceCalculator.reset();
-    final List<int> visibleParticles = ParticleFilter.getVisibleParticles(particles);
+@override
+void paint(Canvas canvas, Size size) {
+  // 1. تصفير الحسابات المؤقتة
+  _distanceCalculator.reset();
+  
+  // 2. فلترة الجزيئات المرئية فقط
+  final List<int> visibleParticles = ParticleFilter.getVisibleParticles(particles);
 
-    _quadTree.clear();
-    // _quadTree.updateBoundary(Rectangle(0, 0, size.width, size.height));
+  // 3. تحديث مساحة الـ QuadTree لتطابق حجم الشاشة الحالي
+  _quadTree.clear();
+  _quadTree.updateBoundary(Rectangle(0, 0, size.width, size.height));
 
-    if (drawNetwork) {
-      for (int i = 0; i < visibleParticles.length; i++) {
-        final int idx = visibleParticles[i];
-        final p = particles[idx];
-        // QuadTree
-        _quadTree.insert(QuadTreeParticle(idx, p.position.dx, p.position.dy));
-      }
-      _drawConnections(canvas, visibleParticles);
+  if (drawNetwork) {
+    // 4. بناء الهيكل المكاني
+    for (int i = 0; i < visibleParticles.length; i++) {
+      final int idx = visibleParticles[i];
+      final p = particles[idx];
+      _quadTree.insert(QuadTreeParticle(idx, p.position.dx, p.position.dy));
     }
-
-    if (touchPoint != null && touchActivation) {
-      _touchHandler.handleTouchInteraction(canvas, visibleParticles);
-    }
-
-    _drawParticles(canvas, visibleParticles);
+    // 5. رسم الروابط بتقنية الـ Buckets
+    _drawConnections(canvas, visibleParticles);
   }
+
+  // 6. التعامل مع اللمس
+  if (touchPoint != null && touchActivation) {
+    _touchHandler.handleTouchInteraction(canvas, visibleParticles);
+  }
+
+  // 7. رسم الجزيئات في النهاية لتكون فوق الخطوط
+  _drawParticles(canvas, visibleParticles);
+}
 
   /// Draws individual particles as circles
   void _drawParticles(Canvas canvas, List<int> visibleParticles) {
