@@ -105,27 +105,20 @@ class OptimizedNetworkPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    
     _distanceCalculator.reset();
-
-    final List<int> visibleParticles = ParticleFilter.getVisibleParticles(
-      particles,
-    );
+    final List<int> visibleParticles = ParticleFilter.getVisibleParticles(particles);
 
     _quadTree.clear();
-    if (drawNetwork) {
-      for (int i = 0; i < visibleParticles.length; i++) {
-        final Particle particle = particles[visibleParticles[i]];
-        _quadTree.insert(
-          QuadTreeParticle(
-            visibleParticles[i],
-            particle.position.dx,
-            particle.position.dy,
-          ),
-        );
-      }
-    }
+    // _quadTree.updateBoundary(Rectangle(0, 0, size.width, size.height));
 
     if (drawNetwork) {
+      for (int i = 0; i < visibleParticles.length; i++) {
+        final int idx = visibleParticles[i];
+        final p = particles[idx];
+        // QuadTree
+        _quadTree.insert(QuadTreeParticle(idx, p.position.dx, p.position.dy));
+      }
       _drawConnections(canvas, visibleParticles);
     }
 
@@ -133,7 +126,6 @@ class OptimizedNetworkPainter extends CustomPainter {
       _touchHandler.handleTouchInteraction(canvas, visibleParticles);
     }
 
-    // Always draw particles at the end
     _drawParticles(canvas, visibleParticles);
   }
 

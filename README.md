@@ -224,7 +224,7 @@ final nearbyParticles = quadTree.queryCircle(
 
 ## Contributing
 
-We welcome contributions! See the [contributing guide](https://github.com/abod8639) for more details.
+We welcome contributions! See the [contributing guide](https://github.com/abod8639/particles_network/tree/main/CONTRIBUTING.md) for more details.
 
 ## License
 

@@ -82,11 +82,18 @@ class DistanceCalculator {
   /// Returns the Euclidean distance between two [Particle]s using the cache.
   /// The XOR key is computed once here so we don’t hash twice.
   double betweenParticles(Particle a, Particle b) {
-    // Symmetric key generation: ensure consistent order for (a,b) and (b,a)
     final int h1 = a.hashCode;
     final int h2 = b.hashCode;
-    final int key = h1 < h2 ? (h1 * 31 + h2) : (h2 * 31 + h1);
+    // Symmetric key generation: ensure consistent order for (a,b) and (b,a)
+    final int key = h1 < h2 ? (h1 ^ (h2 << 5)) : (h2 ^ (h1 << 5));
     return _cachedDistance(a.position, b.position, key);
+  }
+
+
+  static double squaredDistance(Offset a, Offset b) {
+    final double dx = a.dx - b.dx;
+    final double dy = a.dy - b.dy;
+    return dx * dx + dy * dy;
   }
 
   /// Raw distance between two `Offset`s **without caching**. Useful for
