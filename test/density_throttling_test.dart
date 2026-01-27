@@ -366,8 +366,8 @@ void main() {
 
       // Verify the 3 closest are preserved
       expect(connections.length, equals(3));
-      final distances_sorted = [...distances]..sort();
-      final expectedClosest = distances_sorted.take(3).toList();
+      final distancesSorted = [...distances]..sort();
+      final expectedClosest = distancesSorted.take(3).toList();
       final actualDistances = connections.map((c) => c.distance).toList();
       expect(actualDistances, equals(expectedClosest));
     });
