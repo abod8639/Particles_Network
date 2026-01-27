@@ -7,6 +7,7 @@
 /// - Reduces heap allocations by ~70-80% in connection drawing phase
 /// - Minimizes GC pauses on low-end devices
 /// - Improves frame consistency on 60 FPS targets
+library;
 
 /// Generic object pool for recycling objects
 class ObjectPool<T> {
@@ -23,9 +24,9 @@ class ObjectPool<T> {
     required T Function() factory,
     void Function(T)? resetFn,
     int maxPoolSize = 1000,
-  }) : _factory = factory,
-       _resetFn = resetFn,
-       _maxPoolSize = maxPoolSize;
+  })  : _factory = factory,
+        _resetFn = resetFn,
+        _maxPoolSize = maxPoolSize;
 
   /// Acquire an object from the pool or create a new one
   T acquire() {

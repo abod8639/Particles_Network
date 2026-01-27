@@ -2,6 +2,7 @@
 ///
 /// Provides mechanisms to track particle acceleration state and manage
 /// QuadTree updates efficiently based on frame performance.
+library;
 
 /// Tracks the acceleration state of particles
 class AccelerationTracker {
