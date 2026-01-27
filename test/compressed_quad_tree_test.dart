@@ -67,7 +67,6 @@ void main() {
 
   group('Building from Particles', () {
     test('should build tree from particle list', () {
-      // تحديد النوع صراحة كـ List<Particle> يمنع خطأ الـ Subtype
       final List<Particle> particles = [
         _MockParticle(10, 10),
         _MockParticle(30, 30),
@@ -135,21 +134,17 @@ void main() {
     });
 
     test('should optimize memory', () {
-      // ملاحظة: الضغط يقلل عدد العقد في الشجرة وليس بالضرورة عدد الجزيئات
-      // إلا إذا كان منطق الـ Node لديك يدمج الجزيئات المتطابقة
       for (var i = 0; i < 5; i++) {
         quadTree.insert(QuadTreeParticle(i, 10, 10));
       }
 
       quadTree.optimize();
-      // نتحقق من بقاء الجزيئات بعد الضغط
       expect(quadTree.getAllParticleIndices().length, greaterThan(0));
     });
   });
 }
 
-/// كلاس Mock محسن يرث من Particle بشكل صحيح
-/// ويقوم بتمرير القيم المطلوبة للـ Constructor الأساسي
+
 class _MockParticle extends Particle {
   final double x;
   final double y;

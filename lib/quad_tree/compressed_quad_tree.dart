@@ -1,4 +1,3 @@
-import 'package:particles_network/model/particlemodel.dart';
 import 'package:particles_network/model/rectangle.dart';
 import 'package:particles_network/quad_tree/compressed_quad_tree_node.dart';
 
@@ -44,7 +43,7 @@ class CompressedQuadTree {
   /// - Clears existing tree first
   /// - Performs bulk insertion followed by memory optimization
   void buildFromParticles(
-    List<Particle> particles, // Using dynamic to match original interface
+    List<dynamic> particles, // Using dynamic to match original interface
     List<int> visibleParticles,
   ) {
     clear(); // Reset the tree
@@ -151,12 +150,7 @@ class CompressedQuadTree {
   /// Optimization Note:
   /// More efficient than clearing and reinserting when particle
   /// set hasn't changed significantly
-  void rebuild(List<Particle> particles, List<int> visibleParticles) {
+  void rebuild(List<dynamic> particles, List<int> visibleParticles) {
     buildFromParticles(particles, visibleParticles);
   }
-
-  void updateBoundary(Rectangle newBoundary) {
-  _root = CompressedQuadTreeNode(newBoundary);
-}
-
 }

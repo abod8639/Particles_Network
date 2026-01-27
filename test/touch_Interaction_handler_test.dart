@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:particles_network/model/particlemodel.dart';
+import 'package:particles_network/painter/performance_utils.dart';
 import 'package:particles_network/painter/touch_interaction_handler.dart';
 
 // Assuming the Particle class is here
@@ -34,7 +35,8 @@ void main() {
       );
 
       // Act
-      handler.applyTouchPhysics([0, 1]);
+      final tracker = AccelerationTracker();
+      handler.applyTouchPhysics([0, 1], tracker);
 
       // Assert
       expect(particles[0].wasAccelerated, isTrue);
@@ -45,6 +47,7 @@ void main() {
 
       expect(particles[1].wasAccelerated, isFalse);
       expect(particles[1].velocity, Offset.zero);
+      expect(tracker.acceleratedParticleCount, greaterThan(0));
     });
   });
 
