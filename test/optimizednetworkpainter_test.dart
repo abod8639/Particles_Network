@@ -325,7 +325,7 @@ void main() {
       );
 
       noTouchPainter.paint(mockCanvas, testScreenSize);
-      // When touchActivation is false and drawNetwork is true, 
+      // When touchActivation is false and drawNetwork is true,
       // only network lines should be drawn (if any connections exist)
       // For this test with 1 particle, no connections exist
       verify(mockCanvas.drawCircle(any, any, any)).called(greaterThan(0));

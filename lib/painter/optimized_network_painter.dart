@@ -221,10 +221,9 @@ class OptimizedNetworkPainter extends CustomPainter {
           );
 
           if (distance <= lineDistance) {
-            connections.add(_connectionDataPool.acquire(
-              index: i,
-              distance: distance,
-            ));
+            connections.add(
+              _connectionDataPool.acquire(index: i, distance: distance),
+            );
           }
         }
 
@@ -245,7 +244,11 @@ class OptimizedNetworkPainter extends CustomPainter {
               .toInt()
               .clamp(0, 255);
           linePaint.color = lineColor.withAlpha(opacity);
-          canvas.drawLine(particle.position, nearbyParticle.position, linePaint);
+          canvas.drawLine(
+            particle.position,
+            nearbyParticle.position,
+            linePaint,
+          );
           _connectionDataPool.release(connection);
         }
       }

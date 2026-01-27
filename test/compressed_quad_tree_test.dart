@@ -144,17 +144,16 @@ void main() {
   });
 }
 
-
 class _MockParticle extends Particle {
   final double x;
   final double y;
 
   _MockParticle(this.x, this.y)
-      : super(
-          position: ui.Offset(x, y),
-          velocity: ui.Offset.zero,
-          color: const ui.Color(0xFF000000),
-          size: 2.0,
-          isVisible: true,
-        );
+    : super(
+        position: ui.Offset(x, y),
+        velocity: ui.Offset.zero,
+        color: const ui.Color(0xFF000000),
+        size: 2.0,
+        isVisible: true,
+      );
 }

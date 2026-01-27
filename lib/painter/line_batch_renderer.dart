@@ -35,11 +35,7 @@ class LineRenderBatch {
   ///
   /// This method iterates through opacity levels and draws all lines
   /// with the same opacity together, minimizing GPU state changes.
-  void drawBatch(
-    Canvas canvas,
-    Paint paint,
-    Color baseColor,
-  ) {
+  void drawBatch(Canvas canvas, Paint paint, Color baseColor) {
     // Sort by opacity to ensure consistent ordering
     final sortedOpacities = linesByOpacity.keys.toList()..sort();
 
@@ -80,7 +76,10 @@ class BatchLineRenderer {
     double distance,
     double maxDistance,
   ) {
-    final int opacity = ((1 - distance / maxDistance) * 255).toInt().clamp(0, 255);
+    final int opacity = ((1 - distance / maxDistance) * 255).toInt().clamp(
+      0,
+      255,
+    );
     _batch.addLine(p1, p2, opacity);
   }
 

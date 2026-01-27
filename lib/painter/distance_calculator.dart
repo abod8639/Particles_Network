@@ -81,11 +81,11 @@ class DistanceCalculator {
 
   /// Returns the Euclidean distance between two [Particle]s using the LRU cache.
   /// The XOR key is computed once here so we don't hash twice.
-  /// 
+  ///
   /// Cache Performance (with optimal particles density):
   /// - Cache Hit: ~40-50% on moderate movement (< 0.5px/frame)
   /// - Cache Hit: ~60-70% on slow movement (< 0.2px/frame)
-  /// 
+  ///
   /// Optimization: Uses LinkedHashMap for O(1) LRU eviction
   double betweenParticles(Particle a, Particle b) =>
       _cachedDistance(a.position, b.position, a.hashCode ^ b.hashCode);

@@ -137,10 +137,7 @@ void main() {
       }
 
       // Should rebuild at frames 0, interval, interval*2
-      expect(
-        rebuildFrames,
-        equals([0, interval, interval * 2]),
-      );
+      expect(rebuildFrames, equals([0, interval, interval * 2]));
     });
 
     test('multiple forceRebuild calls work correctly', () {

@@ -13,11 +13,15 @@ void main() {
 
     group('Distance Calculations', () {
       test('calculates correct Euclidean distance between particles', () {
-        final p1 = Particle(color: Colors.white, size: 1.0, 
+        final p1 = Particle(
+          color: Colors.white,
+          size: 1.0,
           position: const Offset(0, 0),
           velocity: Offset.zero,
         );
-        final p2 = Particle(color: Colors.white, size: 1.0, 
+        final p2 = Particle(
+          color: Colors.white,
+          size: 1.0,
           position: const Offset(3, 4),
           velocity: Offset.zero,
         );
@@ -38,11 +42,15 @@ void main() {
       });
 
       test('returns 0 for same position particles', () {
-        final p1 = Particle(color: Colors.white, size: 1.0, 
+        final p1 = Particle(
+          color: Colors.white,
+          size: 1.0,
           position: const Offset(5, 5),
           velocity: Offset.zero,
         );
-        final p2 = Particle(color: Colors.white, size: 1.0, 
+        final p2 = Particle(
+          color: Colors.white,
+          size: 1.0,
           position: const Offset(5, 5),
           velocity: Offset.zero,
         );
@@ -53,11 +61,15 @@ void main() {
       });
 
       test('handles negative coordinates correctly', () {
-        final p1 = Particle(color: Colors.white, size: 1.0, 
+        final p1 = Particle(
+          color: Colors.white,
+          size: 1.0,
           position: const Offset(-3, -4),
           velocity: Offset.zero,
         );
-        final p2 = Particle(color: Colors.white, size: 1.0, 
+        final p2 = Particle(
+          color: Colors.white,
+          size: 1.0,
           position: const Offset(0, 0),
           velocity: Offset.zero,
         );
@@ -68,11 +80,15 @@ void main() {
       });
 
       test('distance is symmetric (A->B == B->A)', () {
-        final p1 = Particle(color: Colors.white, size: 1.0, 
+        final p1 = Particle(
+          color: Colors.white,
+          size: 1.0,
           position: const Offset(1, 2),
           velocity: Offset.zero,
         );
-        final p2 = Particle(color: Colors.white, size: 1.0, 
+        final p2 = Particle(
+          color: Colors.white,
+          size: 1.0,
           position: const Offset(4, 6),
           velocity: Offset.zero,
         );
@@ -86,18 +102,22 @@ void main() {
 
     group('Caching Behavior', () {
       test('caches distance calculations', () {
-        final p1 = Particle(color: Colors.white, size: 1.0, 
+        final p1 = Particle(
+          color: Colors.white,
+          size: 1.0,
           position: const Offset(0, 0),
           velocity: Offset.zero,
         );
-        final p2 = Particle(color: Colors.white, size: 1.0, 
+        final p2 = Particle(
+          color: Colors.white,
+          size: 1.0,
           position: const Offset(3, 4),
           velocity: Offset.zero,
         );
 
         // First call - should calculate and cache
         final dist1 = calculator.betweenParticles(p1, p2);
-        
+
         // Second call - should return cached value
         final dist2 = calculator.betweenParticles(p1, p2);
 
@@ -106,18 +126,22 @@ void main() {
       });
 
       test('symmetric caching (A,B) and (B,A) use same cache entry', () {
-        final p1 = Particle(color: Colors.white, size: 1.0, 
+        final p1 = Particle(
+          color: Colors.white,
+          size: 1.0,
           position: const Offset(0, 0),
           velocity: Offset.zero,
         );
-        final p2 = Particle(color: Colors.white, size: 1.0, 
+        final p2 = Particle(
+          color: Colors.white,
+          size: 1.0,
           position: const Offset(3, 4),
           velocity: Offset.zero,
         );
 
         // Calculate A->B
         calculator.betweenParticles(p1, p2);
-        
+
         // Calculate B->A (should hit cache)
         final dist = calculator.betweenParticles(p2, p1);
 
@@ -139,7 +163,9 @@ void main() {
       test('reset clears all cached entries', () {
         final particles = List.generate(
           10,
-          (i) => Particle(color: Colors.white, size: 1.0, 
+          (i) => Particle(
+            color: Colors.white,
+            size: 1.0,
             position: Offset(i.toDouble(), i.toDouble()),
             velocity: Offset.zero,
           ),
@@ -162,10 +188,12 @@ void main() {
     group('LRU Eviction', () {
       test('evicts oldest entry when cache is full', () {
         final smallCalculator = DistanceCalculator(maxEntries: 3);
-        
+
         final particles = List.generate(
           5,
-          (i) => Particle(color: Colors.white, size: 1.0, 
+          (i) => Particle(
+            color: Colors.white,
+            size: 1.0,
             position: Offset(i.toDouble(), 0),
             velocity: Offset.zero,
           ),
@@ -178,16 +206,21 @@ void main() {
 
         // Cache should have evicted oldest entries
         // All calculations should still return correct values
-        final dist = smallCalculator.betweenParticles(particles[0], particles[1]);
+        final dist = smallCalculator.betweenParticles(
+          particles[0],
+          particles[1],
+        );
         expect(dist, equals(1.0));
       });
 
       test('respects maxEntries limit', () {
         final smallCalculator = DistanceCalculator(maxEntries: 5);
-        
+
         final particles = List.generate(
           20,
-          (i) => Particle(color: Colors.white, size: 1.0, 
+          (i) => Particle(
+            color: Colors.white,
+            size: 1.0,
             position: Offset(i.toDouble(), i.toDouble()),
             velocity: Offset.zero,
           ),
@@ -199,18 +232,25 @@ void main() {
         }
 
         // All calculations should still work correctly
-        final dist = smallCalculator.betweenParticles(particles[0], particles[1]);
+        final dist = smallCalculator.betweenParticles(
+          particles[0],
+          particles[1],
+        );
         expect(dist, closeTo(1.414, 0.001)); // sqrt(2)
       });
 
       test('cache disabled when maxEntries is 0', () {
         final noCacheCalculator = DistanceCalculator(maxEntries: 0);
-        
-        final p1 = Particle(color: Colors.white, size: 1.0, 
+
+        final p1 = Particle(
+          color: Colors.white,
+          size: 1.0,
           position: const Offset(0, 0),
           velocity: Offset.zero,
         );
-        final p2 = Particle(color: Colors.white, size: 1.0, 
+        final p2 = Particle(
+          color: Colors.white,
+          size: 1.0,
           position: const Offset(3, 4),
           velocity: Offset.zero,
         );
@@ -225,11 +265,15 @@ void main() {
     });
     group('Edge Cases', () {
       test('handles very large distances', () {
-        final p1 = Particle(color: Colors.white, size: 1.0, 
+        final p1 = Particle(
+          color: Colors.white,
+          size: 1.0,
           position: const Offset(0, 0),
           velocity: Offset.zero,
         );
-        final p2 = Particle(color: Colors.white, size: 1.0, 
+        final p2 = Particle(
+          color: Colors.white,
+          size: 1.0,
           position: const Offset(10000, 10000),
           velocity: Offset.zero,
         );
@@ -240,11 +284,15 @@ void main() {
       });
 
       test('handles very small distances', () {
-        final p1 = Particle(color: Colors.white, size: 1.0, 
+        final p1 = Particle(
+          color: Colors.white,
+          size: 1.0,
           position: const Offset(0, 0),
           velocity: Offset.zero,
         );
-        final p2 = Particle(color: Colors.white, size: 1.0, 
+        final p2 = Particle(
+          color: Colors.white,
+          size: 1.0,
           position: const Offset(0.001, 0.001),
           velocity: Offset.zero,
         );
@@ -257,14 +305,19 @@ void main() {
       test('handles multiple particles with same position', () {
         final particles = List.generate(
           5,
-          (_) => Particle(color: Colors.white, size: 1.0, 
+          (_) => Particle(
+            color: Colors.white,
+            size: 1.0,
             position: const Offset(5, 5),
             velocity: Offset.zero,
           ),
         );
 
         for (int i = 0; i < particles.length - 1; i++) {
-          final dist = calculator.betweenParticles(particles[i], particles[i + 1]);
+          final dist = calculator.betweenParticles(
+            particles[i],
+            particles[i + 1],
+          );
           expect(dist, equals(0.0));
         }
       });
@@ -289,7 +342,7 @@ void main() {
             color: Colors.white,
             size: 1.0,
           );
-          
+
           final distance = calculator.betweenParticles(p1, p2);
           expect(distance, closeTo(expected, 0.001));
         }
@@ -299,24 +352,26 @@ void main() {
     group('Performance Characteristics', () {
       test('handles large number of particles efficiently', () {
         final largeCalculator = DistanceCalculator(maxEntries: 10000);
-        
+
         final particles = List.generate(
           500,
-          (i) => Particle(color: Colors.white, size: 1.0, 
+          (i) => Particle(
+            color: Colors.white,
+            size: 1.0,
             position: Offset(i.toDouble(), i.toDouble()),
             velocity: Offset.zero,
           ),
         );
 
         final stopwatch = Stopwatch()..start();
-        
+
         // Calculate distances for many pairs
         for (int i = 0; i < particles.length - 1; i++) {
           largeCalculator.betweenParticles(particles[i], particles[i + 1]);
         }
-        
+
         stopwatch.stop();
-        
+
         // Should complete in reasonable time (< 100ms for 500 particles)
         expect(stopwatch.elapsedMilliseconds, lessThan(100));
       });
@@ -324,7 +379,9 @@ void main() {
       test('cache provides performance benefit on repeated queries', () {
         final particles = List.generate(
           100,
-          (i) => Particle(color: Colors.white, size: 1.0, 
+          (i) => Particle(
+            color: Colors.white,
+            size: 1.0,
             position: Offset(i.toDouble(), i.toDouble()),
             velocity: Offset.zero,
           ),
@@ -337,7 +394,10 @@ void main() {
 
         // Second pass - should hit cache and return correct values
         for (int i = 0; i < 50; i++) {
-          final dist = calculator.betweenParticles(particles[i], particles[i + 1]);
+          final dist = calculator.betweenParticles(
+            particles[i],
+            particles[i + 1],
+          );
           expect(dist, closeTo(1.414, 0.001)); // sqrt(2)
         }
       });
