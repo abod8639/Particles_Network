@@ -1,53 +1,53 @@
 import 'dart:math' as math; // For mathematical functions (min, max, etc.)
 
-/// A 2D axis-aligned rectangle with collision detection capabilities
+// A 2D axis-aligned rectangle with collision detection capabilities
 class Rectangle {
-  /// The x-coordinate of the rectangle's left edge
+  // The x-coordinate of the rectangle's left edge
   final double x;
 
-  /// The y-coordinate of the rectangle's top edge
+  // The y-coordinate of the rectangle's top edge
   final double y;
 
-  /// The width of the rectangle (extends right from x)
+  // The width of the rectangle (extends right from x)
   final double width;
 
-  /// The height of the rectangle (extends down from y)
+  // The height of the rectangle (extends down from y)
   final double height;
 
-  /// Creates a rectangle with the given position and dimensions
+  // Creates a rectangle with the given position and dimensions
   const Rectangle(this.x, this.y, this.width, this.height);
 
-  /// Gets the right edge x-coordinate (computed property)
+  // Gets the right edge x-coordinate (computed property)
   double get right => x + width;
 
-  /// Gets the bottom edge y-coordinate (computed property)
+  // Gets the bottom edge y-coordinate (computed property)
   double get bottom => y + height;
 
-  /// Gets the left edge x-coordinate (same as x)
+  // Gets the left edge x-coordinate (same as x)
   double get left => x;
 
-  /// Gets the top edge y-coordinate (same as y)
+  // Gets the top edge y-coordinate (same as y)
   double get top => y;
 
-  /// Checks if a point (px, py) is contained within this rectangle
-  ///
-  /// Mathematical Operation:
-  /// Point containment test using simple inequalities:
-  /// px must be between x (left) and x+width (right)
-  /// py must be between y (top) and y+height (bottom)
+  // Checks if a point (px, py) is contained within this rectangle
+  //
+  // Mathematical Operation:
+  // Point containment test using simple inequalities:
+  // px must be between x (left) and x+width (right)
+  // py must be between y (top) and y+height (bottom)
   bool contains(double px, double py) {
     return px >= x && px <= x + width && py >= y && py <= y + height;
   }
 
-  /// Checks if this rectangle intersects with another rectangle
-  ///
-  /// Mathematical Operation:
-  /// Separating axis theorem implementation:
-  /// Two rectangles DON'T intersect if:
-  /// 1. One is completely to the left of the other OR
-  /// 2. One is completely above the other OR
-  /// 3. One is completely to the right of the other OR
-  /// 4. One is completely below the other
+  // Checks if this rectangle intersects with another rectangle
+  //
+  // Mathematical Operation:
+  // Separating axis theorem implementation:
+  // Two rectangles DON'T intersect if:
+  // 1. One is completely to the left of the other OR
+  // 2. One is completely above the other OR
+  // 3. One is completely to the right of the other OR
+  // 4. One is completely below the other
   bool intersects(Rectangle other) {
     return !(other.x >= x + width || // Other is right of us
         other.x + other.width <= x || // Other is left of us
@@ -55,12 +55,12 @@ class Rectangle {
         other.y + other.height <= y); // Other is above us
   }
 
-  /// Checks if this rectangle intersects with a circle
-  ///
-  /// Mathematical Operations:
-  /// 1. Finds the closest point on the rectangle to the circle center
-  /// 2. Calculates squared distance between circle center and closest point
-  /// 3. Compares against squared radius (avoids expensive sqrt operation)
+  // Checks if this rectangle intersects with a circle
+  //
+  // Mathematical Operations:
+  // 1. Finds the closest point on the rectangle to the circle center
+  // 2. Calculates squared distance between circle center and closest point
+  // 3. Compares against squared radius (avoids expensive sqrt operation)
   bool intersectsCircle(double cx, double cy, double radius) {
     // Find closest x-coordinate on rectangle to circle center
     // Clamped between left and right edges
