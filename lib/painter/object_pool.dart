@@ -1,25 +1,25 @@
-/// Object pooling utilities for efficient memory management
-///
-/// Provides reusable object pools to reduce garbage collection pressure
-/// by pre-allocating and reusing objects across frames.
-///
-/// Performance Impact:
-/// - Reduces heap allocations by ~70-80% in connection drawing phase
-/// - Minimizes GC pauses on low-end devices
-/// - Improves frame consistency on 60 FPS targets
+// Object pooling utilities for efficient memory management
+//
+// Provides reusable object pools to reduce garbage collection pressure
+// by pre-allocating and reusing objects across frames.
+//
+// Performance Impact:
+// - Reduces heap allocations by ~70-80% in connection drawing phase
+// - Minimizes GC pauses on low-end devices
+// - Improves frame consistency on 60 FPS targets
 library;
 
-/// Generic object pool for recycling objects
+// Generic object pool for recycling objects
 class ObjectPool<T> {
   final List<T> _available = [];
   final T Function() _factory;
   final void Function(T)? _resetFn;
   final int _maxPoolSize;
 
-  /// Creates a new object pool
-  /// [factory]: Function to create new instances
-  /// [resetFn]: Optional function to reset object state for reuse
-  /// [maxPoolSize]: Maximum objects to keep in pool (default: 1000)
+  // Creates a new object pool
+  // [factory]: Function to create new instances
+  // [resetFn]: Optional function to reset object state for reuse
+  // [maxPoolSize]: Maximum objects to keep in pool (default: 1000)
   ObjectPool({
     required T Function() factory,
     void Function(T)? resetFn,
@@ -28,7 +28,7 @@ class ObjectPool<T> {
         _resetFn = resetFn,
         _maxPoolSize = maxPoolSize;
 
-  /// Acquire an object from the pool or create a new one
+  // Acquire an object from the pool or create a new one
   T acquire() {
     if (_available.isNotEmpty) {
       return _available.removeLast();
@@ -36,7 +36,7 @@ class ObjectPool<T> {
     return _factory();
   }
 
-  /// Release an object back to the pool for reuse
+  // Release an object back to the pool for reuse
   void release(T object) {
     if (_available.length < _maxPoolSize) {
       _resetFn?.call(object);
@@ -44,12 +44,12 @@ class ObjectPool<T> {
     }
   }
 
-  /// Clear all pooled objects
+  // Clear all pooled objects
   void clear() {
     _available.clear();
   }
 
-  /// Get current pool size
+  // Get current pool size
   int get poolSize => _available.length;
 }
 
@@ -60,7 +60,7 @@ class IntListPool {
 
   IntListPool({int maxPoolSize = 500}) : _maxPoolSize = maxPoolSize;
 
-  /// Acquire a list from the pool, clearing it if it was previously used
+  // Acquire a list from the pool, clearing it if it was previously used
   List<int> acquire() {
     if (_available.isNotEmpty) {
       return _available.removeLast()..clear();
@@ -68,7 +68,7 @@ class IntListPool {
     return <int>[];
   }
 
-  /// Release a list back to the pool
+  // Release a list back to the pool
   void release(List<int> list) {
     if (_available.length < _maxPoolSize) {
       list.clear();
@@ -76,23 +76,23 @@ class IntListPool {
     }
   }
 
-  /// Clear all pooled lists
+  // Clear all pooled lists
   void clear() {
     _available.clear();
   }
 
-  /// Get current pool size
+  // Get current pool size
   int get poolSize => _available.length;
 }
 
-/// Specialized pool for ConnectionData objects
+// Specialized pool for ConnectionData objects
 class ConnectionDataPool {
   final List<ConnectionData> _available = [];
   final int _maxPoolSize;
 
   ConnectionDataPool({int maxPoolSize = 1000}) : _maxPoolSize = maxPoolSize;
 
-  /// Acquire a connection data object from the pool
+  // Acquire a connection data object from the pool
   ConnectionData acquire({required int index, required double distance}) {
     if (_available.isNotEmpty) {
       final data = _available.removeLast();
@@ -103,23 +103,23 @@ class ConnectionDataPool {
     return ConnectionData(index: index, distance: distance);
   }
 
-  /// Release a connection data object back to the pool
+  // Release a connection data object back to the pool
   void release(ConnectionData data) {
     if (_available.length < _maxPoolSize) {
       _available.add(data);
     }
   }
 
-  /// Clear all pooled objects
+  // Clear all pooled objects
   void clear() {
     _available.clear();
   }
 
-  /// Get current pool size
+  // Get current pool size
   int get poolSize => _available.length;
 }
 
-/// Reusable connection data structure
+// Reusable connection data structure
 class ConnectionData {
   int index;
   double distance;
@@ -127,7 +127,7 @@ class ConnectionData {
   ConnectionData({required this.index, required this.distance});
 }
 
-/// Global pool manager for efficient resource reuse
+// Global pool manager for efficient resource reuse
 class PoolManager {
   static final PoolManager _instance = PoolManager._internal();
 
@@ -139,15 +139,15 @@ class PoolManager {
     connectionDataPool = ConnectionDataPool(maxPoolSize: 1000);
   }
 
-  /// Get singleton instance
+  // Get singleton instance
   static PoolManager getInstance() => _instance;
 
-  /// Reset all pools (call at the end of each frame if needed)
+  // Reset all pools (call at the end of each frame if needed)
   void resetAll() {
     // Pools manage themselves; this is for explicit cleanup if needed
   }
 
-  /// Clear all pools to free memory
+  // Clear all pools to free memory
   void clearAll() {
     intListPool.clear();
     connectionDataPool.clear();
