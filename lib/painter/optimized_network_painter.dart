@@ -11,19 +11,19 @@ import 'package:particles_network/painter/touch_interaction_handler.dart';
 import 'package:particles_network/quad_tree/compressed_quad_tree.dart';
 import 'package:particles_network/quad_tree/compressed_quad_tree_node.dart';
 
-/// The main painter class for rendering an optimized particle network
-///
-/// This class implements CustomPainter to efficiently render:
-/// - Individual particles as circles
-/// - Connection lines between nearby particles
-/// - Touch interaction effects
-///
-/// Optimization Techniques:
-/// 1. Spatial partitioning using QuadTree
-/// 2. Distance calculation caching
-/// 3. Visible particle filtering
-/// 4. Batched drawing operations
-/// 5. Conditional rendering based on visibility
+// The main painter class for rendering an optimized particle network
+//
+// This class implements CustomPainter to efficiently render:
+// - Individual particles as circles
+// - Connection lines between nearby particles
+// - Touch interaction effects
+//
+// Optimization Techniques:
+// 1. Spatial partitioning using QuadTree
+// 2. Distance calculation caching
+// 3. Visible particle filtering
+// 4. Batched drawing operations
+// 5. Conditional rendering based on visibility
 class OptimizedNetworkPainter extends CustomPainter {
   // Configuration properties
   final List<Particle> particles; // All particles in the system
@@ -156,12 +156,12 @@ class OptimizedNetworkPainter extends CustomPainter {
     _drawParticles(canvas, visibleParticles);
   }
 
-  /// Draws individual particles as circles
-  ///
-  /// Optimizations:
-  /// - Uses pre-allocated Paint object (avoids object creation each frame)
-  /// - Only draws visible particles (reduced draw calls)
-  /// - Simple drawCircle operation (hardware accelerated)
+  // Draws individual particles as circles
+  //
+  // Optimizations:
+  // - Uses pre-allocated Paint object (avoids object creation each frame)
+  // - Only draws visible particles (reduced draw calls)
+  // - Simple drawCircle operation (hardware accelerated)
   void _drawParticles(Canvas canvas, List<int> visibleParticles) {
     for (final int index in visibleParticles) {
       final Particle p = particles[index];
@@ -173,19 +173,19 @@ class OptimizedNetworkPainter extends CustomPainter {
     }
   }
 
-  /// Draw connections between nearby particles using QuadTree
-  ///
-  /// Algorithm:
-  /// 1. For each particle, query nearby particles using QuadTree
-  /// 2. Calculate distance to each nearby particle
-  /// 3. Draw line if within max distance, with opacity based on distance
-  ///
-  /// Optimizations:
-  /// - Uses QuadTree for O(log n) proximity queries instead of O(n²)
-  /// - Distance calculation caching
-  /// - Skips duplicate connections (i < j)
-  /// - Distance-based opacity creates visual depth
-  /// - Object pooling for reduced memory allocations
+  // Draw connections between nearby particles using QuadTree
+  //
+  // Algorithm:
+  // 1. For each particle, query nearby particles using QuadTree
+  // 2. Calculate distance to each nearby particle
+  // 3. Draw line if within max distance, with opacity based on distance
+  //
+  // Optimizations:
+  // - Uses QuadTree for O(log n) proximity queries instead of O(n²)
+  // - Distance calculation caching
+  // - Skips duplicate connections (i < j)
+  // - Distance-based opacity creates visual depth
+  // - Object pooling for reduced memory allocations
   void _drawConnections(Canvas canvas, List<int> visibleParticles) {
     int maxLinesPerDenseParticle = isComplex ? 4 : 5;
     int denseThreshold = isComplex ? lineDistance ~/ 3 : lineDistance ~/ 1;
