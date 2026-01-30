@@ -53,7 +53,7 @@ class ObjectPool<T> {
   int get poolSize => _available.length;
 }
 
-/// Specialized pool for List<int> objects
+// Specialized pool for List<int> objects
 class IntListPool {
   final List<List<int>> _available = [];
   final int _maxPoolSize;
