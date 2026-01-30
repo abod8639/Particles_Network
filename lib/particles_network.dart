@@ -12,73 +12,73 @@ import 'package:particles_network/painter/optimized_network_painter.dart';
 // Importing default particle factory implementation
 import 'model/default_particle_factory.dart';
 
-/// A Flutter widget that renders an interactive particle network visualization.
-///
-/// This widget creates a dynamic system of particles that:
-/// - Move continuously within the widget bounds using basic physics
-/// - Connect visually when within a specified distance (Euclidean distance)
-/// - Respond to touch interactions when enabled (distance-based highlighting)
-/// - Can be customized through various parameters
-///
-/// Mathematical Concepts Used:
-/// - 2D vector math for particle movement (position + velocity)
-/// - Euclidean distance calculation for connection detection
-/// - Random number generation for initial placement and movement
-/// - Basic collision detection with boundaries
-///
-/// Performance Features:
-/// - Spatial partitioning for efficient neighbor detection (O(n) → O(n log n))
-/// - Cached distance calculations to minimize recomputation
-/// - Batched painting operations to reduce GPU calls
-/// - Configurable repaint strategies based on complexity
+// A Flutter widget that renders an interactive particle network visualization.
+//
+// This widget creates a dynamic system of particles that:
+// - Move continuously within the widget bounds using basic physics
+// - Connect visually when within a specified distance (Euclidean distance)
+// - Respond to touch interactions when enabled (distance-based highlighting)
+// - Can be customized through various parameters
+//
+// Mathematical Concepts Used:
+// - 2D vector math for particle movement (position + velocity)
+// - Euclidean distance calculation for connection detection
+// - Random number generation for initial placement and movement
+// - Basic collision detection with boundaries
+//
+// Performance Features:
+// - Spatial partitioning for efficient neighbor detection (O(n) → O(n log n))
+// - Cached distance calculations to minimize recomputation
+// - Batched painting operations to reduce GPU calls
+// - Configurable repaint strategies based on complexity
 class ParticleNetwork extends StatefulWidget {
   // Configuration properties with default values:
 
-  /// Total number of particles in the visualization [default: 60]
-  /// Affects performance: O(n) for updates, O(n²) for connection checks
+  // Total number of particles in the visualization [default: 60]
+  // Affects performance: O(n) for updates, O(n²) for connection checks
   final int particleCount;
 
-  /// Maximum speed of particles in pixels per frame [default: 0.5]
-  /// Determines how fast particles move (velocity magnitude)
+  // Maximum speed of particles in pixels per frame [default: 0.5]
+  // Determines how fast particles move (velocity magnitude)
   final double maxSpeed;
 
-  /// Maximum radius of particles in pixels [default: 1.5]
-  /// Used for rendering particle size
+  // Maximum radius of particles in pixels [default: 1.5]
+  // Used for rendering particle size
   final double maxSize;
 
-  /// Stroke width of connection lines in pixels [default: 0.5]
+  // Stroke width of connection lines in pixels [default: 0.5]
   final double lineWidth;
 
-  /// Maximum connection distance between particles in pixels [default: 100]
-  /// Threshold for drawing connecting lines (Euclidean distance)
+  // Maximum connection distance between particles in pixels [default: 100]
+  // Threshold for drawing connecting lines (Euclidean distance)
   final double lineDistance;
 
-  /// Base color of all particles [default: Colors.white]
+  // Base color of all particles [default: Colors.white]
   final Color particleColor;
 
-  /// Color of connection lines between particles [default: Color.fromARGB(255, 100, 255, 180)]
-  /// Lines are drawn with opacity based on distance (inverse linear interpolation)
+  // Color of connection lines between particles [default: Color.fromARGB(255, 100, 255, 180)]
+  // Lines are drawn with opacity based on distance (inverse linear interpolation)
   final Color lineColor;
 
-  /// Highlight color for touch interactions [default: Colors.amber]
-  /// Particles near touch point get this color (distance-based)
+  // Highlight color for touch interactions [default: Colors.amber]
+  // Particles near touch point get this color (distance-based)
   final Color touchColor;
 
-  /// Whether touch interactions are enabled [default: true]
-  /// Adds gesture detection and touch response logic
+  // Whether touch interactions are enabled [default: true]
+  // Adds gesture detection and touch response logic
   final bool touchActivation;
 
-  /// Whether the painting logic is complex (affects repaint strategy) [default: false]
-  /// If true, Flutter may optimize repainting differently
+  // Whether the painting logic is complex (affects repaint strategy) [default: false]
+  // If true, Flutter may optimize repainting differently
   final bool isComplex;
 
-  /// Whether to fill particles (true) or stroke them (false) [default: true]
+  // Whether to fill particles (true) or stroke them (false) [default: true]
   final bool fill;
 
-  /// Whether to draw connecting lines between particles [default: true]
+  // Whether to draw connecting lines between particles [default: true]
   final bool drawNetwork;
 
-  /// Creates a ParticleNetwork widget with customizable parameters
+  // Creates a ParticleNetwork widget with customizable parameters
   const ParticleNetwork({
     super.key,
     this.particleCount = 60,
@@ -99,12 +99,12 @@ class ParticleNetwork extends StatefulWidget {
   State<ParticleNetwork> createState() => ParticleNetworkState();
 }
 
-/// The stateful logic and animation controller for the ParticleNetwork widget
-/// Handles:
-/// - Particle system initialization
-/// - Animation loop management
-/// - Touch interaction handling
-/// - Dynamic resizing
+// The stateful logic and animation controller for the ParticleNetwork widget
+// Handles:
+// - Particle system initialization
+// - Animation loop management
+// - Touch interaction handling
+// - Dynamic resizing
 class ParticleNetworkState extends State<ParticleNetwork>
     with SingleTickerProviderStateMixin {
   // Core data structures:
@@ -147,11 +147,11 @@ class ParticleNetworkState extends State<ParticleNetwork>
     })..start(); // Start the animation loop immediately
   }
 
-  /// Generates or regenerates particles when size changes
-  /// Uses the factory to create particles with:
-  /// - Random positions within bounds (uniform distribution)
-  /// - Random velocities (direction and magnitude)
-  /// - Random sizes (within maxSize)
+  // Generates or regenerates particles when size changes
+  // Uses the factory to create particles with:
+  // - Random positions within bounds (uniform distribution)
+  // - Random velocities (direction and magnitude)
+  // - Random sizes (within maxSize)
   void _generateParticles(Size size) {
     if (size != currentSize) {
       currentSize = size;
