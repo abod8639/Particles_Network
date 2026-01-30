@@ -23,7 +23,7 @@ class TouchInteractionHandler {
   // Paint object for drawing touch interaction lines
   final Paint linePaint;
 
-  /// Constructor for the touch interaction handler
+  // Constructor for the touch interaction handler
   TouchInteractionHandler({
     required this.particles,
     required this.touchPoint,
@@ -35,9 +35,9 @@ class TouchInteractionHandler {
   // Test variable (appears unused in current implementation)
   final int test = 00;
 
-  /// Applies touch physics to visible particles
-  /// [visibleParticles] - List of indices of currently visible particles
-  /// [tracker] - Acceleration tracker to record accelerated particles
+  // Applies touch physics to visible particles
+  // [visibleParticles] - List of indices of currently visible particles
+  // [tracker] - Acceleration tracker to record accelerated particles
   void applyTouchPhysics(
     List<int> visibleParticles,
     AccelerationTracker tracker,
@@ -65,9 +65,9 @@ class TouchInteractionHandler {
     }
   }
 
-  /// Draws lines between touch point and nearby particles
-  /// [canvas] - The canvas to draw on
-  /// [visibleParticles] - List of indices of currently visible particles
+  // Draws lines between touch point and nearby particles
+  // [canvas] - The canvas to draw on
+  // [visibleParticles] - List of indices of currently visible particles
   void drawTouchLines(Canvas canvas, List<int> visibleParticles) {
     final Offset? touch = touchPoint;
     if (touch == null) return; // Exit if no current touch
