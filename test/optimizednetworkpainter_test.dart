@@ -281,60 +281,62 @@ void main() {
     );
 
     testWidgets('complex mode uses more aggressive throttling', (tester) async {
-       await setUpTest(tester);
+      await setUpTest(tester);
 
-       final central = MockParticle(position: const Offset(100, 100));
-       final neighbors = List.generate(10, (i) => MockParticle(
-         position: Offset(100 + (i + 1) * 2, 100),
-       ));
-       final particles = [central, ...neighbors];
+      final central = MockParticle(position: const Offset(100, 100));
+      final neighbors = List.generate(
+          10,
+          (i) => MockParticle(
+                position: Offset(100 + (i + 1) * 2, 100),
+              ));
+      final particles = [central, ...neighbors];
 
-       final painter = OptimizedNetworkPainter(
-         drawNetwork: true,
-         fill: true,
-         isComplex: true, // Crucial: complex mode
-         particleCount: particles.length,
-         particles: particles,
-         touchPoint: null,
-         lineDistance: 12, // Resulting denseThreshold = 12 ~/ 4 = 3
-         particleColor: Colors.white,
-         lineColor: Colors.grey,
-         touchColor: Colors.red,
-         touchActivation: true,
-         lineWidth: 1.0,
-       );
+      final painter = OptimizedNetworkPainter(
+        drawNetwork: true,
+        fill: true,
+        isComplex: true, // Crucial: complex mode
+        particleCount: particles.length,
+        particles: particles,
+        touchPoint: null,
+        lineDistance: 12, // Resulting denseThreshold = 12 ~/ 4 = 3
+        particleColor: Colors.white,
+        lineColor: Colors.grey,
+        touchColor: Colors.red,
+        touchActivation: true,
+        lineWidth: 1.0,
+      );
 
-       painter.paint(mockCanvas, testScreenSize);
-       
-       // With denseThreshold = 3 and 10 neighbors, it will throttle to maxLines = 3.
-       // 11 particles * 3 max lines = 33 maximum possible drawLine calls.
-       verify(mockCanvas.drawLine(any, any, any)).called(lessThanOrEqualTo(33));
+      painter.paint(mockCanvas, testScreenSize);
+
+      // With denseThreshold = 3 and 10 neighbors, it will throttle to maxLines = 3.
+      // 11 particles * 3 max lines = 33 maximum possible drawLine calls.
+      verify(mockCanvas.drawLine(any, any, any)).called(lessThanOrEqualTo(33));
     });
 
     testWidgets('releases connections to pool after drawing', (tester) async {
-       await setUpTest(tester);
-       
-       final p1 = MockParticle(position: const Offset(10, 10));
-       final p2 = MockParticle(position: const Offset(20, 20));
+      await setUpTest(tester);
 
-       final painter = OptimizedNetworkPainter(
-         drawNetwork: true,
-         fill: true,
-         isComplex: false,
-         particleCount: 2,
-         particles: [p1, p2],
-         touchPoint: null,
-         lineDistance: 100,
-         particleColor: Colors.white,
-         lineColor: Colors.grey,
-         touchColor: Colors.red,
-         touchActivation: true,
-         lineWidth: 1.0,
-       );
+      final p1 = MockParticle(position: const Offset(10, 10));
+      final p2 = MockParticle(position: const Offset(20, 20));
 
-       // Note: Testing pool size directly is hard because it's a singleton and other tests use it.
-       // But calling paint should not crash and should correctly cycle objects.
-       expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
+      final painter = OptimizedNetworkPainter(
+        drawNetwork: true,
+        fill: true,
+        isComplex: false,
+        particleCount: 2,
+        particles: [p1, p2],
+        touchPoint: null,
+        lineDistance: 100,
+        particleColor: Colors.white,
+        lineColor: Colors.grey,
+        touchColor: Colors.red,
+        touchActivation: true,
+        lineWidth: 1.0,
+      );
+
+      // Note: Testing pool size directly is hard because it's a singleton and other tests use it.
+      // But calling paint should not crash and should correctly cycle objects.
+      expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
     });
   });
   group('Touch Interaction Tests', () {

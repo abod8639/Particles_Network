@@ -25,7 +25,7 @@ class ConnectionDrawer {
   final Paint linePaint; // Pre-configured paint object
   final bool isComplex; // Flag for complex drawing logic
   final DistanceCalculator
-  distanceCalculator; // For optimized distance calculations
+      distanceCalculator; // For optimized distance calculations
 
   ConnectionDrawer({
     required this.particles,

@@ -65,9 +65,9 @@ class DistanceCalculator {
   // * `maxEntries == 0` disables caching.
   // * On desktop you might raise this to 20 000+, while on 1 GB phones 2 000
   //   is safer.
-  DistanceCalculator({this.maxEntries = 10_000})
-    : assert(maxEntries >= 0),
-      _cache = LinkedHashMap<int, double>();
+  DistanceCalculator({this.maxEntries = 10000})
+      : assert(maxEntries >= 0),
+        _cache = LinkedHashMap<int, double>();
 
   // Maximum number of memoised distances before eviction.
   final int maxEntries;

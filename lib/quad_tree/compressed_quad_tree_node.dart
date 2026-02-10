@@ -93,8 +93,7 @@ class CompressedQuadTreeNode {
       if (dominantQuad != null && maxCount == allParticles.length) {
         // Create compressed child node
         final Rectangle childBoundary = getChildBoundary(dominantQuad);
-        final CompressedPath childPath =
-            compressedPath?.extend(dominantQuad) ??
+        final CompressedPath childPath = compressedPath?.extend(dominantQuad) ??
             CompressedPath([dominantQuad], depth + 1);
 
         children[dominantQuad] = CompressedQuadTreeNode(

@@ -9,7 +9,8 @@ import 'package:particles_network/model/ip_article.dart';
 import 'package:particles_network/model/particlemodel.dart';
 import 'package:particles_network/painter/optimized_network_painter.dart';
 
-export 'package:particles_network/model/ip_article.dart' show GravityType, GravityConfig;
+export 'package:particles_network/model/ip_article.dart'
+    show GravityType, GravityConfig;
 export 'package:particles_network/model/particlemodel.dart' show Particle;
 
 // Importing default particle factory implementation
@@ -140,9 +141,9 @@ class ParticleNetworkState extends State<ParticleNetwork>
 
   // Injected or default implementations:
   late final IParticleFactory
-  factory; // Creates particles with random properties
+      factory; // Creates particles with random properties
   late final IParticleController
-  controller; // Updates particle positions each frame
+      controller; // Updates particle positions each frame
 
   @override
   void initState() {
@@ -178,7 +179,8 @@ class ParticleNetworkState extends State<ParticleNetwork>
 
       // Trigger repaint by updating the frame counter
       frameNotifier.value = elapsed.inMicroseconds;
-    })..start(); // Start the animation loop immediately
+    })
+      ..start(); // Start the animation loop immediately
   }
 
   // Generates or regenerates particles when size changes
@@ -227,7 +229,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
           child: ValueListenableBuilder<int>(
             valueListenable: frameNotifier,
             // Rebuild only the CustomPaint when frameNotifier changes
-            builder: (_, _, _) => CustomPaint(
+            builder: (_, __, ___) => CustomPaint(
               painter: OptimizedNetworkPainter(
                 // Configuration passed to the painter:
                 drawNetwork: widget.drawNetwork, // Whether to draw connections

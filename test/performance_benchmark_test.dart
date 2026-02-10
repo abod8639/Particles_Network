@@ -10,8 +10,8 @@ import 'dart:math';
 
 void main() {
   test('Performance Benchmark: Update Loop', () {
-    final int particleCount = 1000;
-    final Size size = Size(1000, 1000);
+    const int particleCount = 1000;
+    const Size size = Size(1000, 1000);
     final Random random = Random(42); // Fixed seed for reproducibility
 
     final factory = DefaultParticleFactory(
@@ -46,8 +46,8 @@ void main() {
   });
 
   test('Performance Benchmark: Rendering', () {
-    final int particleCount = 500;
-    final Size size = Size(1000, 1000);
+    const int particleCount = 500;
+    const Size size = Size(1000, 1000);
     final Random random = Random(42);
 
     final factory = DefaultParticleFactory(

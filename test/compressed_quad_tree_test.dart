@@ -10,7 +10,7 @@ void main() {
   late Rectangle boundary;
 
   setUp(() {
-    boundary = Rectangle(0, 0, 100, 100);
+    boundary = const Rectangle(0, 0, 100, 100);
     quadTree = CompressedQuadTree(boundary);
   });
 
@@ -28,13 +28,13 @@ void main() {
 
   group('Particle Insertion', () {
     test('should insert particle successfully', () {
-      final particle = QuadTreeParticle(1, 50, 50);
+      const particle = QuadTreeParticle(1, 50, 50);
       expect(quadTree.insert(particle), isTrue);
       expect(quadTree.getAllParticleIndices(), contains(1));
     });
 
     test('should not insert particle outside boundary', () {
-      final particle = QuadTreeParticle(1, 150, 150);
+      const particle = QuadTreeParticle(1, 150, 150);
       expect(quadTree.insert(particle), isFalse);
       expect(quadTree.getAllParticleIndices(), isEmpty);
     });
@@ -42,13 +42,13 @@ void main() {
 
   group('Range Query', () {
     setUp(() {
-      quadTree.insert(QuadTreeParticle(1, 25, 25));
-      quadTree.insert(QuadTreeParticle(2, 75, 75));
-      quadTree.insert(QuadTreeParticle(3, 10, 10));
+      quadTree.insert(const QuadTreeParticle(1, 25, 25));
+      quadTree.insert(const QuadTreeParticle(2, 75, 75));
+      quadTree.insert(const QuadTreeParticle(3, 10, 10));
     });
 
     test('should find particles in range', () {
-      final queryRange = Rectangle(0, 0, 50, 50);
+      const queryRange = Rectangle(0, 0, 50, 50);
       final result = quadTree.queryRange(queryRange);
       expect(result, containsAll([1, 3]));
       expect(result, isNot(contains(2)));
@@ -57,9 +57,9 @@ void main() {
 
   group('Circle Query', () {
     setUp(() {
-      quadTree.insert(QuadTreeParticle(1, 50, 50));
-      quadTree.insert(QuadTreeParticle(2, 10, 10));
-      quadTree.insert(QuadTreeParticle(3, 90, 90));
+      quadTree.insert(const QuadTreeParticle(1, 50, 50));
+      quadTree.insert(const QuadTreeParticle(2, 10, 10));
+      quadTree.insert(const QuadTreeParticle(3, 90, 90));
     });
 
     test('should find particles within circle radius', () {
@@ -148,7 +148,7 @@ void main() {
 
   group('Memory Management', () {
     test('should clear tree', () {
-      quadTree.insert(QuadTreeParticle(1, 50, 50));
+      quadTree.insert(const QuadTreeParticle(1, 50, 50));
       quadTree.clear();
       expect(quadTree.getAllParticleIndices(), isEmpty);
     });
@@ -169,11 +169,11 @@ class _MockParticle extends Particle {
   final double y;
 
   _MockParticle(this.x, this.y)
-    : super(
-        position: ui.Offset(x, y),
-        velocity: ui.Offset.zero,
-        color: const ui.Color(0xFF000000),
-        size: 2.0,
-        isVisible: true,
-      );
+      : super(
+          position: ui.Offset(x, y),
+          velocity: ui.Offset.zero,
+          color: const ui.Color(0xFF000000),
+          size: 2.0,
+          isVisible: true,
+        );
 }

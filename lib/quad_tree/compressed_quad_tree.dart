@@ -86,7 +86,8 @@ class CompressedQuadTree {
 
   /// Finds nearby particles using circular query and fills the given list
   /// [output]: List to fill with found particle indices
-  void findNearbyParticlesToOutput(double x, double y, double searchRadius, List<int> output) {
+  void findNearbyParticlesToOutput(
+      double x, double y, double searchRadius, List<int> output) {
     final List<QuadTreeParticle> found = [];
     _root.queryCircle(x, y, searchRadius, found);
     for (var i = 0; i < found.length; i++) {

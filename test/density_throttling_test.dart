@@ -21,8 +21,8 @@ void main() {
     });
 
     test('No throttling needed when connections.length <= denseThreshold', () {
-      final int denseThreshold = 5;
-      final int maxLinesPerDenseParticle = 4;
+      const int denseThreshold = 5;
+      const int maxLinesPerDenseParticle = 4;
 
       // Add connections below threshold
       for (int i = 0; i < 3; i++) {
@@ -47,8 +47,8 @@ void main() {
     });
 
     test('Throttling applied when connections.length > denseThreshold', () {
-      final int denseThreshold = 5;
-      final int maxLinesPerDenseParticle = 3;
+      const int denseThreshold = 5;
+      const int maxLinesPerDenseParticle = 3;
 
       // Add connections above threshold
       for (int i = 0; i < 8; i++) {
@@ -73,8 +73,8 @@ void main() {
     });
 
     test('Closest connections are preserved after throttling', () {
-      final int denseThreshold = 5;
-      final int maxLinesPerDenseParticle = 3;
+      const int denseThreshold = 5;
+      const int maxLinesPerDenseParticle = 3;
 
       // Add connections with specific distances
       final distances = [50.0, 10.0, 30.0, 40.0, 20.0, 15.0, 25.0];
@@ -113,8 +113,8 @@ void main() {
     });
 
     test('Connections are sorted by distance before throttling', () {
-      final int denseThreshold = 5;
-      final int maxLinesPerDenseParticle = 3;
+      const int denseThreshold = 5;
+      const int maxLinesPerDenseParticle = 3;
 
       // Add connections in random distance order
       final distances = [80.0, 10.0, 60.0, 20.0, 30.0, 40.0, 70.0];
@@ -140,8 +140,8 @@ void main() {
     });
 
     test('Excess connections are properly released to pool', () {
-      final int denseThreshold = 5;
-      final int maxLinesPerDenseParticle = 3;
+      const int denseThreshold = 5;
+      const int maxLinesPerDenseParticle = 3;
       final int initialPoolSize = connectionDataPool.poolSize;
 
       // Add connections
@@ -170,8 +170,8 @@ void main() {
     });
 
     test('Edge case: denseThreshold equals connections.length', () {
-      final int denseThreshold = 5;
-      final int maxLinesPerDenseParticle = 3;
+      const int denseThreshold = 5;
+      const int maxLinesPerDenseParticle = 3;
 
       // Add exactly threshold number of connections
       for (int i = 0; i < 5; i++) {
@@ -197,8 +197,8 @@ void main() {
     });
 
     test('Edge case: maxLinesPerDenseParticle equals 1', () {
-      final int denseThreshold = 5;
-      final int maxLinesPerDenseParticle = 1;
+      const int denseThreshold = 5;
+      const int maxLinesPerDenseParticle = 1;
 
       // Add multiple connections
       for (int i = 0; i < 8; i++) {
@@ -222,8 +222,8 @@ void main() {
     });
 
     test('Edge case: Empty connections list', () {
-      final int denseThreshold = 5;
-      final int maxLinesPerDenseParticle = 3;
+      const int denseThreshold = 5;
+      const int maxLinesPerDenseParticle = 3;
 
       // Don't add any connections
       expect(connections.length, equals(0));
@@ -241,8 +241,8 @@ void main() {
     });
 
     test('Throttling with negative excess (should not happen but safe)', () {
-      final int denseThreshold = 10;
-      final int maxLinesPerDenseParticle = 15; // maxLines > threshold
+      const int denseThreshold = 10;
+      const int maxLinesPerDenseParticle = 15; // maxLines > threshold
 
       // Add connections above threshold but within maxLines
       for (int i = 0; i < 12; i++) {
@@ -265,8 +265,8 @@ void main() {
     });
 
     test('Multiple rounds of throttling', () {
-      final int denseThreshold = 5;
-      final int maxLinesPerDenseParticle = 3;
+      const int denseThreshold = 5;
+      const int maxLinesPerDenseParticle = 3;
 
       // First round
       for (int i = 0; i < 8; i++) {
@@ -306,8 +306,8 @@ void main() {
     });
 
     test('Throttling preserves connection data integrity', () {
-      final int denseThreshold = 5;
-      final int maxLinesPerDenseParticle = 3;
+      const int denseThreshold = 5;
+      const int maxLinesPerDenseParticle = 3;
 
       // Add connections with specific indices
       final indices = [0, 1, 2, 3, 4, 5, 6, 7];
@@ -343,8 +343,8 @@ void main() {
     });
 
     test('Performance: Throttling with large number of connections', () {
-      final int denseThreshold = 100;
-      final int maxLinesPerDenseParticle = 50;
+      const int denseThreshold = 100;
+      const int maxLinesPerDenseParticle = 50;
 
       // Add many connections
       for (int i = 0; i < 500; i++) {

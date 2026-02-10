@@ -26,8 +26,9 @@ void main() {
     test('should draw line between two close particles', () {
       // Arrange
       final canvas = MockCanvas();
-      final particle1 = MockParticle(position: Offset(0, 0));
-      final particle2 = MockParticle(position: Offset(3, 4)); // Distance = 5
+      final particle1 = MockParticle(position: const Offset(0, 0));
+      final particle2 =
+          MockParticle(position: const Offset(3, 4)); // Distance = 5
       final particles = [particle1, particle2];
       final cell = GridCell(0, 0);
       final grid = {
@@ -57,8 +58,9 @@ void main() {
 
     test('should not draw line if particles are far apart', () {
       final canvas = MockCanvas();
-      final particle1 = MockParticle(position: Offset(0, 0));
-      final particle2 = MockParticle(position: Offset(100, 100)); // Far apart
+      final particle1 = MockParticle(position: const Offset(0, 0));
+      final particle2 =
+          MockParticle(position: const Offset(100, 100)); // Far apart
       final particles = [particle1, particle2];
       final grid = {
         GridCell(0, 0): [0, 1],

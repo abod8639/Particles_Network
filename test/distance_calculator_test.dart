@@ -324,9 +324,9 @@ void main() {
 
       test('handles diagonal distances correctly', () {
         final testCases = [
-          (Offset(0, 0), Offset(1, 1), 1.414), // sqrt(2)
-          (Offset(0, 0), Offset(2, 2), 2.828), // 2*sqrt(2)
-          (Offset(0, 0), Offset(5, 5), 7.071), // 5*sqrt(2)
+          (const Offset(0, 0), const Offset(1, 1), 1.414), // sqrt(2)
+          (const Offset(0, 0), const Offset(2, 2), 2.828), // 2*sqrt(2)
+          (const Offset(0, 0), const Offset(5, 5), 7.071), // 5*sqrt(2)
         ];
 
         for (final (p1Pos, p2Pos, expected) in testCases) {

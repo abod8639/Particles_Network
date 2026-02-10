@@ -93,8 +93,7 @@ class Particle {
   void updateVisibility(Size bounds) {
     // Include a margin to account for particles near the edges of the viewport.
     const margin = 50.0;
-    isVisible =
-        position.dx >= -margin &&
+    isVisible = position.dx >= -margin &&
         position.dx <= bounds.width + margin &&
         position.dy >= -margin &&
         position.dy <= bounds.height + margin;
@@ -126,7 +125,7 @@ Offset computeVelocity(
 
     // Interpolation amount determines how much to blend between current and target velocity.
     const double powrFactor = 0.989;
-    final double interpolationAmount = powrFactor - decayFactor;
+    const double interpolationAmount = powrFactor - decayFactor;
 
     // Smoothly interpolate from currentVelocity to targetVelocity.
     return Offset.lerp(currentVelocity, targetVelocity, interpolationAmount) ??

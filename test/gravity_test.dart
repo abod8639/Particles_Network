@@ -21,7 +21,7 @@ void main() {
     });
 
     test('Global gravity applies constant force', () {
-      final config = GravityConfig(
+      const config = GravityConfig(
         type: GravityType.global,
         strength: 1.0,
         direction: const Offset(0, 1), // Down
@@ -47,7 +47,7 @@ void main() {
       // Unit Vector = (1, 0)
       // Force = (1, 0) * 1.0 = (1, 0)
       // Accel = (1, 0) / 4.0 = (0.25, 0)
-      final config = GravityConfig(
+      const config = GravityConfig(
         type: GravityType.point,
         strength: 1.0,
         center: const Offset(200, 100),
@@ -59,7 +59,7 @@ void main() {
     });
 
     test('Point gravity repulsion with negative strength', () {
-      final config = GravityConfig(
+      const config = GravityConfig(
         type: GravityType.point,
         strength: -1.0,
         center: const Offset(200, 100),
@@ -70,7 +70,7 @@ void main() {
     });
 
     test('None gravity type applies no force', () {
-      final config = GravityConfig(type: GravityType.none, strength: 10.0);
+      const config = GravityConfig(type: GravityType.none, strength: 10.0);
       updater.updateParticles([particle], bounds, gravity: config);
       expect(particle.velocity, Offset.zero);
       expect(particle.position, const Offset(100, 100));

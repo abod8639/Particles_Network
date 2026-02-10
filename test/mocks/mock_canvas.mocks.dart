@@ -24,7 +24,7 @@ import 'package:mockito/mockito.dart' as _i1;
 
 class _FakeRect_0 extends _i1.SmartFake implements _i2.Rect {
   _FakeRect_0(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+      : super(parent, parentInvocation);
 }
 
 /// A class which mocks [Canvas].
@@ -37,27 +37,27 @@ class MockCanvas extends _i1.Mock implements _i2.Canvas {
 
   @override
   void save() => super.noSuchMethod(
-    Invocation.method(#save, []),
-    returnValueForMissingStub: null,
-  );
+        Invocation.method(#save, []),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void saveLayer(_i2.Rect? bounds, _i2.Paint? paint) => super.noSuchMethod(
-    Invocation.method(#saveLayer, [bounds, paint]),
-    returnValueForMissingStub: null,
-  );
+        Invocation.method(#saveLayer, [bounds, paint]),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void restore() => super.noSuchMethod(
-    Invocation.method(#restore, []),
-    returnValueForMissingStub: null,
-  );
+        Invocation.method(#restore, []),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void restoreToCount(int? count) => super.noSuchMethod(
-    Invocation.method(#restoreToCount, [count]),
-    returnValueForMissingStub: null,
-  );
+        Invocation.method(#restoreToCount, [count]),
+        returnValueForMissingStub: null,
+      );
 
   @override
   int getSaveCount() =>
@@ -66,55 +66,54 @@ class MockCanvas extends _i1.Mock implements _i2.Canvas {
 
   @override
   void translate(double? dx, double? dy) => super.noSuchMethod(
-    Invocation.method(#translate, [dx, dy]),
-    returnValueForMissingStub: null,
-  );
+        Invocation.method(#translate, [dx, dy]),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void scale(double? sx, [double? sy]) => super.noSuchMethod(
-    Invocation.method(#scale, [sx, sy]),
-    returnValueForMissingStub: null,
-  );
+        Invocation.method(#scale, [sx, sy]),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void rotate(double? radians) => super.noSuchMethod(
-    Invocation.method(#rotate, [radians]),
-    returnValueForMissingStub: null,
-  );
+        Invocation.method(#rotate, [radians]),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void skew(double? sx, double? sy) => super.noSuchMethod(
-    Invocation.method(#skew, [sx, sy]),
-    returnValueForMissingStub: null,
-  );
+        Invocation.method(#skew, [sx, sy]),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void transform(_i3.Float64List? matrix4) => super.noSuchMethod(
-    Invocation.method(#transform, [matrix4]),
-    returnValueForMissingStub: null,
-  );
+        Invocation.method(#transform, [matrix4]),
+        returnValueForMissingStub: null,
+      );
 
   @override
-  _i3.Float64List getTransform() =>
-      (super.noSuchMethod(
-            Invocation.method(#getTransform, []),
-            returnValue: _i3.Float64List(0),
-          )
-          as _i3.Float64List);
+  _i3.Float64List getTransform() => (super.noSuchMethod(
+        Invocation.method(#getTransform, []),
+        returnValue: _i3.Float64List(0),
+      ) as _i3.Float64List);
 
   @override
   void clipRect(
     _i2.Rect? rect, {
     _i2.ClipOp? clipOp = _i2.ClipOp.intersect,
     bool? doAntiAlias = true,
-  }) => super.noSuchMethod(
-    Invocation.method(
-      #clipRect,
-      [rect],
-      {#clipOp: clipOp, #doAntiAlias: doAntiAlias},
-    ),
-    returnValueForMissingStub: null,
-  );
+  }) =>
+      super.noSuchMethod(
+        Invocation.method(
+          #clipRect,
+          [rect],
+          {#clipOp: clipOp, #doAntiAlias: doAntiAlias},
+        ),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void clipRRect(_i2.RRect? rrect, {bool? doAntiAlias = true}) =>
@@ -144,26 +143,22 @@ class MockCanvas extends _i1.Mock implements _i2.Canvas {
       );
 
   @override
-  _i2.Rect getLocalClipBounds() =>
-      (super.noSuchMethod(
-            Invocation.method(#getLocalClipBounds, []),
-            returnValue: _FakeRect_0(
-              this,
-              Invocation.method(#getLocalClipBounds, []),
-            ),
-          )
-          as _i2.Rect);
+  _i2.Rect getLocalClipBounds() => (super.noSuchMethod(
+        Invocation.method(#getLocalClipBounds, []),
+        returnValue: _FakeRect_0(
+          this,
+          Invocation.method(#getLocalClipBounds, []),
+        ),
+      ) as _i2.Rect);
 
   @override
-  _i2.Rect getDestinationClipBounds() =>
-      (super.noSuchMethod(
-            Invocation.method(#getDestinationClipBounds, []),
-            returnValue: _FakeRect_0(
-              this,
-              Invocation.method(#getDestinationClipBounds, []),
-            ),
-          )
-          as _i2.Rect);
+  _i2.Rect getDestinationClipBounds() => (super.noSuchMethod(
+        Invocation.method(#getDestinationClipBounds, []),
+        returnValue: _FakeRect_0(
+          this,
+          Invocation.method(#getDestinationClipBounds, []),
+        ),
+      ) as _i2.Rect);
 
   @override
   void drawColor(_i2.Color? color, _i2.BlendMode? blendMode) =>
@@ -181,21 +176,21 @@ class MockCanvas extends _i1.Mock implements _i2.Canvas {
 
   @override
   void drawPaint(_i2.Paint? paint) => super.noSuchMethod(
-    Invocation.method(#drawPaint, [paint]),
-    returnValueForMissingStub: null,
-  );
+        Invocation.method(#drawPaint, [paint]),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void drawRect(_i2.Rect? rect, _i2.Paint? paint) => super.noSuchMethod(
-    Invocation.method(#drawRect, [rect, paint]),
-    returnValueForMissingStub: null,
-  );
+        Invocation.method(#drawRect, [rect, paint]),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void drawRRect(_i2.RRect? rrect, _i2.Paint? paint) => super.noSuchMethod(
-    Invocation.method(#drawRRect, [rrect, paint]),
-    returnValueForMissingStub: null,
-  );
+        Invocation.method(#drawRRect, [rrect, paint]),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void drawDRRect(_i2.RRect? outer, _i2.RRect? inner, _i2.Paint? paint) =>
@@ -213,9 +208,9 @@ class MockCanvas extends _i1.Mock implements _i2.Canvas {
 
   @override
   void drawOval(_i2.Rect? rect, _i2.Paint? paint) => super.noSuchMethod(
-    Invocation.method(#drawOval, [rect, paint]),
-    returnValueForMissingStub: null,
-  );
+        Invocation.method(#drawOval, [rect, paint]),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void drawCircle(_i2.Offset? c, double? radius, _i2.Paint? paint) =>
@@ -231,22 +226,23 @@ class MockCanvas extends _i1.Mock implements _i2.Canvas {
     double? sweepAngle,
     bool? useCenter,
     _i2.Paint? paint,
-  ) => super.noSuchMethod(
-    Invocation.method(#drawArc, [
-      rect,
-      startAngle,
-      sweepAngle,
-      useCenter,
-      paint,
-    ]),
-    returnValueForMissingStub: null,
-  );
+  ) =>
+      super.noSuchMethod(
+        Invocation.method(#drawArc, [
+          rect,
+          startAngle,
+          sweepAngle,
+          useCenter,
+          paint,
+        ]),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void drawPath(_i2.Path? path, _i2.Paint? paint) => super.noSuchMethod(
-    Invocation.method(#drawPath, [path, paint]),
-    returnValueForMissingStub: null,
-  );
+        Invocation.method(#drawPath, [path, paint]),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void drawImage(_i2.Image? image, _i2.Offset? offset, _i2.Paint? paint) =>
@@ -261,10 +257,11 @@ class MockCanvas extends _i1.Mock implements _i2.Canvas {
     _i2.Rect? src,
     _i2.Rect? dst,
     _i2.Paint? paint,
-  ) => super.noSuchMethod(
-    Invocation.method(#drawImageRect, [image, src, dst, paint]),
-    returnValueForMissingStub: null,
-  );
+  ) =>
+      super.noSuchMethod(
+        Invocation.method(#drawImageRect, [image, src, dst, paint]),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void drawImageNine(
@@ -272,16 +269,17 @@ class MockCanvas extends _i1.Mock implements _i2.Canvas {
     _i2.Rect? center,
     _i2.Rect? dst,
     _i2.Paint? paint,
-  ) => super.noSuchMethod(
-    Invocation.method(#drawImageNine, [image, center, dst, paint]),
-    returnValueForMissingStub: null,
-  );
+  ) =>
+      super.noSuchMethod(
+        Invocation.method(#drawImageNine, [image, center, dst, paint]),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void drawPicture(_i2.Picture? picture) => super.noSuchMethod(
-    Invocation.method(#drawPicture, [picture]),
-    returnValueForMissingStub: null,
-  );
+        Invocation.method(#drawPicture, [picture]),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void drawParagraph(_i2.Paragraph? paragraph, _i2.Offset? offset) =>
@@ -295,30 +293,33 @@ class MockCanvas extends _i1.Mock implements _i2.Canvas {
     _i2.PointMode? pointMode,
     List<_i2.Offset>? points,
     _i2.Paint? paint,
-  ) => super.noSuchMethod(
-    Invocation.method(#drawPoints, [pointMode, points, paint]),
-    returnValueForMissingStub: null,
-  );
+  ) =>
+      super.noSuchMethod(
+        Invocation.method(#drawPoints, [pointMode, points, paint]),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void drawRawPoints(
     _i2.PointMode? pointMode,
     _i3.Float32List? points,
     _i2.Paint? paint,
-  ) => super.noSuchMethod(
-    Invocation.method(#drawRawPoints, [pointMode, points, paint]),
-    returnValueForMissingStub: null,
-  );
+  ) =>
+      super.noSuchMethod(
+        Invocation.method(#drawRawPoints, [pointMode, points, paint]),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void drawVertices(
     _i2.Vertices? vertices,
     _i2.BlendMode? blendMode,
     _i2.Paint? paint,
-  ) => super.noSuchMethod(
-    Invocation.method(#drawVertices, [vertices, blendMode, paint]),
-    returnValueForMissingStub: null,
-  );
+  ) =>
+      super.noSuchMethod(
+        Invocation.method(#drawVertices, [vertices, blendMode, paint]),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void drawAtlas(
@@ -329,18 +330,19 @@ class MockCanvas extends _i1.Mock implements _i2.Canvas {
     _i2.BlendMode? blendMode,
     _i2.Rect? cullRect,
     _i2.Paint? paint,
-  ) => super.noSuchMethod(
-    Invocation.method(#drawAtlas, [
-      atlas,
-      transforms,
-      rects,
-      colors,
-      blendMode,
-      cullRect,
-      paint,
-    ]),
-    returnValueForMissingStub: null,
-  );
+  ) =>
+      super.noSuchMethod(
+        Invocation.method(#drawAtlas, [
+          atlas,
+          transforms,
+          rects,
+          colors,
+          blendMode,
+          cullRect,
+          paint,
+        ]),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void drawRawAtlas(
@@ -351,18 +353,19 @@ class MockCanvas extends _i1.Mock implements _i2.Canvas {
     _i2.BlendMode? blendMode,
     _i2.Rect? cullRect,
     _i2.Paint? paint,
-  ) => super.noSuchMethod(
-    Invocation.method(#drawRawAtlas, [
-      atlas,
-      rstTransforms,
-      rects,
-      colors,
-      blendMode,
-      cullRect,
-      paint,
-    ]),
-    returnValueForMissingStub: null,
-  );
+  ) =>
+      super.noSuchMethod(
+        Invocation.method(#drawRawAtlas, [
+          atlas,
+          rstTransforms,
+          rects,
+          colors,
+          blendMode,
+          cullRect,
+          paint,
+        ]),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void drawShadow(
@@ -370,13 +373,14 @@ class MockCanvas extends _i1.Mock implements _i2.Canvas {
     _i2.Color? color,
     double? elevation,
     bool? transparentOccluder,
-  ) => super.noSuchMethod(
-    Invocation.method(#drawShadow, [
-      path,
-      color,
-      elevation,
-      transparentOccluder,
-    ]),
-    returnValueForMissingStub: null,
-  );
+  ) =>
+      super.noSuchMethod(
+        Invocation.method(#drawShadow, [
+          path,
+          color,
+          elevation,
+          transparentOccluder,
+        ]),
+        returnValueForMissingStub: null,
+      );
 }

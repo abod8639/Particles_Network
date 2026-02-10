@@ -77,9 +77,9 @@ class BatchLineRenderer {
     double maxDistance,
   ) {
     final int opacity = ((1 - distance / maxDistance) * 255).toInt().clamp(
-      0,
-      255,
-    );
+          0,
+          255,
+        );
     _batch.addLine(p1, p2, opacity);
   }
 

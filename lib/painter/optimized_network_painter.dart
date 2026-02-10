@@ -80,7 +80,7 @@ class OptimizedNetworkPainter extends CustomPainter {
 
     // Initialize QuadTree with viewport bounds
     _quadTree = CompressedQuadTree(
-      Rectangle(
+      const Rectangle(
         -5,
         -5,
         double.maxFinite,
@@ -90,14 +90,16 @@ class OptimizedNetworkPainter extends CustomPainter {
     // Initialize particle paint
     particlePaint = Paint()
       ..style = fill ? PaintingStyle.fill : PaintingStyle.stroke
-      ..isAntiAlias = !isComplex // Optimization: disable AA for high-density scenes
+      ..isAntiAlias =
+          !isComplex // Optimization: disable AA for high-density scenes
       ..color = particleColor;
 
     // Initialize line paint with stroke configuration
     linePaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = lineWidth
-      ..isAntiAlias = !isComplex // Optimization: disable AA for high-density scenes
+      ..isAntiAlias =
+          !isComplex // Optimization: disable AA for high-density scenes
       ..color = lineColor;
 
     // Initialize performance tracking components
@@ -195,7 +197,8 @@ class OptimizedNetworkPainter extends CustomPainter {
     final double maxDistSq = lineDistance * lineDistance;
     // More aggressive throttling when isComplex is true
     final int maxLines = isComplex ? 3 : 5;
-    final int denseThreshold = isComplex ? (lineDistance ~/ 4) : (lineDistance ~/ 1.5);
+    final int denseThreshold =
+        isComplex ? (lineDistance ~/ 4) : (lineDistance ~/ 1.5);
 
     final List<int> nearbyIndices = _intListPool.acquire();
     final List<ConnectionData> connections = [];

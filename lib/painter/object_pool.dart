@@ -24,9 +24,9 @@ class ObjectPool<T> {
     required T Function() factory,
     void Function(T)? resetFn,
     int maxPoolSize = 1000,
-  }) : _factory = factory,
-       _resetFn = resetFn,
-       _maxPoolSize = maxPoolSize;
+  })  : _factory = factory,
+        _resetFn = resetFn,
+        _maxPoolSize = maxPoolSize;
 
   // Acquire an object from the pool or create a new one
   T acquire() {

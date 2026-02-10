@@ -44,7 +44,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   // --- UI Constants ---
   static const double _controlPanelHeight = 350.0;
   static const Duration _animationDuration = Duration(milliseconds: 400);
-  
+
   // --- Particle Network Configuration Variables ---
   bool _drawNetwork = true;
   bool _isFill = false;
@@ -335,7 +335,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       Colors.cyanAccent,
       Colors.pinkAccent,
     ];
-    
+
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
@@ -475,7 +475,7 @@ class FPS extends StatefulWidget {
 class _FPSState extends State<FPS> with SingleTickerProviderStateMixin {
   static const int _maxTimingsLength = 72;
   static const int _microsecondsPerSecond = 1000000;
-  
+
   late final flutter_scheduler.Ticker _ticker;
   final ListQueue<Duration> _timings = ListQueue();
   final ValueNotifier<double> _fpsNotifier = ValueNotifier(0.0);
@@ -492,7 +492,7 @@ class _FPSState extends State<FPS> with SingleTickerProviderStateMixin {
 
   void _onTick(Duration elapsed) {
     _timings.addLast(elapsed);
-    
+
     if (_timings.length > _maxTimingsLength) {
       _timings.removeFirst();
     }
@@ -500,13 +500,14 @@ class _FPSState extends State<FPS> with SingleTickerProviderStateMixin {
     if (_timings.length > 1) {
       final first = _timings.first;
       final last = _timings.last;
-      
+
       final duration = last.inMicroseconds - first.inMicroseconds;
       if (duration > 0) {
-        final currentFps = (_timings.length - 1) * _microsecondsPerSecond / duration;
-        
+        final currentFps =
+            (_timings.length - 1) * _microsecondsPerSecond / duration;
+
         _fpsNotifier.value = currentFps;
-        
+
         if (widget.showChart) {
           _fpsHistory.add(currentFps);
           if (_fpsHistory.length > _maxTimingsLength) {
@@ -563,8 +564,8 @@ class _FPSState extends State<FPS> with SingleTickerProviderStateMixin {
           padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 6),
           decoration: BoxDecoration(
             color: Colors.black87,
-              borderRadius: BorderRadius.circular(8),            
-              border: Border.all(color: color.withValues(alpha: 0.5), width: 1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: color.withValues(alpha: 0.5), width: 1),
             boxShadow: [
               BoxShadow(color: color.withValues(alpha: 0.2), blurRadius: 4),
             ],
@@ -622,7 +623,7 @@ class _FPSChartPainter extends CustomPainter {
 
   final List<double> values;
   final Color color;
-  
+
   static const double _maxFps = 72.0;
   static const double _chartWidth = 80.0;
 
@@ -642,12 +643,13 @@ class _FPSChartPainter extends CustomPainter {
 
     final path = Path();
     final fillPath = Path();
-    
+
     final double stepX = size.width / _chartWidth;
 
     for (int i = 0; i < values.length; i++) {
       final x = i * stepX;
-      final y = size.height - (values[i] / _maxFps * size.height).clamp(0.0, size.height);
+      final y = size.height -
+          (values[i] / _maxFps * size.height).clamp(0.0, size.height);
 
       if (i == 0) {
         path.moveTo(x, y);
@@ -657,7 +659,7 @@ class _FPSChartPainter extends CustomPainter {
         path.lineTo(x, y);
         fillPath.lineTo(x, y);
       }
-      
+
       if (i == values.length - 1) {
         fillPath.lineTo(x, size.height);
         fillPath.close();

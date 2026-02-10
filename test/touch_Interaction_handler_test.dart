@@ -58,20 +58,20 @@ void main() {
       // إعداد الجسيمات
       final particles = [
         Particle(
-          position: Offset(100, 100),
-          velocity: Offset(0, 0),
+          position: const Offset(100, 100),
+          velocity: const Offset(0, 0),
           color: Colors.blue,
           size: 10.0,
         ),
         Particle(
-          position: Offset(150, 150),
-          velocity: Offset(0, 0),
+          position: const Offset(150, 150),
+          velocity: const Offset(0, 0),
           color: Colors.red,
           size: 10.0,
         ),
       ];
 
-      final touchPoint = Offset(120, 120);
+      const touchPoint = Offset(120, 120);
       final linePaint = Paint();
       final handler = TouchInteractionHandler(
         particles: particles,

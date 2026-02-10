@@ -5,9 +5,9 @@ import 'package:particles_network/quad_tree/compressed_quad_tree_node.dart';
 void main() {
   group('Child Boundary Calculation', () {
     test('returns correct boundary for each quadrant', () {
-      final node = CompressedQuadTreeNode(Rectangle(0, 0, 100, 100));
-      final halfWidth = 50.0;
-      final halfHeight = 50.0;
+      final node = CompressedQuadTreeNode(const Rectangle(0, 0, 100, 100));
+      const halfWidth = 50.0;
+      const halfHeight = 50.0;
 
       final nw = node.getChildBoundary(Quadrant.northWest);
       expect(nw.x, 0);
@@ -38,7 +38,7 @@ void main() {
 
   setUp(() {
     // Create a quad tree node with boundary 0,0,100,100
-    quadTree = CompressedQuadTreeNode(Rectangle(0, 0, 100, 100));
+    quadTree = CompressedQuadTreeNode(const Rectangle(0, 0, 100, 100));
   });
 
   group('Basic Properties', () {
@@ -59,22 +59,22 @@ void main() {
 
   group('Particle Insertion', () {
     test('insert particle within bounds', () {
-      final particle = QuadTreeParticle(1, 50, 50);
+      const particle = QuadTreeParticle(1, 50, 50);
       expect(quadTree.insert(particle), isTrue);
       expect(quadTree.particles, contains(particle));
     });
 
     test('reject particle outside bounds', () {
-      final particle = QuadTreeParticle(1, 150, 150);
+      const particle = QuadTreeParticle(1, 150, 150);
       expect(quadTree.insert(particle), isFalse);
       expect(quadTree.particles, isEmpty);
     });
 
     test('subdivision occurs when maxParticles exceeded', () {
       // Insert more than maxParticles (2) particles in same quadrant
-      final p1 = QuadTreeParticle(1, 25, 25); // NW
-      final p2 = QuadTreeParticle(2, 20, 20); // NW
-      final p3 = QuadTreeParticle(3, 15, 15); // NW
+      const p1 = QuadTreeParticle(1, 25, 25); // NW
+      const p2 = QuadTreeParticle(2, 20, 20); // NW
+      const p3 = QuadTreeParticle(3, 15, 15); // NW
 
       quadTree.insert(p1);
       quadTree.insert(p2);
@@ -89,10 +89,10 @@ void main() {
     test('compression occurs with sufficient particles', () {
       // Insert enough particles to trigger compression in NW quadrant
       final particles = [
-        QuadTreeParticle(1, 10, 10), // NW
-        QuadTreeParticle(2, 15, 15), // NW
-        QuadTreeParticle(3, 20, 20), // NW
-        QuadTreeParticle(4, 25, 25), // NW
+        const QuadTreeParticle(1, 10, 10), // NW
+        const QuadTreeParticle(2, 15, 15), // NW
+        const QuadTreeParticle(3, 20, 20), // NW
+        const QuadTreeParticle(4, 25, 25), // NW
       ];
 
       for (var i = 0; i < particles.length; i++) {
@@ -127,12 +127,12 @@ void main() {
 
   group('Range Query', () {
     test('queryRange finds particles in range', () {
-      final p1 = QuadTreeParticle(1, 25, 25);
-      final p2 = QuadTreeParticle(2, 75, 75);
+      const p1 = QuadTreeParticle(1, 25, 25);
+      const p2 = QuadTreeParticle(2, 75, 75);
       quadTree.insert(p1);
       quadTree.insert(p2);
 
-      final queryBoundary = Rectangle(0, 0, 50, 50);
+      const queryBoundary = Rectangle(0, 0, 50, 50);
       final result = quadTree.queryRange(queryBoundary);
 
       expect(result.length, equals(1));
@@ -142,8 +142,8 @@ void main() {
 
   group('Circle Query', () {
     test('queryCircle finds particles within radius', () {
-      final p1 = QuadTreeParticle(1, 10, 10);
-      final p2 = QuadTreeParticle(2, 90, 90);
+      const p1 = QuadTreeParticle(1, 10, 10);
+      const p2 = QuadTreeParticle(2, 90, 90);
       quadTree.insert(p1);
       quadTree.insert(p2);
 
@@ -156,8 +156,8 @@ void main() {
 
   group('Statistics and Optimization', () {
     test('getStats returns correct values', () {
-      final p1 = QuadTreeParticle(1, 25, 25);
-      final p2 = QuadTreeParticle(2, 75, 75);
+      const p1 = QuadTreeParticle(1, 25, 25);
+      const p2 = QuadTreeParticle(2, 75, 75);
       quadTree.insert(p1);
       quadTree.insert(p2);
 
@@ -170,8 +170,8 @@ void main() {
 
     test('optimizeMemory removes empty nodes', () {
       // Insert and then remove particles to create empty nodes
-      final p1 = QuadTreeParticle(1, 25, 25);
-      final p2 = QuadTreeParticle(2, 75, 75);
+      const p1 = QuadTreeParticle(1, 25, 25);
+      const p2 = QuadTreeParticle(2, 75, 75);
       quadTree.insert(p1);
       quadTree.insert(p2);
 
@@ -207,7 +207,7 @@ void main() {
     });
 
     test('extend method creates new path correctly', () {
-      final initial = CompressedPath([Quadrant.northWest], 1);
+      const initial = CompressedPath([Quadrant.northWest], 1);
       final extended = initial.extend(Quadrant.northEast);
 
       expect(extended.path.length, equals(2));
@@ -221,7 +221,7 @@ void main() {
     });
 
     test('toString returns correct format', () {
-      final path = CompressedPath([
+      const path = CompressedPath([
         Quadrant.northWest,
         Quadrant.southEast,
         Quadrant.northEast,
