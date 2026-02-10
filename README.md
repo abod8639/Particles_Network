@@ -52,6 +52,39 @@ Transform your Flutter app’s UI with a high-performance particle network anima
 
 ---
 
+## Demo
+<!-- image demo -->
+![demo image](assets/image.png)
+  <!-- git demo -->
+<p align="center">
+  <h3>✨ Particle Effects Gallery</h3>
+  <table align="center">
+    <tr align="center">
+      <td><b>Default Network</b></td>
+      <td><b>Boold Lines</b></td>
+      <td><b>Gravity Effect</b></td>
+    </tr>
+    <tr>
+      <td><img src="assets/demo_boomerang.gif" width="200"></td>
+      <td><img src="assets/demo_boomerang1.gif" width="200"></td>
+      <td><img src="assets/demo_boomerang2.gif" width="200"></td>
+    </tr>
+    <tr><td colspan="3"></td></tr>
+    <tr align="center">
+      <td><b>Mass Gravity Effect</b></td>
+      <td><b>Complex Optimized</b></td>
+      <td><b>Particle no stroke</b></td>
+    </tr>
+    <tr>
+      <td><img src="assets/demo_boomerang3.gif" width="200"></td>
+      <td><img src="assets/demo_boomerang4.gif" width="200"></td>
+      <td><img src="assets/demo_boomerang5.gif" width="200"></td>
+    </tr>
+  </table>
+</p>
+
+---
+
 ## Installation
 
 Add the package to your `pubspec.yaml`:
