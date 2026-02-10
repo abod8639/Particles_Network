@@ -3,30 +3,40 @@
 Transform your Flutter app's UI with a high-performance particle network animation that responds to touch and adapts seamlessly to any screen size.
 
 <div align="center">
-  <a href="https://github.com/abod8639/Particles_Network">
-    <img alt="particles_network demo" 
-         width="300"
-         src="assets/Picsart_25-05-10_12-57-34-680.png">
-  </a>
 
-  <br>
-  <a href="https://pub.dev/packages/particles_network">
-    <img alt="Pub Version" 
-         src="https://img.shields.io/pub/v/particles_network"></a>
-  <a href="https://github.com/abod8639/Particles_Network/actions/workflows/flutter-ci.yml">
-    <img alt="CI Status" 
-    src="https://github.com/abod8639/Particles_Network/actions/workflows/flutter-ci.yml/badge.svg"></a>
-  <a href="https://opensource.org/licenses/MIT">
-    <img alt="MIT License" 
-         src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
-  <a href="https://codecov.io/gh/abod8639/Particles_Network"></a>
-    <a href="https://codecov.io/gh/abod8639/Particles_Network">
-     <img alt="Code Coverage" 
-          src="https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg"></a>
-  <img alt="Pub Likes" 
-       src="https://img.shields.io/pub/likes/particles_network">
-  <img alt="Pub Points" 
-       src="https://img.shields.io/pub/points/particles_network">
+#  Particles Network
+
+**High-performance, GPU-accelerated particle systems for Flutter with advanced physics.**
+
+<a href="https://github.com/abod8639/Particles_Network">
+  <img src="assets/Picsart_25-05-10_12-57-34-680.png" width="450" alt="Particles Network Banner" style="border-radius: 12px;">
+</a>
+
+<p align="center">
+
+  <a href="https://pub.dev/packages/particles_network"><img src="https://img.shields.io/pub/v/particles_network?color=blue&label=pub.dev&logo=dart" alt="Pub Version"></a>
+  <a href="https://github.com/abod8639/Particles_Network/actions"><img src="https://github.com/abod8639/Particles_Network/actions/workflows/flutter-ci.yml/badge.svg" alt="CI Status"></a>
+  <a href="https://codecov.io/gh/abod8639/Particles_Network"><img src="https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg" alt="Code Coverage"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-purple.svg" alt="License: MIT"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/abod8639/Particles_Network/stargazers"><img src="https://img.shields.io/github/stars/abod8639/Particles_Network?style=flat&logo=github&color=blue" alt="GitHub stars"></a>
+  <img src="https://img.shields.io/pub/likes/particles_network?logo=flutter&color=gold" alt="Pub Likes">
+  <img src="https://img.shields.io/pub/points/particles_network?logo=dart&color=green" alt="Pub Points">
+  <a href="https://particle-network-example.web.app"><img src="https://img.shields.io/badge/Demo-Live_Preview-EA4335?logo=firebase" alt="Live Demo"></a>
+</p>
+
+---
+
+<p align="center">
+
+  <a href="https://github.com/abod8639/Particles_Network"><b>GitHub</b></a> •
+  <a href="https://pub.dev/packages/particles_network"><b>Pub.dev</b></a> •
+  <a href="https://particle-network-example.web.app"><b>Live Demo</b></a> •
+  <a href="#-gravity-simulation-guide"><b>Documentation</b></a>
+</p>
+
 </div>
 
 ---
@@ -85,7 +95,7 @@ Transform your Flutter app's UI with a high-performance particle network animati
 
 ## Demo
 <!-- image demo -->
-![demo image](assets/image.png)
+![demo image](https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/image.png)
   <!-- git demo -->
 <p align="center">
   <h3>Particle Effects</h3>
@@ -136,44 +146,15 @@ Experience the performance and fluid animations directly in your browser:
 
 Perfect for creating stunning visual effects in:
 
-- 🎨 **Landing Pages** - Create memorable first impressions
-- 🎮 **Game Backgrounds** - Add dynamic ambiance to game menus
-- 📱 **App Onboarding** - Engage users with interactive tutorials
-- 🖼️ **Portfolio Sites** - Showcase your creativity
-- 🎯 **Marketing Pages** - Capture attention with motion
-- 🌌 **Data Visualization** - Animated backgrounds for dashboards
-- 🎪 **Event Websites** - Create excitement and energy
+- **Landing Pages** - Create memorable first impressions
+- **Game Backgrounds** - Add dynamic ambiance to game menus
+- **App Onboarding** - Engage users with interactive tutorials
+- **Portfolio Sites** - Showcase your creativity
+- **Marketing Pages** - Capture attention with motion
+- **Data Visualization** - Animated backgrounds for dashboards
+- **Event Websites** - Create excitement and energy
 
 ---
-
-## Performance Benchmarks
-
-Real-world performance metrics across different platforms:
-
-### Mobile (Tested on Pixel 6 Pro)
-| Particle Count | FPS | CPU Usage | Notes |
-|----------------|-----|-----------|-------|
-| 50 | 60 | ~5% | Smooth, minimal impact |
-| 100 | 60 | ~8% | Recommended for most apps |
-| 200 | 60 | ~12% | Good for feature highlights |
-| 500 | 58-60 | ~18% | Enable `isComplex: true` |
-| 1000 | 45-55 | ~25% | High-end devices only |
-
-### Web - CanvasKit (Tested on Chrome, M1 MacBook)
-| Particle Count | FPS | CPU Usage | Notes |
-|----------------|-----|-----------|-------|
-| 100 | 60 | ~6% | Excellent performance |
-| 300 | 60 | ~10% | Recommended for web |
-| 500 | 58-60 | ~15% | Enable `isComplex: true` |
-| 800 | 50-58 | ~22% | Consider reducing for older devices |
-
-### Desktop (Tested on Windows 11, Ryzen 7)
-| Particle Count | FPS | CPU Usage | Notes |
-|----------------|-----|-----------|-------|
-| 200 | 60 | ~4% | Very smooth |
-| 500 | 60 | ~8% | Recommended for desktop |
-| 1000 | 60 | ~14% | Excellent even at high counts |
-| 2000 | 55-60 | ~25% | Possible with `isComplex: true` |
 
 > [!NOTE]
 > Performance may vary based on device specifications, screen resolution, and other running applications. These benchmarks use default settings with `drawNetwork: true` and `fill: true`.
@@ -246,10 +227,9 @@ For optimal performance on web, use **CanvasKit** renderer:
 
 ```bash
 # Development
-flutter run -d chrome --web-renderer canvaskit
-
+flutter run -d chrome --wasm
 # Production build
-flutter build web --web-renderer canvaskit
+flutter build web --wasm
 ```
 
 #### Mobile (Android/iOS)
@@ -421,7 +401,7 @@ final nearbyParticles = quadTree.queryCircle(
 );
 ```
 
-![QuadTree Visualization](assets/250530_22h33m09s_screenshot.png)
+![QuadTree Visualization](https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/250530_22h33m09s_screenshot.png)
 
 **Key Benefits:**
 * **O(log n)** insertion and query complexity
@@ -699,16 +679,6 @@ ParticleNetwork(
 )
 ```
 
-### Q: Can I change particle properties dynamically?
-
-**A:** Yes! Use a `StatefulWidget` and call `setState()`:
-```dart
-setState(() {
-  _particleCount = 200;
-  _gravityStrength = 1.5;
-});
-```
-
 Note: Some properties like `particleCount`, `maxSpeed`, and `maxSize` require a widget rebuild to take effect. You can force this by changing the widget's `key`.
 
 ---
@@ -778,11 +748,11 @@ This package is built with:
 We welcome contributions! See the [contributing guide](https://github.com/abod8639/particles_network/tree/main/CONTRIBUTING.md) for more details.
 
 **Ways to Contribute:**
-- 🐛 Report bugs via [GitHub Issues](https://github.com/abod8639/Particles_Network/issues)
-- 💡 Suggest features or improvements
-- 📖 Improve documentation
-- 🔧 Submit pull requests
-- ⭐ Star the repository if you find it useful!
+- Report bugs via [GitHub Issues](https://github.com/abod8639/Particles_Network/issues)
+- Suggest features or improvements
+- Improve documentation
+- Submit pull requests
+- Star the repository if you find it useful!
 
 ## License
 
