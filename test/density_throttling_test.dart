@@ -27,10 +27,7 @@ void main() {
       // Add connections below threshold
       for (int i = 0; i < 3; i++) {
         connections.add(
-          connectionDataPool.acquire(
-            index: i,
-            distance: (i + 1) * 10.0,
-          ),
+          connectionDataPool.acquire(index: i, distance: (i + 1) * 10.0),
         );
       }
 
@@ -56,10 +53,7 @@ void main() {
       // Add connections above threshold
       for (int i = 0; i < 8; i++) {
         connections.add(
-          connectionDataPool.acquire(
-            index: i,
-            distance: (i + 1) * 10.0,
-          ),
+          connectionDataPool.acquire(index: i, distance: (i + 1) * 10.0),
         );
       }
 
@@ -86,10 +80,7 @@ void main() {
       final distances = [50.0, 10.0, 30.0, 40.0, 20.0, 15.0, 25.0];
       for (int i = 0; i < distances.length; i++) {
         connections.add(
-          connectionDataPool.acquire(
-            index: i,
-            distance: distances[i],
-          ),
+          connectionDataPool.acquire(index: i, distance: distances[i]),
         );
       }
 
@@ -129,10 +120,7 @@ void main() {
       final distances = [80.0, 10.0, 60.0, 20.0, 30.0, 40.0, 70.0];
       for (int i = 0; i < distances.length; i++) {
         connections.add(
-          connectionDataPool.acquire(
-            index: i,
-            distance: distances[i],
-          ),
+          connectionDataPool.acquire(index: i, distance: distances[i]),
         );
       }
 
@@ -159,14 +147,14 @@ void main() {
       // Add connections
       for (int i = 0; i < 8; i++) {
         connections.add(
-          connectionDataPool.acquire(
-            index: i,
-            distance: (i + 1) * 10.0,
-          ),
+          connectionDataPool.acquire(index: i, distance: (i + 1) * 10.0),
         );
       }
 
-      expect(connectionDataPool.poolSize, equals(initialPoolSize)); // Pool empty
+      expect(
+        connectionDataPool.poolSize,
+        equals(initialPoolSize),
+      ); // Pool empty
 
       // Apply throttling logic
       if (connections.length > denseThreshold) {
@@ -188,10 +176,7 @@ void main() {
       // Add exactly threshold number of connections
       for (int i = 0; i < 5; i++) {
         connections.add(
-          connectionDataPool.acquire(
-            index: i,
-            distance: (i + 1) * 10.0,
-          ),
+          connectionDataPool.acquire(index: i, distance: (i + 1) * 10.0),
         );
       }
 
@@ -218,10 +203,7 @@ void main() {
       // Add multiple connections
       for (int i = 0; i < 8; i++) {
         connections.add(
-          connectionDataPool.acquire(
-            index: i,
-            distance: (i + 1) * 10.0,
-          ),
+          connectionDataPool.acquire(index: i, distance: (i + 1) * 10.0),
         );
       }
 
@@ -265,10 +247,7 @@ void main() {
       // Add connections above threshold but within maxLines
       for (int i = 0; i < 12; i++) {
         connections.add(
-          connectionDataPool.acquire(
-            index: i,
-            distance: (i + 1) * 10.0,
-          ),
+          connectionDataPool.acquire(index: i, distance: (i + 1) * 10.0),
         );
       }
 
@@ -292,10 +271,7 @@ void main() {
       // First round
       for (int i = 0; i < 8; i++) {
         connections.add(
-          connectionDataPool.acquire(
-            index: i,
-            distance: (i + 1) * 10.0,
-          ),
+          connectionDataPool.acquire(index: i, distance: (i + 1) * 10.0),
         );
       }
 
@@ -312,10 +288,7 @@ void main() {
       // Add more connections and throttle again
       for (int i = 8; i < 15; i++) {
         connections.add(
-          connectionDataPool.acquire(
-            index: i,
-            distance: (i + 1) * 10.0,
-          ),
+          connectionDataPool.acquire(index: i, distance: (i + 1) * 10.0),
         );
       }
 
@@ -342,10 +315,7 @@ void main() {
 
       for (int i = 0; i < indices.length; i++) {
         connections.add(
-          connectionDataPool.acquire(
-            index: indices[i],
-            distance: distances[i],
-          ),
+          connectionDataPool.acquire(index: indices[i], distance: distances[i]),
         );
       }
 
@@ -379,10 +349,7 @@ void main() {
       // Add many connections
       for (int i = 0; i < 500; i++) {
         connections.add(
-          connectionDataPool.acquire(
-            index: i,
-            distance: (i % 200) * 1.5,
-          ),
+          connectionDataPool.acquire(index: i, distance: (i % 200) * 1.5),
         );
       }
 
@@ -420,10 +387,7 @@ void main() {
         // Add connections
         for (int i = 0; i < 15; i++) {
           connections.add(
-            connectionDataPool.acquire(
-              index: i,
-              distance: (i + 1) * 5.0,
-            ),
+            connectionDataPool.acquire(index: i, distance: (i + 1) * 5.0),
           );
         }
 

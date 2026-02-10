@@ -1,4 +1,4 @@
-// import 'dart:math' as math;
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:particles_network/model/particlemodel.dart';
@@ -94,9 +94,11 @@ class OptimizedNetworkPainter extends CustomPainter {
 
     // Initialize line paint with stroke configuration
     linePaint = Paint()
-      ..style = fill ? PaintingStyle.stroke : PaintingStyle.fill
+      ..style = PaintingStyle.stroke
       ..strokeWidth = lineWidth
-      ..color = lineColor; // Added line color
+      // ..strokeCap = StrokeCap.round
+      ..isAntiAlias = false
+      ..color = lineColor;
 
     // Initialize performance tracking components
     _accelerationTracker = AccelerationTracker();
@@ -187,77 +189,65 @@ class OptimizedNetworkPainter extends CustomPainter {
   // - Distance-based opacity creates visual depth
   // - Object pooling for reduced memory allocations
   void _drawConnections(Canvas canvas, List<int> visibleParticles) {
-    int maxLinesPerDenseParticle = isComplex ? 4 : 5;
-    int denseThreshold = isComplex ? lineDistance ~/ 3 : lineDistance ~/ 1;
+    final double maxDistSq = lineDistance * lineDistance;
+    final int maxLines = isComplex ? 4 : 5;
+    // Throttling threshold: only sort and prune if we exceed this number of connections
+    final int denseThreshold = isComplex ? (lineDistance ~/ 3) : (lineDistance ~/ 1);
 
-    // Use pooled list to reduce allocations
-    final List<int> filteredNearby = _intListPool.acquire();
-    final List<ConnectionData> connections = <ConnectionData>[];
+    final List<int> nearbyIndices = _intListPool.acquire();
+    final List<ConnectionData> connections = [];
 
     try {
       for (final int index in visibleParticles) {
         final Particle particle = particles[index];
+        final Offset pos = particle.position;
 
-        final List<int> nearbyParticles = _quadTree.findNearbyParticles(
-          particle.position.dx,
-          particle.position.dy,
-          lineDistance,
-        );
+        nearbyIndices.clear();
+        _quadTree.findNearbyParticlesToOutput(pos.dx, pos.dy, lineDistance, nearbyIndices);
 
-        // Filter and collect connections using pooled objects
-        filteredNearby.clear();
         connections.clear();
+        for (final int neighborIndex in nearbyIndices) {
+          // Avoid duplicate lines and self-connection
+          if (neighborIndex <= index) continue;
 
-        for (final int i in nearbyParticles) {
-          if (i > index) {
-            filteredNearby.add(i);
-          }
-        }
+          final Particle neighbor = particles[neighborIndex];
+          final Offset neighborPos = neighbor.position;
+          final double dx = pos.dx - neighborPos.dx;
+          final double dy = pos.dy - neighborPos.dy;
+          final double distSq = dx * dx + dy * dy;
 
-        for (final int i in filteredNearby) {
-          final double distance = _distanceCalculator.betweenPoints(
-            particle.position,
-            particles[i].position,
-          );
-
-          if (distance <= lineDistance) {
+          if (distSq <= maxDistSq) {
             connections.add(
-              _connectionDataPool.acquire(index: i, distance: distance),
+              _connectionDataPool.acquire(
+                index: neighborIndex,
+                distance: math.sqrt(distSq),
+              ),
             );
           }
         }
 
-        // Apply density throttling if needed
+        // Density throttling: if we have too many connections, keep only the closest ones
         if (connections.length > denseThreshold) {
           connections.sort((a, b) => a.distance.compareTo(b.distance));
-          // Keep only the closest connections
-          final excess = connections.length - maxLinesPerDenseParticle;
-          for (int i = 0; i < excess; i++) {
+          while (connections.length > maxLines) {
             _connectionDataPool.release(connections.removeLast());
           }
         }
 
         // Draw connections for this particle
-        for (final connection in connections) {
-          final Particle nearbyParticle = particles[connection.index];
-          final int opacity = ((1 - connection.distance / lineDistance) * 255)
-              .toInt()
-              .clamp(0, 255);
-          linePaint.color = lineColor.withAlpha(opacity);
-          canvas.drawLine(
-            particle.position,
-            nearbyParticle.position,
-            linePaint,
-          );
-          _connectionDataPool.release(connection);
+        for (final conn in connections) {
+          final double opacity = (1.0 - (conn.distance / lineDistance)).clamp(0.0, 1.0);
+          linePaint.color = lineColor.withAlpha((opacity * 255).toInt());
+          canvas.drawLine(pos, particles[conn.index].position, linePaint);
+          _connectionDataPool.release(conn);
         }
       }
     } finally {
-      // Always return pooled resources
-      _intListPool.release(filteredNearby);
+      // Cleanup any remaining pooled objects in case of early return/error
       for (final conn in connections) {
         _connectionDataPool.release(conn);
       }
+      _intListPool.release(nearbyIndices);
     }
   }
 

@@ -333,7 +333,10 @@ void main() {
       intList.add(42);
       manager.intListPool.release(intList);
 
-      final connData = manager.connectionDataPool.acquire(index: 5, distance: 10.0);
+      final connData = manager.connectionDataPool.acquire(
+        index: 5,
+        distance: 10.0,
+      );
       manager.connectionDataPool.release(connData);
 
       expect(manager.intListPool.poolSize, equals(1));
@@ -395,29 +398,32 @@ void main() {
       expect(pool.poolSize, equals(1)); // maxPoolSize is 3
     });
 
-test('acquiring more than maxPoolSize creates new instances', () {
+    test('acquiring more than maxPoolSize creates new instances', () {
       final obj1 = pool.acquire();
       final obj2 = pool.acquire();
       final obj3 = pool.acquire();
       final obj4 = pool.acquire();
 
       // التأكد أن الكائنات ليست نال (null) وأنها من النوع الصحيح
-      expect(obj1, isNotNull); 
-      
+      expect(obj1, isNotNull);
+
       // التأكد أن جميع الكائنات فريدة وليست نفس النسخة في الذاكرة
       final objects = [obj1, obj2, obj3, obj4];
       final uniqueObjects = Set.from(objects);
-      
-      expect(uniqueObjects.length, equals(4), reason: 'All acquired objects must be unique instances');
-      
+
+      expect(
+        uniqueObjects.length,
+        equals(4),
+        reason: 'All acquired objects must be unique instances',
+      );
+
       // أو الطريقة التقليدية التي كنت تستخدمها:
       expect(identical(obj1, obj2), isFalse);
       expect(identical(obj1, obj3), isFalse);
       expect(identical(obj1, obj4), isFalse);
       expect(identical(obj2, obj3), isFalse);
       expect(identical(obj3, obj4), isFalse);
-    }
-    );
+    });
   });
 
   group('IntListPool - Edge Cases', () {
