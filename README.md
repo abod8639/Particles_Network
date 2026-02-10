@@ -57,7 +57,8 @@ Transform your Flutter app’s UI with a high-performance particle network anima
 ![demo image](assets/image.png)
   <!-- git demo -->
 <p align="center">
-  <h3>Particle Effects Gallery Gif</h3>
+  <h3>Particle Effects</h3>
+  
   <table align="center">
     <tr align="center">
       <td><b>Default Network</b></td>
@@ -65,9 +66,9 @@ Transform your Flutter app’s UI with a high-performance particle network anima
       <td><b>Gravity Effect</b></td>
     </tr>
     <tr>
-      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang.gif" width="200"></td>
-      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang1.gif" width="200"></td>
-      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang2.gif" width="200"></td>
+      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang.gif" width="220"></td>
+      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang1.gif" width="220"></td>
+      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang2.gif" width="220"></td>
     </tr>
     <tr><td colspan="3" height="10"></td></tr>
     <tr align="center">
@@ -76,12 +77,56 @@ Transform your Flutter app’s UI with a high-performance particle network anima
       <td><b>Particle no stroke</b></td>
     </tr>
     <tr>
-      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang3.gif" width="200"></td>
-      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang4.gif" width="200"></td>
-      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang5.gif" width="200"></td>
+      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang3.gif" width="220"></td>
+      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang4.gif" width="220"></td>
+      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang5.gif" width="220"></td>
     </tr>
   </table>
 </p>
+
+---
+
+## Quick Start
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:particles_network/particles_network.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        backgroundColor: Colors.black,
+        body: ParticlesNetwork(
+          particleCount: 60,
+          maxSpeed: 0.5,
+          maxSize: 1.5,
+          lineWidth: 0.5,
+          lineDistance: 100,
+          particleColor: Colors.white,
+          lineColor: Colors.teal,
+          touchColor: Colors.amber,
+          touchActivation: true,
+          isComplex: false,
+          fill: true,
+          drawNetwork: true,
+          gravityType: GravityType.none,
+          gravityStrength: 0.1,
+          gravityDirection: const Offset(0, 1),
+          gravityCenter: null,
+        ),
+      ),
+    );
+  }
+}
+```
 
 ---
 
