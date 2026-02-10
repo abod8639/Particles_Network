@@ -104,7 +104,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       home: Scaffold(
         backgroundColor: Colors.black,
-        body: ParticlesNetwork(
+        body: ParticleNetwork(
           particleCount: 60,
           maxSpeed: 0.5,
           maxSize: 1.5,
