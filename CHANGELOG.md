@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## [1.9.1] 
+## [1.9.2] 
 
 Initial release of the Particles Network package with the following features:
 

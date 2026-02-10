@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:particles_network/particles_network.dart';
-import 'package:show_fps/show_fps.dart';
+
+import 'package:show_fps/show_fps.dart'; // <--- amazing package to show fps
+// run "flutter pub add show_fps" to add it to your project
+
 import 'dart:math' as math; // For mathematical functions (min, max, etc.)
 
 void main() => runApp(const MyApp());
@@ -61,6 +64,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
 
   // UI state to toggle control panel visibility
   bool showPanel = true;
+  bool showChart = false;
 
   // UniqueKey is used to force a full rebuild of the ParticleNetwork
   // when engine-critical parameters change (Count, Speed, Size).
@@ -94,7 +98,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
             AnimatedContainer(
               duration: const Duration(milliseconds: 400),
               curve: Curves.easeInOut,
-              height: showPanel ? 320 : 0,
+              height: showPanel ? 350 : 0,
               child: SingleChildScrollView(
                 physics: const NeverScrollableScrollPhysics(),
                 child: _buildAdvancedControlPanel(),
@@ -106,9 +110,10 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
               child: ShowFPS(
                 alignment: Alignment.topRight,
                 visible: true,
-                showChart: false,
+                showChart: showChart,
                 child: ParticleNetwork(
-                  key: particleKey, // Key updates only on critical parameter changes
+                  key:
+                      particleKey, // Key updates only on critical parameter changes
                   drawNetwork: drawNetwork,
                   fill: isFill,
                   isComplex: isComplex,
@@ -124,6 +129,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                   gravityType: gravityType,
                   gravityStrength: gravityStrength,
                   gravityDirection: gravityDirection,
+                  // gravityCenter: Offset(0, 100),
                 ),
               ),
             ),
@@ -138,7 +144,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       color: Colors.grey[900],
-      height: 320,
+      height: 350,
       child: ListView(
         children: [
           _buildColorSection(),
@@ -187,8 +193,11 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("Gravity Settings",
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+        const Text(
+          "Gravity Settings",
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: 5),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
@@ -197,32 +206,47 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
             _buildGravityTypeButton("Point", GravityType.point),
           ],
         ),
-        if (gravityType != GravityType.none)
-          _buildSlider(
-            "Strength",
-            gravityStrength,
-            -2.0,
-            2.0,
-            (v) => setState(() => gravityStrength = v),
-          ),
-        if (gravityType == GravityType.global)
-          Row(
-            children: [
-              const Text("Direction", style: TextStyle(fontSize: 10)),
-              Expanded(
-                child: Slider(
-                  value: math.atan2(gravityDirection.dy, gravityDirection.dx),
-                  min: -math.pi,
-                  max: math.pi,
-                  onChanged: (v) {
-                    setState(() {
-                      gravityDirection = Offset(math.cos(v), math.sin(v));
-                    });
-                  },
-                ),
+        _buildSlider(
+          "Strength",
+          gravityStrength,
+          -2.0,
+          2.0,
+          (v) => setState(() => gravityStrength = v),
+        ),
+        Row(
+          children: [
+            SizedBox(
+              width: 80,
+              child: Text("Direction", style: const TextStyle(fontSize: 10)),
+            ),
+            Expanded(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Slider(
+                      activeColor: controllerColor,
+                      value: math.atan2(
+                        gravityDirection.dy,
+                        gravityDirection.dx,
+                      ),
+                      min: -math.pi,
+                      max: math.pi,
+                      onChanged: (v) {
+                        setState(() {
+                          gravityDirection = Offset(math.cos(v), math.sin(v));
+                        });
+                      },
+                    ),
+                  ),
+                  Text(
+                    gravityDirection.toString().replaceAll("Direction", ""),
+                    style: TextStyle(color: controllerColor, fontSize: 10),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -340,7 +364,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   Widget _buildSwitchesSection() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: Row(
+      child: Wrap(
         children: [
           _buildSwitch(
             "Network",
@@ -357,6 +381,12 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
             "Touch",
             touchActivation,
             (v) => setState(() => touchActivation = v),
+          ),
+          SizedBox(width: 30),
+          _buildSwitch(
+            "Chart",
+            showChart,
+            (v) => setState(() => showChart = v),
           ),
         ],
       ),
@@ -411,8 +441,3 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
     );
   }
 }
-
-
-
-
-
