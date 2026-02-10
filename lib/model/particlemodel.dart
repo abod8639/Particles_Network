@@ -12,6 +12,12 @@ class Particle {
   // The current velocity of the particle.
   Offset velocity;
 
+  // Accumulated acceleration from forces applied during this frame.
+  Offset acceleration = Offset.zero;
+
+  // The mass of the particle, affects how much force is needed to move it.
+  final double mass;
+
   // The default velocity of the particle, used to reset its speed.
   Offset defaultVelocity;
 
@@ -34,14 +40,28 @@ class Particle {
     required this.color,
     required this.size,
     this.isVisible = true,
-  }) : defaultVelocity = velocity;
+  })  : defaultVelocity = velocity,
+        mass = size * size; // Mass is proportional to area (size^2)
+
+  // Applies a force to the particle based on F = ma (a = F/m).
+  void applyForce(Offset force) {
+    if (mass > 0) {
+      acceleration += force / mass;
+    }
+  }
 
   // Updates the particle's position and velocity based on its current state.
   void update(Size bounds) {
+    // Apply accumulated acceleration to velocity
+    velocity += acceleration;
+
+    // Reset acceleration for the next frame
+    acceleration = Offset.zero;
+
     // Update the position by adding the velocity.
     position += velocity;
 
-    // If the particle was accelerated, gradually reduce its velocity to the default.
+    // If the particle was accelerated (e.g. by touch), gradually return to default.
     if (wasAccelerated) {
       velocity = computeVelocity(velocity, defaultVelocity, 0.01);
       // If velocity has returned to default, reset the accelerated flag.

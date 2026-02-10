@@ -31,40 +31,69 @@ abstract class IParticleFactory {
 // - Verlet integration
 // - Physics with constraints
 // - Special effect behaviors
+// Enum to define different types of gravity effects
+enum GravityType { none, global, point }
+
+// Configuration class for gravity effects
+class GravityConfig {
+  final GravityType type;
+  final double strength;
+  final Offset direction; // For global gravity
+  final Offset center; // For point gravity
+
+  const GravityConfig({
+    this.type = GravityType.none,
+    this.strength = 0.5,
+    this.direction = const Offset(0, 1), // Default: down
+    this.center = Offset.zero,
+  });
+}
+
 abstract class IParticleController {
   // Updates all particles' state based on the current simulation frame
   //
   // [particles] - List of all active particles
   // [bounds] - Current container size for boundary checking
-  void updateParticles(List<Particle> particles, Size bounds);
+  // [gravity] - Optional gravity configuration
+  void updateParticles(
+    List<Particle> particles,
+    Size bounds, {
+    GravityConfig gravity = const GravityConfig(),
+  });
 }
 
-// Default particle controller implementing basic Euler integration physics
-//
-// Features:
-// - Handles position updates based on velocity
-// - Implements boundary collision
-// - Processes basic particle physics
-//
-// Performance Characteristics:
-// - Time Complexity: O(n) where n is number of particles
-// - Space Complexity: O(1) (updates in-place)
-//
-// Physics Model:
-// position(t+Δt) = position(t) + velocity(t)*Δt
-// velocity(t+Δt) = velocity(t) + acceleration(t)*Δt
+// Default particle controller implementing basic Euler integration physics with gravity support
 class ParticleUpdater implements IParticleController {
   @override
-  void updateParticles(List<Particle> particles, Size bounds) {
-    // Process each particle using basic Euler integration
+  void updateParticles(
+    List<Particle> particles,
+    Size bounds, {
+    GravityConfig gravity = const GravityConfig(),
+  }) {
+    // Process each particle
     for (final Particle p in particles) {
+      _applyGravity(p, gravity);
       p.update(bounds);
     }
+  }
 
-    // Note: The actual Particle.update() method should handle:
-    // 1. Position integration
-    // 2. Boundary collisions
-    // 3. Velocity updates
-    // 4. Any other physics effects
+  void _applyGravity(Particle p, GravityConfig config) {
+    if (config.type == GravityType.none || config.strength == 0) return;
+
+    if (config.type == GravityType.global) {
+      // Global gravity: constant force in a fixed direction
+      p.applyForce(config.direction * config.strength);
+    } else if (config.type == GravityType.point) {
+      // Point gravity: force directed towards a specific center point
+      final Offset delta = config.center - p.position;
+      final double distance = delta.distance;
+
+      if (distance > 0) {
+        // Normalizing and applying strength
+        // Note: Could use inverse-square law for more realism, but linear is often "feel" better for UI
+        final Offset force = (delta / distance) * config.strength;
+        p.applyForce(force);
+      }
+    }
   }
 }

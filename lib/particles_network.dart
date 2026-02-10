@@ -9,6 +9,9 @@ import 'package:particles_network/model/ip_article.dart';
 import 'package:particles_network/model/particlemodel.dart';
 import 'package:particles_network/painter/optimized_network_painter.dart';
 
+export 'package:particles_network/model/ip_article.dart' show GravityType, GravityConfig;
+export 'package:particles_network/model/particlemodel.dart' show Particle;
+
 // Importing default particle factory implementation
 import 'model/default_particle_factory.dart';
 
@@ -78,6 +81,20 @@ class ParticleNetwork extends StatefulWidget {
   // Whether to draw connecting lines between particles [default: true]
   final bool drawNetwork;
 
+  // --- Gravity Configuration ---
+
+  // The type of gravity to apply [default: GravityType.none]
+  final GravityType gravityType;
+
+  // The strength of the gravity force [default: 0.1]
+  final double gravityStrength;
+
+  // The direction of global gravity [default: Offset(0, 1) - downwards]
+  final Offset gravityDirection;
+
+  // The center point for point gravity [default: null - defaults to widget center]
+  final Offset? gravityCenter;
+
   // Creates a ParticleNetwork widget with customizable parameters
   const ParticleNetwork({
     super.key,
@@ -93,6 +110,10 @@ class ParticleNetwork extends StatefulWidget {
     this.isComplex = false,
     this.fill = true,
     this.drawNetwork = true,
+    this.gravityType = GravityType.none,
+    this.gravityStrength = 0.1,
+    this.gravityDirection = const Offset(0, 1),
+    this.gravityCenter,
   });
 
   @override
@@ -139,8 +160,21 @@ class ParticleNetworkState extends State<ParticleNetwork>
 
     // Animation loop (runs at ~60fps when visible)
     ticker = createTicker((elapsed) {
-      // Update all particle positions based on their velocity
-      controller.updateParticles(particles, currentSize);
+      // Create gravity configuration
+      final gravityConfig = GravityConfig(
+        type: widget.gravityType,
+        strength: widget.gravityStrength,
+        direction: widget.gravityDirection,
+        center: widget.gravityCenter ??
+            Offset(currentSize.width / 2, currentSize.height / 2),
+      );
+
+      // Update all particle positions based on their velocity and gravity
+      controller.updateParticles(
+        particles,
+        currentSize,
+        gravity: gravityConfig,
+      );
 
       // Trigger repaint by updating the frame counter
       frameNotifier.value = elapsed.inMicroseconds;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:particles_network/particles_network.dart';
 import 'package:show_fps/show_fps.dart';
+import 'dart:math' as math; // For mathematical functions (min, max, etc.)
 
 void main() => runApp(const MyApp());
 
@@ -47,11 +48,14 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   int particleCount = 100;
   double maxSpeed = 1.5;
   double maxSize = 3.0;
-  double lineDistance = 200.0;
+  double lineDistance = 100.0;
+  GravityType gravityType = GravityType.none;
+  double gravityStrength = 0.1;
+  Offset gravityDirection = const Offset(0, 1);
 
   // --- Styling Variables ---
   Color particleColor = Colors.white;
-  Color lineColor = Colors.white.withOpacity(0.5);
+  Color lineColor = Colors.white;
   Color touchColor = Colors.amber;
   Color controllerColor = Colors.tealAccent;
 
@@ -117,6 +121,9 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                   particleColor: particleColor,
                   lineColor: lineColor,
                   touchColor: touchColor,
+                  gravityType: gravityType,
+                  gravityStrength: gravityStrength,
+                  gravityDirection: gravityDirection,
                 ),
               ),
             ),
@@ -169,8 +176,68 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
             setState(() => maxSize = v);
             _refreshEngine();
           }),
+          const Divider(),
+          _buildGravitySection(),
         ],
       ),
+    );
+  }
+
+  Widget _buildGravitySection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Gravity Settings",
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildGravityTypeButton("None", GravityType.none),
+            _buildGravityTypeButton("Global", GravityType.global),
+            _buildGravityTypeButton("Point", GravityType.point),
+          ],
+        ),
+        if (gravityType != GravityType.none)
+          _buildSlider(
+            "Strength",
+            gravityStrength,
+            -2.0,
+            2.0,
+            (v) => setState(() => gravityStrength = v),
+          ),
+        if (gravityType == GravityType.global)
+          Row(
+            children: [
+              const Text("Direction", style: TextStyle(fontSize: 10)),
+              Expanded(
+                child: Slider(
+                  value: math.atan2(gravityDirection.dy, gravityDirection.dx),
+                  min: -math.pi,
+                  max: math.pi,
+                  onChanged: (v) {
+                    setState(() {
+                      gravityDirection = Offset(math.cos(v), math.sin(v));
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+
+  Widget _buildGravityTypeButton(String label, GravityType type) {
+    final isSelected = gravityType == type;
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isSelected ? controllerColor : Colors.grey[800],
+        foregroundColor: isSelected ? Colors.black : Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        minimumSize: const Size(60, 30),
+      ),
+      onPressed: () => setState(() => gravityType = type),
+      child: Text(label, style: const TextStyle(fontSize: 10)),
     );
   }
 
