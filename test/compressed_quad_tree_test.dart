@@ -19,6 +19,11 @@ void main() {
       expect(quadTree.boundary, equals(boundary));
       expect(quadTree.getAllParticleIndices(), isEmpty);
     });
+
+    test('should expose root node', () {
+      expect(quadTree.root, isNotNull);
+      expect(quadTree.root, isA<CompressedQuadTreeNode>());
+    });
   });
 
   group('Particle Insertion', () {
@@ -62,6 +67,21 @@ void main() {
       expect(result, contains(1));
       expect(result, isNot(contains(2)));
       expect(result, isNot(contains(3)));
+    });
+
+    test('findNearbyParticles should be a wrapper for queryCircle', () {
+      final result = quadTree.findNearbyParticles(50, 50, 20);
+      expect(result, contains(1));
+      expect(result, isNot(contains(2)));
+      expect(result, isNot(contains(3)));
+    });
+
+    test('findNearbyParticlesToOutput should populate existing list', () {
+      final List<int> output = [];
+      quadTree.findNearbyParticlesToOutput(50, 50, 20, output);
+      expect(output, contains(1));
+      expect(output, isNot(contains(2)));
+      expect(output, isNot(contains(3)));
     });
   });
 
