@@ -252,8 +252,8 @@ No additional setup required! The package works out of the box.
 |  Linux   | ✅ Full |  Very Good  | OpenGL acceleration           |
 
 **Minimum Requirements:**
-- Flutter SDK: `>=3.32.5`
-- Dart SDK: `^3.10.8`
+- Flutter SDK: `>=3.10.0`
+- Dart SDK: `^3.0.0`
 
 ---
 
