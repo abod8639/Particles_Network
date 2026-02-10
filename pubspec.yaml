@@ -13,7 +13,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  show_fps: ^1.1.0
 
 dev_dependencies:
   flutter_test:
@@ -36,3 +35,11 @@ flutter:
 screenshots:
   - description: The equatable package logo.
     path: assets/Picsart_25-05-10_12-57-34-680.png
+
+platforms:
+  android:
+  ios:
+  web:
+  windows:
+  macos:
+  linux:

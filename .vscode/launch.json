@@ -1,25 +1,40 @@
 {
-  // Use IntelliSense to learn about possible attributes.
-  // Hover to view descriptions of existing attributes.
-  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-  "version": "1.5.0",
+  "version": "0.2.0",
   "configurations": [
     {
-      "name": "particles_network",
-      "request": "launch",
-      "type": "dart"
-    },
-    {
-      "name": "particles_network (profile mode)",
+      "name": "stronger_muscles_dashboard",
       "request": "launch",
       "type": "dart",
-      "flutterMode": "profile"
+      "args": ["-d", "linux"],
+      "env": {
+        "__NV_PRIME_RENDER_OFFLOAD": "1",
+        "__GLX_VENDOR_LIBRARY_NAME": "nvidia"
+        // "__VK_LAYER_NV_optimus": "NVIDIA_only"
+      }
     },
     {
-      "name": "particles_network (release mode)",
+      "name": "stronger_muscles_dashboard (profile mode)",
       "request": "launch",
       "type": "dart",
-      "flutterMode": "release"
+      "flutterMode": "profile",
+      "args": ["-d", "linux"],
+      "env": {
+        "__NV_PRIME_RENDER_OFFLOAD": "1",
+        "__GLX_VENDOR_LIBRARY_NAME": "nvidia"
+        // "__VK_LAYER_NV_optimus": "NVIDIA_only"
+      }
+    },
+    {
+      "name": "stronger_muscles_dashboard (release mode)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release",
+      "args": ["-d", "linux"],
+      "env": {
+        "__NV_PRIME_RENDER_OFFLOAD": "1",
+        "__GLX_VENDOR_LIBRARY_NAME": "nvidia"
+        // "__VK_LAYER_NV_optimus": "NVIDIA_only"
+      }
     }
   ]
 }
