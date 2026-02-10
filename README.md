@@ -262,14 +262,14 @@ No additional setup required! The package works out of the box.
 
 ## Platform Support
 
-| Platform | Support | Performance | Notes |
-|----------|---------|-------------|-------|
-| 🤖 Android | ✅ Full | Excellent | Hardware acceleration enabled |
-| 🍎 iOS | ✅ Full | Excellent | Optimized for Metal rendering |
-| 🌐 Web | ✅ Full | Very Good | Best with CanvasKit renderer |
-| 🪟 Windows | ✅ Full | Excellent | DirectX acceleration |
-| 🍎 macOS | ✅ Full | Excellent | Metal acceleration |
-| 🐧 Linux | ✅ Full | Very Good | OpenGL acceleration |
+| Platform | Support | Performance | Notes                         |
+|----------|---------|-------------|-------------------------------|
+|  Android | ✅ Full |  Excellent  | Hardware acceleration enabled |
+|  iOS     | ✅ Full |  Excellent  | Optimized for Metal rendering |
+|  Web     | ✅ Full |  Very Good  | Best with CanvasKit renderer  |
+|  Windows | ✅ Full |  Excellent  | DirectX acceleration          |
+|  macOS   | ✅ Full |  Excellent  | Metal acceleration            |
+|  Linux   | ✅ Full |  Very Good  | OpenGL acceleration           |
 
 **Minimum Requirements:**
 - Flutter SDK: `>=3.32.5`
@@ -280,7 +280,7 @@ No additional setup required! The package works out of the box.
 ## Configuration Options
 
 | Property           | Type          | Default        | Description                                            |
-| ------------------ | ------------- | -------------- | ------------------------------------------------------ |
+| ------------------ | ------------- | -------------- | -------------------------------------------------------|
 | `particleCount`    | `int`         | `60`           | Number of particles in the system                      |
 | `maxSpeed`         | `double`      | `0.5`          | Maximum initial velocity of particles                  |
 | `maxSize`          | `double`      | `1.5`          | Maximum particle radius                                |

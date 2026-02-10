@@ -7,8 +7,8 @@ repository: https://github.com/abod8639/Particles_Network.git
 homepage: https://github.com/abod8639/Particles_Network
 
 environment:
-  sdk: ^3.10.8
-  flutter: ">=3.32.5"
+  sdk: '>=3.10.8 <4.0.0'
+  flutter: '>=3.38.9'
 
 dependencies:
   flutter:
@@ -26,14 +26,12 @@ flutter:
   shaders:
     - shaders/particles.frag
 
-
-  # To add assets to your package, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 
 screenshots:
-  - description: The equatable package logo.
+  - description: "Interactive particle network with gravity and touch response."
     path: assets/Picsart_25-05-10_12-57-34-680.png
 
 platforms:
