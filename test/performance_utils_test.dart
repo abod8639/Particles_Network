@@ -78,7 +78,7 @@ void main() {
     test('initializes with rebuildInterval frame count', () {
       expect(
         manager.frameSinceLastRebuild,
-        equals(AdaptiveQuadTreeManager.rebuildInterval),
+        equals(manager.rebuildInterval),
       );
     });
 
@@ -92,7 +92,7 @@ void main() {
       expect(manager.frameSinceLastRebuild, equals(1));
 
       // Continue calling until we hit the interval again
-      for (int i = 0; i < AdaptiveQuadTreeManager.rebuildInterval - 2; i++) {
+      for (int i = 0; i < manager.rebuildInterval - 2; i++) {
         expect(manager.shouldRebuild(), isFalse);
       }
 
@@ -122,12 +122,12 @@ void main() {
 
       expect(
         manager.frameSinceLastRebuild,
-        equals(AdaptiveQuadTreeManager.rebuildInterval),
+        equals(manager.rebuildInterval),
       );
     });
 
     test('rebuild cycle follows expected pattern', () {
-      final interval = AdaptiveQuadTreeManager.rebuildInterval;
+      final interval = manager.rebuildInterval;
       final rebuildFrames = <int>[];
 
       for (int frame = 0; frame < interval * 3; frame++) {

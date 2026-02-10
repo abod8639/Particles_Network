@@ -90,19 +90,22 @@ class OptimizedNetworkPainter extends CustomPainter {
     // Initialize particle paint
     particlePaint = Paint()
       ..style = fill ? PaintingStyle.fill : PaintingStyle.stroke
+      ..isAntiAlias = !isComplex // Optimization: disable AA for high-density scenes
       ..color = particleColor;
 
     // Initialize line paint with stroke configuration
     linePaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = lineWidth
-      // ..strokeCap = StrokeCap.round
-      ..isAntiAlias = false
+      ..isAntiAlias = !isComplex // Optimization: disable AA for high-density scenes
       ..color = lineColor;
 
     // Initialize performance tracking components
     _accelerationTracker = AccelerationTracker();
-    _quadTreeManager = AdaptiveQuadTreeManager();
+    // Adaptive rebuild interval based on complexity
+    _quadTreeManager = AdaptiveQuadTreeManager(
+      rebuildInterval: isComplex ? 6 : 3,
+    );
     _poolManager = PoolManager.getInstance();
     _intListPool = _poolManager.intListPool;
     _connectionDataPool = _poolManager.connectionDataPool;
@@ -190,9 +193,9 @@ class OptimizedNetworkPainter extends CustomPainter {
   // - Object pooling for reduced memory allocations
   void _drawConnections(Canvas canvas, List<int> visibleParticles) {
     final double maxDistSq = lineDistance * lineDistance;
-    final int maxLines = isComplex ? 4 : 5;
-    // Throttling threshold: only sort and prune if we exceed this number of connections
-    final int denseThreshold = isComplex ? (lineDistance ~/ 3) : (lineDistance ~/ 1);
+    // More aggressive throttling when isComplex is true
+    final int maxLines = isComplex ? 3 : 5;
+    final int denseThreshold = isComplex ? (lineDistance ~/ 4) : (lineDistance ~/ 1.5);
 
     final List<int> nearbyIndices = _intListPool.acquire();
     final List<ConnectionData> connections = [];
@@ -203,7 +206,12 @@ class OptimizedNetworkPainter extends CustomPainter {
         final Offset pos = particle.position;
 
         nearbyIndices.clear();
-        _quadTree.findNearbyParticlesToOutput(pos.dx, pos.dy, lineDistance, nearbyIndices);
+        _quadTree.findNearbyParticlesToOutput(
+          pos.dx,
+          pos.dy,
+          lineDistance,
+          nearbyIndices,
+        );
 
         connections.clear();
         for (final int neighborIndex in nearbyIndices) {
@@ -236,7 +244,8 @@ class OptimizedNetworkPainter extends CustomPainter {
 
         // Draw connections for this particle
         for (final conn in connections) {
-          final double opacity = (1.0 - (conn.distance / lineDistance)).clamp(0.0, 1.0);
+          final double opacity =
+              (1.0 - (conn.distance / lineDistance)).clamp(0.0, 1.0);
           linePaint.color = lineColor.withAlpha((opacity * 255).toInt());
           canvas.drawLine(pos, particles[conn.index].position, linePaint);
           _connectionDataPool.release(conn);

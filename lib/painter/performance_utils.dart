@@ -33,10 +33,13 @@ class AccelerationTracker {
 // particle movement and rebuilds only when necessary.
 class AdaptiveQuadTreeManager {
   // How many frames to skip between mandatory rebuilds
-  static const int rebuildInterval = 3;
+  int rebuildInterval;
 
-  int _frameSinceLastRebuild = rebuildInterval; // Start at rebuild interval
+  int _frameSinceLastRebuild;
   bool _forceNextRebuild = false;
+
+  AdaptiveQuadTreeManager({this.rebuildInterval = 3})
+      : _frameSinceLastRebuild = rebuildInterval;
 
   // Check if QuadTree should be rebuilt this frame
   bool shouldRebuild() {
