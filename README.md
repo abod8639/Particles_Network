@@ -30,7 +30,6 @@ Transform your Flutter app's UI with a high-performance particle network animati
 ---
 
 <p align="center">
-
   <a href="https://github.com/abod8639/Particles_Network"><b>GitHub</b></a> •
   <a href="https://pub.dev/packages/particles_network"><b>Pub.dev</b></a> •
   <a href="https://particle-network-example.web.app"><b>Live Demo</b></a> •
@@ -211,7 +210,7 @@ Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  particles_network: ^1.9.2
+  particles_network: ^1.9.3
 ```
 
 Then run:
