@@ -1,4 +1,9 @@
-// Importing core Dart math library for random number generation
+/// Main entry point for the particles_network package.
+///
+/// This library provides the [ParticleNetwork] widget, which is the primary
+/// way to use the particle animation in a Flutter application.
+library particles_network;
+
 import 'dart:math';
 
 // Importing Flutter material design library for UI components
@@ -16,87 +21,84 @@ export 'package:particles_network/model/particlemodel.dart' show Particle;
 // Importing default particle factory implementation
 import 'model/default_particle_factory.dart';
 
-// A Flutter widget that renders an interactive particle network visualization.
-//
-// This widget creates a dynamic system of particles that:
-// - Move continuously within the widget bounds using basic physics
-// - Connect visually when within a specified distance (Euclidean distance)
-// - Respond to touch interactions when enabled (distance-based highlighting)
-// - Can be customized through various parameters
-//
-// Mathematical Concepts Used:
-// - 2D vector math for particle movement (position + velocity)
-// - Euclidean distance calculation for connection detection
-// - Random number generation for initial placement and movement
-// - Basic collision detection with boundaries
-//
-// Performance Features:
-// - Spatial partitioning for efficient neighbor detection (O(n) → O(n log n))
-// - Cached distance calculations to minimize recomputation
-// - Batched painting operations to reduce GPU calls
-// - Configurable repaint strategies based on complexity
+/// A Flutter widget that renders an interactive particle network visualization.
+///
+/// This widget creates a dynamic system of particles that:
+/// - Move continuously within the widget bounds using basic physics
+/// - Connect visually when within a specified distance (Euclidean distance)
+/// - Respond to touch interactions when enabled (distance-based highlighting)
+/// - Can be customized through various parameters
+///
+/// Mathematical Concepts Used:
+/// - 2D vector math for particle movement (position + velocity)
+/// - Euclidean distance calculation for connection detection
+/// - Random number generation for initial placement and movement
+/// - Basic collision detection with boundaries
+///
+/// Performance Features:
+/// - Spatial partitioning for efficient neighbor detection (O(n) → O(n log n))
+/// - Cached distance calculations to minimize recomputation
+/// - Batched painting operations to reduce GPU calls
+/// - Configurable repaint strategies based on complexity
 class ParticleNetwork extends StatefulWidget {
-  // Configuration properties with default values:
-
-  // Total number of particles in the visualization [default: 60]
-  // Affects performance: O(n) for updates, O(n²) for connection checks
+  /// Total number of particles in the visualization [default: 60].
+  /// Affects performance: O(n) for updates, O(n²) for connection checks.
   final int particleCount;
 
-  // Maximum speed of particles in pixels per frame [default: 0.5]
-  // Determines how fast particles move (velocity magnitude)
+  /// Maximum speed of particles in pixels per frame [default: 0.5].
+  /// Determines how fast particles move (velocity magnitude).
   final double maxSpeed;
 
-  // Maximum radius of particles in pixels [default: 1.5]
-  // Used for rendering particle size
+  /// Maximum radius of particles in pixels [default: 1.5].
+  /// Used for rendering particle size.
   final double maxSize;
 
-  // Stroke width of connection lines in pixels [default: 0.5]
+  /// Stroke width of connection lines in pixels [default: 0.5].
   final double lineWidth;
 
-  // Maximum connection distance between particles in pixels [default: 100]
-  // Threshold for drawing connecting lines (Euclidean distance)
+  /// Maximum connection distance between particles in pixels [default: 100].
+  /// Threshold for drawing connecting lines (Euclidean distance).
   final double lineDistance;
 
-  // Base color of all particles [default: Colors.white]
+  /// Base color of all particles [default: Colors.white].
   final Color particleColor;
 
-  // Color of connection lines between particles [default: Color.fromARGB(255, 100, 255, 180)]
-  // Lines are drawn with opacity based on distance (inverse linear interpolation)
+  /// Color of connection lines between particles [default: Color.fromARGB(255, 100, 255, 180)].
+  /// Lines are drawn with opacity based on distance (inverse linear interpolation).
   final Color lineColor;
 
-  // Highlight color for touch interactions [default: Colors.amber]
-  // Particles near touch point get this color (distance-based)
+  /// Highlight color for touch interactions [default: Colors.amber].
+  /// Particles near touch point get this color (distance-based).
   final Color touchColor;
 
-  // Whether touch interactions are enabled [default: true]
-  // Adds gesture detection and touch response logic
+  /// Whether touch interactions are enabled [default: true].
+  /// Adds gesture detection and touch response logic.
   final bool touchActivation;
 
-  // Whether the painting logic is complex (affects repaint strategy) [default: false]
-  // If true, Flutter may optimize repainting differently
+  /// Whether the painting logic is complex (affects repaint strategy) [default: false].
+  /// If true, Flutter may optimize repainting differently.
   final bool isComplex;
 
-  // Whether to fill particles (true) or stroke them (false) [default: true]
+  /// Whether to fill particles (true) or stroke them (false) [default: true].
   final bool fill;
 
-  // Whether to draw connecting lines between particles [default: true]
+  /// Whether to draw connecting lines between particles [default: true].
   final bool drawNetwork;
 
-  // --- Gravity Configuration ---
-
-  // The type of gravity to apply [default: GravityType.none]
+  /// The type of gravity effect to apply [default: GravityType.none].
   final GravityType gravityType;
 
-  // The strength of the gravity force [default: 0.1]
+  /// The strength of the applied gravity force [default: 0.1].
   final double gravityStrength;
 
-  // The direction of global gravity [default: Offset(0, 1) - downwards]
+  /// The direction vector for global gravity [default: Offset(0, 1) - downwards].
   final Offset gravityDirection;
 
-  // The center point for point gravity [default: null - defaults to widget center]
+  /// The center point for point-based gravity effects.
+  /// Defaults to the widget's center if null.
   final Offset? gravityCenter;
 
-  // Creates a ParticleNetwork widget with customizable parameters
+  /// Creates a [ParticleNetwork] widget with customizable visualization parameters.
   const ParticleNetwork({
     super.key,
     this.particleCount = 60,

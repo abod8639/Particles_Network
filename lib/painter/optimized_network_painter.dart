@@ -1,3 +1,10 @@
+/// Specialized painter for rendering a high-performance particle network.
+///
+/// This library provides the [OptimizedNetworkPainter] and related utilities
+/// to render particles and their connections using advanced optimization
+/// techniques like spatial partitioning and object pooling.
+library optimized_network_painter;
+
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -11,34 +18,58 @@ import 'package:particles_network/painter/touch_interaction_handler.dart';
 import 'package:particles_network/quad_tree/compressed_quad_tree.dart';
 import 'package:particles_network/quad_tree/compressed_quad_tree_node.dart';
 
-// The main painter class for rendering an optimized particle network
-//
-// This class implements CustomPainter to efficiently render:
-// - Individual particles as circles
-// - Connection lines between nearby particles
-// - Touch interaction effects
-//
-// Optimization Techniques:
-// 1. Spatial partitioning using QuadTree
-// 2. Distance calculation caching
-// 3. Visible particle filtering
-// 4. Batched drawing operations
-// 5. Conditional rendering based on visibility
+/// The main painter class for rendering an optimized particle network.
+///
+/// This class implements [CustomPainter] to efficiently render:
+/// - Individual particles as circles
+/// - Connection lines between nearby particles
+/// - Touch interaction effects
+///
+/// Optimization Techniques:
+/// 1. Spatial partitioning using QuadTree
+/// 2. Distance calculation caching
+/// 3. Visible particle filtering
+/// 4. Batched drawing operations
+/// 5. Conditional rendering based on visibility
 class OptimizedNetworkPainter extends CustomPainter {
-  // Configuration properties
-  final List<Particle> particles; // All particles in the system
-  final Offset? touchPoint; // Current touch position (nullable)
-  final double lineDistance; // Max connection distance (in pixels)
-  final Color particleColor; // Base color for particles
-  final Color lineColor; // Color for connection lines
-  final Color touchColor; // Color for touch interactions
-  final bool touchActivation; // Whether touch effects are enabled
-  final int particleCount; // Total particle count (for pre-allocation)
-  final double lineWidth; // Width of connection lines
-  final bool isComplex; // Debug mode flag
-  final bool fill; // Whether to fill particles or stroke them
-  final bool drawNetwork; // Whether to draw connection lines
-  final bool showQuadTree; // Whether to visualize QuadTree structure
+  /// The list of particles currently in the system.
+  final List<Particle> particles;
+
+  /// The current touch position, if any.
+  final Offset? touchPoint;
+
+  /// The maximum distance (in pixels) for connection lines to be drawn.
+  final double lineDistance;
+
+  /// The base color for rendering particles.
+  final Color particleColor;
+
+  /// The color used for connecting lines between particles.
+  final Color lineColor;
+
+  /// The color used to highlight particles near a touch point.
+  final Color touchColor;
+
+  /// Whether touch interaction effects are enabled.
+  final bool touchActivation;
+
+  /// The total number of particles, used for pre-allocation optimizations.
+  final int particleCount;
+
+  /// The width of the connecting lines.
+  final double lineWidth;
+
+  /// Whether to use complex (high-quality) or optimized painting logic.
+  final bool isComplex;
+
+  /// Whether to fill particles (true) or draw them as outlines (false).
+  final bool fill;
+
+  /// Whether to draw the web of connection lines between particles.
+  final bool drawNetwork;
+
+  /// Whether to visualize the underlying QuadTree structure for debugging.
+  final bool showQuadTree;
 
   // Optimized sub-components
   late final DistanceCalculator _distanceCalculator;

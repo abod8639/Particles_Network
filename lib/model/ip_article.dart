@@ -1,46 +1,59 @@
+/// Interfaces and configuration for particle systems.
+///
+/// This library defines the core abstractions ([IParticleFactory], [IParticleController])
+/// and configuration objects ([GravityConfig]) used by the system.
+library ip_article;
+
 import 'dart:ui';
 
 import 'package:particles_network/model/particlemodel.dart';
 
-// Abstract factory interface for creating particle instances
-//
-// This follows the Factory Method design pattern, allowing different
-// particle creation strategies to be implemented while maintaining
-// a consistent interface.
-//
-// Implementations can control:
-// - Initial position distribution
-// - Velocity ranges
-// - Size variations
-// - Color schemes
+/// Abstract factory interface for creating particle instances.
+///
+/// This follows the Factory Method design pattern, allowing different
+/// particle creation strategies to be implemented while maintaining
+/// a consistent interface.
+///
+/// Implementations can control:
+/// - Initial position distribution
+/// - Velocity ranges
+/// - Size variations
+/// - Color schemes
 abstract class IParticleFactory {
-  // Creates a new particle within specified bounds
-  //
-  // [size] - The available space where particles can be placed
-  // Returns: A new Particle instance with randomized properties
+  /// Creates a new particle within specified bounds.
+  ///
+  /// [size] - The available space where particles can be placed.
+  /// Returns: A new Particle instance with randomized properties.
   Particle createParticle(Size size);
 }
 
-// Abstract interface for controlling particle behavior and physics
-//
-// This enables different physics models to be applied to the particle
-// system while maintaining consistent update behavior.
-//
-// Common implementations might include:
-// - Basic Euler integration
-// - Verlet integration
-// - Physics with constraints
-// - Special effect behaviors
-// Enum to define different types of gravity effects
-enum GravityType { none, global, point }
+/// Enum to define different types of gravity effects.
+enum GravityType {
+  /// No gravity effect applied.
+  none,
 
-// Configuration class for gravity effects
+  /// Constant force applied to all particles in a specific direction.
+  global,
+
+  /// Force directed towards or away from a specific center point.
+  point
+}
+
+/// Configuration class for gravity effects.
 class GravityConfig {
+  /// The type of gravity effect to apply.
   final GravityType type;
-  final double strength;
-  final Offset direction; // For global gravity
-  final Offset center; // For point gravity
 
+  /// The intensity of the gravity force.
+  final double strength;
+
+  /// The direction vector for [GravityType.global].
+  final Offset direction;
+
+  /// The center point coordinates for [GravityType.point].
+  final Offset center;
+
+  /// Creates a [GravityConfig] with the specified parameters.
   const GravityConfig({
     this.type = GravityType.none,
     this.strength = 0.5,
@@ -49,12 +62,16 @@ class GravityConfig {
   });
 }
 
+/// Abstract interface for controlling particle behavior and physics.
+///
+/// This enables different physics models to be applied to the particle
+/// system while maintaining consistent update behavior.
 abstract class IParticleController {
-  // Updates all particles' state based on the current simulation frame
-  //
-  // [particles] - List of all active particles
-  // [bounds] - Current container size for boundary checking
-  // [gravity] - Optional gravity configuration
+  /// Updates all particles' state based on the current simulation frame.
+  ///
+  /// [particles] - List of all active particles.
+  /// [bounds] - Current container size for boundary checking.
+  /// [gravity] - Optional gravity configuration.
   void updateParticles(
     List<Particle> particles,
     Size bounds, {

@@ -1,39 +1,42 @@
-// Added an explanation for the library
-// This library provides a Particle class to simulate particles in a network. Each particle has properties like position, velocity, color, and size. The library includes methods to update particle states, handle screen boundary collisions, and compute velocity with gradual decay. Additionally, a utility function is provided to create mock particles for testing purposes.
+/// Particle data model and physics logic.
+///
+/// This library defines the [Particle] class and helper functions for calculating
+/// velocity and simulating particle behavior.
+library particle_model;
 
 import 'package:flutter/material.dart';
 
-// The Particle class represents a single particle in the particle network.
-// It contains properties for position, velocity, color, size, and visibility.
+/// The Particle class represents a single particle in the particle network.
+/// It contains properties for position, velocity, color, size, and visibility.
 class Particle {
-  // The current position of the particle.
+  /// The current position of the particle.
   Offset position;
 
-  // The current velocity of the particle.
+  /// The current velocity of the particle.
   Offset velocity;
 
-  // Accumulated acceleration from forces applied during this frame.
+  /// Accumulated acceleration from forces applied during this frame.
   Offset acceleration = Offset.zero;
 
-  // The mass of the particle, affects how much force is needed to move it.
+  /// The mass of the particle, affects how much force is needed to move it.
   final double mass;
 
-  // The default velocity of the particle, used to reset its speed.
+  /// The default velocity of the particle, used to reset its speed.
   Offset defaultVelocity;
 
-  // A flag indicating whether the particle was affected by touch interaction.
+  /// A flag indicating whether the particle was affected by touch interaction.
   bool wasAccelerated = false;
 
-  // A flag indicating whether the particle is visible within the viewport.
+  /// A flag indicating whether the particle is visible within the viewport.
   bool isVisible = true;
 
-  // The color of the particle.
+  /// The color of the particle.
   Color color;
 
-  // The size of the particle.
+  /// The size of the particle.
   double size;
 
-  // Constructor to initialize the particle's properties.
+  /// Constructor to initialize the particle's properties.
   Particle({
     required this.position,
     required this.velocity,
@@ -43,14 +46,14 @@ class Particle {
   })  : defaultVelocity = velocity,
         mass = size * size; // Mass is proportional to area (size^2)
 
-  // Applies a force to the particle based on F = ma (a = F/m).
+  /// Applies a force to the particle based on F = ma (a = F/m).
   void applyForce(Offset force) {
     if (mass > 0) {
       acceleration += force / mass;
     }
   }
 
-  // Updates the particle's position and velocity based on its current state.
+  /// Updates the particle's position and velocity based on its current state.
   void update(Size bounds) {
     // Apply accumulated acceleration to velocity
     velocity += acceleration;
@@ -77,7 +80,7 @@ class Particle {
     updateVisibility(bounds);
   }
 
-  // Handles collisions with the screen boundaries by reversing the velocity.
+  /// Handles collisions with the screen boundaries by reversing the velocity.
   void handleScreenBoundaries(Size bounds) {
     if (position.dx < 0 || position.dx > bounds.width) {
       velocity = Offset(-velocity.dx, velocity.dy);
@@ -89,7 +92,7 @@ class Particle {
     }
   }
 
-  // Updates the visibility status of the particle based on its position.
+  /// Updates the visibility status of the particle based on its position.
   void updateVisibility(Size bounds) {
     // Include a margin to account for particles near the edges of the viewport.
     const margin = 50.0;
@@ -100,7 +103,7 @@ class Particle {
   }
 }
 
-// Computes the velocity with gradual decay to return to the default velocity.
+/// Computes the velocity with gradual decay to return to the default velocity.
 Offset computeVelocity(
   Offset currentVelocity,
   Offset defaultVelocity,
@@ -133,7 +136,7 @@ Offset computeVelocity(
   }
 }
 
-// Added a utility function to create a mock particle for testing
+/// Utility function to create a mock particle for testing.
 Particle createMockParticle({
   Offset? position,
   Offset? velocity,

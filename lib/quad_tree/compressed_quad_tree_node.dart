@@ -1,23 +1,53 @@
+/// Core data structures and logic for the compressed quadtree implementation.
+///
+/// This library provides the [CompressedQuadTreeNode] and related helper classes
+/// like [QuadTreeParticle] and [CompressedPath] to efficiently manage spatial
+/// data for the particle network.
+library compressed_quad_tree_node;
+
 import 'dart:math' as math; // For mathematical operations
 
 import 'package:particles_network/model/rectangle.dart';
 
-/// Represents a particle with index and 2D coordinates
+/// Represents a particle with index and 2D coordinates.
 class QuadTreeParticle {
-  final int index; // Unique identifier for the particle
-  final double x, y; // Spatial coordinates
+  /// Unique identifier or index of the particle.
+  final int index;
 
+  /// The x-coordinate of the particle.
+  final double x;
+
+  /// The y-coordinate of the particle.
+  final double y;
+
+  /// Creates a [QuadTreeParticle] with the given [index] and coordinates ([x], [y]).
   const QuadTreeParticle(this.index, this.x, this.y);
 }
 
-/// Enum representing the four quadrants in 2D space
-enum Quadrant { northWest, northEast, southWest, southEast }
+/// Enum representing the four quadrants in 2D space.
+enum Quadrant {
+  /// The top-left quadrant.
+  northWest,
+
+  /// The top-right quadrant.
+  northEast,
+
+  /// The bottom-left quadrant.
+  southWest,
+
+  /// The bottom-right quadrant.
+  southEast
+}
 
 /// Represents a compressed path in the quadtree for optimization
 class CompressedPath {
-  final List<Quadrant> path; // Sequence of quadrant traversals
-  final int depth; // Depth in the tree
+  /// The sequence of quadrants traversed to reach this path.
+  final List<Quadrant> path;
 
+  /// The depth of this path in the quadtree structure.
+  final int depth;
+
+  /// Creates a new [CompressedPath] with the given [path] and [depth].
   const CompressedPath(this.path, this.depth);
 
   /// Extends the path with a new quadrant
@@ -39,13 +69,21 @@ class CompressedQuadTreeNode {
   static const int minParticlesForCompression = 3; // Threshold for compression
 
   // Spatial boundaries of this node
+  /// The spatial boundary covered by this node.
   final Rectangle boundary;
-  final int depth; // Current depth in the tree
-  final CompressedPath? compressedPath; // Compression information
+
+  /// The depth level of this node in the quadtree.
+  final int depth;
+
+  /// The compressed path information, if this node is part of a compressed segment.
+  final CompressedPath? compressedPath;
 
   // Data storage
-  final List<QuadTreeParticle> particles = []; // Particles in this node
-  final Map<Quadrant, CompressedQuadTreeNode> children = {}; // Child nodes
+  /// The list of particles currently stored within this node.
+  final List<QuadTreeParticle> particles = [];
+
+  /// The mapping of child quadrants to their corresponding sub-nodes.
+  final Map<Quadrant, CompressedQuadTreeNode> children = {};
 
   // Status flags
   bool get isCompressed => compressedPath != null;
