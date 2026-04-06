@@ -24,7 +24,7 @@ void main() {
       const config = GravityConfig(
         type: GravityType.global,
         strength: 1.0,
-        direction: const Offset(0, 1), // Down
+        direction: Offset(0, 1), // Down
       );
 
       // Frame 1: Acceleration = Force / Mass = (0, 1) / 4 = (0, 0.25)
@@ -50,7 +50,7 @@ void main() {
       const config = GravityConfig(
         type: GravityType.point,
         strength: 1.0,
-        center: const Offset(200, 100),
+        center: Offset(200, 100),
       );
 
       updater.updateParticles([particle], bounds, gravity: config);
@@ -62,7 +62,7 @@ void main() {
       const config = GravityConfig(
         type: GravityType.point,
         strength: -1.0,
-        center: const Offset(200, 100),
+        center: Offset(200, 100),
       );
 
       updater.updateParticles([particle], bounds, gravity: config);
