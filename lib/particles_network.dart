@@ -221,37 +221,44 @@ class ParticleNetworkState extends State<ParticleNetwork>
         // This ensures particles stay within bounds when widget resizes
         _generateParticles(constraints.biggest);
 
-        return GestureDetector(
-          // Touch interaction handling
-          onPanDown: (d) => touchPoint = d.localPosition, // Touch started
-          onPanUpdate: (d) => touchPoint = d.localPosition, // Touch moved
-          onPanEnd: (_) => touchPoint = Offset.infinite, // Touch ended
-          onPanCancel: () => touchPoint = Offset.infinite, // Touch cancelled
+        return MouseRegion(
+          // Mouse hover (desktop and web): particles follow the cursor
+          // without requiring a click. On touch platforms MouseRegion is
+          // a no-op, so existing touch and drag behavior is preserved.
+          onHover: (event) => touchPoint = event.localPosition,
+          onExit: (_) => touchPoint = Offset.infinite,
+          child: GestureDetector(
+            // Touch interaction handling
+            onPanDown: (d) => touchPoint = d.localPosition, // Touch started
+            onPanUpdate: (d) => touchPoint = d.localPosition, // Touch moved
+            onPanEnd: (_) => touchPoint = Offset.infinite, // Touch ended
+            onPanCancel: () => touchPoint = Offset.infinite, // Touch cancelled
 
-          child: ValueListenableBuilder<int>(
-            valueListenable: frameNotifier,
-            // Rebuild only the CustomPaint when frameNotifier changes
-            builder: (_, __, ___) => CustomPaint(
-              painter: OptimizedNetworkPainter(
-                // Configuration passed to the painter:
-                drawNetwork: widget.drawNetwork, // Whether to draw connections
-                fill: widget.fill, // Fill vs stroke particles
-                isComplex: widget.isComplex, // Painting complexity hint
-                lineWidth: widget.lineWidth, // Connection line thickness
-                particleCount: widget.particleCount,
-                touchActivation: widget.touchActivation, // Touch interaction
-                particles: particles, // The particle data
-                touchPoint: touchPoint, // Current touch position
-                lineDistance: widget.lineDistance, // Max connection distance
-                particleColor: widget.particleColor,
-                lineColor: widget.lineColor,
-                touchColor: widget.touchColor,
+            child: ValueListenableBuilder<int>(
+              valueListenable: frameNotifier,
+              // Rebuild only the CustomPaint when frameNotifier changes
+              builder: (_, __, ___) => CustomPaint(
+                painter: OptimizedNetworkPainter(
+                  // Configuration passed to the painter:
+                  drawNetwork: widget.drawNetwork, // Whether to draw connections
+                  fill: widget.fill, // Fill vs stroke particles
+                  isComplex: widget.isComplex, // Painting complexity hint
+                  lineWidth: widget.lineWidth, // Connection line thickness
+                  particleCount: widget.particleCount,
+                  touchActivation: widget.touchActivation, // Touch interaction
+                  particles: particles, // The particle data
+                  touchPoint: touchPoint, // Current touch position
+                  lineDistance: widget.lineDistance, // Max connection distance
+                  particleColor: widget.particleColor,
+                  lineColor: widget.lineColor,
+                  touchColor: widget.touchColor,
+                ),
+                // Performance optimization flags:
+                isComplex:
+                    true, // Hint that painting is computationally intensive
+                willChange: true, // Widget will change frequently (animation)
+                child: const SizedBox.expand(), // Fill available space
               ),
-              // Performance optimization flags:
-              isComplex:
-                  true, // Hint that painting is computationally intensive
-              willChange: true, // Widget will change frequently (animation)
-              child: const SizedBox.expand(), // Fill available space
             ),
           ),
         );
