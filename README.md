@@ -195,6 +195,7 @@ class MyApp extends StatelessWidget {
           gravityStrength: 0.1,
           gravityDirection: const Offset(0, 1),
           gravityCenter: null,
+          enableHover: true,
         ),
       ),
     );
