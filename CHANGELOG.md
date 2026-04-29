@@ -3,7 +3,8 @@
 ## [1.9.4] 
 
 Initial release of the Particles Network package with the following features:
-
+* Add optional mouse hover support on Desktop and Web.
+* Introduce `hoverEffect` (or `enableHover`) property to toggle cursor tracking.
 * Implemented interactive particle network system
 * Added spatial partitioning for optimized performance
 * Added touch interaction support
