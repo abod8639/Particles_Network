@@ -2,7 +2,7 @@
 ///
 /// This library provides basic geometric shapes like [Rectangle] for spatial
 /// partitioning and intersection tests.
-library rectangle;
+library;
 
 import 'dart:math' as math; // For mathematical functions (min, max, etc.)
 

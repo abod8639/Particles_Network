@@ -2,7 +2,7 @@
 ///
 /// This library provides the [ParticleNetwork] widget, which is the primary
 /// way to use the particle animation in a Flutter application.
-library particles_network;
+library;
 
 import 'dart:math';
 

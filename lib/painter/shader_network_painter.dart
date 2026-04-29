@@ -6,7 +6,7 @@
 ///
 /// Uniform indices mirror the layout declared in `shaders/particles.frag`.
 /// See that file for the authoritative index table.
-library shader_network_painter;
+library;
 
 import 'dart:ui' show FragmentShader;
 

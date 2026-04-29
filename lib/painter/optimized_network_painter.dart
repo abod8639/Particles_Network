@@ -3,7 +3,7 @@
 /// This library provides the [OptimizedNetworkPainter] and related utilities
 /// to render particles and their connections using advanced optimization
 /// techniques like spatial partitioning and object pooling.
-library optimized_network_painter;
+library;
 
 import 'dart:math' as math;
 

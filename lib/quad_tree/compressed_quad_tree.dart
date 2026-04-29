@@ -2,7 +2,7 @@
 ///
 /// This library provides the [CompressedQuadTree] class, which serves as the
 /// main interface for the spatial partitioning system.
-library compressed_quad_tree;
+library;
 
 import 'package:particles_network/model/rectangle.dart';
 import 'package:particles_network/quad_tree/compressed_quad_tree_node.dart';

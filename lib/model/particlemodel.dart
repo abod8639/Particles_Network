@@ -2,7 +2,7 @@
 ///
 /// This library defines the [Particle] class and helper functions for calculating
 /// velocity and simulating particle behavior.
-library particle_model;
+library;
 
 import 'package:flutter/material.dart';
 

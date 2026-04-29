@@ -2,7 +2,7 @@
 ///
 /// This library defines the core abstractions ([IParticleFactory], [IParticleController])
 /// and configuration objects ([GravityConfig]) used by the system.
-library ip_article;
+library;
 
 import 'dart:ui';
 

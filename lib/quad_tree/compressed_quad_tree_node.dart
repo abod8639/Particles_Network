@@ -3,7 +3,7 @@
 /// This library provides the [CompressedQuadTreeNode] and related helper classes
 /// like [QuadTreeParticle] and [CompressedPath] to efficiently manage spatial
 /// data for the particle network.
-library compressed_quad_tree_node;
+library;
 
 import 'dart:math' as math; // For mathematical operations
 
