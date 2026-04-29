@@ -58,6 +58,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   GravityType _gravityType = GravityType.none;
   double _gravityStrength = 0.1;
   Offset _gravityDirection = const Offset(0, 1);
+  final bool _hoverEffect = false;
 
   // --- Styling Variables ---
   Color _particleColor = Colors.white;
@@ -130,6 +131,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                   gravityType: _gravityType,
                   gravityStrength: _gravityStrength,
                   gravityDirection: _gravityDirection,
+                  hoverEffect: _hoverEffect,
                 ),
               ),
             ),
