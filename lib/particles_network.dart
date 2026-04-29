@@ -123,7 +123,7 @@ class ParticleNetwork extends StatefulWidget {
     this.gravityStrength = 0.1,
     this.gravityDirection = const Offset(0, 1),
     this.gravityCenter,
-    this.hoverEffect = true,
+    this.hoverEffect = false,
   });
 
   @override
