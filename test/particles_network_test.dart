@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:particles_network/particles_network.dart';
@@ -144,5 +145,101 @@ void main() {
     } finally {
       debugPrint = originalDebugPrint;
     }
+  });
+
+  testWidgets('ParticleNetwork handles mouse hover when hoverEffect is true', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: ParticleNetwork(hoverEffect: true),
+          ),
+        ),
+      ),
+    );
+
+    final state = tester.state<ParticleNetworkState>(
+      find.byType(ParticleNetwork),
+    );
+
+    expect(state.touchPoint, equals(Offset.infinite));
+
+    // Simulate mouse hover
+    final pointer = TestPointer(1, PointerDeviceKind.mouse);
+    await tester.sendEventToBinding(pointer.hover(const Offset(100, 100)));
+    await tester.pump();
+
+    expect(state.touchPoint, equals(const Offset(100, 100)));
+
+    // Move pointer outside to trigger onExit
+    await tester.sendEventToBinding(pointer.hover(const Offset(400, 400)));
+    await tester.pump();
+    expect(state.touchPoint, equals(Offset.infinite));
+  });
+
+  testWidgets('ParticleNetwork ignores mouse hover when hoverEffect is false', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: ParticleNetwork(hoverEffect: false),
+          ),
+        ),
+      ),
+    );
+
+    final state = tester.state<ParticleNetworkState>(
+      find.byType(ParticleNetwork),
+    );
+
+    expect(state.touchPoint, equals(Offset.infinite));
+
+    // Simulate mouse hover
+    final pointer = TestPointer(1, PointerDeviceKind.mouse);
+    await tester.sendEventToBinding(pointer.hover(const Offset(100, 100)));
+    await tester.pump();
+
+    // Should still be infinite because hoverEffect is false
+    expect(state.touchPoint, equals(Offset.infinite));
+  });
+
+  testWidgets('ParticleNetwork handles pan cancel', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: ParticleNetwork(),
+          ),
+        ),
+      ),
+    );
+
+    final state = tester.state<ParticleNetworkState>(
+      find.byType(ParticleNetwork),
+    );
+
+    expect(state.touchPoint, equals(Offset.infinite));
+
+    // Start a gesture
+    final gesture = await tester.startGesture(const Offset(150, 150));
+    await tester.pump();
+    expect(state.touchPoint, equals(const Offset(150, 150)));
+
+    // Cancel the gesture
+    await gesture.cancel();
+    await tester.pump();
+    expect(state.touchPoint, equals(Offset.infinite));
   });
 }
