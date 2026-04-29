@@ -98,6 +98,12 @@ class ParticleNetwork extends StatefulWidget {
   /// Defaults to the widget's center if null.
   final Offset? gravityCenter;
 
+  /// Whether hover effects are enabled.
+  /// If true, particles will follow the mouse cursor when hovered.
+  /// If false, particles will not follow the mouse cursor when hovered.
+  /// If null, hover effects will be enabled by default.
+  final bool? hoverEffect;
+
   /// Creates a [ParticleNetwork] widget with customizable visualization parameters.
   const ParticleNetwork({
     super.key,
@@ -117,6 +123,7 @@ class ParticleNetwork extends StatefulWidget {
     this.gravityStrength = 0.1,
     this.gravityDirection = const Offset(0, 1),
     this.gravityCenter,
+    this.hoverEffect = true,
   });
 
   @override
@@ -225,8 +232,9 @@ class ParticleNetworkState extends State<ParticleNetwork>
           // Mouse hover (desktop and web): particles follow the cursor
           // without requiring a click. On touch platforms MouseRegion is
           // a no-op, so existing touch and drag behavior is preserved.
-          onHover: (event) => touchPoint = event.localPosition,
-          onExit: (_) => touchPoint = Offset.infinite,
+          onHover: widget.hoverEffect! ? (event) => touchPoint = event.localPosition : null,
+          onExit: widget.hoverEffect! ? (_) => touchPoint = Offset.infinite : null,
+
           child: GestureDetector(
             // Touch interaction handling
             onPanDown: (d) => touchPoint = d.localPosition, // Touch started

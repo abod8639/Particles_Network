@@ -87,7 +87,8 @@ void main() {
             vec2 dp1 = uv - p1;
             if (dot(dp1, dp1) > lineDistSq * 2.25) continue;
 
-            for (int j = i + 1; j < 150; j++) {
+            for (int j = 0; j < 150; j++) {
+                if (j <= i) continue;
                 if (j >= count) break;
                 vec2 p2 = uParticles[j];
 

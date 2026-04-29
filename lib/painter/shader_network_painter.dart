@@ -120,16 +120,16 @@ class ShaderNetworkPainter extends CustomPainter {
     shader.setFloat(idx++, count.toDouble());
 
     // vec4  uParticleColor
-    shader.setFloat(idx++, particleColor.red / 255.0);
-    shader.setFloat(idx++, particleColor.green / 255.0);
-    shader.setFloat(idx++, particleColor.blue / 255.0);
-    shader.setFloat(idx++, particleColor.alpha / 255.0);
+    shader.setFloat(idx++, particleColor.r);
+    shader.setFloat(idx++, particleColor.g);
+    shader.setFloat(idx++, particleColor.b);
+    shader.setFloat(idx++, particleColor.a);
 
     // vec4  uLineColor
-    shader.setFloat(idx++, lineColor.red / 255.0);
-    shader.setFloat(idx++, lineColor.green / 255.0);
-    shader.setFloat(idx++, lineColor.blue / 255.0);
-    shader.setFloat(idx++, lineColor.alpha / 255.0);
+    shader.setFloat(idx++, lineColor.r);
+    shader.setFloat(idx++, lineColor.g);
+    shader.setFloat(idx++, lineColor.b);
+    shader.setFloat(idx++, lineColor.a);
 
     // vec2  uTouchPoint
     shader.setFloat(idx++, touch.dx);
@@ -139,10 +139,10 @@ class ShaderNetworkPainter extends CustomPainter {
     shader.setFloat(idx++, touchActive ? 1.0 : 0.0);
 
     // vec4  uTouchColor
-    shader.setFloat(idx++, touchColor.red / 255.0);
-    shader.setFloat(idx++, touchColor.green / 255.0);
-    shader.setFloat(idx++, touchColor.blue / 255.0);
-    shader.setFloat(idx++, touchColor.alpha / 255.0);
+    shader.setFloat(idx++, touchColor.r);
+    shader.setFloat(idx++, touchColor.g);
+    shader.setFloat(idx++, touchColor.b);
+    shader.setFloat(idx++, touchColor.a);
 
     // float uGlowIntensity
     shader.setFloat(idx++, glowIntensity);
