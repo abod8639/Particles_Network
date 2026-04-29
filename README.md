@@ -277,7 +277,7 @@ No additional setup required! The package works out of the box.
 | `gravityStrength`  | `double`      | `0.1`          | Intensity of the force ($F = ma$ applied)              |
 | `gravityDirection` | `Offset`      | `(0, 1)`       | Direction vector for `GravityType.global`              |
 | `gravityCenter`    | `Offset?`     | `center`       | Center coordinates for `GravityType.point`             |
-| `hoverEffect`      | `bool?`       | `true`         | Enables/Disables mouse hover effects                   |
+| `hoverEffect`      | `bool?`       | `false`         | Enables/Disables mouse hover effects                   |
 
 ---
 
