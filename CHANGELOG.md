@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## [1.9.4] 
+## [1.9.5] 
 
 Initial release of the Particles Network package with the following features:
 * Add optional mouse hover support on Desktop and Web.
