@@ -18,6 +18,10 @@ import 'package:particles_network/painter/optimized_network_painter.dart';
 export 'package:particles_network/model/ip_article.dart'
     show GravityType, GravityConfig;
 export 'package:particles_network/model/particlemodel.dart' show Particle;
+export 'package:particles_network/model/trajectory_buffer.dart'
+    show TrajectoryBuffer;
+
+import 'package:particles_network/model/trajectory_buffer.dart';
 
 // Importing default particle factory implementation
 import 'model/default_particle_factory.dart';
@@ -157,6 +161,9 @@ class ParticleNetworkState extends State<ParticleNetwork>
   // Cached gravity configuration to avoid per-frame allocations
   GravityConfig _gravityConfig = const GravityConfig();
 
+  // Trajectory buffer for precalculated physics when idle
+  final TrajectoryBuffer _trajectoryBuffer = TrajectoryBuffer(capacity: 120);
+
   void _updateGravityConfig() {
     _gravityConfig = GravityConfig(
       type: widget.gravityType,
@@ -184,12 +191,30 @@ class ParticleNetworkState extends State<ParticleNetwork>
 
     // Animation loop (runs at ~60fps when visible)
     ticker = createTicker((elapsed) {
-      // Update all particle positions based on their velocity and gravity (zero allocations)
-      controller.updateParticles(
-        particles,
-        currentSize,
-        gravity: _gravityConfig,
-      );
+      final bool isTouchActive = widget.touchActivation &&
+          touchPoint.isFinite &&
+          touchPoint != Offset.infinite;
+
+      if (isTouchActive) {
+        // Real-time physics when user is touching/interacting
+        _trajectoryBuffer.invalidate();
+        controller.updateParticles(
+          particles,
+          currentSize,
+          gravity: _gravityConfig,
+        );
+      } else {
+        // Precalculated trajectory playback when idle (zero physics calculations)
+        if (!_trajectoryBuffer.advance(particles)) {
+          _trajectoryBuffer.precompute(
+            particles: particles,
+            bounds: currentSize,
+            controller: controller,
+            gravity: _gravityConfig,
+          );
+          _trajectoryBuffer.advance(particles);
+        }
+      }
 
       // Trigger repaint by updating the frame counter
       frameNotifier.value = elapsed.inMicroseconds;
@@ -200,6 +225,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
   @override
   void didUpdateWidget(ParticleNetwork oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _trajectoryBuffer.invalidate();
     bool factoryChanged = false;
     if (widget.maxSpeed != oldWidget.maxSpeed ||
         widget.maxSize != oldWidget.maxSize ||
@@ -243,6 +269,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
     if (size != currentSize) {
       currentSize = size;
       _updateGravityConfig();
+      _trajectoryBuffer.invalidate();
       particles.clear();
 
       // Only generate particles if we have valid dimensions
