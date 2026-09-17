@@ -87,30 +87,30 @@ class ParticleUpdater implements IParticleController {
     Size bounds, {
     GravityConfig gravity = const GravityConfig(),
   }) {
+    final bool hasGlobalGravity =
+        gravity.type == GravityType.global && gravity.strength != 0;
+    final Offset globalForce =
+        hasGlobalGravity ? gravity.direction * gravity.strength : Offset.zero;
+
     // Process each particle
     for (final Particle p in particles) {
-      _applyGravity(p, gravity);
+      if (hasGlobalGravity) {
+        p.applyForce(globalForce);
+      } else if (gravity.type == GravityType.point && gravity.strength != 0) {
+        _applyPointGravity(p, gravity);
+      }
       p.update(bounds);
     }
   }
 
-  void _applyGravity(Particle p, GravityConfig config) {
-    if (config.type == GravityType.none || config.strength == 0) return;
+  void _applyPointGravity(Particle p, GravityConfig config) {
+    // Point gravity: force directed towards a specific center point
+    final Offset delta = config.center - p.position;
+    final double distance = delta.distance;
 
-    if (config.type == GravityType.global) {
-      // Global gravity: constant force in a fixed direction
-      p.applyForce(config.direction * config.strength);
-    } else if (config.type == GravityType.point) {
-      // Point gravity: force directed towards a specific center point
-      final Offset delta = config.center - p.position;
-      final double distance = delta.distance;
-
-      if (distance > 0) {
-        // Normalizing and applying strength
-        // Note: Could use inverse-square law for more realism, but linear is often "feel" better for UI
-        final Offset force = (delta / distance) * config.strength;
-        p.applyForce(force);
-      }
+    if (distance > 0) {
+      final Offset force = (delta / distance) * config.strength;
+      p.applyForce(force);
     }
   }
 }
