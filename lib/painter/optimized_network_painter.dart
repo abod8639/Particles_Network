@@ -91,6 +91,9 @@ class OptimizedNetworkPainter extends CustomPainter {
   final List<int> _visibleParticles = [];
   final List<ConnectionData> _connections = [];
 
+  // Precomputed color look-up table for zero-allocation alpha line rendering
+  late final List<Color> _lineColorLut;
+
   /// Constructor with dependency initialization
   OptimizedNetworkPainter({
     required this.particleCount,
@@ -108,6 +111,13 @@ class OptimizedNetworkPainter extends CustomPainter {
     this.showQuadTree = false, // Default to false
     super.repaint,
   }) {
+    // Precompute 256 alpha levels for lineColor to avoid allocations during drawing
+    _lineColorLut = List<Color>.generate(
+      256,
+      (int alpha) => lineColor.withAlpha(alpha),
+      growable: false,
+    );
+
     // Initialize QuadTree with viewport bounds (will be updated with exact size in paint)
     _quadTree = CompressedQuadTree(
       const Rectangle(
@@ -190,7 +200,13 @@ class OptimizedNetworkPainter extends CustomPainter {
       _drawConnections(canvas, visibleParticles);
     }
 
-    if (touchPoint != null && touchActivation) {
+    // Only execute touch physics and drawing if there is an active finite touch point
+    final bool isTouchActive = touchActivation &&
+        touchPoint != null &&
+        touchPoint!.isFinite &&
+        touchPoint != Offset.infinite;
+
+    if (isTouchActive) {
       _touchHandler.drawTouchLines(canvas, visibleParticles);
       _touchHandler.applyTouchPhysics(visibleParticles, _accelerationTracker);
       _quadTreeManager.forceRebuild(); // Rebuild after touch interaction
@@ -232,6 +248,8 @@ class OptimizedNetworkPainter extends CustomPainter {
   // - Object pooling for reduced memory allocations
   void _drawConnections(Canvas canvas, List<int> visibleParticles) {
     final double maxDistSq = lineDistance * lineDistance;
+    final double invLineDistance =
+        lineDistance > 0 ? 255.0 / lineDistance : 0.0;
     // More aggressive throttling when isComplex is true
     final int maxLines = isComplex ? 3 : 5;
     final int denseThreshold =
@@ -283,11 +301,11 @@ class OptimizedNetworkPainter extends CustomPainter {
           }
         }
 
-        // Draw connections for this particle
+        // Draw connections for this particle using precomputed Color LUT (zero allocations)
         for (final conn in connections) {
-          final double opacity =
-              (1.0 - (conn.distance / lineDistance)).clamp(0.0, 1.0);
-          linePaint.color = lineColor.withAlpha((opacity * 255).toInt());
+          final int alpha =
+              (255 - (conn.distance * invLineDistance)).toInt().clamp(0, 255);
+          linePaint.color = _lineColorLut[alpha];
           canvas.drawLine(pos, particles[conn.index].position, linePaint);
           _connectionDataPool.release(conn);
         }
