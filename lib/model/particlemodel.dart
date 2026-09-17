@@ -82,13 +82,28 @@ class Particle {
 
   /// Handles collisions with the screen boundaries by reversing the velocity.
   void handleScreenBoundaries(Size bounds) {
-    if (position.dx < 0 || position.dx > bounds.width) {
-      velocity = Offset(-velocity.dx, velocity.dy);
-      defaultVelocity = Offset(-defaultVelocity.dx, defaultVelocity.dy);
+    if (position.dx < 0) {
+      if (velocity.dx < 0) {
+        velocity = Offset(-velocity.dx, velocity.dy);
+        defaultVelocity = Offset(-defaultVelocity.dx, defaultVelocity.dy);
+      }
+    } else if (position.dx > bounds.width) {
+      if (velocity.dx > 0) {
+        velocity = Offset(-velocity.dx, velocity.dy);
+        defaultVelocity = Offset(-defaultVelocity.dx, defaultVelocity.dy);
+      }
     }
-    if (position.dy < 0 || position.dy > bounds.height) {
-      velocity = Offset(velocity.dx, -velocity.dy);
-      defaultVelocity = Offset(defaultVelocity.dx, -defaultVelocity.dy);
+
+    if (position.dy < 0) {
+      if (velocity.dy < 0) {
+        velocity = Offset(velocity.dx, -velocity.dy);
+        defaultVelocity = Offset(defaultVelocity.dx, -defaultVelocity.dy);
+      }
+    } else if (position.dy > bounds.height) {
+      if (velocity.dy > 0) {
+        velocity = Offset(velocity.dx, -velocity.dy);
+        defaultVelocity = Offset(defaultVelocity.dx, -defaultVelocity.dy);
+      }
     }
   }
 
@@ -121,7 +136,8 @@ Offset computeVelocity(
     const decayFactor = 0.985;
 
     // Scale factor adjusts the default velocity to match the current speed's direction.
-    final double scaleFactor = defaultSpeed / currentSpeed;
+    final double scaleFactor =
+        defaultSpeed / (currentSpeed > 0.0001 ? currentSpeed : 0.0001);
 
     // Target velocity is the default velocity scaled to match the current speed.
     final Offset targetVelocity = defaultVelocity * scaleFactor;
