@@ -56,4 +56,14 @@ class ParticleFilter {
 
     return visibleParticles;
   }
+
+  /// Populates [output] with indices of all currently visible particles without allocating a new list.
+  static void getVisibleParticlesTo(List<Particle> particles, List<int> output) {
+    output.clear();
+    for (int i = 0; i < particles.length; i++) {
+      if (particles[i].isVisible) {
+        output.add(i);
+      }
+    }
+  }
 }
