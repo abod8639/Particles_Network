@@ -22,11 +22,23 @@ class CompressedQuadTree {
   late CompressedQuadTreeNode _root;
 
   /// The rectangular boundary within which the tree partitions particles.
-  final Rectangle boundary;
+  Rectangle _boundary;
+  Rectangle get boundary => _boundary;
 
   /// Constructor initializes tree with given [boundary].
-  CompressedQuadTree(this.boundary) {
-    _root = CompressedQuadTreeNode(boundary);
+  CompressedQuadTree(Rectangle boundary) : _boundary = boundary {
+    _root = CompressedQuadTreeNode(_boundary);
+  }
+
+  /// Updates tree boundary and resets root node if boundary dimensions changed.
+  void updateBoundary(Rectangle newBoundary) {
+    if (_boundary.x != newBoundary.x ||
+        _boundary.y != newBoundary.y ||
+        _boundary.width != newBoundary.width ||
+        _boundary.height != newBoundary.height) {
+      _boundary = newBoundary;
+      _root = CompressedQuadTreeNode(_boundary);
+    }
   }
 
   /// Public accessor for root node (for debugging/inspection).
@@ -95,11 +107,7 @@ class CompressedQuadTree {
   /// [output]: List to fill with found particle indices.
   void findNearbyParticlesToOutput(
       double x, double y, double searchRadius, List<int> output) {
-    final List<QuadTreeParticle> found = [];
-    _root.queryCircle(x, y, searchRadius, found);
-    for (var i = 0; i < found.length; i++) {
-      output.add(found[i].index);
-    }
+    _root.queryCircleIndices(x, y, searchRadius, output);
   }
 
   /// Finds nearby particles using circular query.
