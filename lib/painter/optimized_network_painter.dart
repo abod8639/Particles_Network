@@ -87,6 +87,10 @@ class OptimizedNetworkPainter extends CustomPainter {
   late final IntListPool _intListPool;
   late final ConnectionDataPool _connectionDataPool;
 
+  // Reusable internal buffers to avoid per-frame GC allocations
+  final List<int> _visibleParticles = [];
+  final List<ConnectionData> _connections = [];
+
   /// Constructor with dependency initialization
   OptimizedNetworkPainter({
     required this.particleCount,
@@ -102,21 +106,16 @@ class OptimizedNetworkPainter extends CustomPainter {
     required this.fill,
     required this.drawNetwork,
     this.showQuadTree = false, // Default to false
+    super.repaint,
   }) {
-    // Get viewport dimensions for QuadTree initialization
-    // final mw = MediaQuery.of(context).size.width + 10;
-    // final mh = double.infinity ;
-
-    // final s = Size(width, height)
-
-    // Initialize QuadTree with viewport bounds
+    // Initialize QuadTree with viewport bounds (will be updated with exact size in paint)
     _quadTree = CompressedQuadTree(
       const Rectangle(
         -5,
         -5,
-        double.maxFinite,
-        double.maxFinite,
-      ), // Placeholder, will be updated in paint
+        1000,
+        1000,
+      ),
     );
     // Initialize particle paint
     particlePaint = Paint()
@@ -159,9 +158,16 @@ class OptimizedNetworkPainter extends CustomPainter {
     _distanceCalculator.reset();
     _accelerationTracker.resetFrame();
 
-    final List<int> visibleParticles = ParticleFilter.getVisibleParticles(
-      particles,
-    );
+    // Update QuadTree boundary to match actual viewport dimensions
+    if (size.width > 0 && size.height > 0) {
+      _quadTree.updateBoundary(
+        Rectangle(-5, -5, size.width + 10, size.height + 10),
+      );
+    }
+
+    // Reuse pre-allocated buffer for visible particle indices
+    ParticleFilter.getVisibleParticlesTo(particles, _visibleParticles);
+    final List<int> visibleParticles = _visibleParticles;
 
     // Adaptive QuadTree update: only rebuild when necessary
     if (_quadTreeManager.shouldRebuild()) {
@@ -232,7 +238,8 @@ class OptimizedNetworkPainter extends CustomPainter {
         isComplex ? (lineDistance ~/ 4) : (lineDistance ~/ 1.5);
 
     final List<int> nearbyIndices = _intListPool.acquire();
-    final List<ConnectionData> connections = [];
+    final List<ConnectionData> connections = _connections;
+    connections.clear();
 
     try {
       for (final int index in visibleParticles) {
