@@ -155,7 +155,14 @@ class CompressedQuadTreeNode {
     // Try to insert into appropriate child if not leaf
     if (!isLeaf) {
       final Quadrant targetQuadrant = _getQuadrant(particle.x, particle.y);
-      return children[targetQuadrant]?.insert(particle) ?? false;
+      var child = children[targetQuadrant];
+      if (child == null) {
+        // Create missing child quadrant if this node was previously compressed
+        final Rectangle childBoundary = getChildBoundary(targetQuadrant);
+        child = CompressedQuadTreeNode(childBoundary, depth + 1);
+        children[targetQuadrant] = child;
+      }
+      return child.insert(particle);
     }
 
     // Fallback: store in current node if max depth reached

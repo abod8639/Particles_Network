@@ -1,9 +1,9 @@
 import 'dart:collection';
 import 'dart:math' as math;
 
+import 'package:particles_network/particles_network.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart' as flutter_scheduler;
-import 'package:particles_network/particles_network.dart';
 
 void main() => runApp(const MyApp());
 
@@ -51,7 +51,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   bool _isComplex = false;
   bool _touchActivation = true;
   double _lineWidth = 1.0;
-  int _particleCount = 100;
+  int _particleCount = 500;
   double _maxSpeed = 1.5;
   double _maxSize = 2.0;
   double _lineDistance = 100.0;
@@ -110,6 +110,27 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
             ),
 
             // The Particle Network Display Area
+            //  Expanded(
+            //    child: ParticleNetwork(
+            //         key: _particleKey,
+            //         drawNetwork: _drawNetwork,
+            //         fill: _isFill,
+            //         isComplex: _isComplex,
+            //         lineWidth: _lineWidth,
+            //         touchActivation: _touchActivation,
+            //         particleCount: _particleCount,
+            //         maxSpeed: _maxSpeed,
+            //         maxSize: _maxSize,
+            //         lineDistance: _lineDistance,
+            //         particleColor: _particleColor,
+            //         lineColor: _lineColor,
+            //         touchColor: _touchColor,
+            //         gravityType: _gravityType,
+            //         gravityStrength: _gravityStrength,
+            //         gravityDirection: _gravityDirection,
+            //         hoverEffect: _hoverEffect,
+            //       ),
+            //  ),
             Expanded(
               child: FPS(
                 alignment: Alignment.topRight,
