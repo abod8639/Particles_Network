@@ -1,10 +1,9 @@
-// Importing Dart's UI library for Canvas and Paint classes
+import 'dart:math' as math;
 import 'dart:ui';
 
 // Importing the particle model
 import 'package:particles_network/model/particlemodel.dart';
 import 'package:particles_network/painter/performance_utils.dart';
-// import 'package:test1/model/particlemodel.dart';
 
 /// Class that handles touch interactions with particles
 class TouchInteractionHandler {
@@ -32,8 +31,8 @@ class TouchInteractionHandler {
     required this.linePaint,
   });
 
-  // Test variable (appears unused in current implementation)
-  final int test = 00;
+  // Test variable (kept for API compatibility)
+  final int test = 0;
 
   // Applies touch physics to visible particles
   // [visibleParticles] - List of indices of currently visible particles
@@ -45,18 +44,21 @@ class TouchInteractionHandler {
     final Offset? touch = touchPoint;
     if (touch == null) return; // Exit if no current touch
 
+    final double maxDistSq = lineDistance * lineDistance;
+
     for (final int i in visibleParticles) {
       final Particle p = particles[i];
-      // Calculate distance from particle to touch point
-      final double distance = (p.position - touch).distance - test;
+      final double dx = touch.dx - p.position.dx;
+      final double dy = touch.dy - p.position.dy;
+      final double distSq = dx * dx + dy * dy;
 
-      // Only affect particles within the interaction distance
-      if (distance < lineDistance) {
+      // Only affect particles within the interaction distance (avoid sqrt if out of range)
+      if (distSq < maxDistSq) {
         const double force = 0.00111; // Strength of the pull effect
-        // Calculate pull vector towards touch point
-        final Offset pull = (touch - p.position) * force;
-        // Apply the pull to particle's velocity
-        p.velocity += pull;
+        p.velocity = Offset(
+          p.velocity.dx + dx * force,
+          p.velocity.dy + dy * force,
+        );
         // Mark particle as accelerated for visual feedback
         p.wasAccelerated = true;
         // Record acceleration for efficient shouldRepaint
@@ -72,15 +74,19 @@ class TouchInteractionHandler {
     final Offset? touch = touchPoint;
     if (touch == null) return; // Exit if no current touch
 
+    final double maxDistSq = lineDistance * lineDistance;
+
     for (final int i in visibleParticles) {
       final Particle p = particles[i];
-      // Calculate distance from particle to touch point
-      final double distance = (p.position - touch).distance - test;
+      final double dx = touch.dx - p.position.dx;
+      final double dy = touch.dy - p.position.dy;
+      final double distSq = dx * dx + dy * dy;
 
       // Only draw lines for particles within the connection distance
-      if (distance < lineDistance) {
+      if (distSq < maxDistSq) {
+        final double distance = math.sqrt(distSq);
         // Calculate line opacity based on distance (further = more transparent)
-        final int opacity = ((1 - distance / lineDistance) * 255).toInt();
+        final int opacity = ((1.0 - distance / lineDistance) * 255).toInt();
         // Update paint color with calculated opacity
         linePaint.color = touchColor.withAlpha(opacity.clamp(0, 255));
         // Draw line from particle to touch point
