@@ -304,6 +304,35 @@ class CompressedQuadTreeNode {
     return found;
   }
 
+  /// Queries particle indices within a circular area directly into an output list.
+  /// Eliminates intermediate object allocations during connection checks.
+  void queryCircleIndices(
+    double centerX,
+    double centerY,
+    double radius,
+    List<int> output,
+  ) {
+    // First check if circle intersects this node's boundary
+    if (!boundary.intersectsCircle(centerX, centerY, radius)) return;
+
+    // Pre-calculate squared radius for efficient comparison
+    final double radiusSquared = radius * radius;
+
+    // Check particles in this node
+    for (final particle in particles) {
+      final double dx = particle.x - centerX;
+      final double dy = particle.y - centerY;
+      if (dx * dx + dy * dy <= radiusSquared) {
+        output.add(particle.index);
+      }
+    }
+
+    // Recursively query children
+    for (final CompressedQuadTreeNode child in children.values) {
+      child.queryCircleIndices(centerX, centerY, radius, output);
+    }
+  }
+
   /// Collects all particles in this subtree
   List<QuadTreeParticle> getAllParticles([
     List<QuadTreeParticle>? allParticles,
