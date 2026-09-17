@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:particles_network/model/ip_article.dart';
 import 'package:particles_network/model/particlemodel.dart';
+import 'package:particles_network/painter/object_pool.dart';
 import 'package:particles_network/painter/optimized_network_painter.dart';
 
 export 'package:particles_network/model/ip_article.dart'
@@ -149,10 +150,22 @@ class ParticleNetworkState extends State<ParticleNetwork>
   ); // Repaint trigger
 
   // Injected or default implementations:
-  late final IParticleFactory
-      factory; // Creates particles with random properties
+  late IParticleFactory factory; // Creates particles with random properties
   late final IParticleController
       controller; // Updates particle positions each frame
+
+  // Cached gravity configuration to avoid per-frame allocations
+  GravityConfig _gravityConfig = const GravityConfig();
+
+  void _updateGravityConfig() {
+    _gravityConfig = GravityConfig(
+      type: widget.gravityType,
+      strength: widget.gravityStrength,
+      direction: widget.gravityDirection,
+      center: widget.gravityCenter ??
+          Offset(currentSize.width / 2, currentSize.height / 2),
+    );
+  }
 
   @override
   void initState() {
@@ -167,29 +180,58 @@ class ParticleNetworkState extends State<ParticleNetwork>
     );
 
     controller = ParticleUpdater(); // Handles particle movement logic
+    _updateGravityConfig();
 
     // Animation loop (runs at ~60fps when visible)
     ticker = createTicker((elapsed) {
-      // Create gravity configuration
-      final gravityConfig = GravityConfig(
-        type: widget.gravityType,
-        strength: widget.gravityStrength,
-        direction: widget.gravityDirection,
-        center: widget.gravityCenter ??
-            Offset(currentSize.width / 2, currentSize.height / 2),
-      );
-
-      // Update all particle positions based on their velocity and gravity
+      // Update all particle positions based on their velocity and gravity (zero allocations)
       controller.updateParticles(
         particles,
         currentSize,
-        gravity: gravityConfig,
+        gravity: _gravityConfig,
       );
 
       // Trigger repaint by updating the frame counter
       frameNotifier.value = elapsed.inMicroseconds;
     })
       ..start(); // Start the animation loop immediately
+  }
+
+  @override
+  void didUpdateWidget(ParticleNetwork oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    bool factoryChanged = false;
+    if (widget.maxSpeed != oldWidget.maxSpeed ||
+        widget.maxSize != oldWidget.maxSize ||
+        widget.particleColor != oldWidget.particleColor) {
+      factory = DefaultParticleFactory(
+        random: Random(),
+        maxSpeed: widget.maxSpeed,
+        maxSize: widget.maxSize,
+        color: widget.particleColor,
+      );
+      factoryChanged = true;
+    }
+
+    if (widget.particleCount != oldWidget.particleCount || factoryChanged) {
+      if (currentSize.width > 0 && currentSize.height > 0) {
+        if (particles.length < widget.particleCount) {
+          final int toAdd = widget.particleCount - particles.length;
+          for (int i = 0; i < toAdd; i++) {
+            particles.add(factory.createParticle(currentSize));
+          }
+        } else if (particles.length > widget.particleCount) {
+          particles.removeRange(widget.particleCount, particles.length);
+        }
+      }
+    }
+
+    if (widget.gravityType != oldWidget.gravityType ||
+        widget.gravityStrength != oldWidget.gravityStrength ||
+        widget.gravityDirection != oldWidget.gravityDirection ||
+        widget.gravityCenter != oldWidget.gravityCenter) {
+      _updateGravityConfig();
+    }
   }
 
   // Generates or regenerates particles when size changes
@@ -200,6 +242,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
   void _generateParticles(Size size) {
     if (size != currentSize) {
       currentSize = size;
+      _updateGravityConfig();
       particles.clear();
 
       // Only generate particles if we have valid dimensions
@@ -217,11 +260,14 @@ class ParticleNetworkState extends State<ParticleNetwork>
     // Clean up resources to prevent memory leaks
     ticker.dispose(); // Stop the animation loop
     frameNotifier.dispose(); // Dispose the value notifier
+    PoolManager.getInstance().clearAll(); // Free static pools memory
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool hover = widget.hoverEffect ?? false;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         // Regenerate particles if size changed
@@ -232,8 +278,8 @@ class ParticleNetworkState extends State<ParticleNetwork>
           // Mouse hover (desktop and web): particles follow the cursor
           // without requiring a click. On touch platforms MouseRegion is
           // a no-op, so existing touch and drag behavior is preserved.
-          onHover: widget.hoverEffect! ? (event) => touchPoint = event.localPosition : null,
-          onExit: widget.hoverEffect! ? (_) => touchPoint = Offset.infinite : null,
+          onHover: hover ? (event) => touchPoint = event.localPosition : null,
+          onExit: hover ? (_) => touchPoint = Offset.infinite : null,
 
           child: GestureDetector(
             // Touch interaction handling
