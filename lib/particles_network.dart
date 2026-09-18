@@ -161,9 +161,6 @@ class ParticleNetworkState extends State<ParticleNetwork>
   // Cached gravity configuration to avoid per-frame allocations
   GravityConfig _gravityConfig = const GravityConfig();
 
-  // Trajectory buffer for precalculated physics when idle
-  final TrajectoryBuffer _trajectoryBuffer = TrajectoryBuffer(capacity: 120);
-
   void _updateGravityConfig() {
     _gravityConfig = GravityConfig(
       type: widget.gravityType,
@@ -191,30 +188,12 @@ class ParticleNetworkState extends State<ParticleNetwork>
 
     // Animation loop (runs at ~60fps when visible)
     ticker = createTicker((elapsed) {
-      final bool isTouchActive = widget.touchActivation &&
-          touchPoint.isFinite &&
-          touchPoint != Offset.infinite;
-
-      if (isTouchActive) {
-        // Real-time physics when user is touching/interacting
-        _trajectoryBuffer.invalidate();
-        controller.updateParticles(
-          particles,
-          currentSize,
-          gravity: _gravityConfig,
-        );
-      } else {
-        // Precalculated trajectory playback when idle (zero physics calculations)
-        if (!_trajectoryBuffer.advance(particles)) {
-          _trajectoryBuffer.precompute(
-            particles: particles,
-            bounds: currentSize,
-            controller: controller,
-            gravity: _gravityConfig,
-          );
-          _trajectoryBuffer.advance(particles);
-        }
-      }
+      // Update all particle positions smoothly each frame (zero allocations, ~0.05ms)
+      controller.updateParticles(
+        particles,
+        currentSize,
+        gravity: _gravityConfig,
+      );
 
       // Trigger repaint by updating the frame counter
       frameNotifier.value = elapsed.inMicroseconds;
@@ -225,7 +204,6 @@ class ParticleNetworkState extends State<ParticleNetwork>
   @override
   void didUpdateWidget(ParticleNetwork oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _trajectoryBuffer.invalidate();
     bool factoryChanged = false;
     if (widget.maxSpeed != oldWidget.maxSpeed ||
         widget.maxSize != oldWidget.maxSize ||
@@ -269,7 +247,6 @@ class ParticleNetworkState extends State<ParticleNetwork>
     if (size != currentSize) {
       currentSize = size;
       _updateGravityConfig();
-      _trajectoryBuffer.invalidate();
       particles.clear();
 
       // Only generate particles if we have valid dimensions
