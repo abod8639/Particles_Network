@@ -124,32 +124,16 @@ Offset computeVelocity(
   Offset defaultVelocity,
   double speedThreshold,
 ) {
-  // Calculate the magnitude (speed) of the current and default velocity vectors.
-  final double currentSpeed = currentVelocity.distance;
-  final double defaultSpeed = defaultVelocity.distance;
-
-  // If the difference in speed is less than the threshold, snap to the default velocity.
-  if ((currentSpeed - defaultSpeed).abs() < speedThreshold) {
+  // Use squared difference to avoid expensive sqrt calls
+  final double diffSq = (currentVelocity - defaultVelocity).distanceSquared;
+  if (diffSq < speedThreshold * speedThreshold) {
     return defaultVelocity;
-  } else {
-    // Decay factor controls how quickly the velocity returns to default.
-    const decayFactor = 0.985;
-
-    // Scale factor adjusts the default velocity to match the current speed's direction.
-    final double scaleFactor =
-        defaultSpeed / (currentSpeed > 0.0001 ? currentSpeed : 0.0001);
-
-    // Target velocity is the default velocity scaled to match the current speed.
-    final Offset targetVelocity = defaultVelocity * scaleFactor;
-
-    // Interpolation amount determines how much to blend between current and target velocity.
-    const double powrFactor = 0.989;
-    const double interpolationAmount = powrFactor - decayFactor;
-
-    // Smoothly interpolate from currentVelocity to targetVelocity.
-    return Offset.lerp(currentVelocity, targetVelocity, interpolationAmount) ??
-        currentVelocity;
   }
+
+  // Smooth decay towards default velocity
+  const double decayRate = 0.02;
+  return Offset.lerp(currentVelocity, defaultVelocity, decayRate) ??
+      defaultVelocity;
 }
 
 /// Utility function to create a mock particle for testing.
