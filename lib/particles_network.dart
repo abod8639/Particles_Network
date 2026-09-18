@@ -155,9 +155,33 @@ class ParticleNetworkState extends State<ParticleNetwork>
   late IParticleFactory factory; // Creates particles with random properties
   late final IParticleController
       controller; // Updates particle positions each frame
+  late OptimizedNetworkPainter _painter; // Single painter instance
 
   // Cached gravity configuration to avoid per-frame allocations
   GravityConfig _gravityConfig = const GravityConfig();
+
+  void _initPainter() {
+    _painter = OptimizedNetworkPainter(
+      drawNetwork: widget.drawNetwork,
+      fill: widget.fill,
+      isComplex: widget.isComplex,
+      lineWidth: widget.lineWidth,
+      particleCount: widget.particleCount,
+      touchActivation: widget.touchActivation,
+      particles: particles,
+      touchPoint: touchPoint,
+      lineDistance: widget.lineDistance,
+      particleColor: widget.particleColor,
+      lineColor: widget.lineColor,
+      touchColor: widget.touchColor,
+      repaint: frameNotifier,
+    );
+  }
+
+  void _updateTouchPoint(Offset point) {
+    touchPoint = point;
+    _painter.updateTouchPoint(point);
+  }
 
   void _updateGravityConfig() {
     _gravityConfig = GravityConfig(
@@ -183,6 +207,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
 
     controller = ParticleUpdater(); // Handles particle movement logic
     _updateGravityConfig();
+    _initPainter();
 
     // Animation loop (runs at ~60fps when visible)
     ticker = createTicker((elapsed) {
@@ -234,6 +259,19 @@ class ParticleNetworkState extends State<ParticleNetwork>
         widget.gravityCenter != oldWidget.gravityCenter) {
       _updateGravityConfig();
     }
+
+    if (widget.drawNetwork != oldWidget.drawNetwork ||
+        widget.fill != oldWidget.fill ||
+        widget.isComplex != oldWidget.isComplex ||
+        widget.lineWidth != oldWidget.lineWidth ||
+        widget.particleCount != oldWidget.particleCount ||
+        widget.touchActivation != oldWidget.touchActivation ||
+        widget.lineDistance != oldWidget.lineDistance ||
+        widget.particleColor != oldWidget.particleColor ||
+        widget.lineColor != oldWidget.lineColor ||
+        widget.touchColor != oldWidget.touchColor) {
+      _initPainter();
+    }
   }
 
   // Generates or regenerates particles when size changes
@@ -280,41 +318,21 @@ class ParticleNetworkState extends State<ParticleNetwork>
           // Mouse hover (desktop and web): particles follow the cursor
           // without requiring a click. On touch platforms MouseRegion is
           // a no-op, so existing touch and drag behavior is preserved.
-          onHover: hover ? (event) => touchPoint = event.localPosition : null,
-          onExit: hover ? (_) => touchPoint = Offset.infinite : null,
+          onHover: hover ? (event) => _updateTouchPoint(event.localPosition) : null,
+          onExit: hover ? (_) => _updateTouchPoint(Offset.infinite) : null,
 
           child: GestureDetector(
             // Touch interaction handling
-            onPanDown: (d) => touchPoint = d.localPosition, // Touch started
-            onPanUpdate: (d) => touchPoint = d.localPosition, // Touch moved
-            onPanEnd: (_) => touchPoint = Offset.infinite, // Touch ended
-            onPanCancel: () => touchPoint = Offset.infinite, // Touch cancelled
+            onPanDown: (d) => _updateTouchPoint(d.localPosition), // Touch started
+            onPanUpdate: (d) => _updateTouchPoint(d.localPosition), // Touch moved
+            onPanEnd: (_) => _updateTouchPoint(Offset.infinite), // Touch ended
+            onPanCancel: () => _updateTouchPoint(Offset.infinite), // Touch cancelled
 
-            child: ValueListenableBuilder<int>(
-              valueListenable: frameNotifier,
-              // Rebuild only the CustomPaint when frameNotifier changes
-              builder: (_, __, ___) => CustomPaint(
-                painter: OptimizedNetworkPainter(
-                  // Configuration passed to the painter:
-                  drawNetwork: widget.drawNetwork, // Whether to draw connections
-                  fill: widget.fill, // Fill vs stroke particles
-                  isComplex: widget.isComplex, // Painting complexity hint
-                  lineWidth: widget.lineWidth, // Connection line thickness
-                  particleCount: widget.particleCount,
-                  touchActivation: widget.touchActivation, // Touch interaction
-                  particles: particles, // The particle data
-                  touchPoint: touchPoint, // Current touch position
-                  lineDistance: widget.lineDistance, // Max connection distance
-                  particleColor: widget.particleColor,
-                  lineColor: widget.lineColor,
-                  touchColor: widget.touchColor,
-                ),
-                // Performance optimization flags:
-                isComplex:
-                    true, // Hint that painting is computationally intensive
-                willChange: true, // Widget will change frequently (animation)
-                child: const SizedBox.expand(), // Fill available space
-              ),
+            child: CustomPaint(
+              painter: _painter,
+              isComplex: widget.isComplex,
+              willChange: true, // Widget will change frequently (animation)
+              child: const SizedBox.expand(), // Fill available space
             ),
           ),
         );
