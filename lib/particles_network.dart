@@ -21,8 +21,6 @@ export 'package:particles_network/model/particlemodel.dart' show Particle;
 export 'package:particles_network/model/trajectory_buffer.dart'
     show TrajectoryBuffer;
 
-import 'package:particles_network/model/trajectory_buffer.dart';
-
 // Importing default particle factory implementation
 import 'model/default_particle_factory.dart';
 
