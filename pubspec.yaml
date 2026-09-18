@@ -23,8 +23,8 @@ dev_dependencies:
   build_runner: ^2.4.0
 
 flutter:
-  shaders:
-    - shaders/particles.frag
+  # shaders:
+    # - shaders/particles.frag
 
   # assets:
   #   - images/a_dot_burr.jpeg
