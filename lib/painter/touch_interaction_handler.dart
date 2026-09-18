@@ -11,7 +11,7 @@ class TouchInteractionHandler {
   final List<Particle> particles;
 
   // Current touch position (null when not touching)
-  final Offset? touchPoint;
+  Offset? touchPoint;
 
   // Maximum distance for touch interactions
   final double lineDistance;
@@ -34,6 +34,13 @@ class TouchInteractionHandler {
   // Test variable (kept for API compatibility)
   final int test = 0;
 
+  // Precomputed color look-up table for touch lines (zero allocation)
+  late final List<Color> _touchColorLut = List<Color>.generate(
+    256,
+    (int a) => touchColor.withAlpha(a),
+    growable: false,
+  );
+
   // Applies touch physics to visible particles
   // [visibleParticles] - List of indices of currently visible particles
   // [tracker] - Acceleration tracker to record accelerated particles
@@ -45,6 +52,7 @@ class TouchInteractionHandler {
     if (touch == null) return; // Exit if no current touch
 
     final double maxDistSq = lineDistance * lineDistance;
+    const double force = 0.00111; // Strength of the pull effect
 
     for (final int i in visibleParticles) {
       final Particle p = particles[i];
@@ -54,7 +62,6 @@ class TouchInteractionHandler {
 
       // Only affect particles within the interaction distance (avoid sqrt if out of range)
       if (distSq < maxDistSq) {
-        const double force = 0.00111; // Strength of the pull effect
         p.velocity = Offset(
           p.velocity.dx + dx * force,
           p.velocity.dy + dy * force,
@@ -75,6 +82,7 @@ class TouchInteractionHandler {
     if (touch == null) return; // Exit if no current touch
 
     final double maxDistSq = lineDistance * lineDistance;
+    final double invLineDist = lineDistance > 0 ? 255.0 / lineDistance : 0.0;
 
     for (final int i in visibleParticles) {
       final Particle p = particles[i];
@@ -85,11 +93,9 @@ class TouchInteractionHandler {
       // Only draw lines for particles within the connection distance
       if (distSq < maxDistSq) {
         final double distance = math.sqrt(distSq);
-        // Calculate line opacity based on distance (further = more transparent)
-        final int opacity = ((1.0 - distance / lineDistance) * 255).toInt();
-        // Update paint color with calculated opacity
-        linePaint.color = touchColor.withAlpha(opacity.clamp(0, 255));
-        // Draw line from particle to touch point
+        final int opacity =
+            (255 - (distance * invLineDist)).toInt().clamp(0, 255);
+        linePaint.color = _touchColorLut[opacity];
         canvas.drawLine(p.position, touch, linePaint);
       }
     }
