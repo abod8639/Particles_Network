@@ -309,12 +309,14 @@ class OptimizedNetworkPainter extends CustomPainter {
           canvas.drawLine(pos, particles[conn.index].position, linePaint);
           _connectionDataPool.release(conn);
         }
+        connections.clear();
       }
     } finally {
       // Cleanup any remaining pooled objects in case of early return/error
       for (final conn in connections) {
         _connectionDataPool.release(conn);
       }
+      connections.clear();
       _intListPool.release(nearbyIndices);
     }
   }
