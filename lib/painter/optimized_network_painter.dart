@@ -10,7 +10,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:particles_network/model/particlemodel.dart';
 import 'package:particles_network/model/rectangle.dart';
-import 'package:particles_network/painter/distance_calculator.dart';
 import 'package:particles_network/painter/object_pool.dart';
 import 'package:particles_network/painter/particle_filter.dart';
 import 'package:particles_network/painter/performance_utils.dart';
@@ -36,7 +35,7 @@ class OptimizedNetworkPainter extends CustomPainter {
   final List<Particle> particles;
 
   /// The current touch position, if any.
-  final Offset? touchPoint;
+  Offset? touchPoint;
 
   /// The maximum distance (in pixels) for connection lines to be drawn.
   final double lineDistance;
@@ -72,7 +71,6 @@ class OptimizedNetworkPainter extends CustomPainter {
   final bool showQuadTree;
 
   // Optimized sub-components
-  late final DistanceCalculator _distanceCalculator;
   late final TouchInteractionHandler _touchHandler;
   late final CompressedQuadTree _quadTree; // Changed to CompressedQuadTree
 
@@ -153,7 +151,6 @@ class OptimizedNetworkPainter extends CustomPainter {
     _connectionDataPool = _poolManager.connectionDataPool;
 
     // Initialize sub-components with dependency injection
-    _distanceCalculator = DistanceCalculator();
     _touchHandler = TouchInteractionHandler(
       particles: particles,
       touchPoint: touchPoint,
@@ -163,9 +160,14 @@ class OptimizedNetworkPainter extends CustomPainter {
     );
   }
 
+  /// Updates touch point without recreating the painter instance
+  void updateTouchPoint(Offset? newPoint) {
+    touchPoint = newPoint;
+    _touchHandler.touchPoint = newPoint;
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
-    _distanceCalculator.reset();
     _accelerationTracker.resetFrame();
 
     // Update QuadTree boundary to match actual viewport dimensions
