@@ -130,8 +130,8 @@ Offset computeVelocity(
     return defaultVelocity;
   }
 
-  // Smooth decay towards default velocity
-  const double decayRate = 0.02;
+  // Smooth natural decay towards cruising velocity (~0.7s fluid settling time)
+  const double decayRate = 0.045;
   return Offset.lerp(currentVelocity, defaultVelocity, decayRate) ??
       defaultVelocity;
 }

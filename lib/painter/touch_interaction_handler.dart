@@ -53,7 +53,6 @@ class TouchInteractionHandler {
 
     final double maxDist = lineDistance;
     final double maxDistSq = maxDist * maxDist;
-    const double force = 0.00111; // Strength of the pull effect
 
     for (final int i in visibleParticles) {
       final Particle p = particles[i];
@@ -65,10 +64,48 @@ class TouchInteractionHandler {
 
       // Only affect particles within the interaction distance (avoid sqrt if out of range)
       if (distSq < maxDistSq) {
-        p.velocity = Offset(
-          p.velocity.dx + dx * force,
-          p.velocity.dy + dy * force,
-        );
+        final double dist = math.sqrt(distSq);
+        // Smooth quadratic falloff: strong near touch, fading seamlessly to 0 at maxDist
+        final double normDist = dist / maxDist;
+        final double falloff = 1.0 - normDist;
+        final double smoothFactor = falloff * falloff;
+
+        // Normalized direction vector towards touch point
+        final double invDist = dist > 0.001 ? 1.0 / dist : 0.0;
+        final double nx = dx * invDist;
+        final double ny = dy * invDist;
+
+        // Smooth attraction force without edge step discontinuity
+        const double pullForce = 0.28;
+        double vx = p.velocity.dx + nx * (pullForce * smoothFactor);
+        double vy = p.velocity.dy + ny * (pullForce * smoothFactor);
+
+        // Fluid damping while inside touch field to prevent chaotic oscillation
+        const double touchDamping = 0.96;
+        vx *= touchDamping;
+        vy *= touchDamping;
+
+        // Terminal speed limit to prevent unnatural hyper-velocity
+        final double speedSq = vx * vx + vy * vy;
+        const double maxTouchSpeed = 3.5;
+        if (speedSq > maxTouchSpeed * maxTouchSpeed) {
+          final double scale = maxTouchSpeed / math.sqrt(speedSq);
+          vx *= scale;
+          vy *= scale;
+        }
+
+        p.velocity = Offset(vx, vy);
+
+        // Align cruising velocity with current momentum so release dispersion is natural
+        final double cruisingSpeed = p.defaultVelocity.distance;
+        if (cruisingSpeed > 0 && speedSq > 0.0001) {
+          final double invSpeed = 1.0 / math.sqrt(speedSq);
+          p.defaultVelocity = Offset(
+            vx * invSpeed * cruisingSpeed,
+            vy * invSpeed * cruisingSpeed,
+          );
+        }
+
         // Mark particle as accelerated for visual feedback
         p.wasAccelerated = true;
         // Record acceleration for efficient shouldRepaint
