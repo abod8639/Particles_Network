@@ -107,43 +107,34 @@ class CompressedQuadTreeNode {
 
     // At capacity but not at max depth - consider subdivision
     if (isLeaf && depth < maxDepth) {
-      // Temporary collection of all particles including new one
-      final List<QuadTreeParticle> allParticles = [...particles, particle];
-
-      // Group particles by which quadrant they would fall into
-      final Map<Quadrant, List<QuadTreeParticle>> groups = {};
-      for (final p in allParticles) {
-        final Quadrant quad = _getQuadrant(p.x, p.y);
-        groups.putIfAbsent(quad, () => []).add(p);
-      }
-
-      // Find the quadrant with most particles (dominant quadrant)
-      var maxCount = 0;
-      Quadrant? dominantQuad;
-      for (final entry in groups.entries) {
-        if (entry.value.length > maxCount) {
-          maxCount = entry.value.length;
-          dominantQuad = entry.key;
+      final Quadrant newQuad = _getQuadrant(particle.x, particle.y);
+      bool allSame = true;
+      for (int i = 0; i < particles.length; i++) {
+        if (_getQuadrant(particles[i].x, particles[i].y) != newQuad) {
+          allSame = false;
+          break;
         }
       }
 
       // If all particles are in one quadrant, use path compression
-      if (dominantQuad != null && maxCount == allParticles.length) {
+      if (allSame) {
         // Create compressed child node
-        final Rectangle childBoundary = getChildBoundary(dominantQuad);
-        final CompressedPath childPath = compressedPath?.extend(dominantQuad) ??
-            CompressedPath([dominantQuad], depth + 1);
+        final Rectangle childBoundary = getChildBoundary(newQuad);
+        final CompressedPath childPath = compressedPath?.extend(newQuad) ??
+            CompressedPath([newQuad], depth + 1);
 
-        children[dominantQuad] = CompressedQuadTreeNode(
+        final child = CompressedQuadTreeNode(
           childBoundary,
           depth + 1,
           childPath,
         );
+        children[newQuad] = child;
 
         // Move all particles to the compressed child
-        for (final p in allParticles) {
-          children[dominantQuad]!.insert(p);
+        for (int i = 0; i < particles.length; i++) {
+          child.insert(particles[i]);
         }
+        child.insert(particle);
         particles.clear();
         return true;
       } else {
@@ -328,9 +319,9 @@ class CompressedQuadTreeNode {
     }
 
     // Recursively query children
-    for (final CompressedQuadTreeNode child in children.values) {
+    children.forEach((_, child) {
       child.queryCircleIndices(centerX, centerY, radius, output);
-    }
+    });
   }
 
   /// Collects all particles in this subtree
