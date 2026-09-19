@@ -33,6 +33,9 @@ class Particle {
   /// The mass of the particle, affects how much force is needed to move it.
   final double mass;
 
+  /// Precomputed inverse mass (1/mass) to replace per-call division with multiplication.
+  final double _invMass;
+
   /// Default X velocity component, used to reset its speed.
   double defaultVx;
 
@@ -95,7 +98,8 @@ class Particle {
         vy = velocity.dy,
         defaultVx = velocity.dx,
         defaultVy = velocity.dy,
-        mass = size * size; // Mass is proportional to area (size^2)
+        mass = size * size, // Mass is proportional to area (size^2)
+        _invMass = size > 0 ? 1.0 / (size * size) : 0.0;
 
   /// Applies a force to the particle based on F = ma (a = F/m).
   void applyForce(Offset force) {
@@ -103,12 +107,10 @@ class Particle {
   }
 
   /// Applies a force using primitive scalar components with zero heap allocations.
+  @pragma('vm:prefer-inline')
   void applyForceRaw(double fx, double fy) {
-    if (mass > 0) {
-      final double invMass = 1.0 / mass;
-      ax += fx * invMass;
-      ay += fy * invMass;
-    }
+    ax += fx * _invMass;
+    ay += fy * _invMass;
   }
 
   /// Updates the particle's position and velocity based on its current state with zero allocations.
