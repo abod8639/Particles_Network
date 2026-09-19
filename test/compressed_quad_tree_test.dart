@@ -165,10 +165,7 @@ void main() {
 }
 
 class _MockParticle extends Particle {
-  final double x;
-  final double y;
-
-  _MockParticle(this.x, this.y)
+  _MockParticle(double x, double y)
       : super(
           position: ui.Offset(x, y),
           velocity: ui.Offset.zero,
@@ -177,3 +174,4 @@ class _MockParticle extends Particle {
           isVisible: true,
         );
 }
+
