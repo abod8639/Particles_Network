@@ -8,21 +8,36 @@ import 'package:flutter/material.dart';
 
 /// The Particle class represents a single particle in the particle network.
 /// It contains properties for position, velocity, color, size, and visibility.
+///
+/// Uses primitive doubles internally for zero-allocation per-frame physics updates
+/// while providing [Offset] accessors for 100% API compatibility.
 class Particle {
-  /// The current position of the particle.
-  Offset position;
+  /// Raw X position coordinate.
+  double x;
 
-  /// The current velocity of the particle.
-  Offset velocity;
+  /// Raw Y position coordinate.
+  double y;
 
-  /// Accumulated acceleration from forces applied during this frame.
-  Offset acceleration = Offset.zero;
+  /// Raw X velocity component.
+  double vx;
+
+  /// Raw Y velocity component.
+  double vy;
+
+  /// Accumulated acceleration on X axis.
+  double ax = 0.0;
+
+  /// Accumulated acceleration on Y axis.
+  double ay = 0.0;
 
   /// The mass of the particle, affects how much force is needed to move it.
   final double mass;
 
-  /// The default velocity of the particle, used to reset its speed.
-  Offset defaultVelocity;
+  /// Default X velocity component, used to reset its speed.
+  double defaultVx;
+
+  /// Default Y velocity component, used to reset its speed.
+  double defaultVy;
 
   /// A flag indicating whether the particle was affected by touch interaction.
   bool wasAccelerated = false;
@@ -39,40 +54,90 @@ class Particle {
   /// The size of the particle.
   double size;
 
+  /// The current position of the particle as an [Offset].
+  Offset get position => Offset(x, y);
+  set position(Offset pos) {
+    x = pos.dx;
+    y = pos.dy;
+  }
+
+  /// The current velocity of the particle as an [Offset].
+  Offset get velocity => Offset(vx, vy);
+  set velocity(Offset vel) {
+    vx = vel.dx;
+    vy = vel.dy;
+  }
+
+  /// Accumulated acceleration from forces applied during this frame as an [Offset].
+  Offset get acceleration => Offset(ax, ay);
+  set acceleration(Offset acc) {
+    ax = acc.dx;
+    ay = acc.dy;
+  }
+
+  /// The default velocity of the particle as an [Offset], used to reset its speed.
+  Offset get defaultVelocity => Offset(defaultVx, defaultVy);
+  set defaultVelocity(Offset vel) {
+    defaultVx = vel.dx;
+    defaultVy = vel.dy;
+  }
+
   /// Constructor to initialize the particle's properties.
   Particle({
-    required this.position,
-    required this.velocity,
+    required Offset position,
+    required Offset velocity,
     required this.color,
     required this.size,
     this.isVisible = true,
-  })  : defaultVelocity = velocity,
+  })  : x = position.dx,
+        y = position.dy,
+        vx = velocity.dx,
+        vy = velocity.dy,
+        defaultVx = velocity.dx,
+        defaultVy = velocity.dy,
         mass = size * size; // Mass is proportional to area (size^2)
 
   /// Applies a force to the particle based on F = ma (a = F/m).
   void applyForce(Offset force) {
+    applyForceRaw(force.dx, force.dy);
+  }
+
+  /// Applies a force using primitive scalar components with zero heap allocations.
+  void applyForceRaw(double fx, double fy) {
     if (mass > 0) {
-      acceleration += force / mass;
+      final double invMass = 1.0 / mass;
+      ax += fx * invMass;
+      ay += fy * invMass;
     }
   }
 
-  /// Updates the particle's position and velocity based on its current state.
+  /// Updates the particle's position and velocity based on its current state with zero allocations.
   void update(Size bounds) {
     // Apply accumulated acceleration to velocity
-    velocity += acceleration;
+    vx += ax;
+    vy += ay;
 
     // Reset acceleration for the next frame
-    acceleration = Offset.zero;
+    ax = 0.0;
+    ay = 0.0;
 
     // Update the position by adding the velocity.
-    position += velocity;
+    x += vx;
+    y += vy;
 
     // If the particle was accelerated (e.g. by touch), gradually return to default.
     if (wasAccelerated) {
-      velocity = computeVelocity(velocity, defaultVelocity, 0.01, decayRate);
-      // If velocity has returned to default, reset the accelerated flag.
-      if (velocity == defaultVelocity) {
+      final double diffX = vx - defaultVx;
+      final double diffY = vy - defaultVy;
+      final double diffSq = diffX * diffX + diffY * diffY;
+      const double speedThreshold = 0.01;
+      if (diffSq < speedThreshold * speedThreshold) {
+        vx = defaultVx;
+        vy = defaultVy;
         wasAccelerated = false;
+      } else {
+        vx = vx + (defaultVx - vx) * decayRate;
+        vy = vy + (defaultVy - vy) * decayRate;
       }
     }
 
@@ -85,27 +150,27 @@ class Particle {
 
   /// Handles collisions with the screen boundaries by reversing the velocity.
   void handleScreenBoundaries(Size bounds) {
-    if (position.dx < 0) {
-      if (velocity.dx < 0) {
-        velocity = Offset(-velocity.dx, velocity.dy);
-        defaultVelocity = Offset(-defaultVelocity.dx, defaultVelocity.dy);
+    if (x < 0) {
+      if (vx < 0) {
+        vx = -vx;
+        defaultVx = -defaultVx;
       }
-    } else if (position.dx > bounds.width) {
-      if (velocity.dx > 0) {
-        velocity = Offset(-velocity.dx, velocity.dy);
-        defaultVelocity = Offset(-defaultVelocity.dx, defaultVelocity.dy);
+    } else if (x > bounds.width) {
+      if (vx > 0) {
+        vx = -vx;
+        defaultVx = -defaultVx;
       }
     }
 
-    if (position.dy < 0) {
-      if (velocity.dy < 0) {
-        velocity = Offset(velocity.dx, -velocity.dy);
-        defaultVelocity = Offset(defaultVelocity.dx, -defaultVelocity.dy);
+    if (y < 0) {
+      if (vy < 0) {
+        vy = -vy;
+        defaultVy = -defaultVy;
       }
-    } else if (position.dy > bounds.height) {
-      if (velocity.dy > 0) {
-        velocity = Offset(velocity.dx, -velocity.dy);
-        defaultVelocity = Offset(defaultVelocity.dx, -defaultVelocity.dy);
+    } else if (y > bounds.height) {
+      if (vy > 0) {
+        vy = -vy;
+        defaultVy = -defaultVy;
       }
     }
   }
@@ -113,11 +178,11 @@ class Particle {
   /// Updates the visibility status of the particle based on its position.
   void updateVisibility(Size bounds) {
     // Include a margin to account for particles near the edges of the viewport.
-    const margin = 50.0;
-    isVisible = position.dx >= -margin &&
-        position.dx <= bounds.width + margin &&
-        position.dy >= -margin &&
-        position.dy <= bounds.height + margin;
+    const double margin = 50.0;
+    isVisible = x >= -margin &&
+        x <= bounds.width + margin &&
+        y >= -margin &&
+        y <= bounds.height + margin;
   }
 }
 
