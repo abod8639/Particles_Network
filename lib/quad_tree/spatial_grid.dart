@@ -1,0 +1,152 @@
+/// High-performance 2D Uniform Spatial Hash Grid for particle neighbor queries.
+///
+/// This library provides the [SpatialGrid] class, an alternative spatial
+/// partitioning structure designed for fixed-radius particle queries with zero
+/// heap allocations per frame.
+library;
+
+import 'dart:typed_data';
+
+import 'package:particles_network/model/particlemodel.dart';
+
+/// A 2D uniform spatial grid for efficient neighbor queries.
+///
+/// Mathematical Foundations:
+/// - Divides 2D space into uniform square cells of size [cellSize].
+/// - Any two particles within Euclidean distance $R \le \text{cellSize}$ must
+///   reside in the same cell or in immediately adjacent neighbor cells (at most 9 cells).
+///
+/// Performance Characteristics:
+/// - Grid build time: $O(N)$ with zero allocations per frame.
+/// - Neighbor queries: $O(1)$ cell lookups (checking at most 9 cells).
+/// - Memory footprint: Flat contiguous [Int32List] memory.
+class SpatialGrid {
+  /// The size of each grid cell (typically set to `lineDistance`).
+  double cellSize;
+
+  /// Cached inverse cell size to replace division with multiplication.
+  double invCellSize;
+
+  /// Number of columns in the grid.
+  int cols = 0;
+
+  /// Number of rows in the grid.
+  int rows = 0;
+
+  /// Head pointers for each cell's linked list of particle indices.
+  Int32List cellHeads = Int32List(0);
+
+  /// Next pointers linking particles belonging to the same cell.
+  Int32List particleNext = Int32List(0);
+
+  /// Creates a [SpatialGrid] with the specified [cellSize].
+  SpatialGrid({required this.cellSize})
+      : invCellSize = cellSize > 0 ? 1.0 / cellSize : 0.0;
+
+  /// Updates the cell size and recomputes the inverse cell size.
+  void updateCellSize(double size) {
+    cellSize = size;
+    invCellSize = size > 0 ? 1.0 / size : 0.0;
+  }
+
+  /// Builds or rebuilds the spatial grid from visible particles.
+  ///
+  /// Reuses existing [Int32List] buffers without allocating objects on the heap.
+  void build(
+    List<Particle> particles,
+    List<int> visibleIndices,
+    double width,
+    double height,
+  ) {
+    if (width <= 0 || height <= 0 || cellSize <= 0) return;
+
+    final int newCols = (width * invCellSize).ceil() + 1;
+    final int newRows = (height * invCellSize).ceil() + 1;
+    final int totalCells = newCols * newRows;
+
+    cols = newCols;
+    rows = newRows;
+
+    // Grow cell heads buffer if needed
+    if (cellHeads.length < totalCells) {
+      cellHeads = Int32List(totalCells);
+    }
+    cellHeads.fillRange(0, totalCells, -1);
+
+    // Grow particle next pointers buffer if needed
+    final int n = particles.length;
+    if (particleNext.length < n) {
+      particleNext = Int32List(n);
+    }
+
+    final int visibleCount = visibleIndices.length;
+    for (int i = 0; i < visibleCount; i++) {
+      final int idx = visibleIndices[i];
+      final Particle p = particles[idx];
+
+      int cx = (p.position.dx * invCellSize).toInt();
+      int cy = (p.position.dy * invCellSize).toInt();
+
+      if (cx < 0) {
+        cx = 0;
+      } else if (cx >= cols) {
+        cx = cols - 1;
+      }
+
+      if (cy < 0) {
+        cy = 0;
+      } else if (cy >= rows) {
+        cy = rows - 1;
+      }
+
+      final int cell = cy * cols + cx;
+      particleNext[idx] = cellHeads[cell];
+      cellHeads[cell] = idx;
+    }
+  }
+
+  /// Finds nearby particle indices within [radius] of point ([x], [y])
+  /// and writes them to [output].
+  void findNearbyParticlesToOutput(
+    double x,
+    double y,
+    double radius,
+    List<int> output,
+  ) {
+    output.clear();
+    if (cols <= 0 || rows <= 0) return;
+
+    int cx = (x * invCellSize).toInt();
+    int cy = (y * invCellSize).toInt();
+    if (cx < 0) cx = 0;
+    if (cx >= cols) cx = cols - 1;
+    if (cy < 0) cy = 0;
+    if (cy >= rows) cy = rows - 1;
+
+    final int cellRadius = (radius * invCellSize).ceil();
+    final int minCx = (cx - cellRadius).clamp(0, cols - 1);
+    final int maxCx = (cx + cellRadius).clamp(0, cols - 1);
+    final int minCy = (cy - cellRadius).clamp(0, rows - 1);
+    final int maxCy = (cy + cellRadius).clamp(0, rows - 1);
+
+    for (int cy = minCy; cy <= maxCy; cy++) {
+      final int rowOffset = cy * cols;
+      for (int cx = minCx; cx <= maxCx; cx++) {
+        int idx = cellHeads[rowOffset + cx];
+        while (idx != -1) {
+          output.add(idx);
+          idx = particleNext[idx];
+        }
+      }
+    }
+  }
+
+  /// Clears the grid state.
+  void clear() {
+    if (cellHeads.isNotEmpty) {
+      cellHeads.fillRange(0, cellHeads.length, -1);
+    }
+    cols = 0;
+    rows = 0;
+  }
+}
