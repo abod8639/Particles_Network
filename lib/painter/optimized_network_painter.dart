@@ -95,11 +95,13 @@ class OptimizedNetworkPainter extends CustomPainter {
   final List<int> _visibleParticles = [];
   Int32List _candidateIndices = Int32List(128);
   Float64List _candidateDistSq = Float64List(128);
-  final Map<int, List<Offset>> _pointBuckets = {};
+  static const int _maxParticleSizeBuckets = 64;
+  late final List<Float32List> _particleRawBuckets;
+  final Int32List _particleRawOffsets = Int32List(_maxParticleSizeBuckets);
   final Paint _batchedPointPaint = Paint()..strokeCap = StrokeCap.round;
 
   // Number of alpha buckets for GPU line draw call batching
-  static const int _numLineBuckets = 32;
+  static const int _numLineBuckets = 24;
   late final List<Float32List> _rawBuckets;
   late final Int32List _rawOffsets;
   late final List<Paint> _lineBucketPaints;
@@ -149,7 +151,11 @@ class OptimizedNetworkPainter extends CustomPainter {
       cellSize: lineDistance > 0 ? lineDistance : 100.0,
     );
 
-    // Initialize 32-bucket batched line buffers and precomputed tables for GPU acceleration
+    // Initialize raw particle size buckets for zero-allocation particle drawing
+    _particleRawBuckets =
+        List.generate(_maxParticleSizeBuckets, (_) => Float32List(256));
+
+    // Initialize batched line buffers and precomputed tables for GPU acceleration
     _rawBuckets = List.generate(_numLineBuckets, (_) => Float32List(2048));
     _rawOffsets = Int32List(_numLineBuckets);
 
@@ -162,6 +168,7 @@ class OptimizedNetworkPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..isAntiAlias = !isComplex;
     });
+
 
     final double maxDistSq = lineDistance * lineDistance;
     _invMaxDistSq = maxDistSq > 0 ? 1.0 / maxDistSq : 0.0;
@@ -242,8 +249,8 @@ class OptimizedNetworkPainter extends CustomPainter {
           _quadTree.insert(
             QuadTreeParticle(
               visibleParticles[i],
-              particle.position.dx,
-              particle.position.dy,
+              particle.x,
+              particle.y,
             ),
           );
         }
@@ -273,7 +280,7 @@ class OptimizedNetworkPainter extends CustomPainter {
   // Optimizations:
   // - Uses pre-allocated Paint object (avoids object creation each frame)
   // - Only draws visible particles (reduced draw calls)
-  // - Batched drawPoints when particle density is high and fill is true
+  // - Batched GPU drawRawPoints when fill is true for zero heap allocations
   void _drawParticles(Canvas canvas, List<int> visibleParticles) {
     final int count = visibleParticles.length;
     if (count == 0) return;
@@ -281,15 +288,16 @@ class OptimizedNetworkPainter extends CustomPainter {
     if (!fill) {
       for (int i = 0; i < count; i++) {
         final Particle p = particles[visibleParticles[i]];
-        canvas.drawCircle(p.position, p.size, particlePaint);
+        canvas.drawCircle(Offset(p.x, p.y), p.size, particlePaint);
       }
       return;
     }
 
-    if (count < 150) {
+    // For very small particle counts (< 5), direct circle drawing has minimal overhead
+    if (count < 5) {
       for (int i = 0; i < count; i++) {
         final Particle p = particles[visibleParticles[i]];
-        canvas.drawCircle(p.position, p.size, particlePaint);
+        canvas.drawCircle(Offset(p.x, p.y), p.size, particlePaint);
       }
       return;
     }
@@ -298,17 +306,29 @@ class OptimizedNetworkPainter extends CustomPainter {
   }
 
   void _drawBatchedParticles(Canvas canvas, List<int> visibleParticles) {
-    for (final list in _pointBuckets.values) {
-      list.clear();
-    }
-
+    _particleRawOffsets.fillRange(0, _maxParticleSizeBuckets, 0);
     final int count = visibleParticles.length;
+
     for (int i = 0; i < count; i++) {
       final Particle p = particles[visibleParticles[i]];
-      // Quantize size to half-pixel resolution: e.g. 1.0, 1.5, 2.0, 2.5
-      final int key = (p.size * 2).round();
-      final bucket = _pointBuckets.putIfAbsent(key, () => <Offset>[]);
-      bucket.add(p.position);
+      // Quantize size to half-pixel resolution: e.g. 1.0 -> 2, 1.5 -> 3, 2.0 -> 4
+      int bucket = (p.size * 2).round();
+      if (bucket < 1) bucket = 1;
+      if (bucket >= _maxParticleSizeBuckets) {
+        bucket = _maxParticleSizeBuckets - 1;
+      }
+
+      final int off = _particleRawOffsets[bucket];
+      Float32List raw = _particleRawBuckets[bucket];
+      if (off + 2 > raw.length) {
+        final newBuf = Float32List(math.max(raw.length * 2, off + 2));
+        newBuf.setRange(0, off, raw);
+        _particleRawBuckets[bucket] = newBuf;
+        raw = newBuf;
+      }
+      raw[off] = p.x;
+      raw[off + 1] = p.y;
+      _particleRawOffsets[bucket] = off + 2;
     }
 
     _batchedPointPaint
@@ -317,11 +337,15 @@ class OptimizedNetworkPainter extends CustomPainter {
       ..isAntiAlias = !isComplex
       ..color = particleColor;
 
-    for (final entry in _pointBuckets.entries) {
-      final List<Offset> points = entry.value;
-      if (points.isNotEmpty) {
-        _batchedPointPaint.strokeWidth = entry.key.toDouble();
-        canvas.drawPoints(PointMode.points, points, _batchedPointPaint);
+    for (int b = 1; b < _maxParticleSizeBuckets; b++) {
+      final int rawCount = _particleRawOffsets[b];
+      if (rawCount > 0) {
+        _batchedPointPaint.strokeWidth = b.toDouble();
+        canvas.drawRawPoints(
+          PointMode.points,
+          Float32List.sublistView(_particleRawBuckets[b], 0, rawCount),
+          _batchedPointPaint,
+        );
       }
     }
   }
@@ -408,12 +432,13 @@ class OptimizedNetworkPainter extends CustomPainter {
       for (int i = 0; i < count; i++) {
         final int index = visibleParticles[i];
         final Particle particle = particles[index];
-        final Offset pos = particle.position;
+        final double px = particle.x;
+        final double py = particle.y;
 
         nearbyIndices.clear();
         _spatialGrid.findNearbyParticlesToOutput(
-          pos.dx,
-          pos.dy,
+          px,
+          py,
           lineDistance,
           nearbyIndices,
         );
@@ -425,9 +450,220 @@ class OptimizedNetworkPainter extends CustomPainter {
           if (neighborIndex <= index) continue;
 
           final Particle neighbor = particles[neighborIndex];
-          final Offset neighborPos = neighbor.position;
-          final double dx = pos.dx - neighborPos.dx;
-          final double dy = pos.dy - neighborPos.dy;
+          final double dx = px - neighbor.x;
+          final double dy = py - neighbor.y;
+          final double distSq = dx * dx + dy * dy;
+
+          if (distSq <= maxDistSq) {
+            if (candidateCount >= _candidateIndices.length) {
+              _growCandidateBuffers();
+            }
+            _candidateIndices[candidateCount] = neighborIndex;
+            _candidateDistSq[candidateCount] = distSq;
+            candidateCount++;
+          }
+        }
+
+        if (candidateCount > 0) {
+          int drawCount = candidateCount;
+          if (candidateCount > denseThreshold) {
+            _selectTopKClosest(candidateCount, maxLines);
+            drawCount = maxLines < candidateCount ? maxLines : candidateCount;
+          }
+
+          final Offset pos = Offset(px, py);
+          for (int c = 0; c < drawCount; c++) {
+            final int neighborIdx = _candidateIndices[c];
+            final Particle neighbor = particles[neighborIdx];
+            final double distance = math.sqrt(_candidateDistSq[c]);
+            final int alpha =
+                (255 - (distance * invLineDistance)).toInt().clamp(0, 255);
+            linePaint.color = _lineColorLut[alpha];
+            canvas.drawLine(pos, Offset(neighbor.x, neighbor.y), linePaint);
+          }
+        }
+      }
+    } finally {
+      _intListPool.release(nearbyIndices);
+    }
+  }
+
+  void _drawBatchedConnections(
+    Canvas canvas,
+    List<int> visibleParticles,
+  ) {
+    final double maxDistSq = lineDistance * lineDistance;
+    _rawOffsets.fillRange(0, _numLineBuckets, 0);
+
+    if (isComplex) {
+      _drawBatchedConnectionsComplex(visibleParticles, maxDistSq);
+    } else {
+      _drawBatchedConnectionsFast(maxDistSq);
+    }
+
+    // Draw batched lines in at most _numLineBuckets GPU draw calls
+    for (int b = 0; b < _numLineBuckets; b++) {
+      final int rawCount = _rawOffsets[b];
+      if (rawCount > 0) {
+        canvas.drawRawPoints(
+          PointMode.lines,
+          Float32List.sublistView(_rawBuckets[b], 0, rawCount),
+          _lineBucketPaints[b],
+        );
+      }
+    }
+  }
+
+  void _drawBatchedConnectionsFast(double maxDistSq) {
+    final int cols = _spatialGrid.cols;
+    final int rows = _spatialGrid.rows;
+    if (cols <= 0 || rows <= 0) return;
+
+    final Int32List cellHeads = _spatialGrid.cellHeads;
+    final Int32List particleNext = _spatialGrid.particleNext;
+    final Int32List activeCells = _spatialGrid.activeCells;
+    final int activeCount = _spatialGrid.activeCellsCount;
+
+    for (int a = 0; a < activeCount; a++) {
+      final int cell = activeCells[a];
+      final int p1Head = cellHeads[cell];
+      if (p1Head == -1) continue;
+
+      final int cx = cell % cols;
+      final int cy = cell ~/ cols;
+
+      // 4 forward neighbor cell indices
+      final int east = (cx < cols - 1) ? cell + 1 : -1;
+      final int southWest =
+          (cy < rows - 1 && cx > 0) ? cell + cols - 1 : -1;
+      final int south = (cy < rows - 1) ? cell + cols : -1;
+      final int southEast =
+          (cy < rows - 1 && cx < cols - 1) ? cell + cols + 1 : -1;
+
+      int p1 = p1Head;
+      while (p1 != -1) {
+        final Particle particle1 = particles[p1];
+        final double p1x = particle1.x;
+        final double p1y = particle1.y;
+
+        // 1. Check subsequent particles in the SAME cell
+        int p2 = particleNext[p1];
+        while (p2 != -1) {
+          final Particle particle2 = particles[p2];
+          final double dx = p1x - particle2.x;
+          final double dy = p1y - particle2.y;
+          final double distSq = dx * dx + dy * dy;
+
+          if (distSq <= maxDistSq) {
+            final int tableIdx =
+                ((distSq * _invMaxDistSq) * 1024).toInt().clamp(0, 1024);
+            final int bucket = _distBucketTable[tableIdx];
+
+            final int off = _rawOffsets[bucket];
+            Float32List raw = _rawBuckets[bucket];
+            if (off + 4 > raw.length) {
+              raw = _growBucket(bucket, off + 4);
+            }
+            raw[off] = p1x;
+            raw[off + 1] = p1y;
+            raw[off + 2] = particle2.x;
+            raw[off + 3] = particle2.y;
+            _rawOffsets[bucket] = off + 4;
+          }
+          p2 = particleNext[p2];
+        }
+
+        // 2. Check particles in the 4 forward neighbor cells
+        if (east != -1) {
+          _connectWithCell(p1x, p1y, east, maxDistSq, cellHeads, particleNext);
+        }
+        if (southWest != -1) {
+          _connectWithCell(
+              p1x, p1y, southWest, maxDistSq, cellHeads, particleNext);
+        }
+        if (south != -1) {
+          _connectWithCell(
+              p1x, p1y, south, maxDistSq, cellHeads, particleNext);
+        }
+        if (southEast != -1) {
+          _connectWithCell(
+              p1x, p1y, southEast, maxDistSq, cellHeads, particleNext);
+        }
+
+        p1 = particleNext[p1];
+      }
+    }
+  }
+
+  void _connectWithCell(
+    double p1x,
+    double p1y,
+    int neighborCell,
+    double maxDistSq,
+    Int32List cellHeads,
+    Int32List particleNext,
+  ) {
+    int p2 = cellHeads[neighborCell];
+    while (p2 != -1) {
+      final Particle particle2 = particles[p2];
+      final double dx = p1x - particle2.x;
+      final double dy = p1y - particle2.y;
+      final double distSq = dx * dx + dy * dy;
+
+      if (distSq <= maxDistSq) {
+        final int tableIdx =
+            ((distSq * _invMaxDistSq) * 1024).toInt().clamp(0, 1024);
+        final int bucket = _distBucketTable[tableIdx];
+
+        final int off = _rawOffsets[bucket];
+        Float32List raw = _rawBuckets[bucket];
+        if (off + 4 > raw.length) {
+          raw = _growBucket(bucket, off + 4);
+        }
+        raw[off] = p1x;
+        raw[off + 1] = p1y;
+        raw[off + 2] = particle2.x;
+        raw[off + 3] = particle2.y;
+        _rawOffsets[bucket] = off + 4;
+      }
+      p2 = particleNext[p2];
+    }
+  }
+
+  void _drawBatchedConnectionsComplex(
+    List<int> visibleParticles,
+    double maxDistSq,
+  ) {
+    final List<int> nearbyIndices = _intListPool.acquire();
+
+    try {
+      final int count = visibleParticles.length;
+      final int maxLines = 3;
+      final int denseThreshold = lineDistance ~/ 4;
+
+      for (int i = 0; i < count; i++) {
+        final int index = visibleParticles[i];
+        final Particle particle = particles[index];
+        final double px = particle.x;
+        final double py = particle.y;
+
+        nearbyIndices.clear();
+        _spatialGrid.findNearbyParticlesToOutput(
+          px,
+          py,
+          lineDistance,
+          nearbyIndices,
+        );
+
+        final int nearbyCount = nearbyIndices.length;
+        int candidateCount = 0;
+        for (int n = 0; n < nearbyCount; n++) {
+          final int neighborIndex = nearbyIndices[n];
+          if (neighborIndex <= index) continue;
+
+          final Particle neighbor = particles[neighborIndex];
+          final double dx = px - neighbor.x;
+          final double dy = py - neighbor.y;
           final double distSq = dx * dx + dy * dy;
 
           if (distSq <= maxDistSq) {
@@ -449,136 +685,23 @@ class OptimizedNetworkPainter extends CustomPainter {
 
           for (int c = 0; c < drawCount; c++) {
             final int neighborIdx = _candidateIndices[c];
-            final double distance = math.sqrt(_candidateDistSq[c]);
-            final int alpha =
-                (255 - (distance * invLineDistance)).toInt().clamp(0, 255);
-            linePaint.color = _lineColorLut[alpha];
-            canvas.drawLine(pos, particles[neighborIdx].position, linePaint);
-          }
-        }
-      }
-    } finally {
-      _intListPool.release(nearbyIndices);
-    }
-  }
+            final Particle neighbor = particles[neighborIdx];
+            final double distSq = _candidateDistSq[c];
+            final int tableIdx =
+                ((distSq * _invMaxDistSq) * 1024).toInt().clamp(0, 1024);
+            final int bucket = _distBucketTable[tableIdx];
 
-  void _drawBatchedConnections(
-    Canvas canvas,
-    List<int> visibleParticles,
-  ) {
-    final double maxDistSq = lineDistance * lineDistance;
-    _rawOffsets.fillRange(0, _numLineBuckets, 0);
-    final List<int> nearbyIndices = _intListPool.acquire();
-
-    try {
-      final int count = visibleParticles.length;
-      final int maxLines = 3;
-      final int denseThreshold = lineDistance ~/ 4;
-
-      for (int i = 0; i < count; i++) {
-        final int index = visibleParticles[i];
-        final Particle particle = particles[index];
-        final double px = particle.position.dx;
-        final double py = particle.position.dy;
-
-        nearbyIndices.clear();
-        _spatialGrid.findNearbyParticlesToOutput(
-          px,
-          py,
-          lineDistance,
-          nearbyIndices,
-        );
-
-        final int nearbyCount = nearbyIndices.length;
-        if (isComplex) {
-          int candidateCount = 0;
-          for (int n = 0; n < nearbyCount; n++) {
-            final int neighborIndex = nearbyIndices[n];
-            if (neighborIndex <= index) continue;
-
-            final Particle neighbor = particles[neighborIndex];
-            final double dx = px - neighbor.position.dx;
-            final double dy = py - neighbor.position.dy;
-            final double distSq = dx * dx + dy * dy;
-
-            if (distSq <= maxDistSq) {
-              if (candidateCount >= _candidateIndices.length) {
-                _growCandidateBuffers();
-              }
-              _candidateIndices[candidateCount] = neighborIndex;
-              _candidateDistSq[candidateCount] = distSq;
-              candidateCount++;
+            final int off = _rawOffsets[bucket];
+            Float32List raw = _rawBuckets[bucket];
+            if (off + 4 > raw.length) {
+              raw = _growBucket(bucket, off + 4);
             }
+            raw[off] = px;
+            raw[off + 1] = py;
+            raw[off + 2] = neighbor.x;
+            raw[off + 3] = neighbor.y;
+            _rawOffsets[bucket] = off + 4;
           }
-
-          if (candidateCount > 0) {
-            int drawCount = candidateCount;
-            if (candidateCount > denseThreshold) {
-              _selectTopKClosest(candidateCount, maxLines);
-              drawCount = maxLines < candidateCount ? maxLines : candidateCount;
-            }
-
-            for (int c = 0; c < drawCount; c++) {
-              final int neighborIdx = _candidateIndices[c];
-              final Particle neighbor = particles[neighborIdx];
-              final double distSq = _candidateDistSq[c];
-              final int tableIdx =
-                  ((distSq * _invMaxDistSq) * 1024).toInt().clamp(0, 1024);
-              final int bucket = _distBucketTable[tableIdx];
-
-              final int off = _rawOffsets[bucket];
-              Float32List raw = _rawBuckets[bucket];
-              if (off + 4 > raw.length) {
-                raw = _growBucket(bucket, off + 4);
-              }
-              raw[off] = px;
-              raw[off + 1] = py;
-              raw[off + 2] = neighbor.position.dx;
-              raw[off + 3] = neighbor.position.dy;
-              _rawOffsets[bucket] = off + 4;
-            }
-          }
-        } else {
-          for (int n = 0; n < nearbyCount; n++) {
-            final int neighborIndex = nearbyIndices[n];
-            if (neighborIndex <= index) continue;
-
-            final Particle neighbor = particles[neighborIndex];
-            final double pjx = neighbor.position.dx;
-            final double pjy = neighbor.position.dy;
-            final double dx = px - pjx;
-            final double dy = py - pjy;
-            final double distSq = dx * dx + dy * dy;
-
-            if (distSq <= maxDistSq) {
-              final int tableIdx =
-                  ((distSq * _invMaxDistSq) * 1024).toInt().clamp(0, 1024);
-              final int bucket = _distBucketTable[tableIdx];
-
-              final int off = _rawOffsets[bucket];
-              Float32List raw = _rawBuckets[bucket];
-              if (off + 4 > raw.length) {
-                raw = _growBucket(bucket, off + 4);
-              }
-              raw[off] = px;
-              raw[off + 1] = py;
-              raw[off + 2] = pjx;
-              raw[off + 3] = pjy;
-              _rawOffsets[bucket] = off + 4;
-            }
-          }
-        }
-      }
-
-      // Draw batched lines in only 32 GPU draw calls
-      for (int b = 0; b < _numLineBuckets; b++) {
-        final int rawCount = _rawOffsets[b];
-        if (rawCount > 0) {
-          canvas.drawRawPoints(
-            PointMode.lines,
-            Float32List.sublistView(_rawBuckets[b], 0, rawCount),
-            _lineBucketPaints[b],
-          );
         }
       }
     } finally {
