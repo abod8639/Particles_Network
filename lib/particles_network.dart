@@ -276,7 +276,8 @@ class ParticleNetworkState extends State<ParticleNetwork>
         widget.lineDistance != oldWidget.lineDistance ||
         widget.particleColor != oldWidget.particleColor ||
         widget.lineColor != oldWidget.lineColor ||
-        widget.touchColor != oldWidget.touchColor) {
+        widget.touchColor != oldWidget.touchColor ||
+        widget.touchFeatures != oldWidget.touchFeatures) {
       _initPainter();
     }
   }
