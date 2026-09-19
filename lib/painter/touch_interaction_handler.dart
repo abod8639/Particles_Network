@@ -101,26 +101,33 @@ class TouchInteractionHandler {
     final Offset? touch = touchPoint;
     if (touch == null) return; // Exit if no current touch
 
+    final double tx = touch.dx;
+    final double ty = touch.dy;
     final double maxDist = lineDistance;
     final double maxDistSq = maxDist * maxDist;
+    final double pullForce = touchFeatures.force;
+    final double touchDamping = touchFeatures.damping;
+    final double maxTouchSpeed = touchFeatures.maxTouchSpeed;
+    final double maxTouchSpeedSq = maxTouchSpeed * maxTouchSpeed;
+    final double touchSpeed = touchFeatures.speed;
 
-    for (final int i in visibleParticles) {
-      final Particle p = particles[i];
-      final double dx = touch.dx - p.position.dx;
+    final int count = visibleParticles.length;
+    for (int idx = 0; idx < count; idx++) {
+      final Particle p = particles[visibleParticles[idx]];
+      final double dx = tx - p.x;
       if (dx > maxDist || dx < -maxDist) continue;
-      final double dy = touch.dy - p.position.dy;
+      final double dy = ty - p.y;
       if (dy > maxDist || dy < -maxDist) continue;
       final double distSq = dx * dx + dy * dy;
+
       // Only affect particles within the interaction distance (avoid sqrt if out of range)
       if (distSq < maxDistSq) {
-        p.velocity = Offset(
-          p.velocity.dx + dx * force,
-          p.velocity.dy + dy * force,
-        );
+        p.vx += dx * force;
+        p.vy += dy * force;
+
         final double dist = math.sqrt(distSq);
         // Linear falloff: responsive attraction that smoothly reaches 0 at maxDist
-        final double normDist = dist / maxDist;
-        final double falloff = 1.0 - normDist;
+        final double falloff = 1.0 - (dist / maxDist);
 
         // Normalized direction vector towards touch point
         final double invDist = dist > 0.001 ? 1.0 / dist : 0.0;
@@ -128,28 +135,22 @@ class TouchInteractionHandler {
         final double ny = dy * invDist;
 
         // Stronger, responsive pull force for fluid drag response
-        final double pullForce = touchFeatures.force;
-        double vx = p.velocity.dx + nx * (pullForce * falloff);
-        double vy = p.velocity.dy + ny * (pullForce * falloff);
-
-        // Fluid damping to preserve momentum and allow particles to sling through
-        final double touchDamping = touchFeatures.damping;
-        vx *= touchDamping;
-        vy *= touchDamping;
+        double vx = (p.vx + nx * (pullForce * falloff)) * touchDamping;
+        double vy = (p.vy + ny * (pullForce * falloff)) * touchDamping;
 
         // Terminal speed limit from touchFeatures
         final double speedSq = vx * vx + vy * vy;
-        final double maxTouchSpeed = touchFeatures.maxTouchSpeed;
-        if (speedSq > maxTouchSpeed * maxTouchSpeed) {
+        if (speedSq > maxTouchSpeedSq) {
           final double scale = maxTouchSpeed / math.sqrt(speedSq);
           vx *= scale;
           vy *= scale;
         }
 
-        p.velocity = Offset(vx, vy);
+        p.vx = vx;
+        p.vy = vy;
 
         // Mark particle as accelerated and apply configured recovery speed
-        p.decayRate = touchFeatures.speed;
+        p.decayRate = touchSpeed;
         p.wasAccelerated = true;
         // Record acceleration for efficient shouldRepaint
         tracker.recordAcceleration();
@@ -164,24 +165,29 @@ class TouchInteractionHandler {
     final Offset? touch = touchPoint;
     if (touch == null) return; // Exit if no current touch
 
-    final double maxDistSq = lineDistance * lineDistance;
+    final double tx = touch.dx;
+    final double ty = touch.dy;
     final double maxDist = lineDistance;
+    final double maxDistSq = maxDist * maxDist;
+    final double invMaxDist = maxDist > 0 ? 1.0 / maxDist : 0.0;
 
-    for (final int i in visibleParticles) {
-      final Particle p = particles[i];
-      final double dx = touch.dx - p.position.dx;
-      final double dy = touch.dy - p.position.dy;
+    final int count = visibleParticles.length;
+    for (int idx = 0; idx < count; idx++) {
+      final Particle p = particles[visibleParticles[idx]];
+      final double dx = tx - p.x;
+      if (dx > maxDist || dx < -maxDist) continue;
+      final double dy = ty - p.y;
+      if (dy > maxDist || dy < -maxDist) continue;
       final double distSq = dx * dx + dy * dy;
 
       // Only draw lines for particles within the connection distance
       if (distSq < maxDistSq) {
         final double distance = math.sqrt(distSq);
         // Smooth linear falloff: 1.0 at touch, 0.0 at maxDist
-        final double normDist = distance / maxDist;
-        final double opacity = 1.0 - normDist;
+        final double opacity = 1.0 - (distance * invMaxDist);
         final int alpha = (255 * opacity).toInt().clamp(0, 255);
         linePaint.color = _touchColorLut[alpha];
-        canvas.drawLine(p.position, touch, linePaint);
+        canvas.drawLine(Offset(p.x, p.y), touch, linePaint);
       }
     }
   }
