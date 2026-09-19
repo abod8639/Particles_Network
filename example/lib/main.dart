@@ -192,7 +192,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           _buildSlider(
             "Line Dist",
             _lineDistance,
-            10,
+            0,
             500,
             (v) => setState(() => _lineDistance = v),
           ),
