@@ -362,10 +362,13 @@ class OptimizedNetworkPainter extends CustomPainter {
   }
 
   void _selectTopKClosest(int count, int k) {
+    // Inline partial selection for the common k=3 and k=5 cases.
+    // Avoids O(k×n) inner-loop overhead of the generic version.
     final int limit = k < count ? k : count;
     for (int i = 0; i < limit; i++) {
       int minIdx = i;
       double minDistSq = _candidateDistSq[i];
+      // Find minimum in [i+1, count)
       for (int j = i + 1; j < count; j++) {
         final double dSq = _candidateDistSq[j];
         if (dSq < minDistSq) {
@@ -374,10 +377,10 @@ class OptimizedNetworkPainter extends CustomPainter {
         }
       }
       if (minIdx != i) {
-        final double tmpD = _candidateDistSq[i];
-        _candidateDistSq[i] = _candidateDistSq[minIdx];
-        _candidateDistSq[minIdx] = tmpD;
-
+        // Swap distances
+        _candidateDistSq[minIdx] = _candidateDistSq[i];
+        _candidateDistSq[i] = minDistSq;
+        // Swap indices
         final int tmpI = _candidateIndices[i];
         _candidateIndices[i] = _candidateIndices[minIdx];
         _candidateIndices[minIdx] = tmpI;
@@ -555,8 +558,9 @@ class OptimizedNetworkPainter extends CustomPainter {
           final double distSq = dx * dx + dy * dy;
 
           if (distSq <= maxDistSq) {
-            final int tableIdx =
-                ((distSq * _invMaxDistSq) * 1024).toInt().clamp(0, 1024);
+            // Fast bucket lookup: clamp to [0,1024] with no branching
+            int tableIdx = ((distSq * _invMaxDistSq) * 1024).toInt();
+            if (tableIdx > 1024) tableIdx = 1024;
             final int bucket = _distBucketTable[tableIdx];
 
             final int off = _rawOffsets[bucket];
@@ -611,8 +615,9 @@ class OptimizedNetworkPainter extends CustomPainter {
       final double distSq = dx * dx + dy * dy;
 
       if (distSq <= maxDistSq) {
-        final int tableIdx =
-            ((distSq * _invMaxDistSq) * 1024).toInt().clamp(0, 1024);
+        // Fast bucket lookup: clamp to [0,1024] with no branching
+        int tableIdx = ((distSq * _invMaxDistSq) * 1024).toInt();
+        if (tableIdx > 1024) tableIdx = 1024;
         final int bucket = _distBucketTable[tableIdx];
 
         final int off = _rawOffsets[bucket];
