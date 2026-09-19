@@ -60,6 +60,11 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   Offset _gravityDirection = const Offset(0, 1);
   final bool _hoverEffect = false;
 
+  // --- Touch Features Variables ---
+  double _touchSpeed = 0.012;
+  double _touchForce = 0.42;
+  double _maxTouchSpeed = 5.5;
+
   // --- Styling Variables ---
   Color _particleColor = Colors.white;
   Color _lineColor = Colors.white;
@@ -136,6 +141,11 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                 alignment: Alignment.topRight,
                 showChart: _showChart,
                 child: ParticleNetwork(
+                  // touchFeatures: TouchFeatures(
+                  //   speed: _touchSpeed,
+                  //   force: _touchForce,
+                  //   maxTouchSpeed: _maxTouchSpeed,
+                  // ),
                   key: _particleKey,
                   drawNetwork: _drawNetwork,
                   fill: _isFill,
@@ -212,6 +222,8 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           }),
           const Divider(),
           _buildGravitySection(),
+          const Divider(),
+          _buildTouchFeaturesSection(),
         ],
       ),
     );
@@ -275,6 +287,41 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
               ),
             ),
           ],
+        ),
+      ],
+    );
+  }
+
+  /// Builds the touch features configuration section
+  Widget _buildTouchFeaturesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Touch Features Settings",
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 5),
+        _buildSlider(
+          "Touch Speed",
+          _touchSpeed,
+          0.005,
+          0.08,
+          (v) => setState(() => _touchSpeed = v),
+        ),
+        _buildSlider(
+          "Touch Force",
+          _touchForce,
+          0.05,
+          1.5,
+          (v) => setState(() => _touchForce = v),
+        ),
+        _buildSlider(
+          "Max Touch Speed",
+          _maxTouchSpeed,
+          1.0,
+          15.0,
+          (v) => setState(() => _maxTouchSpeed = v),
         ),
       ],
     );
