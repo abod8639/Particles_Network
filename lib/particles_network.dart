@@ -25,6 +25,7 @@ export 'package:particles_network/painter/touch_interaction_handler.dart'
 
 // Importing default particle factory implementation
 import 'model/default_particle_factory.dart';
+import 'painter/touch_interaction_handler.dart';
 
 /// A Flutter widget that renders an interactive particle network visualization.
 ///
