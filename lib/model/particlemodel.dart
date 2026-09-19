@@ -27,6 +27,9 @@ class Particle {
   /// A flag indicating whether the particle was affected by touch interaction.
   bool wasAccelerated = false;
 
+  /// The decay rate used when returning to default velocity after touch acceleration.
+  double decayRate = 0.012;
+
   /// A flag indicating whether the particle is visible within the viewport.
   bool isVisible = true;
 
@@ -66,7 +69,7 @@ class Particle {
 
     // If the particle was accelerated (e.g. by touch), gradually return to default.
     if (wasAccelerated) {
-      velocity = computeVelocity(velocity, defaultVelocity, 0.01);
+      velocity = computeVelocity(velocity, defaultVelocity, 0.01, decayRate);
       // If velocity has returned to default, reset the accelerated flag.
       if (velocity == defaultVelocity) {
         wasAccelerated = false;
@@ -122,16 +125,15 @@ class Particle {
 Offset computeVelocity(
   Offset currentVelocity,
   Offset defaultVelocity,
-  double speedThreshold,
-) {
+  double speedThreshold, [
+  double decayRate = 0.012,
+]) {
   // Use squared difference to avoid expensive sqrt calls
   final double diffSq = (currentVelocity - defaultVelocity).distanceSquared;
   if (diffSq < speedThreshold * speedThreshold) {
     return defaultVelocity;
   }
 
-  // Smooth natural decay towards cruising velocity (~1.5s fluid settling time)
-  const double decayRate = 0.012;
   return Offset.lerp(currentVelocity, defaultVelocity, decayRate) ??
       defaultVelocity;
 }
