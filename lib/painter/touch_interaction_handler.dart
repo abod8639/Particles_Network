@@ -51,13 +51,16 @@ class TouchInteractionHandler {
     final Offset? touch = touchPoint;
     if (touch == null) return; // Exit if no current touch
 
-    final double maxDistSq = lineDistance * lineDistance;
+    final double maxDist = lineDistance;
+    final double maxDistSq = maxDist * maxDist;
     const double force = 0.00111; // Strength of the pull effect
 
     for (final int i in visibleParticles) {
       final Particle p = particles[i];
       final double dx = touch.dx - p.position.dx;
+      if (dx > maxDist || dx < -maxDist) continue;
       final double dy = touch.dy - p.position.dy;
+      if (dy > maxDist || dy < -maxDist) continue;
       final double distSq = dx * dx + dy * dy;
 
       // Only affect particles within the interaction distance (avoid sqrt if out of range)
@@ -81,13 +84,16 @@ class TouchInteractionHandler {
     final Offset? touch = touchPoint;
     if (touch == null) return; // Exit if no current touch
 
-    final double maxDistSq = lineDistance * lineDistance;
-    final double invLineDist = lineDistance > 0 ? 255.0 / lineDistance : 0.0;
+    final double maxDist = lineDistance;
+    final double maxDistSq = maxDist * maxDist;
+    final double invLineDist = maxDist > 0 ? 255.0 / maxDist : 0.0;
 
     for (final int i in visibleParticles) {
       final Particle p = particles[i];
       final double dx = touch.dx - p.position.dx;
+      if (dx > maxDist || dx < -maxDist) continue;
       final double dy = touch.dy - p.position.dy;
+      if (dy > maxDist || dy < -maxDist) continue;
       final double distSq = dx * dx + dy * dy;
 
       // Only draw lines for particles within the connection distance
