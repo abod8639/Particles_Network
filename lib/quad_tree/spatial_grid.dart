@@ -78,7 +78,8 @@ class SpatialGrid {
 
     if (dimensionChanged) {
       if (cellHeads.length < totalCells) {
-        cellHeads = Int32List(totalCells);
+        // Over-allocate by 20% to amortize reallocation cost during resize
+        cellHeads = Int32List((totalCells * 1.2).ceil());
       }
       cellHeads.fillRange(0, totalCells, -1);
       activeCellsCount = 0;
@@ -92,7 +93,8 @@ class SpatialGrid {
 
     final int visibleCount = visibleIndices.length;
     if (activeCells.length < visibleCount) {
-      activeCells = Int32List(visibleCount);
+      // Over-allocate by 25% to amortize growth on particle count increase
+      activeCells = Int32List((visibleCount * 1.25).ceil());
     }
 
     // Grow particle next pointers buffer if needed
