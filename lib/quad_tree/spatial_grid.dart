@@ -39,6 +39,12 @@ class SpatialGrid {
   /// Next pointers linking particles belonging to the same cell.
   Int32List particleNext = Int32List(0);
 
+  /// Indices of currently populated cells for O(N) clearing and direct traversal.
+  Int32List activeCells = Int32List(0);
+
+  /// Number of active populated cells in the current frame.
+  int activeCellsCount = 0;
+
   /// Creates a [SpatialGrid] with the specified [cellSize].
   SpatialGrid({required this.cellSize})
       : invCellSize = cellSize > 0 ? 1.0 / cellSize : 0.0;
@@ -52,6 +58,7 @@ class SpatialGrid {
   /// Builds or rebuilds the spatial grid from visible particles.
   ///
   /// Reuses existing [Int32List] buffers without allocating objects on the heap.
+  /// Achieves O(N) build and reset complexity by tracking active cells.
   void build(
     List<Particle> particles,
     List<int> visibleIndices,
@@ -64,14 +71,29 @@ class SpatialGrid {
     final int newRows = (height * invCellSize).ceil() + 1;
     final int totalCells = newCols * newRows;
 
+    final bool dimensionChanged =
+        newCols != cols || newRows != rows || cellHeads.length < totalCells;
     cols = newCols;
     rows = newRows;
 
-    // Grow cell heads buffer if needed
-    if (cellHeads.length < totalCells) {
-      cellHeads = Int32List(totalCells);
+    if (dimensionChanged) {
+      if (cellHeads.length < totalCells) {
+        cellHeads = Int32List(totalCells);
+      }
+      cellHeads.fillRange(0, totalCells, -1);
+      activeCellsCount = 0;
+    } else {
+      // Fast O(N) reset: only clear cells that had particles in the previous frame
+      for (int i = 0; i < activeCellsCount; i++) {
+        cellHeads[activeCells[i]] = -1;
+      }
+      activeCellsCount = 0;
     }
-    cellHeads.fillRange(0, totalCells, -1);
+
+    final int visibleCount = visibleIndices.length;
+    if (activeCells.length < visibleCount) {
+      activeCells = Int32List(visibleCount);
+    }
 
     // Grow particle next pointers buffer if needed
     final int n = particles.length;
@@ -79,13 +101,12 @@ class SpatialGrid {
       particleNext = Int32List(n);
     }
 
-    final int visibleCount = visibleIndices.length;
     for (int i = 0; i < visibleCount; i++) {
       final int idx = visibleIndices[i];
       final Particle p = particles[idx];
 
-      int cx = (p.position.dx * invCellSize).toInt();
-      int cy = (p.position.dy * invCellSize).toInt();
+      int cx = (p.x * invCellSize).toInt();
+      int cy = (p.y * invCellSize).toInt();
 
       if (cx < 0) {
         cx = 0;
@@ -100,7 +121,11 @@ class SpatialGrid {
       }
 
       final int cell = cy * cols + cx;
-      particleNext[idx] = cellHeads[cell];
+      final int currentHead = cellHeads[cell];
+      if (currentHead == -1) {
+        activeCells[activeCellsCount++] = cell;
+      }
+      particleNext[idx] = currentHead;
       cellHeads[cell] = idx;
     }
   }
@@ -144,9 +169,17 @@ class SpatialGrid {
   /// Clears the grid state.
   void clear() {
     if (cellHeads.isNotEmpty) {
-      cellHeads.fillRange(0, cellHeads.length, -1);
+      if (activeCellsCount > 0) {
+        for (int i = 0; i < activeCellsCount; i++) {
+          cellHeads[activeCells[i]] = -1;
+        }
+        activeCellsCount = 0;
+      } else {
+        cellHeads.fillRange(0, cellHeads.length, -1);
+      }
     }
     cols = 0;
     rows = 0;
   }
 }
+
