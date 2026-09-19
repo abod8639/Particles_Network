@@ -180,6 +180,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
       particleColor: widget.particleColor,
       lineColor: widget.lineColor,
       touchColor: widget.touchColor,
+      touchFeatures: widget.touchFeatures,
       repaint: frameNotifier,
     );
   }
