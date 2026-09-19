@@ -4,6 +4,7 @@
 /// and configuration objects ([GravityConfig]) used by the system.
 library;
 
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:particles_network/model/particlemodel.dart';
@@ -89,28 +90,32 @@ class ParticleUpdater implements IParticleController {
   }) {
     final bool hasGlobalGravity =
         gravity.type == GravityType.global && gravity.strength != 0;
-    final Offset globalForce =
-        hasGlobalGravity ? gravity.direction * gravity.strength : Offset.zero;
+    final double gStrength = gravity.strength;
+    final double gfx =
+        hasGlobalGravity ? gravity.direction.dx * gStrength : 0.0;
+    final double gfy =
+        hasGlobalGravity ? gravity.direction.dy * gStrength : 0.0;
+    final bool isPointGravity =
+        gravity.type == GravityType.point && gStrength != 0;
+    final double cx = gravity.center.dx;
+    final double cy = gravity.center.dy;
 
-    // Process each particle
-    for (final Particle p in particles) {
+    final int count = particles.length;
+    for (int i = 0; i < count; i++) {
+      final Particle p = particles[i];
       if (hasGlobalGravity) {
-        p.applyForce(globalForce);
-      } else if (gravity.type == GravityType.point && gravity.strength != 0) {
-        _applyPointGravity(p, gravity);
+        p.applyForceRaw(gfx, gfy);
+      } else if (isPointGravity) {
+        final double dx = cx - p.x;
+        final double dy = cy - p.y;
+        final double distSq = dx * dx + dy * dy;
+        if (distSq > 0) {
+          final double invDist = 1.0 / math.sqrt(distSq);
+          p.applyForceRaw(dx * invDist * gStrength, dy * invDist * gStrength);
+        }
       }
       p.update(bounds);
     }
   }
-
-  void _applyPointGravity(Particle p, GravityConfig config) {
-    // Point gravity: force directed towards a specific center point
-    final Offset delta = config.center - p.position;
-    final double distance = delta.distance;
-
-    if (distance > 0) {
-      final Offset force = (delta / distance) * config.strength;
-      p.applyForce(force);
-    }
-  }
 }
+
