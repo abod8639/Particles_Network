@@ -63,13 +63,13 @@ class TouchInteractionHandler {
   final double lineDistance;
 
   // Color to use for touch interactions
-  final Color touchColor;
+  Color touchColor;
 
   // Paint object for drawing touch interaction lines
   final Paint linePaint;
 
   // Configuration for touch features and physics
-  final TouchFeatures touchFeatures;
+  TouchFeatures touchFeatures;
 
   // Constructor for the touch interaction handler
   TouchInteractionHandler({
@@ -85,11 +85,22 @@ class TouchInteractionHandler {
   final int test = 0;
   final double force = 0.00111;
   // Precomputed color look-up table for touch lines (zero allocation)
-  late final List<Color> _touchColorLut = List<Color>.generate(
+  late List<Color> _touchColorLut = List<Color>.generate(
     256,
     (int a) => touchColor.withAlpha(a),
     growable: false,
   );
+
+  /// Rebuilds the touch color LUT with a new color — called by the painter
+  /// to avoid full reconstruction when only the touch color changes.
+  void rebuildTouchColorLut(Color newColor) {
+    touchColor = newColor;
+    _touchColorLut = List<Color>.generate(
+      256,
+      (int a) => newColor.withAlpha(a),
+      growable: false,
+    );
+  }
 
   // Applies touch physics to visible particles
   // [visibleParticles] - List of indices of currently visible particles

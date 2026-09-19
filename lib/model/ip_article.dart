@@ -110,8 +110,9 @@ class ParticleUpdater implements IParticleController {
         final double dy = cy - p.y;
         final double distSq = dx * dx + dy * dy;
         if (distSq > 0) {
-          final double invDist = 1.0 / math.sqrt(distSq);
-          p.applyForceRaw(dx * invDist * gStrength, dy * invDist * gStrength);
+          // Precompute scale = strength/dist in one step (saves one multiply vs invDist * gStrength)
+          final double scale = gStrength / math.sqrt(distSq);
+          p.applyForceRaw(dx * scale, dy * scale);
         }
       }
       p.update(bounds);

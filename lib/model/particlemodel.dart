@@ -114,6 +114,9 @@ class Particle {
   }
 
   /// Updates the particle's position and velocity based on its current state with zero allocations.
+  ///
+  /// Boundary collision detection and visibility update are inlined here to
+  /// eliminate 2 virtual method calls per particle per frame on the hot path.
   void update(Size bounds) {
     // Apply accumulated acceleration to velocity
     vx += ax;
@@ -131,23 +134,48 @@ class Particle {
     if (wasAccelerated) {
       final double diffX = vx - defaultVx;
       final double diffY = vy - defaultVy;
-      final double diffSq = diffX * diffX + diffY * diffY;
       const double speedThreshold = 0.01;
-      if (diffSq < speedThreshold * speedThreshold) {
+      if (diffX * diffX + diffY * diffY < speedThreshold * speedThreshold) {
         vx = defaultVx;
         vy = defaultVy;
         wasAccelerated = false;
       } else {
-        vx = vx + (defaultVx - vx) * decayRate;
-        vy = vy + (defaultVy - vy) * decayRate;
+        vx += (defaultVx - vx) * decayRate;
+        vy += (defaultVy - vy) * decayRate;
       }
     }
 
-    // Handle collisions with the screen boundaries.
-    handleScreenBoundaries(bounds);
+    // Inlined boundary + visibility in a single pass —
+    // avoids 2 virtual dispatch calls (handleScreenBoundaries + updateVisibility).
+    final double w = bounds.width;
+    final double h = bounds.height;
 
-    // Update the visibility status of the particle.
-    updateVisibility(bounds);
+    if (x < 0) {
+      if (vx < 0) {
+        vx = -vx;
+        defaultVx = -defaultVx;
+      }
+    } else if (x > w) {
+      if (vx > 0) {
+        vx = -vx;
+        defaultVx = -defaultVx;
+      }
+    }
+
+    if (y < 0) {
+      if (vy < 0) {
+        vy = -vy;
+        defaultVy = -defaultVy;
+      }
+    } else if (y > h) {
+      if (vy > 0) {
+        vy = -vy;
+        defaultVy = -defaultVy;
+      }
+    }
+
+    const double margin = 50.0;
+    isVisible = x >= -margin && x <= w + margin && y >= -margin && y <= h + margin;
   }
 
   /// Handles collisions with the screen boundaries by reversing the velocity.

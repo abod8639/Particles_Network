@@ -41,40 +41,40 @@ class OptimizedNetworkPainter extends CustomPainter {
   Offset? touchPoint;
 
   /// The maximum distance (in pixels) for connection lines to be drawn.
-  final double lineDistance;
+  double lineDistance;
 
   /// The base color for rendering particles.
-  final Color particleColor;
+  Color particleColor;
 
   /// The color used for connecting lines between particles.
-  final Color lineColor;
+  Color lineColor;
 
   /// The color used to highlight particles near a touch point.
-  final Color touchColor;
+  Color touchColor;
 
   /// Whether touch interaction effects are enabled.
-  final bool touchActivation;
+  bool touchActivation;
 
   /// The total number of particles, used for pre-allocation optimizations.
   final int particleCount;
 
   /// The width of the connecting lines.
-  final double lineWidth;
+  double lineWidth;
 
   /// Whether to use complex (high-quality) or optimized painting logic.
-  final bool isComplex;
+  bool isComplex;
 
   /// Whether to fill particles (true) or draw them as outlines (false).
-  final bool fill;
+  bool fill;
 
   /// Whether to draw the web of connection lines between particles.
-  final bool drawNetwork;
+  bool drawNetwork;
 
   /// Whether to visualize the underlying QuadTree structure for debugging.
   final bool showQuadTree;
 
   /// Advanced touch interaction features and physics configuration.
-  final TouchFeatures touchFeatures;
+  TouchFeatures touchFeatures;
 
   // Optimized sub-components
   late final TouchInteractionHandler _touchHandler;
@@ -106,7 +106,7 @@ class OptimizedNetworkPainter extends CustomPainter {
   late final Int32List _rawOffsets;
   late final List<Paint> _lineBucketPaints;
   late final Int32List _distBucketTable;
-  late final double _invMaxDistSq;
+  late double _invMaxDistSq;
 
   // Precomputed color look-up table for zero-allocation alpha line rendering
   late final List<Color> _lineColorLut;
@@ -712,6 +712,97 @@ class OptimizedNetworkPainter extends CustomPainter {
     } finally {
       _intListPool.release(nearbyIndices);
     }
+  }
+
+  // ─── Live-update methods ───────────────────────────────────────────────────────────────
+  // Update painter config in-place without reconstructing the full painter or
+  // its pre-allocated buffers. Called from ParticleNetworkState.didUpdateWidget.
+
+  /// Updates particle and line colors in-place.
+  void updateColors({
+    Color? particleColor,
+    Color? lineColor,
+    Color? touchColor,
+  }) {
+    if (particleColor != null && particleColor != this.particleColor) {
+      this.particleColor = particleColor;
+      particlePaint.color = particleColor;
+    }
+    if (lineColor != null && lineColor != this.lineColor) {
+      this.lineColor = lineColor;
+      linePaint.color = lineColor;
+      _rebuildLineLut(lineColor);
+    }
+    if (touchColor != null && touchColor != this.touchColor) {
+      this.touchColor = touchColor;
+      _touchHandler.rebuildTouchColorLut(touchColor);
+    }
+  }
+
+  // Rebuilds the line color LUT and bucket paint colors in-place (O(N_buckets)).
+  void _rebuildLineLut(Color color) {
+    for (int i = 0; i < 256; i++) {
+      _lineColorLut[i] = color.withAlpha(i);
+    }
+    for (int b = 0; b < _numLineBuckets; b++) {
+      final int alpha = (((b + 1) * 255) ~/ _numLineBuckets).clamp(0, 255);
+      _lineBucketPaints[b].color = color.withAlpha(alpha);
+    }
+  }
+
+  /// Updates stroke width in-place.
+  void updateLineWidth(double width) {
+    if (width == lineWidth) return;
+    lineWidth = width;
+    linePaint.strokeWidth = width;
+    for (int b = 0; b < _numLineBuckets; b++) {
+      _lineBucketPaints[b].strokeWidth = width;
+    }
+  }
+
+  /// Updates connection distance and recomputes dependent lookup tables.
+  void updateLineDistance(double distance) {
+    if (distance == lineDistance) return;
+    lineDistance = distance;
+    _spatialGrid.updateCellSize(distance > 0 ? distance : 100.0);
+    final double maxDistSq = distance * distance;
+    _invMaxDistSq = maxDistSq > 0 ? 1.0 / maxDistSq : 0.0;
+    // Rebuild distance-to-bucket LUT
+    for (int i = 0; i <= 1024; i++) {
+      final double ratio = math.sqrt(i / 1024.0);
+      _distBucketTable[i] =
+          ((1.0 - ratio) * (_numLineBuckets - 1)).round().clamp(0, _numLineBuckets - 1);
+    }
+  }
+
+  /// Updates rendering mode flags without rebuilding.
+  void updateRenderFlags({
+    bool? drawNetwork,
+    bool? fill,
+    bool? isComplex,
+    bool? touchActivation,
+  }) {
+    if (drawNetwork != null) this.drawNetwork = drawNetwork;
+    if (touchActivation != null) this.touchActivation = touchActivation;
+    if (fill != null && fill != this.fill) {
+      this.fill = fill;
+      particlePaint.style = fill ? PaintingStyle.fill : PaintingStyle.stroke;
+    }
+    if (isComplex != null && isComplex != this.isComplex) {
+      this.isComplex = isComplex;
+      particlePaint.isAntiAlias = !isComplex;
+      linePaint.isAntiAlias = !isComplex;
+      for (int b = 0; b < _numLineBuckets; b++) {
+        _lineBucketPaints[b].isAntiAlias = !isComplex;
+      }
+      _quadTreeManager.rebuildInterval = isComplex ? 6 : 3;
+    }
+  }
+
+  /// Updates touch physics configuration without rebuilding.
+  void updateTouchFeatures(TouchFeatures features) {
+    touchFeatures = features;
+    _touchHandler.touchFeatures = features;
   }
 
   @override

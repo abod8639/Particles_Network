@@ -549,7 +549,7 @@ class _FPSState extends State<FPS> with SingleTickerProviderStateMixin {
   late final flutter_scheduler.Ticker _ticker;
   final ListQueue<Duration> _timings = ListQueue();
   final ValueNotifier<double> _fpsNotifier = ValueNotifier(0.0);
-  final List<double> _fpsHistory = [];
+  final ListQueue<double> _fpsHistory = ListQueue();
 
   @override
   void initState() {
@@ -579,9 +579,9 @@ class _FPSState extends State<FPS> with SingleTickerProviderStateMixin {
         _fpsNotifier.value = currentFps;
 
         if (widget.showChart) {
-          _fpsHistory.add(currentFps);
+          _fpsHistory.addLast(currentFps);
           if (_fpsHistory.length > _maxTimingsLength) {
-            _fpsHistory.removeAt(0);
+            _fpsHistory.removeFirst(); // O(1) vs O(n) removeAt(0) on List
           }
         }
       }
@@ -691,7 +691,7 @@ class _FPSState extends State<FPS> with SingleTickerProviderStateMixin {
 class _FPSChartPainter extends CustomPainter {
   _FPSChartPainter(this.values, this.color);
 
-  final List<double> values;
+  final ListQueue<double> values;
   final Color color;
 
   static const double _maxFps = 72.0;
@@ -715,11 +715,14 @@ class _FPSChartPainter extends CustomPainter {
     final fillPath = Path();
 
     final double stepX = size.width / _chartWidth;
+    final int count = values.length;
+    final int lastIdx = count - 1;
+    int i = 0;
 
-    for (int i = 0; i < values.length; i++) {
-      final x = i * stepX;
-      final y = size.height -
-          (values[i] / _maxFps * size.height).clamp(0.0, size.height);
+    for (final double fpsVal in values) {
+      final double x = i * stepX;
+      final double y = size.height -
+          (fpsVal / _maxFps * size.height).clamp(0.0, size.height);
 
       if (i == 0) {
         path.moveTo(x, y);
@@ -730,10 +733,11 @@ class _FPSChartPainter extends CustomPainter {
         fillPath.lineTo(x, y);
       }
 
-      if (i == values.length - 1) {
+      if (i == lastIdx) {
         fillPath.lineTo(x, size.height);
         fillPath.close();
       }
+      i++;
     }
 
     canvas.drawPath(fillPath, fillPaint);

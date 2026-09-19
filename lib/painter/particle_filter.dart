@@ -34,6 +34,10 @@ class ParticleFilter {
   // Time Complexity: O(n) - linear scan through all particles
   // Space Complexity: O(k) - where k is number of visible particles
   // Memory Allocations: 1 (for the result list)
+  @Deprecated(
+    'Allocates a new List<int> every call. '
+    'Use getVisibleParticlesTo(particles, existingList) to reuse a pre-allocated buffer.',
+  )
   static List<int> getVisibleParticles(List<Particle> particles) {
     // Pre-allocate list for visible particle indices
     final List<int> visibleParticles = <int>[];

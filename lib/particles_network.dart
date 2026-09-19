@@ -268,18 +268,45 @@ class ParticleNetworkState extends State<ParticleNetwork>
       _updateGravityConfig();
     }
 
+    // --- Targeted painter updates — no full reconstruction needed ---
+
+    // Colors: mutates Paint objects and LUTs directly in-place
+    if (widget.particleColor != oldWidget.particleColor ||
+        widget.lineColor != oldWidget.lineColor ||
+        widget.touchColor != oldWidget.touchColor) {
+      _painter.updateColors(
+        particleColor: widget.particleColor,
+        lineColor: widget.lineColor,
+        touchColor: widget.touchColor,
+      );
+    }
+
+    // Line stroke width: updates Paint.strokeWidth on all relevant paints
+    if (widget.lineWidth != oldWidget.lineWidth) {
+      _painter.updateLineWidth(widget.lineWidth);
+    }
+
+    // Line distance: updates SpatialGrid cell size + LUT rebuild
+    if (widget.lineDistance != oldWidget.lineDistance) {
+      _painter.updateLineDistance(widget.lineDistance);
+    }
+
+    // Boolean render flags
     if (widget.drawNetwork != oldWidget.drawNetwork ||
         widget.fill != oldWidget.fill ||
         widget.isComplex != oldWidget.isComplex ||
-        widget.lineWidth != oldWidget.lineWidth ||
-        widget.particleCount != oldWidget.particleCount ||
-        widget.touchActivation != oldWidget.touchActivation ||
-        widget.lineDistance != oldWidget.lineDistance ||
-        widget.particleColor != oldWidget.particleColor ||
-        widget.lineColor != oldWidget.lineColor ||
-        widget.touchColor != oldWidget.touchColor ||
-        widget.touchFeatures != oldWidget.touchFeatures) {
-      _initPainter();
+        widget.touchActivation != oldWidget.touchActivation) {
+      _painter.updateRenderFlags(
+        drawNetwork: widget.drawNetwork,
+        fill: widget.fill,
+        isComplex: widget.isComplex,
+        touchActivation: widget.touchActivation,
+      );
+    }
+
+    // Touch physics configuration
+    if (widget.touchFeatures != oldWidget.touchFeatures) {
+      _painter.updateTouchFeatures(widget.touchFeatures);
     }
   }
 
