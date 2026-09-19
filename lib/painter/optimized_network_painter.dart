@@ -73,6 +73,9 @@ class OptimizedNetworkPainter extends CustomPainter {
   /// Whether to visualize the underlying QuadTree structure for debugging.
   final bool showQuadTree;
 
+  /// Advanced touch interaction features and physics configuration.
+  final TouchFeatures touchFeatures;
+
   // Optimized sub-components
   late final TouchInteractionHandler _touchHandler;
   late final CompressedQuadTree _quadTree; // Changed to CompressedQuadTree
@@ -120,6 +123,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     required this.isComplex,
     required this.fill,
     required this.drawNetwork,
+    this.touchFeatures = const TouchFeatures(),
     this.showQuadTree = false, // Default to false
     super.repaint,
   }) {
@@ -199,6 +203,7 @@ class OptimizedNetworkPainter extends CustomPainter {
       lineDistance: lineDistance,
       touchColor: touchColor,
       linePaint: linePaint,
+      touchFeatures: touchFeatures,
     );
   }
 
@@ -587,6 +592,7 @@ class OptimizedNetworkPainter extends CustomPainter {
         _accelerationTracker.hadAcceleratedParticles ||
         oldDelegate.lineDistance != lineDistance ||
         oldDelegate.particleColor != particleColor ||
-        oldDelegate.lineColor != lineColor;
+        oldDelegate.lineColor != lineColor ||
+        oldDelegate.touchFeatures != touchFeatures;
   }
 }
