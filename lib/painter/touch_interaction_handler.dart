@@ -5,6 +5,52 @@ import 'dart:ui';
 import 'package:particles_network/model/particlemodel.dart';
 import 'package:particles_network/painter/performance_utils.dart';
 
+/// Configuration class for touch interaction behavior and physics.
+class TouchFeatures {
+  /// The recovery/settling decay rate after touch release [default: 0.012].
+  /// Controls how gradually particles return to cruising speed after being dragged/touched.
+  final double speed;
+
+  /// Attraction pull force towards touch point [default: 0.42].
+  final double force;
+
+  /// Maximum velocity cap for particles during touch interaction [default: 5.5].
+  final double maxTouchSpeed;
+
+  /// Fluid damping factor applied to particles inside the touch field [default: 0.985].
+  final double damping;
+
+  /// Creates a [TouchFeatures] configuration.
+  const TouchFeatures({
+    double? speed,
+    double? decayRate,
+    double? force,
+    double? pullForce,
+    this.maxTouchSpeed = 5.5,
+    this.damping = 0.985,
+  })  : speed = speed ?? decayRate ?? 0.012,
+        force = force ?? pullForce ?? 0.42;
+
+  /// Alias for [speed] (decay rate).
+  double get decayRate => speed;
+
+  /// Alias for [force] (pull force).
+  double get pullForce => force;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TouchFeatures &&
+          runtimeType == other.runtimeType &&
+          speed == other.speed &&
+          force == other.force &&
+          maxTouchSpeed == other.maxTouchSpeed &&
+          damping == other.damping;
+
+  @override
+  int get hashCode => Object.hash(speed, force, maxTouchSpeed, damping);
+}
+
 /// Class that handles touch interactions with particles
 class TouchInteractionHandler {
   // List of all particles in the network
@@ -22,6 +68,9 @@ class TouchInteractionHandler {
   // Paint object for drawing touch interaction lines
   final Paint linePaint;
 
+  // Configuration for touch features and physics
+  final TouchFeatures touchFeatures;
+
   // Constructor for the touch interaction handler
   TouchInteractionHandler({
     required this.particles,
@@ -29,6 +78,7 @@ class TouchInteractionHandler {
     required this.lineDistance,
     required this.touchColor,
     required this.linePaint,
+    this.touchFeatures = const TouchFeatures(),
   });
 
   // Test variable (kept for API compatibility)
@@ -78,18 +128,18 @@ class TouchInteractionHandler {
         final double ny = dy * invDist;
 
         // Stronger, responsive pull force for fluid drag response
-        const double pullForce = 0.42;
+        final double pullForce = touchFeatures.force;
         double vx = p.velocity.dx + nx * (pullForce * falloff);
         double vy = p.velocity.dy + ny * (pullForce * falloff);
 
-        // Light fluid damping to preserve momentum and allow particles to sling through
-        const double touchDamping = 0.985;
+        // Fluid damping to preserve momentum and allow particles to sling through
+        final double touchDamping = touchFeatures.damping;
         vx *= touchDamping;
         vy *= touchDamping;
 
-        // Higher terminal speed limit for lively, agile motion during drag
+        // Terminal speed limit from touchFeatures
         final double speedSq = vx * vx + vy * vy;
-        const double maxTouchSpeed = 5.5;
+        final double maxTouchSpeed = touchFeatures.maxTouchSpeed;
         if (speedSq > maxTouchSpeed * maxTouchSpeed) {
           final double scale = maxTouchSpeed / math.sqrt(speedSq);
           vx *= scale;
@@ -98,7 +148,8 @@ class TouchInteractionHandler {
 
         p.velocity = Offset(vx, vy);
 
-        // Mark particle as accelerated for visual feedback
+        // Mark particle as accelerated and apply configured recovery speed
+        p.decayRate = touchFeatures.speed;
         p.wasAccelerated = true;
         // Record acceleration for efficient shouldRepaint
         tracker.recordAcceleration();
