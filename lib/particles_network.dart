@@ -337,11 +337,13 @@ class ParticleNetworkState extends State<ParticleNetwork>
             onPanEnd: (_) => _updateTouchPoint(Offset.infinite), // Touch ended
             onPanCancel: () => _updateTouchPoint(Offset.infinite), // Touch cancelled
 
-            child: CustomPaint(
-              painter: _painter,
-              isComplex: widget.isComplex,
-              willChange: true, // Widget will change frequently (animation)
-              child: const SizedBox.expand(), // Fill available space
+            child: RepaintBoundary(
+              child: CustomPaint(
+                painter: _painter,
+                isComplex: widget.isComplex,
+                willChange: true, // Widget will change frequently (animation)
+                child: const SizedBox.expand(), // Fill available space
+              ),
             ),
           ),
         );
