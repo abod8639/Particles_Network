@@ -94,4 +94,60 @@ void main() {
       'Rendering (500 particles, 100 frames): ${stopwatch.elapsedMilliseconds}ms',
     );
   });
+
+  test('Performance Benchmark: High-Density Rendering (1000 particles)', () {
+    const int particleCount = 1000;
+    const Size size = Size(1000, 1000);
+    final Random random = Random(42);
+
+    final factory = DefaultParticleFactory(
+      random: random,
+      maxSpeed: 1.0,
+      maxSize: 2.0,
+      color: Colors.white,
+    );
+
+    final List<Particle> particles = List.generate(
+      particleCount,
+      (_) => factory.createParticle(size),
+    );
+
+    final painter = OptimizedNetworkPainter(
+      particleCount: particleCount,
+      particles: particles,
+      touchPoint: const Offset(500, 500),
+      lineDistance: 100,
+      particleColor: Colors.white,
+      lineColor: Colors.blue,
+      touchColor: Colors.red,
+      touchActivation: true,
+      lineWidth: 1.0,
+      isComplex: true,
+      fill: true,
+      drawNetwork: true,
+    );
+
+    final recorder = PictureRecorder();
+    final canvas = Canvas(recorder);
+
+    // Warm-up
+    for (int i = 0; i < 5; i++) {
+      painter.paint(canvas, size);
+    }
+
+    final stopwatch = Stopwatch()..start();
+    const int frames = 50;
+    for (int i = 0; i < frames; i++) {
+      painter.paint(canvas, size);
+    }
+    stopwatch.stop();
+
+    final msPerFrame = stopwatch.elapsedMicroseconds / (frames * 1000);
+    print(
+      'High-Density Rendering (2000 particles, $frames frames): ${stopwatch.elapsedMilliseconds}ms (${msPerFrame.toStringAsFixed(2)}ms/frame)',
+    );
+
+    // Frame time for 1000 particles in headless CPU test environment
+    expect(msPerFrame, lessThan(100.0));
+  });
 }
