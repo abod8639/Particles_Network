@@ -20,6 +20,8 @@ export 'package:particles_network/model/ip_article.dart'
 export 'package:particles_network/model/particlemodel.dart' show Particle;
 export 'package:particles_network/model/trajectory_buffer.dart'
     show TrajectoryBuffer;
+export 'package:particles_network/painter/touch_interaction_handler.dart'
+    show TouchFeatures;
 
 // Importing default particle factory implementation
 import 'model/default_particle_factory.dart';
@@ -107,6 +109,9 @@ class ParticleNetwork extends StatefulWidget {
   /// If null, hover effects will be enabled by default.
   final bool? hoverEffect;
 
+  /// Advanced touch interaction features and physics configuration.
+  final TouchFeatures touchFeatures;
+
   /// Creates a [ParticleNetwork] widget with customizable visualization parameters.
   const ParticleNetwork({
     super.key,
@@ -127,6 +132,7 @@ class ParticleNetwork extends StatefulWidget {
     this.gravityDirection = const Offset(0, 1),
     this.gravityCenter,
     this.hoverEffect = false,
+    this.touchFeatures = const TouchFeatures(),
   });
 
   @override
