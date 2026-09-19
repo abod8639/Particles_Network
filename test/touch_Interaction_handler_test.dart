@@ -106,6 +106,60 @@ void main() {
       expect(customPaintFinder, findsOneWidget);
     });
   });
+
+  group('TouchFeatures', () {
+    test('default values are set correctly', () {
+      const features = TouchFeatures();
+      expect(features.speed, equals(0.012));
+      expect(features.decayRate, equals(0.012));
+      expect(features.force, equals(0.42));
+      expect(features.pullForce, equals(0.42));
+      expect(features.maxTouchSpeed, equals(5.5));
+      expect(features.damping, equals(0.985));
+    });
+
+    test('custom values and aliases are supported', () {
+      const features = TouchFeatures(
+        speed: 0.02,
+        force: 0.8,
+        maxTouchSpeed: 10.0,
+        damping: 0.95,
+      );
+      expect(features.speed, equals(0.02));
+      expect(features.decayRate, equals(0.02));
+      expect(features.force, equals(0.8));
+      expect(features.maxTouchSpeed, equals(10.0));
+      expect(features.damping, equals(0.95));
+    });
+
+    test('applies custom TouchFeatures to particle acceleration and decayRate', () {
+      final p = Particle(
+        position: const Offset(100, 100),
+        velocity: Offset.zero,
+        color: Colors.white,
+        size: 2,
+      );
+      final handler = TouchInteractionHandler(
+        particles: [p],
+        touchPoint: const Offset(110, 110),
+        lineDistance: 100.0,
+        touchColor: Colors.amber,
+        linePaint: Paint(),
+        touchFeatures: const TouchFeatures(
+          speed: 0.025,
+          force: 1.2,
+          maxTouchSpeed: 8.0,
+        ),
+      );
+
+      final tracker = AccelerationTracker();
+      handler.applyTouchPhysics([0], tracker);
+
+      expect(p.wasAccelerated, isTrue);
+      expect(p.decayRate, equals(0.025));
+      expect(p.velocity.distance, lessThanOrEqualTo(8.0));
+    });
+  });
 }
 
 // فئة CustomPainter لاختبار الرسم
