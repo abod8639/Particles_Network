@@ -118,17 +118,9 @@ class OptimizedNetworkPainter extends CustomPainter {
   // Ultra-performance single draw-call line buffer
   Float32List _unifiedLineBuffer = Float32List(4096);
   int _unifiedLineCount = 0;
-  late int _baseLineRgb;
 
   // Connection count tracking buffer for strict O(N) capping
   Int32List _connectionCounts = Int32List(0);
-
-  static int _extractRgb(Color c) {
-    final int r = (c.r * 255.0).round().clamp(0, 255);
-    final int g = (c.g * 255.0).round().clamp(0, 255);
-    final int b = (c.b * 255.0).round().clamp(0, 255);
-    return (r << 16) | (g << 8) | b;
-  }
 
   /// Constructor with dependency initialization
   OptimizedNetworkPainter({
@@ -154,7 +146,6 @@ class OptimizedNetworkPainter extends CustomPainter {
   }) : fastLineRendering =
             fastLineRendering ?? useVerticesRendering ?? false {
     final int baseAlpha = (lineColor.a * 255.0).round().clamp(0, 255);
-    _baseLineRgb = _extractRgb(lineColor);
     _lineColorLut = List<Color>.generate(
       256,
       (int alpha) => lineColor.withAlpha((alpha * baseAlpha) ~/ 255),
