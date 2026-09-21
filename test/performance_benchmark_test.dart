@@ -3,10 +3,7 @@ import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:particles_network/model/default_particle_factory.dart';
-import 'package:particles_network/model/ip_article.dart';
-import 'package:particles_network/model/particlemodel.dart';
-import 'package:particles_network/painter/optimized_network_painter.dart';
+import 'package:particles_network/particles_network.dart';
 
 void main() {
   test('Benchmark 500 particles simulation and paint', () {
