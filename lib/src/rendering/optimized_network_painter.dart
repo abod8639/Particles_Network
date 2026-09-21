@@ -688,6 +688,7 @@ class OptimizedNetworkPainter extends CustomPainter {
   void updateLineDistance(double distance) {
     if (distance == lineDistance) return;
     lineDistance = distance;
+    _touchHandler.lineDistance = distance;
     _spatialGrid.updateCellSize(distance > 0 ? distance : 100.0);
     final double maxDistSq = distance * distance;
     _invMaxDistSq = maxDistSq > 0 ? 1.0 / maxDistSq : 0.0;
