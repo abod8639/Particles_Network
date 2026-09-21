@@ -1001,7 +1001,6 @@ class OptimizedNetworkPainter extends CustomPainter {
 
   void _rebuildLineLut(Color color) {
     final int baseAlpha = (color.a * 255.0).round().clamp(0, 255);
-    _baseLineRgb = _extractRgb(color);
     for (int i = 0; i < 256; i++) {
       _lineColorLut[i] = color.withAlpha((i * baseAlpha) ~/ 255);
     }
