@@ -159,6 +159,51 @@ void main() {
       expect(p.decayRate, equals(0.025));
       expect(p.velocity.distance, lessThanOrEqualTo(8.0));
     });
+
+    test('equality and hashCode work as expected', () {
+      const f1 = TouchFeatures(
+        speed: 0.02,
+        force: 0.5,
+        maxTouchSpeed: 6.0,
+        damping: 0.9,
+        lineDistance: 80.0,
+      );
+      const f2 = TouchFeatures(
+        speed: 0.02,
+        force: 0.5,
+        maxTouchSpeed: 6.0,
+        damping: 0.9,
+        lineDistance: 80.0,
+      );
+      const f3 = TouchFeatures(
+        speed: 0.03,
+        force: 0.5,
+        maxTouchSpeed: 6.0,
+        damping: 0.9,
+        lineDistance: 80.0,
+      );
+      const f4 = TouchFeatures(
+        speed: 0.02,
+        force: 0.5,
+        maxTouchSpeed: 6.0,
+        damping: 0.9,
+        lineDistance: 120.0,
+      );
+
+      expect(f1, equals(f2));
+      expect(f1.hashCode, equals(f2.hashCode));
+      expect(f1 == f3, isFalse);
+      expect(f1 == f4, isFalse);
+      expect(f1 == Object(), isFalse);
+    });
+
+    test('lineDistance defaults to null and can be configured', () {
+      const defaultFeatures = TouchFeatures();
+      expect(defaultFeatures.lineDistance, isNull);
+
+      const customFeatures = TouchFeatures(lineDistance: 150.0);
+      expect(customFeatures.lineDistance, equals(150.0));
+    });
   });
 }
 
