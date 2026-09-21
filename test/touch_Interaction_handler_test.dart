@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/mockito.dart';
 import 'package:particles_network/particles_network.dart';
 
-// Assuming the Particle class is here
+import 'mocks/mock_canvas.mocks.dart';
 
 void main() {
   group('TouchInteractionHandler - applyTouchPhysics', () {
@@ -47,9 +48,67 @@ void main() {
       expect(particles[1].velocity, Offset.zero);
       expect(tracker.acceleratedParticleCount, greaterThan(0));
     });
+
+    test('clamps velocity to maxTouchSpeed when speedSq > maxTouchSpeedSq (L113-L117)', () {
+      final p = Particle(
+        position: const Offset(90, 90),
+        velocity: Offset.zero,
+        color: Colors.white,
+        size: 2,
+      );
+
+      const double maxTouchSpeed = 4.0;
+      final handler = TouchInteractionHandler(
+        particles: [p],
+        touchPoint: const Offset(100, 100),
+        lineDistance: 100.0,
+        touchColor: Colors.amber,
+        linePaint: Paint(),
+        touchFeatures: const TouchFeatures(
+          force: 50.0, // strong force that exceeds terminal velocity
+          maxTouchSpeed: maxTouchSpeed,
+          damping: 1.0,
+        ),
+      );
+
+      final tracker = AccelerationTracker();
+      handler.applyTouchPhysics([0], tracker);
+
+      // Velocity magnitude must be clamped to maxTouchSpeed
+      expect(p.velocity.distance, closeTo(maxTouchSpeed, 1e-5));
+      // Direction towards (100, 100) is 45 degrees, so vx and vy should be equal
+      expect(p.velocity.dx, closeTo(p.velocity.dy, 1e-5));
+      expect(p.velocity.dx, greaterThan(0));
+      expect(p.velocity.dy, greaterThan(0));
+    });
   });
 
   group('TouchInteractionHandler', () {
+    test('drawTouchLines returns immediately when touchPoint is null (L136)', () {
+      final mockCanvas = MockCanvas();
+      final particles = [
+        Particle(
+          position: const Offset(100, 100),
+          velocity: Offset.zero,
+          color: Colors.white,
+          size: 2,
+        ),
+      ];
+
+      final handler = TouchInteractionHandler(
+        particles: particles,
+        touchPoint: null, // touchPoint is null
+        lineDistance: 100.0,
+        touchColor: Colors.amber,
+        linePaint: Paint(),
+      );
+
+      handler.drawTouchLines(mockCanvas, [0]);
+
+      // No drawing calls should be made on mockCanvas
+      verifyZeroInteractions(mockCanvas);
+    });
+
     testWidgets('drawTouchLines should draw lines for particles within range', (
       WidgetTester tester,
     ) async {
