@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:particles_network/model/particlemodel.dart';
-import 'package:particles_network/painter/particle_filter.dart';
+import 'package:particles_network/particles_network.dart';
 import 'dart:ui';
 
 void main() {
