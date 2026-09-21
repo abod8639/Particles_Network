@@ -230,6 +230,8 @@ void main() {
       expect(monitor.isDroppingFrames(), isTrue);
     });
 
+
+
     test('sample window maintains max size', () {
       const maxSize = 60;
       final frameTimes = List<Duration>.filled(
