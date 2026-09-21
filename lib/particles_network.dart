@@ -35,7 +35,11 @@ export 'package:particles_network/src/rendering/optimized_network_painter.dart'
 export 'package:particles_network/src/rendering/particle_filter.dart'
     show ParticleFilter;
 export 'package:particles_network/src/rendering/performance_utils.dart'
-    show AccelerationTracker, AdaptiveQuadTreeManager, PerformanceMonitor;
+    show
+        AccelerationTracker,
+        AdaptiveQuadTreeManager,
+        PerformanceMonitor,
+        AdaptivePerformanceController;
 export 'package:particles_network/src/simulation/particle_simulation.dart'
     show ParticleSimulation;
 export 'package:particles_network/src/spatial/compressed_quad_tree.dart'
