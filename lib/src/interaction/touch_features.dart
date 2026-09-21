@@ -16,6 +16,10 @@ class TouchFeatures {
   /// Fluid damping factor applied to particles inside the touch field [default: 0.985].
   final double damping;
 
+  /// Maximum connection distance for touch interactions.
+  /// If null, defaults to the network's lineDistance.
+  final double? lineDistance;
+
   /// Creates a [TouchFeatures] configuration.
   const TouchFeatures({
     double? speed,
@@ -24,6 +28,7 @@ class TouchFeatures {
     double? pullForce,
     this.maxTouchSpeed = 5.5,
     this.damping = 0.985,
+    this.lineDistance,
   })  : speed = speed ?? decayRate ?? 0.012,
         force = force ?? pullForce ?? 0.42;
 
@@ -41,8 +46,10 @@ class TouchFeatures {
           speed == other.speed &&
           force == other.force &&
           maxTouchSpeed == other.maxTouchSpeed &&
-          damping == other.damping;
+          damping == other.damping &&
+          lineDistance == other.lineDistance;
 
   @override
-  int get hashCode => Object.hash(speed, force, maxTouchSpeed, damping);
+  int get hashCode =>
+      Object.hash(speed, force, maxTouchSpeed, damping, lineDistance);
 }
