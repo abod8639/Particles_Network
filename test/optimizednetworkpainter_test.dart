@@ -4,9 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
-import 'package:particles_network/model/particlemodel.dart';
-import 'package:particles_network/painter/optimized_network_painter.dart';
-import 'package:particles_network/painter/touch_interaction_handler.dart';
+import 'package:particles_network/particles_network.dart';
 
 import 'mocks/mock_canvas.mocks.dart';
 
@@ -521,8 +519,8 @@ void main() {
       expect(defaultPainter.particleColor, equals(Colors.purple));
       expect(defaultPainter.lineColor, equals(Colors.yellow));
       expect(defaultPainter.touchColor, equals(Colors.cyan));
-      expect(defaultPainter.particlePaint.color, equals(Colors.purple));
-      expect(defaultPainter.linePaint.color, equals(Colors.yellow));
+      expect(defaultPainter.particlePaint.color.value, equals(Colors.purple.value));
+      expect(defaultPainter.linePaint.color.value, equals(Colors.yellow.value));
     });
 
     testWidgets('updateLineWidth updates line width and bucket paints', (
@@ -658,15 +656,20 @@ void main() {
     ) async {
       await setUpTest(tester);
 
-      final p1 = MockParticle(position: const Offset(100, 100));
-      final p2 = MockParticle(position: const Offset(120, 100));
+      final particles = List.generate(
+        32,
+        (i) => MockParticle(
+          position: Offset(100.0 + (i % 4) * 10, 100.0 + (i ~/ 4) * 10),
+          size: 2.0,
+        ),
+      );
 
       final complexPainter = OptimizedNetworkPainter(
         drawNetwork: true,
         fill: true,
         isComplex: true,
-        particleCount: 2,
-        particles: [p1, p2],
+        particleCount: 32,
+        particles: particles,
         touchPoint: null,
         lineDistance: 100,
         particleColor: Colors.white,
