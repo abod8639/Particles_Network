@@ -121,3 +121,82 @@ class PerformanceMonitor {
     _frameTimes.clear();
   }
 }
+
+/// Dynamically adjusts visualization quality metrics (distance, connections)
+/// to maintain a stable target frame rate without dropped frames.
+class AdaptivePerformanceController {
+  /// Underlying performance monitor tracking frame durations.
+  final PerformanceMonitor monitor;
+
+  /// Target frame time in milliseconds (default: 16.67ms for 60 FPS).
+  final double targetFrameTimeMs;
+
+  /// Minimum quality scale allowed.
+  final double minScale;
+
+  /// Maximum quality scale allowed.
+  final double maxScale;
+
+  double _currentScale = 1.0;
+  int _consecutiveDrops = 0;
+  int _consecutiveSmooth = 0;
+
+  /// Creates an [AdaptivePerformanceController].
+  AdaptivePerformanceController({
+    PerformanceMonitor? monitor,
+    this.targetFrameTimeMs = 16.67,
+    this.minScale = 0.4,
+    this.maxScale = 1.0,
+  }) : monitor = monitor ?? PerformanceMonitor();
+
+  /// Current quality scale factor between [minScale] and [maxScale].
+  double get scaleFactor => _currentScale;
+
+  /// Records a frame duration and adapts the scale factor if necessary.
+  void recordFrameTime(Duration duration) {
+    monitor.recordFrameTime(duration);
+    final double ms = duration.inMicroseconds / 1000.0;
+
+    if (ms > targetFrameTimeMs * 1.25) {
+      _consecutiveDrops++;
+      _consecutiveSmooth = 0;
+      if (_consecutiveDrops >= 3) {
+        // Step down quality scale to recover frame rate
+        _currentScale = (_currentScale - 0.1).clamp(minScale, maxScale);
+        _consecutiveDrops = 0;
+      }
+    } else if (ms < targetFrameTimeMs * 0.85) {
+      _consecutiveSmooth++;
+      _consecutiveDrops = 0;
+      if (_consecutiveSmooth >= 15) {
+        // Step up quality scale gradually when performance is consistently smooth
+        _currentScale = (_currentScale + 0.05).clamp(minScale, maxScale);
+        _consecutiveSmooth = 0;
+      }
+    } else {
+      _consecutiveDrops = 0;
+      _consecutiveSmooth = 0;
+    }
+  }
+
+  /// Returns the line distance scaled by the current performance factor.
+  double getAdjustedLineDistance(double baseDistance) {
+    return baseDistance * _currentScale;
+  }
+
+  /// Returns the maximum connection count scaled by the current performance factor.
+  int getAdjustedMaxConnections(int baseMaxConnections) {
+    return (baseMaxConnections * _currentScale)
+        .round()
+        .clamp(1, baseMaxConnections);
+  }
+
+  /// Resets controller state and underlying monitor.
+  void reset() {
+    _currentScale = 1.0;
+    _consecutiveDrops = 0;
+    _consecutiveSmooth = 0;
+    monitor.clear();
+  }
+}
+
