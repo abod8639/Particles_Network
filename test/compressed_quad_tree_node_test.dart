@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:particles_network/model/rectangle.dart';
-import 'package:particles_network/quad_tree/compressed_quad_tree_node.dart';
+import 'package:particles_network/particles_network.dart';
 
 void main() {
   group('Child Boundary Calculation', () {
