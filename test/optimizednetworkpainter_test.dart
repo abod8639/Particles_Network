@@ -519,8 +519,8 @@ void main() {
       expect(defaultPainter.particleColor, equals(Colors.purple));
       expect(defaultPainter.lineColor, equals(Colors.yellow));
       expect(defaultPainter.touchColor, equals(Colors.cyan));
-      expect(defaultPainter.particlePaint.color.value, equals(Colors.purple.value));
-      expect(defaultPainter.linePaint.color.value, equals(Colors.yellow.value));
+      expect(defaultPainter.particlePaint.color.toARGB32(), equals(Colors.purple.value));
+      expect(defaultPainter.linePaint.color.toARGB32(), equals(Colors.yellow.value));
     });
 
     testWidgets('updateLineWidth updates line width and bucket paints', (

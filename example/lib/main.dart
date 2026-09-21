@@ -142,12 +142,12 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                 alignment: Alignment.topRight,
                 showChart: _showChart,
                 child: ParticleNetwork(
-                  touchFeatures: TouchFeatures(
-                    speed: _touchSpeed,
-                    force: _touchForce,
-                    maxTouchSpeed: _maxTouchSpeed,
-                    lineDistance: _touchLineDistance,
-                  ),
+                  // touchFeatures: TouchFeatures(
+                  //   speed: _touchSpeed,
+                  //   force: _touchForce,
+                  //   maxTouchSpeed: _maxTouchSpeed,
+                  //   lineDistance: _touchLineDistance,
+                  // ),
                   key: _particleKey,
                   drawNetwork: _drawNetwork,
                   fill: _isFill,
