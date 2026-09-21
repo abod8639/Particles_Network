@@ -242,4 +242,12 @@ void main() {
     await tester.pump();
     expect(state.touchPoint, equals(Offset.infinite));
   });
+
+  test('TouchFeatures defaults and lineDistance assignment', () {
+    const featuresDefault = TouchFeatures();
+    expect(featuresDefault.lineDistance, isNull);
+
+    const customFeatures = TouchFeatures(lineDistance: 150.0);
+    expect(customFeatures.lineDistance, equals(150.0));
+  });
 }
