@@ -712,5 +712,187 @@ void main() {
         returnsNormally,
       );
     });
+
+    testWidgets('clamps particle size bucket to _maxParticleSizeBuckets - 1 (L277)', (
+      tester,
+    ) async {
+      await setUpTest(tester);
+
+      final particles = List.generate(
+        6,
+        (i) => MockParticle(
+          position: Offset(50.0 + i * 10, 50.0),
+          size: i == 0 ? 100.0 : 2.0, // size 100 -> bucket 200 >= 64, capped to 63
+        ),
+      );
+      final painter = OptimizedNetworkPainter(
+        drawNetwork: false,
+        fill: true,
+        isComplex: false,
+        particleCount: 6,
+        particles: particles,
+        touchPoint: null,
+        lineDistance: 100,
+        particleColor: Colors.white,
+        lineColor: Colors.grey,
+        touchColor: Colors.red,
+        touchActivation: false,
+        lineWidth: 1.0,
+      );
+
+      expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
+      verify(mockCanvas.drawRawPoints(PointMode.points, any, any)).called(
+        greaterThan(0),
+      );
+    });
+
+    testWidgets('_growCandidateBuffers grows buffer when candidates exceed initial capacity of 128 (L312-L321, L610)', (
+      tester,
+    ) async {
+      await setUpTest(tester);
+
+      // Create 140 particles clustered within lineDistance (200)
+      // Particle 0 will have 139 candidates, exceeding the initial buffer size of 128
+      final particles = List.generate(
+        140,
+        (i) => MockParticle(
+          position: Offset(100.0 + (i % 10) * 2.0, 100.0 + (i ~/ 10) * 2.0),
+          size: 2.0,
+        ),
+      );
+
+      final painter = OptimizedNetworkPainter(
+        drawNetwork: true,
+        fill: false,
+        isComplex: true, // triggers _drawBatchedConnectionsComplex
+        particleCount: 140,
+        particles: particles,
+        touchPoint: null,
+        lineDistance: 200.0,
+        particleColor: Colors.white,
+        lineColor: Colors.grey,
+        touchColor: Colors.red,
+        touchActivation: false,
+        lineWidth: 1.0,
+      );
+
+      expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
+      verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(
+        greaterThan(0),
+      );
+    });
+
+    testWidgets('_growBucket expands raw line buckets in same cell during normal batched connections (L345-L350, L505)', (
+      tester,
+    ) async {
+      await setUpTest(tester);
+
+      // Initial bucket holds 2048 / 4 = 512 lines.
+      // 40 particles in the same cell produce 40 * 39 / 2 = 780 lines.
+      // All at the exact same location (distSq = 0), so all map to bucket 31.
+      final particles = List.generate(
+        40,
+        (i) => MockParticle(
+          position: const Offset(100.0, 100.0),
+          size: 2.0,
+        ),
+      );
+
+      final painter = OptimizedNetworkPainter(
+        drawNetwork: true,
+        fill: false,
+        isComplex: false, // normal batched connections
+        particleCount: 40,
+        particles: particles,
+        touchPoint: null,
+        lineDistance: 100.0,
+        particleColor: Colors.white,
+        lineColor: Colors.grey,
+        touchColor: Colors.red,
+        touchActivation: false,
+        lineWidth: 1.0,
+      );
+
+      expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
+      verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(
+        greaterThan(0),
+      );
+    });
+
+    testWidgets('_growBucket expands raw line buckets in neighboring cells via _connectWithCell (L345-L350, L560)', (
+      tester,
+    ) async {
+      await setUpTest(tester);
+
+      // lineDistance = 100, cellSize = 100.
+      // 25 particles in cell (0, 0) at (40, 40)
+      // 25 particles in cell (1, 0) at (110, 40) -> distance = 70 < 100
+      // Cross connections between the two cells = 25 * 25 = 625 lines > 512 lines (2048 floats)
+      final particles = <MockParticle>[
+        ...List.generate(
+          25,
+          (_) => MockParticle(position: const Offset(40.0, 40.0)),
+        ),
+        ...List.generate(
+          25,
+          (_) => MockParticle(position: const Offset(110.0, 40.0)),
+        ),
+      ];
+
+      final painter = OptimizedNetworkPainter(
+        drawNetwork: true,
+        fill: false,
+        isComplex: false,
+        particleCount: 50,
+        particles: particles,
+        touchPoint: null,
+        lineDistance: 100.0,
+        particleColor: Colors.white,
+        lineColor: Colors.grey,
+        touchColor: Colors.red,
+        touchActivation: false,
+        lineWidth: 1.0,
+      );
+
+      expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
+      verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(
+        greaterThan(0),
+      );
+    });
+
+    testWidgets('_growBucket expands raw line buckets in complex batched connections (L345-L350, L636)', (
+      tester,
+    ) async {
+      await setUpTest(tester);
+
+      // In complex batched mode with high lineDistance (800.0), denseThreshold = 800 ~/ 4 = 200.
+      // 40 particles at identical position will have candidateCount = 39 <= denseThreshold (200),
+      // so lines are not clamped to maxLines (3).
+      // Total lines = 40 * 39 / 2 = 780 lines > 512, all in the same bucket.
+      final particles = List.generate(
+        40,
+        (_) => MockParticle(position: const Offset(200.0, 200.0)),
+      );
+
+      final painter = OptimizedNetworkPainter(
+        drawNetwork: true,
+        fill: false,
+        isComplex: true,
+        particleCount: 40,
+        particles: particles,
+        touchPoint: null,
+        lineDistance: 800.0,
+        particleColor: Colors.white,
+        lineColor: Colors.grey,
+        touchColor: Colors.red,
+        touchActivation: false,
+        lineWidth: 1.0,
+      );
+
+      expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
+      verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(
+        greaterThan(0),
+      );
+    });
   });
 }
