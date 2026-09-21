@@ -1015,6 +1015,7 @@ class OptimizedNetworkPainter extends CustomPainter {
   void updatePerformanceOptions({
     int? maxConnectionsPerParticle,
     bool? adaptiveDensity,
+    bool? fastLineRendering,
     bool? useVerticesRendering,
   }) {
     if (maxConnectionsPerParticle != null) {
@@ -1023,8 +1024,10 @@ class OptimizedNetworkPainter extends CustomPainter {
     if (adaptiveDensity != null) {
       this.adaptiveDensity = adaptiveDensity;
     }
-    if (useVerticesRendering != null) {
-      this.useVerticesRendering = useVerticesRendering;
+    if (fastLineRendering != null) {
+      this.fastLineRendering = fastLineRendering;
+    } else if (useVerticesRendering != null) {
+      this.fastLineRendering = useVerticesRendering;
     }
   }
 
