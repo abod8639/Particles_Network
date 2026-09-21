@@ -241,6 +241,392 @@ void main() {
     await gesture.cancel();
     await tester.pump();
     expect(state.touchPoint, equals(Offset.infinite));
+
+    final customPaint = tester.widget<CustomPaint>(
+      find.descendant(
+        of: find.byType(ParticleNetwork),
+        matching: find.byType(CustomPaint),
+      ),
+    );
+    final painter = customPaint.painter as OptimizedNetworkPainter;
+    expect(painter.touchPoint, equals(Offset.infinite));
+  });
+
+  testWidgets('ParticleNetworkState exposes particles from simulation', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: ParticleNetwork(particleCount: 25),
+          ),
+        ),
+      ),
+    );
+
+    final state = tester.state<ParticleNetworkState>(
+      find.byType(ParticleNetwork),
+    );
+
+    expect(state.particles, same(state.simulation.particles));
+    expect(state.particles.length, 25);
+  });
+
+  testWidgets(
+    'ParticleNetwork didUpdateWidget updates simulation factory on maxSpeed, maxSize, or color change',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleNetwork(
+                maxSpeed: 2.0,
+                maxSize: 4.0,
+                particleColor: Colors.red,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final state = tester.state<ParticleNetworkState>(
+        find.byType(ParticleNetwork),
+      );
+      var factory = state.factory as DefaultParticleFactory;
+      expect(factory.maxSpeed, 2.0);
+      expect(factory.maxSize, 4.0);
+      expect(factory.color, Colors.red);
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleNetwork(
+                maxSpeed: 6.0,
+                maxSize: 10.0,
+                particleColor: Colors.blue,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      factory = state.factory as DefaultParticleFactory;
+      expect(factory.maxSpeed, 6.0);
+      expect(factory.maxSize, 10.0);
+      expect(factory.color, Colors.blue);
+    },
+  );
+
+  testWidgets('ParticleNetwork didUpdateWidget updates particleCount', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: ParticleNetwork(particleCount: 20),
+          ),
+        ),
+      ),
+    );
+
+    final state = tester.state<ParticleNetworkState>(
+      find.byType(ParticleNetwork),
+    );
+    expect(state.particles.length, 20);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: ParticleNetwork(particleCount: 35),
+          ),
+        ),
+      ),
+    );
+
+    expect(state.particles.length, 35);
+  });
+
+  testWidgets('ParticleNetwork didUpdateWidget updates painter colors', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: ParticleNetwork(
+              particleColor: Colors.white,
+              lineColor: Colors.grey,
+              touchColor: Colors.yellow,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    CustomPaint customPaint = tester.widget(
+      find.descendant(
+        of: find.byType(ParticleNetwork),
+        matching: find.byType(CustomPaint),
+      ),
+    );
+    var painter = customPaint.painter as OptimizedNetworkPainter;
+    expect(painter.particleColor, Colors.white);
+    expect(painter.lineColor, Colors.grey);
+    expect(painter.touchColor, Colors.yellow);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: ParticleNetwork(
+              particleColor: Colors.green,
+              lineColor: Colors.purple,
+              touchColor: Colors.orange,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    customPaint = tester.widget(
+      find.descendant(
+        of: find.byType(ParticleNetwork),
+        matching: find.byType(CustomPaint),
+      ),
+    );
+    painter = customPaint.painter as OptimizedNetworkPainter;
+    expect(painter.particleColor, Colors.green);
+    expect(painter.lineColor, Colors.purple);
+    expect(painter.touchColor, Colors.orange);
+  });
+
+  testWidgets('ParticleNetwork didUpdateWidget updates painter lineWidth', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: ParticleNetwork(lineWidth: 1.5),
+          ),
+        ),
+      ),
+    );
+
+    CustomPaint customPaint = tester.widget(
+      find.descendant(
+        of: find.byType(ParticleNetwork),
+        matching: find.byType(CustomPaint),
+      ),
+    );
+    var painter = customPaint.painter as OptimizedNetworkPainter;
+    expect(painter.lineWidth, 1.5);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: ParticleNetwork(lineWidth: 3.5),
+          ),
+        ),
+      ),
+    );
+
+    customPaint = tester.widget(
+      find.descendant(
+        of: find.byType(ParticleNetwork),
+        matching: find.byType(CustomPaint),
+      ),
+    );
+    painter = customPaint.painter as OptimizedNetworkPainter;
+    expect(painter.lineWidth, 3.5);
+  });
+
+  testWidgets('ParticleNetwork didUpdateWidget updates painter lineDistance', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: ParticleNetwork(lineDistance: 75.0),
+          ),
+        ),
+      ),
+    );
+
+    CustomPaint customPaint = tester.widget(
+      find.descendant(
+        of: find.byType(ParticleNetwork),
+        matching: find.byType(CustomPaint),
+      ),
+    );
+    var painter = customPaint.painter as OptimizedNetworkPainter;
+    expect(painter.lineDistance, 75.0);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: ParticleNetwork(lineDistance: 130.0),
+          ),
+        ),
+      ),
+    );
+
+    customPaint = tester.widget(
+      find.descendant(
+        of: find.byType(ParticleNetwork),
+        matching: find.byType(CustomPaint),
+      ),
+    );
+    painter = customPaint.painter as OptimizedNetworkPainter;
+    expect(painter.lineDistance, 130.0);
+  });
+
+  testWidgets('ParticleNetwork didUpdateWidget updates painter render flags', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: ParticleNetwork(
+              drawNetwork: true,
+              fill: true,
+              isComplex: false,
+              touchActivation: false,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    CustomPaint customPaint = tester.widget(
+      find.descendant(
+        of: find.byType(ParticleNetwork),
+        matching: find.byType(CustomPaint),
+      ),
+    );
+    var painter = customPaint.painter as OptimizedNetworkPainter;
+    expect(painter.drawNetwork, isTrue);
+    expect(painter.fill, isTrue);
+    expect(painter.isComplex, isFalse);
+    expect(painter.touchActivation, isFalse);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: ParticleNetwork(
+              drawNetwork: false,
+              fill: false,
+              isComplex: true,
+              touchActivation: true,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    customPaint = tester.widget(
+      find.descendant(
+        of: find.byType(ParticleNetwork),
+        matching: find.byType(CustomPaint),
+      ),
+    );
+    painter = customPaint.painter as OptimizedNetworkPainter;
+    expect(painter.drawNetwork, isFalse);
+    expect(painter.fill, isFalse);
+    expect(painter.isComplex, isTrue);
+    expect(painter.touchActivation, isTrue);
+  });
+
+  testWidgets('ParticleNetwork didUpdateWidget updates painter touchFeatures', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: ParticleNetwork(
+              touchFeatures: TouchFeatures(force: 0.5, damping: 0.95),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    CustomPaint customPaint = tester.widget(
+      find.descendant(
+        of: find.byType(ParticleNetwork),
+        matching: find.byType(CustomPaint),
+      ),
+    );
+    var painter = customPaint.painter as OptimizedNetworkPainter;
+    expect(painter.touchFeatures.force, 0.5);
+    expect(painter.touchFeatures.damping, 0.95);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: ParticleNetwork(
+              touchFeatures: TouchFeatures(
+                force: 0.8,
+                damping: 0.99,
+                lineDistance: 175.0,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    customPaint = tester.widget(
+      find.descendant(
+        of: find.byType(ParticleNetwork),
+        matching: find.byType(CustomPaint),
+      ),
+    );
+    painter = customPaint.painter as OptimizedNetworkPainter;
+    expect(painter.touchFeatures.force, 0.8);
+    expect(painter.touchFeatures.damping, 0.99);
+    expect(painter.touchFeatures.lineDistance, 175.0);
   });
 
   test('TouchFeatures defaults and lineDistance assignment', () {
