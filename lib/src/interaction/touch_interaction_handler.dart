@@ -15,8 +15,11 @@ class TouchInteractionHandler {
   // Current touch position (null when not touching)
   Offset? touchPoint;
 
-  // Maximum distance for touch interactions
-  final double lineDistance;
+  // Base maximum distance for touch interactions (fallback if not specified in touchFeatures)
+  double lineDistance;
+
+  /// Effective distance for touch interactions
+  double get effectiveLineDistance => touchFeatures.lineDistance ?? lineDistance;
 
   // Color to use for touch interactions
   Color touchColor;
@@ -70,7 +73,7 @@ class TouchInteractionHandler {
 
     final double tx = touch.dx;
     final double ty = touch.dy;
-    final double maxDist = lineDistance;
+    final double maxDist = effectiveLineDistance;
     final double maxDistSq = maxDist * maxDist;
     final double pullForce = touchFeatures.force;
     final double touchDamping = touchFeatures.damping;
@@ -134,7 +137,7 @@ class TouchInteractionHandler {
 
     final double tx = touch.dx;
     final double ty = touch.dy;
-    final double maxDist = lineDistance;
+    final double maxDist = effectiveLineDistance;
     final double maxDistSq = maxDist * maxDist;
     final double invMaxDist = maxDist > 0 ? 1.0 / maxDist : 0.0;
 
