@@ -64,6 +64,22 @@ class OptimizedNetworkPainter extends CustomPainter {
   /// Advanced touch interaction features and physics configuration.
   TouchFeatures touchFeatures;
 
+  /// Maximum number of connection lines a single particle can emit.
+  ///
+  /// Clamping connections guarantees strict O(N) rendering complexity, preventing
+  /// explosive line counts and maintaining high FPS in dense particle clusters.
+  int? maxConnectionsPerParticle;
+
+  /// Whether to automatically scale down connection distance in dense networks.
+  bool adaptiveDensity;
+
+  /// Whether to use ultra-fast single draw-call line rendering.
+  bool fastLineRendering;
+
+  /// Compatibility alias for [fastLineRendering].
+  bool get useVerticesRendering => fastLineRendering;
+  set useVerticesRendering(bool value) => fastLineRendering = value;
+
   // Optimized sub-components
   late final TouchInteractionHandler _touchHandler;
   late final CompressedQuadTree _quadTree;
@@ -99,6 +115,21 @@ class OptimizedNetworkPainter extends CustomPainter {
   // Precomputed color look-up table for zero-allocation alpha line rendering
   late final List<Color> _lineColorLut;
 
+  // Ultra-performance single draw-call line buffer
+  Float32List _unifiedLineBuffer = Float32List(4096);
+  int _unifiedLineCount = 0;
+  late int _baseLineRgb;
+
+  // Connection count tracking buffer for strict O(N) capping
+  Int32List _connectionCounts = Int32List(0);
+
+  static int _extractRgb(Color c) {
+    final int r = (c.r * 255.0).round().clamp(0, 255);
+    final int g = (c.g * 255.0).round().clamp(0, 255);
+    final int b = (c.b * 255.0).round().clamp(0, 255);
+    return (r << 16) | (g << 8) | b;
+  }
+
   /// Constructor with dependency initialization
   OptimizedNetworkPainter({
     required this.particleCount,
@@ -115,9 +146,15 @@ class OptimizedNetworkPainter extends CustomPainter {
     required this.drawNetwork,
     this.touchFeatures = const TouchFeatures(),
     this.showQuadTree = false,
+    this.maxConnectionsPerParticle,
+    this.adaptiveDensity = false,
+    bool? fastLineRendering,
+    bool? useVerticesRendering,
     super.repaint,
-  }) {
-    final int baseAlpha = lineColor.alpha;
+  }) : fastLineRendering =
+            fastLineRendering ?? useVerticesRendering ?? false {
+    final int baseAlpha = (lineColor.a * 255.0).round().clamp(0, 255);
+    _baseLineRgb = _extractRgb(lineColor);
     _lineColorLut = List<Color>.generate(
       256,
       (int alpha) => lineColor.withAlpha((alpha * baseAlpha) ~/ 255),
@@ -208,7 +245,22 @@ class OptimizedNetworkPainter extends CustomPainter {
     final List<int> visibleParticles = _visibleParticles;
 
     if (drawNetwork) {
-      _spatialGrid.updateCellSize(lineDistance > 0 ? lineDistance : 100.0);
+      double effectiveDistance = lineDistance;
+      if (adaptiveDensity &&
+          size.width > 0 &&
+          size.height > 0 &&
+          visibleParticles.isNotEmpty) {
+        final double screenArea = size.width * size.height;
+        final double areaPerParticle = screenArea / visibleParticles.length;
+        // 5333 px^2 corresponds to ~60 particles on a 400x800 screen.
+        final double factor =
+            math.sqrt(areaPerParticle / 5333.0).clamp(0.25, 1.0);
+        effectiveDistance = lineDistance * factor;
+      }
+
+      _spatialGrid.updateCellSize(
+        effectiveDistance > 0 ? effectiveDistance : 100.0,
+      );
       _spatialGrid.build(particles, visibleParticles, size.width, size.height);
 
       if (showQuadTree && _quadTreeManager.shouldRebuild()) {
@@ -225,7 +277,7 @@ class OptimizedNetworkPainter extends CustomPainter {
         }
       }
 
-      _drawConnections(canvas, visibleParticles);
+      _drawConnections(canvas, visibleParticles, effectiveDistance);
     }
 
     final bool isTouchActive = touchActivation &&
@@ -349,24 +401,232 @@ class OptimizedNetworkPainter extends CustomPainter {
     return newBuf;
   }
 
-  void _drawConnections(Canvas canvas, List<int> visibleParticles) {
-    if (visibleParticles.length < 30) {
-      _drawIndividualConnections(canvas, visibleParticles);
+  void _growUnifiedLineBuffer(int needed) {
+    final int newLen = math.max(_unifiedLineBuffer.length * 2, needed);
+    final Float32List newBuf = Float32List(newLen);
+    newBuf.setRange(0, _unifiedLineCount, _unifiedLineBuffer);
+    _unifiedLineBuffer = newBuf;
+  }
+
+  void _connectUnifiedWithCell(
+    int p1,
+    double p1x,
+    double p1y,
+    int neighborCell,
+    double maxDistSq,
+    Int32List cellHeads,
+    Int32List particleNext,
+    int? maxConn,
+  ) {
+    int p2 = cellHeads[neighborCell];
+    while (p2 != -1) {
+      if (maxConn != null && _connectionCounts[p2] >= maxConn) {
+        p2 = particleNext[p2];
+        continue;
+      }
+
+      final Particle particle2 = particles[p2];
+      final double dx = p1x - particle2.x;
+      final double dy = p1y - particle2.y;
+      final double distSq = dx * dx + dy * dy;
+
+      if (distSq <= maxDistSq) {
+        if (_unifiedLineCount + 4 > _unifiedLineBuffer.length) {
+          _growUnifiedLineBuffer(_unifiedLineCount + 4);
+        }
+        _unifiedLineBuffer[_unifiedLineCount] = p1x;
+        _unifiedLineBuffer[_unifiedLineCount + 1] = p1y;
+        _unifiedLineBuffer[_unifiedLineCount + 2] = particle2.x;
+        _unifiedLineBuffer[_unifiedLineCount + 3] = particle2.y;
+        _unifiedLineCount += 4;
+
+        if (maxConn != null) {
+          _connectionCounts[p1]++;
+          _connectionCounts[p2]++;
+          if (_connectionCounts[p1] >= maxConn) break;
+        }
+      }
+      p2 = particleNext[p2];
+    }
+  }
+
+  void _drawFastUnifiedConnections(Canvas canvas, double effectiveDistance) {
+    final int cols = _spatialGrid.cols;
+    final int rows = _spatialGrid.rows;
+    if (cols <= 0 || rows <= 0) return;
+
+    final double maxDistSq = effectiveDistance * effectiveDistance;
+    _unifiedLineCount = 0;
+
+    final Int32List cellHeads = _spatialGrid.cellHeads;
+    final Int32List particleNext = _spatialGrid.particleNext;
+    final Int32List activeCells = _spatialGrid.activeCells;
+    final int activeCount = _spatialGrid.activeCellsCount;
+
+    final int? maxConn = maxConnectionsPerParticle;
+    if (maxConn != null) {
+      if (_connectionCounts.length < particles.length) {
+        _connectionCounts = Int32List(particles.length);
+      }
+      _connectionCounts.fillRange(0, particles.length, 0);
+    }
+
+    for (int a = 0; a < activeCount; a++) {
+      final int cell = activeCells[a];
+      final int p1Head = cellHeads[cell];
+      if (p1Head == -1) continue;
+
+      final int cx = cell % cols;
+      final int cy = cell ~/ cols;
+
+      final int east = (cx < cols - 1) ? cell + 1 : -1;
+      final int southWest =
+          (cy < rows - 1 && cx > 0) ? cell + cols - 1 : -1;
+      final int south = (cy < rows - 1) ? cell + cols : -1;
+      final int southEast =
+          (cy < rows - 1 && cx < cols - 1) ? cell + cols + 1 : -1;
+
+      int p1 = p1Head;
+      while (p1 != -1) {
+        if (maxConn != null && _connectionCounts[p1] >= maxConn) {
+          p1 = particleNext[p1];
+          continue;
+        }
+
+        final Particle particle1 = particles[p1];
+        final double p1x = particle1.x;
+        final double p1y = particle1.y;
+
+        int p2 = particleNext[p1];
+        while (p2 != -1) {
+          if (maxConn != null && _connectionCounts[p2] >= maxConn) {
+            p2 = particleNext[p2];
+            continue;
+          }
+
+          final Particle particle2 = particles[p2];
+          final double dx = p1x - particle2.x;
+          final double dy = p1y - particle2.y;
+          final double distSq = dx * dx + dy * dy;
+
+          if (distSq <= maxDistSq) {
+            if (_unifiedLineCount + 4 > _unifiedLineBuffer.length) {
+              _growUnifiedLineBuffer(_unifiedLineCount + 4);
+            }
+            _unifiedLineBuffer[_unifiedLineCount] = p1x;
+            _unifiedLineBuffer[_unifiedLineCount + 1] = p1y;
+            _unifiedLineBuffer[_unifiedLineCount + 2] = particle2.x;
+            _unifiedLineBuffer[_unifiedLineCount + 3] = particle2.y;
+            _unifiedLineCount += 4;
+
+            if (maxConn != null) {
+              _connectionCounts[p1]++;
+              _connectionCounts[p2]++;
+              if (_connectionCounts[p1] >= maxConn) break;
+            }
+          }
+          p2 = particleNext[p2];
+        }
+
+        if (maxConn == null || _connectionCounts[p1] < maxConn) {
+          if (east != -1) {
+            _connectUnifiedWithCell(
+              p1,
+              p1x,
+              p1y,
+              east,
+              maxDistSq,
+              cellHeads,
+              particleNext,
+              maxConn,
+            );
+          }
+        }
+        if (maxConn == null || _connectionCounts[p1] < maxConn) {
+          if (southWest != -1) {
+            _connectUnifiedWithCell(
+              p1,
+              p1x,
+              p1y,
+              southWest,
+              maxDistSq,
+              cellHeads,
+              particleNext,
+              maxConn,
+            );
+          }
+        }
+        if (maxConn == null || _connectionCounts[p1] < maxConn) {
+          if (south != -1) {
+            _connectUnifiedWithCell(
+              p1,
+              p1x,
+              p1y,
+              south,
+              maxDistSq,
+              cellHeads,
+              particleNext,
+              maxConn,
+            );
+          }
+        }
+        if (maxConn == null || _connectionCounts[p1] < maxConn) {
+          if (southEast != -1) {
+            _connectUnifiedWithCell(
+              p1,
+              p1x,
+              p1y,
+              southEast,
+              maxDistSq,
+              cellHeads,
+              particleNext,
+              maxConn,
+            );
+          }
+        }
+
+        p1 = particleNext[p1];
+      }
+    }
+
+    if (_unifiedLineCount > 0) {
+      canvas.drawRawPoints(
+        PointMode.lines,
+        Float32List.sublistView(_unifiedLineBuffer, 0, _unifiedLineCount),
+        linePaint,
+      );
+    }
+  }
+
+  void _drawConnections(
+    Canvas canvas,
+    List<int> visibleParticles, [
+    double? effectiveDistance,
+  ]) {
+    final double dist = effectiveDistance ?? lineDistance;
+    if (fastLineRendering) {
+      _drawFastUnifiedConnections(canvas, dist);
+    } else if (visibleParticles.length < 30) {
+      _drawIndividualConnections(canvas, visibleParticles, dist);
     } else {
-      _drawBatchedConnections(canvas, visibleParticles);
+      _drawBatchedConnections(canvas, visibleParticles, dist);
+    }
+  }
     }
   }
 
   void _drawIndividualConnections(
     Canvas canvas,
-    List<int> visibleParticles,
-  ) {
-    final double maxDistSq = lineDistance * lineDistance;
+    List<int> visibleParticles, [
+    double? effectiveDistance,
+  ]) {
+    final double dist = effectiveDistance ?? lineDistance;
+    final double maxDistSq = dist * dist;
     final double invLineDistance =
-        lineDistance > 0 ? 255.0 / lineDistance : 0.0;
+        dist > 0 ? 255.0 / dist : 0.0;
     final int maxLines = isComplex ? 3 : 5;
     final int denseThreshold =
-        isComplex ? (lineDistance ~/ 4) : (lineDistance ~/ 1.5);
+        isComplex ? (dist ~/ 4) : (dist ~/ 1.5);
 
     final List<int> nearbyIndices = _intListPool.acquire();
 
@@ -382,7 +642,7 @@ class OptimizedNetworkPainter extends CustomPainter {
         _spatialGrid.findNearbyParticlesToOutput(
           px,
           py,
-          lineDistance,
+          dist,
           nearbyIndices,
         );
 
@@ -433,9 +693,11 @@ class OptimizedNetworkPainter extends CustomPainter {
 
   void _drawBatchedConnections(
     Canvas canvas,
-    List<int> visibleParticles,
-  ) {
-    final double maxDistSq = lineDistance * lineDistance;
+    List<int> visibleParticles, [
+    double? effectiveDistance,
+  ]) {
+    final double dist = effectiveDistance ?? lineDistance;
+    final double maxDistSq = dist * dist;
     _rawOffsets.fillRange(0, _numLineBuckets, 0);
 
     if (isComplex) {
@@ -466,6 +728,14 @@ class OptimizedNetworkPainter extends CustomPainter {
     final Int32List activeCells = _spatialGrid.activeCells;
     final int activeCount = _spatialGrid.activeCellsCount;
 
+    final int? maxConn = maxConnectionsPerParticle;
+    if (maxConn != null) {
+      if (_connectionCounts.length < particles.length) {
+        _connectionCounts = Int32List(particles.length);
+      }
+      _connectionCounts.fillRange(0, particles.length, 0);
+    }
+
     for (int a = 0; a < activeCount; a++) {
       final int cell = activeCells[a];
       final int p1Head = cellHeads[cell];
@@ -483,12 +753,22 @@ class OptimizedNetworkPainter extends CustomPainter {
 
       int p1 = p1Head;
       while (p1 != -1) {
+        if (maxConn != null && _connectionCounts[p1] >= maxConn) {
+          p1 = particleNext[p1];
+          continue;
+        }
+
         final Particle particle1 = particles[p1];
         final double p1x = particle1.x;
         final double p1y = particle1.y;
 
         int p2 = particleNext[p1];
         while (p2 != -1) {
+          if (maxConn != null && _connectionCounts[p2] >= maxConn) {
+            p2 = particleNext[p2];
+            continue;
+          }
+
           final Particle particle2 = particles[p2];
           final double dx = p1x - particle2.x;
           final double dy = p1y - particle2.y;
@@ -509,24 +789,71 @@ class OptimizedNetworkPainter extends CustomPainter {
             raw[off + 2] = particle2.x;
             raw[off + 3] = particle2.y;
             _rawOffsets[bucket] = off + 4;
+
+            if (maxConn != null) {
+              _connectionCounts[p1]++;
+              _connectionCounts[p2]++;
+              if (_connectionCounts[p1] >= maxConn) break;
+            }
           }
           p2 = particleNext[p2];
         }
 
-        if (east != -1) {
-          _connectWithCell(p1x, p1y, east, maxDistSq, cellHeads, particleNext);
+        if (maxConn == null || _connectionCounts[p1] < maxConn) {
+          if (east != -1) {
+            _connectWithCell(
+              p1x,
+              p1y,
+              east,
+              maxDistSq,
+              cellHeads,
+              particleNext,
+              p1,
+              maxConn,
+            );
+          }
         }
-        if (southWest != -1) {
-          _connectWithCell(
-              p1x, p1y, southWest, maxDistSq, cellHeads, particleNext);
+        if (maxConn == null || _connectionCounts[p1] < maxConn) {
+          if (southWest != -1) {
+            _connectWithCell(
+              p1x,
+              p1y,
+              southWest,
+              maxDistSq,
+              cellHeads,
+              particleNext,
+              p1,
+              maxConn,
+            );
+          }
         }
-        if (south != -1) {
-          _connectWithCell(
-              p1x, p1y, south, maxDistSq, cellHeads, particleNext);
+        if (maxConn == null || _connectionCounts[p1] < maxConn) {
+          if (south != -1) {
+            _connectWithCell(
+              p1x,
+              p1y,
+              south,
+              maxDistSq,
+              cellHeads,
+              particleNext,
+              p1,
+              maxConn,
+            );
+          }
         }
-        if (southEast != -1) {
-          _connectWithCell(
-              p1x, p1y, southEast, maxDistSq, cellHeads, particleNext);
+        if (maxConn == null || _connectionCounts[p1] < maxConn) {
+          if (southEast != -1) {
+            _connectWithCell(
+              p1x,
+              p1y,
+              southEast,
+              maxDistSq,
+              cellHeads,
+              particleNext,
+              p1,
+              maxConn,
+            );
+          }
         }
 
         p1 = particleNext[p1];
@@ -540,10 +867,19 @@ class OptimizedNetworkPainter extends CustomPainter {
     int neighborCell,
     double maxDistSq,
     Int32List cellHeads,
-    Int32List particleNext,
-  ) {
+    Int32List particleNext, [
+    int? p1Index,
+    int? maxConn,
+  ]) {
     int p2 = cellHeads[neighborCell];
     while (p2 != -1) {
+      if (maxConn != null && p1Index != null) {
+        if (_connectionCounts[p2] >= maxConn) {
+          p2 = particleNext[p2];
+          continue;
+        }
+      }
+
       final Particle particle2 = particles[p2];
       final double dx = p1x - particle2.x;
       final double dy = p1y - particle2.y;
@@ -564,6 +900,12 @@ class OptimizedNetworkPainter extends CustomPainter {
         raw[off + 2] = particle2.x;
         raw[off + 3] = particle2.y;
         _rawOffsets[bucket] = off + 4;
+
+        if (maxConn != null && p1Index != null) {
+          _connectionCounts[p1Index]++;
+          _connectionCounts[p2]++;
+          if (_connectionCounts[p1Index] >= maxConn) break;
+        }
       }
       p2 = particleNext[p2];
     }
@@ -669,7 +1011,8 @@ class OptimizedNetworkPainter extends CustomPainter {
   }
 
   void _rebuildLineLut(Color color) {
-    final int baseAlpha = color.alpha;
+    final int baseAlpha = (color.a * 255.0).round().clamp(0, 255);
+    _baseLineRgb = _extractRgb(color);
     for (int i = 0; i < 256; i++) {
       _lineColorLut[i] = color.withAlpha((i * baseAlpha) ~/ 255);
     }
@@ -677,6 +1020,23 @@ class OptimizedNetworkPainter extends CustomPainter {
       final int alpha =
           ((b * baseAlpha) ~/ (_numLineBuckets - 1)).clamp(0, 255);
       _lineBucketPaints[b].color = color.withAlpha(alpha);
+    }
+  }
+
+  /// Updates performance and rendering strategy options.
+  void updatePerformanceOptions({
+    int? maxConnectionsPerParticle,
+    bool? adaptiveDensity,
+    bool? useVerticesRendering,
+  }) {
+    if (maxConnectionsPerParticle != null) {
+      this.maxConnectionsPerParticle = maxConnectionsPerParticle;
+    }
+    if (adaptiveDensity != null) {
+      this.adaptiveDensity = adaptiveDensity;
+    }
+    if (useVerticesRendering != null) {
+      this.useVerticesRendering = useVerticesRendering;
     }
   }
 
@@ -738,6 +1098,9 @@ class OptimizedNetworkPainter extends CustomPainter {
         oldDelegate.lineDistance != lineDistance ||
         oldDelegate.particleColor != particleColor ||
         oldDelegate.lineColor != lineColor ||
-        oldDelegate.touchFeatures != touchFeatures;
+        oldDelegate.touchFeatures != touchFeatures ||
+        oldDelegate.maxConnectionsPerParticle != maxConnectionsPerParticle ||
+        oldDelegate.adaptiveDensity != adaptiveDensity ||
+        oldDelegate.useVerticesRendering != useVerticesRendering;
   }
 }
