@@ -1,6 +1,5 @@
 import 'dart:ui';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:particles_network/src/core/particle.dart';
 import 'package:particles_network/src/factory/default_particle_factory.dart';
 import 'package:particles_network/src/physics/gravity_config.dart';
 import 'package:particles_network/src/simulation/particle_simulation.dart';
