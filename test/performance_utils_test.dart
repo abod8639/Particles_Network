@@ -165,6 +165,22 @@ void main() {
     test('initializes with empty frame times', () {
       expect(monitor.recordedFrameCount, equals(0));
       expect(monitor.averageFrameTime, isNull);
+      expect(monitor.isDroppingFrames(), isFalse);
+    });
+
+    test('isDroppingFrames returns false when averageFrameTime is null', () {
+      // Empty monitor initially has avg == null
+      expect(monitor.averageFrameTime, isNull);
+      expect(monitor.isDroppingFrames(), isFalse);
+
+      // Record slow frame to make it true
+      monitor.recordFrameTime(const Duration(milliseconds: 30));
+      expect(monitor.isDroppingFrames(), isTrue);
+
+      // Clear empties frames so avg becomes null again
+      monitor.clear();
+      expect(monitor.averageFrameTime, isNull);
+      expect(monitor.isDroppingFrames(), isFalse);
     });
 
     test('recordFrameTime adds durations', () {
