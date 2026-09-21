@@ -89,7 +89,7 @@ class OptimizedNetworkPainter extends CustomPainter {
   final Paint _batchedPointPaint = Paint()..strokeCap = StrokeCap.round;
 
   // Number of alpha buckets for GPU line draw call batching
-  static const int _numLineBuckets = 24;
+  static const int _numLineBuckets = 32;
   late final List<Float32List> _rawBuckets;
   late final Int32List _rawOffsets;
   late final List<Paint> _lineBucketPaints;
@@ -117,9 +117,10 @@ class OptimizedNetworkPainter extends CustomPainter {
     this.showQuadTree = false,
     super.repaint,
   }) {
+    final int baseAlpha = lineColor.alpha;
     _lineColorLut = List<Color>.generate(
       256,
-      (int alpha) => lineColor.withAlpha(alpha),
+      (int alpha) => lineColor.withAlpha((alpha * baseAlpha) ~/ 255),
       growable: false,
     );
 
@@ -138,7 +139,8 @@ class OptimizedNetworkPainter extends CustomPainter {
     _rawOffsets = Int32List(_numLineBuckets);
 
     _lineBucketPaints = List.generate(_numLineBuckets, (int b) {
-      final int alpha = (((b + 1) * 255) ~/ _numLineBuckets).clamp(0, 255);
+      final int alpha =
+          ((b * baseAlpha) ~/ (_numLineBuckets - 1)).clamp(0, 255);
       return Paint()
         ..color = lineColor.withAlpha(alpha)
         ..strokeWidth = lineWidth
@@ -667,11 +669,13 @@ class OptimizedNetworkPainter extends CustomPainter {
   }
 
   void _rebuildLineLut(Color color) {
+    final int baseAlpha = color.alpha;
     for (int i = 0; i < 256; i++) {
-      _lineColorLut[i] = color.withAlpha(i);
+      _lineColorLut[i] = color.withAlpha((i * baseAlpha) ~/ 255);
     }
     for (int b = 0; b < _numLineBuckets; b++) {
-      final int alpha = (((b + 1) * 255) ~/ _numLineBuckets).clamp(0, 255);
+      final int alpha =
+          ((b * baseAlpha) ~/ (_numLineBuckets - 1)).clamp(0, 255);
       _lineBucketPaints[b].color = color.withAlpha(alpha);
     }
   }
