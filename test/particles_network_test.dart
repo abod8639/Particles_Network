@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -636,4 +637,160 @@ void main() {
     const customFeatures = TouchFeatures(lineDistance: 150.0);
     expect(customFeatures.lineDistance, equals(150.0));
   });
+
+  test('ParticleNetwork constructor defaults', () {
+    const network = ParticleNetwork();
+    expect(network.particleCount, 60);
+    expect(network.maxSpeed, 0.5);
+    expect(network.maxSize, 1.5);
+    expect(network.lineWidth, 0.5);
+    expect(network.lineDistance, 100);
+    expect(network.particleColor, Colors.white);
+    expect(network.lineColor, const Color.fromARGB(255, 100, 255, 180));
+    expect(network.touchColor, Colors.amber);
+    expect(network.touchActivation, isTrue);
+    expect(network.isComplex, isFalse);
+    expect(network.fill, isTrue);
+    expect(network.drawNetwork, isTrue);
+    expect(network.gravityType, GravityType.none);
+    expect(network.gravityStrength, 0.1);
+    expect(network.gravityDirection, const Offset(0, 1));
+    expect(network.gravityCenter, isNull);
+    expect(network.hoverEffect, isFalse);
+    expect(network.touchFeatures, const TouchFeatures());
+  });
+
+  testWidgets('ParticleNetworkState factory getter and setter', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(width: 300, height: 300, child: ParticleNetwork()),
+        ),
+      ),
+    );
+
+    final state = tester.state<ParticleNetworkState>(
+      find.byType(ParticleNetwork),
+    );
+    expect(state.factory, same(state.simulation.factory));
+
+    final customFactory = DefaultParticleFactory(
+      random: Random(42),
+      maxSpeed: 7.0,
+      maxSize: 9.0,
+      color: Colors.teal,
+    );
+    state.factory = customFactory;
+
+    expect(state.factory, same(customFactory));
+    expect(state.simulation.factory, same(customFactory));
+  });
+
+  testWidgets('ParticleNetworkState controller getter', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(width: 300, height: 300, child: ParticleNetwork()),
+        ),
+      ),
+    );
+
+    final state = tester.state<ParticleNetworkState>(
+      find.byType(ParticleNetwork),
+    );
+    expect(state.controller, same(state.simulation.controller));
+    expect(state.controller, isA<IParticleController>());
+  });
+
+  testWidgets(
+    'ParticleNetwork didUpdateWidget updates simulation gravity',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleNetwork(
+                gravityType: GravityType.none,
+                gravityStrength: 0.1,
+                gravityDirection: Offset(0, 1),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final state = tester.state<ParticleNetworkState>(
+        find.byType(ParticleNetwork),
+      );
+      expect(state.simulation.gravityConfig.type, GravityType.none);
+      expect(state.simulation.gravityConfig.strength, 0.1);
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleNetwork(
+                gravityType: GravityType.point,
+                gravityStrength: 0.8,
+                gravityDirection: Offset(1, 0),
+                gravityCenter: Offset(150, 150),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(state.simulation.gravityConfig.type, GravityType.point);
+      expect(state.simulation.gravityConfig.strength, 0.8);
+      expect(state.simulation.gravityConfig.direction, const Offset(1, 0));
+      expect(state.simulation.gravityConfig.center, const Offset(150, 150));
+    },
+  );
+
+  testWidgets(
+    'GestureDetector onPanCancel updates touchPoint to Offset.infinite',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(width: 300, height: 300, child: ParticleNetwork()),
+          ),
+        ),
+      );
+
+      final state = tester.state<ParticleNetworkState>(
+        find.byType(ParticleNetwork),
+      );
+
+      state.touchPoint = const Offset(120, 120);
+
+      final gestureDetector = tester.widget<GestureDetector>(
+        find.descendant(
+          of: find.byType(ParticleNetwork),
+          matching: find.byType(GestureDetector),
+        ),
+      );
+      gestureDetector.onPanCancel?.call();
+      await tester.pump();
+
+      expect(state.touchPoint, equals(Offset.infinite));
+
+      final customPaint = tester.widget<CustomPaint>(
+        find.descendant(
+          of: find.byType(ParticleNetwork),
+          matching: find.byType(CustomPaint),
+        ),
+      );
+      final painter = customPaint.painter as OptimizedNetworkPainter;
+      expect(painter.touchPoint, equals(Offset.infinite));
+    },
+  );
 }
