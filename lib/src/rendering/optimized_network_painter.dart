@@ -612,8 +612,6 @@ class OptimizedNetworkPainter extends CustomPainter {
       _drawBatchedConnections(canvas, visibleParticles, dist);
     }
   }
-    }
-  }
 
   void _drawIndividualConnections(
     Canvas canvas,
