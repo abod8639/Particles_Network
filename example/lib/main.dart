@@ -64,6 +64,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   double _touchSpeed = 0.012;
   double _touchForce = 0.42;
   double _maxTouchSpeed = 5.5;
+  double _touchLineDistance = 100.0;
 
   // --- Styling Variables ---
   Color _particleColor = Colors.white;
@@ -141,11 +142,12 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                 alignment: Alignment.topRight,
                 showChart: _showChart,
                 child: ParticleNetwork(
-                  // touchFeatures: TouchFeatures(
-                  //   speed: _touchSpeed,
-                  //   force: _touchForce,
-                  //   maxTouchSpeed: _maxTouchSpeed,
-                  // ),
+                  touchFeatures: TouchFeatures(
+                    speed: _touchSpeed,
+                    force: _touchForce,
+                    maxTouchSpeed: _maxTouchSpeed,
+                    lineDistance: _touchLineDistance,
+                  ),
                   key: _particleKey,
                   drawNetwork: _drawNetwork,
                   fill: _isFill,
@@ -322,6 +324,13 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           1.0,
           15.0,
           (v) => setState(() => _maxTouchSpeed = v),
+        ),
+        _buildSlider(
+          "Touch Line Dist",
+          _touchLineDistance,
+          0,
+          500,
+          (v) => setState(() => _touchLineDistance = v),
         ),
       ],
     );
