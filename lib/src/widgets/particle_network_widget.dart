@@ -10,6 +10,7 @@ import 'package:particles_network/src/physics/gravity_config.dart';
 import 'package:particles_network/src/physics/particle_controller.dart';
 import 'package:particles_network/src/rendering/object_pool.dart';
 import 'package:particles_network/src/rendering/optimized_network_painter.dart';
+import 'package:particles_network/src/rendering/performance_utils.dart';
 import 'package:particles_network/src/simulation/particle_simulation.dart';
 
 /// A Flutter widget that renders an interactive particle network visualization.
@@ -68,6 +69,24 @@ class ParticleNetwork extends StatefulWidget {
   /// Advanced touch interaction features and physics configuration.
   final TouchFeatures touchFeatures;
 
+  /// Maximum number of connection lines a single particle can emit.
+  ///
+  /// Setting this bounds the total connection count to O(N) instead of O(N^2),
+  /// dramatically improving performance for large particle counts.
+  final int? maxConnectionsPerParticle;
+
+  /// Whether to automatically scale down connection distance in dense networks.
+  final bool adaptiveDensity;
+
+  /// Whether to use ultra-fast single draw-call line rendering.
+  final bool fastLineRendering;
+
+  /// Compatibility alias for [fastLineRendering].
+  bool get useVerticesRendering => fastLineRendering;
+
+  /// Whether to dynamically monitor frame rate and adapt quality to maintain 60 FPS.
+  final bool enableAdaptivePerformance;
+
   /// Creates a [ParticleNetwork] widget with customizable visualization parameters.
   const ParticleNetwork({
     super.key,
@@ -89,7 +108,13 @@ class ParticleNetwork extends StatefulWidget {
     this.gravityCenter,
     this.hoverEffect = false,
     this.touchFeatures = const TouchFeatures(),
-  });
+    this.maxConnectionsPerParticle,
+    this.adaptiveDensity = false,
+    bool? fastLineRendering,
+    bool? useVerticesRendering,
+    this.enableAdaptivePerformance = false,
+  }) : fastLineRendering =
+            fastLineRendering ?? useVerticesRendering ?? false;
 
   @override
   State<ParticleNetwork> createState() => ParticleNetworkState();
@@ -115,6 +140,9 @@ class ParticleNetworkState extends State<ParticleNetwork>
   set factory(IParticleFactory f) => simulation.factory = f;
 
   IParticleController get controller => simulation.controller;
+
+  late final AdaptivePerformanceController _adaptiveController;
+  int _lastFrameMicros = 0;
 
   late OptimizedNetworkPainter _painter;
 
@@ -143,6 +171,9 @@ class ParticleNetworkState extends State<ParticleNetwork>
       lineColor: widget.lineColor,
       touchColor: widget.touchColor,
       touchFeatures: widget.touchFeatures,
+      maxConnectionsPerParticle: widget.maxConnectionsPerParticle,
+      adaptiveDensity: widget.adaptiveDensity,
+      fastLineRendering: widget.fastLineRendering,
       repaint: frameNotifier,
     );
   }
@@ -156,6 +187,8 @@ class ParticleNetworkState extends State<ParticleNetwork>
   void initState() {
     super.initState();
 
+    _adaptiveController = AdaptivePerformanceController();
+
     simulation = ParticleSimulation(
       particleCount: widget.particleCount,
       maxSpeed: widget.maxSpeed,
@@ -167,8 +200,30 @@ class ParticleNetworkState extends State<ParticleNetwork>
     _initPainter();
 
     ticker = createTicker((elapsed) {
+      final int now = elapsed.inMicroseconds;
+      if (widget.enableAdaptivePerformance) {
+        if (_lastFrameMicros != 0) {
+          final int deltaUs = now - _lastFrameMicros;
+          if (deltaUs > 0) {
+            _adaptiveController.recordFrameTime(Duration(microseconds: deltaUs));
+            final double adjustedDist =
+                _adaptiveController.getAdjustedLineDistance(widget.lineDistance);
+            if (adjustedDist != _painter.lineDistance) {
+              _painter.updateLineDistance(adjustedDist);
+            }
+            if (widget.maxConnectionsPerParticle != null) {
+              final int adjustedConn = _adaptiveController
+                  .getAdjustedMaxConnections(widget.maxConnectionsPerParticle!);
+              if (adjustedConn != _painter.maxConnectionsPerParticle) {
+                _painter.maxConnectionsPerParticle = adjustedConn;
+              }
+            }
+          }
+        }
+      }
+      _lastFrameMicros = now;
       simulation.step();
-      frameNotifier.value = elapsed.inMicroseconds;
+      frameNotifier.value = now;
     })..start();
   }
 
@@ -232,6 +287,17 @@ class ParticleNetworkState extends State<ParticleNetwork>
     if (widget.touchFeatures != oldWidget.touchFeatures) {
       _painter.updateTouchFeatures(widget.touchFeatures);
     }
+
+    if (widget.maxConnectionsPerParticle !=
+            oldWidget.maxConnectionsPerParticle ||
+        widget.adaptiveDensity != oldWidget.adaptiveDensity ||
+        widget.fastLineRendering != oldWidget.fastLineRendering) {
+      _painter.updatePerformanceOptions(
+        maxConnectionsPerParticle: widget.maxConnectionsPerParticle,
+        adaptiveDensity: widget.adaptiveDensity,
+        fastLineRendering: widget.fastLineRendering,
+      );
+    }
   }
 
   void _generateParticles(Size size) {
@@ -245,6 +311,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
   void dispose() {
     ticker.dispose();
     frameNotifier.dispose();
+    _adaptiveController.reset();
     PoolManager.getInstance().clearAll();
     super.dispose();
   }
