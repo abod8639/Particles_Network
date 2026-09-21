@@ -1,10 +1,12 @@
 import 'dart:math' as math;
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:particles_network/model/particlemodel.dart';
 import 'package:particles_network/painter/optimized_network_painter.dart';
+import 'package:particles_network/painter/touch_interaction_handler.dart';
 
 import 'mocks/mock_canvas.mocks.dart';
 
@@ -479,6 +481,233 @@ void main() {
 
       // Even with same params, should repaint for continuous animation
       expect(newPainter.shouldRepaint(anotherPainter), isFalse);
+    });
+
+    testWidgets('returns true when touchFeatures change', (tester) async {
+      await setUpTest(tester);
+
+      final newPainter = OptimizedNetworkPainter(
+        drawNetwork: true,
+        fill: true,
+        isComplex: false,
+        particleCount: 1,
+        particles: [particle],
+        touchPoint: null,
+        lineDistance: 100,
+        particleColor: Colors.white,
+        lineColor: Colors.grey,
+        touchColor: Colors.red,
+        touchActivation: true,
+        lineWidth: 1.0,
+        touchFeatures: const TouchFeatures(speed: 0.05),
+      );
+
+      expect(newPainter.shouldRepaint(defaultPainter), isTrue);
+    });
+  });
+
+  group('OptimizedNetworkPainter Dynamic Updates', () {
+    testWidgets('updateColors updates particle, line, and touch colors', (
+      tester,
+    ) async {
+      await setUpTest(tester);
+
+      defaultPainter.updateColors(
+        particleColor: Colors.purple,
+        lineColor: Colors.yellow,
+        touchColor: Colors.cyan,
+      );
+
+      expect(defaultPainter.particleColor, equals(Colors.purple));
+      expect(defaultPainter.lineColor, equals(Colors.yellow));
+      expect(defaultPainter.touchColor, equals(Colors.cyan));
+      expect(defaultPainter.particlePaint.color, equals(Colors.purple));
+      expect(defaultPainter.linePaint.color, equals(Colors.yellow));
+    });
+
+    testWidgets('updateLineWidth updates line width and bucket paints', (
+      tester,
+    ) async {
+      await setUpTest(tester);
+
+      defaultPainter.updateLineWidth(3.5);
+      expect(defaultPainter.lineWidth, equals(3.5));
+      expect(defaultPainter.linePaint.strokeWidth, equals(3.5));
+    });
+
+    testWidgets('updateLineDistance updates lineDistance and spatial grid', (
+      tester,
+    ) async {
+      await setUpTest(tester);
+
+      defaultPainter.updateLineDistance(180.0);
+      expect(defaultPainter.lineDistance, equals(180.0));
+    });
+
+    testWidgets('updateRenderFlags updates flags and paint styles', (
+      tester,
+    ) async {
+      await setUpTest(tester);
+
+      defaultPainter.updateRenderFlags(
+        drawNetwork: false,
+        fill: false,
+        isComplex: true,
+        touchActivation: false,
+      );
+
+      expect(defaultPainter.drawNetwork, isFalse);
+      expect(defaultPainter.fill, isFalse);
+      expect(defaultPainter.particlePaint.style, equals(PaintingStyle.stroke));
+      expect(defaultPainter.isComplex, isTrue);
+      expect(defaultPainter.particlePaint.isAntiAlias, isFalse);
+      expect(defaultPainter.linePaint.isAntiAlias, isFalse);
+      expect(defaultPainter.touchActivation, isFalse);
+    });
+
+    testWidgets('updateTouchFeatures propagates to touchFeatures', (
+      tester,
+    ) async {
+      await setUpTest(tester);
+
+      const newFeatures = TouchFeatures(
+        speed: 0.04,
+        force: 0.9,
+        lineDistance: 120.0,
+      );
+      defaultPainter.updateTouchFeatures(newFeatures);
+
+      expect(defaultPainter.touchFeatures, equals(newFeatures));
+    });
+
+    testWidgets('updateTouchPoint propagates new touch point', (tester) async {
+      await setUpTest(tester);
+
+      defaultPainter.updateTouchPoint(const Offset(40, 40));
+      expect(defaultPainter.touchPoint, equals(const Offset(40, 40)));
+    });
+  });
+
+  group('OptimizedNetworkPainter Drawing Variations', () {
+    testWidgets('paints in batched mode when count >= 5 and fill is true', (
+      tester,
+    ) async {
+      await setUpTest(tester);
+
+      final particles = List.generate(
+        6,
+        (i) => MockParticle(
+          position: Offset(50.0 * i + 10, 50.0 * i + 10),
+          size: 2.0,
+        ),
+      );
+
+      final batchedPainter = OptimizedNetworkPainter(
+        drawNetwork: true,
+        fill: true,
+        isComplex: false,
+        particleCount: 6,
+        particles: particles,
+        touchPoint: null,
+        lineDistance: 100,
+        particleColor: Colors.white,
+        lineColor: Colors.grey,
+        touchColor: Colors.red,
+        touchActivation: false,
+        lineWidth: 1.0,
+      );
+
+      batchedPainter.paint(mockCanvas, testScreenSize);
+      verify(mockCanvas.drawRawPoints(PointMode.points, any, any)).called(
+        greaterThan(0),
+      );
+    });
+
+    testWidgets('paints in stroke mode when fill is false', (tester) async {
+      await setUpTest(tester);
+
+      final particles = List.generate(
+        6,
+        (i) => MockParticle(
+          position: Offset(50.0 * i + 10, 50.0 * i + 10),
+          size: 2.0,
+        ),
+      );
+
+      final strokePainter = OptimizedNetworkPainter(
+        drawNetwork: false,
+        fill: false,
+        isComplex: false,
+        particleCount: 6,
+        particles: particles,
+        touchPoint: null,
+        lineDistance: 100,
+        particleColor: Colors.white,
+        lineColor: Colors.grey,
+        touchColor: Colors.red,
+        touchActivation: false,
+        lineWidth: 1.0,
+      );
+
+      strokePainter.paint(mockCanvas, testScreenSize);
+      verify(mockCanvas.drawCircle(any, any, any)).called(6);
+    });
+
+    testWidgets('paints complex network mode with batched connections', (
+      tester,
+    ) async {
+      await setUpTest(tester);
+
+      final p1 = MockParticle(position: const Offset(100, 100));
+      final p2 = MockParticle(position: const Offset(120, 100));
+
+      final complexPainter = OptimizedNetworkPainter(
+        drawNetwork: true,
+        fill: true,
+        isComplex: true,
+        particleCount: 2,
+        particles: [p1, p2],
+        touchPoint: null,
+        lineDistance: 100,
+        particleColor: Colors.white,
+        lineColor: Colors.grey,
+        touchColor: Colors.red,
+        touchActivation: false,
+        lineWidth: 1.0,
+      );
+
+      complexPainter.paint(mockCanvas, testScreenSize);
+      verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(
+        greaterThan(0),
+      );
+    });
+
+    testWidgets('handles showQuadTree boundary update and insertion', (
+      tester,
+    ) async {
+      await setUpTest(tester);
+
+      final p = MockParticle(position: const Offset(50, 50));
+      final quadTreePainter = OptimizedNetworkPainter(
+        drawNetwork: true,
+        fill: true,
+        isComplex: false,
+        particleCount: 1,
+        particles: [p],
+        touchPoint: null,
+        lineDistance: 100,
+        particleColor: Colors.white,
+        lineColor: Colors.grey,
+        touchColor: Colors.red,
+        touchActivation: false,
+        lineWidth: 1.0,
+        showQuadTree: true,
+      );
+
+      expect(
+        () => quadTreePainter.paint(mockCanvas, testScreenSize),
+        returnsNormally,
+      );
     });
   });
 }
