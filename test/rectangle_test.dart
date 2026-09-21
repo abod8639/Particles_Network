@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:particles_network/model/rectangle.dart';
+import 'package:particles_network/particles_network.dart';
 
 void main() {
   group('Rectangle', () {
