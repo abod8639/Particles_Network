@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:particles_network/model/particlemodel.dart';
-import 'package:particles_network/painter/performance_utils.dart';
-import 'package:particles_network/painter/touch_interaction_handler.dart';
+import 'package:particles_network/particles_network.dart';
 
 // Assuming the Particle class is here
 
