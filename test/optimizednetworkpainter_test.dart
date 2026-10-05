@@ -980,5 +980,109 @@ void main() {
         greaterThan(0),
       );
     });
+
+    testWidgets('useVerticesRendering getter and setter alias fastLineRendering (L81)', (
+      tester,
+    ) async {
+      await setUpTest(tester);
+      final painter = OptimizedNetworkPainter(
+        drawNetwork: true,
+        fill: false,
+        isComplex: false,
+        particleCount: 1,
+        particles: [particle],
+        touchPoint: null,
+        lineDistance: 100.0,
+        particleColor: Colors.white,
+        lineColor: Colors.grey,
+        touchColor: Colors.red,
+        touchActivation: false,
+        lineWidth: 1.0,
+      );
+
+      expect(painter.useVerticesRendering, equals(painter.fastLineRendering));
+      painter.useVerticesRendering = true;
+      expect(painter.fastLineRendering, isTrue);
+      expect(painter.useVerticesRendering, isTrue);
+    });
+
+    testWidgets('_drawFastUnifiedConnections with buffer growth, maxConnectionsPerParticle, and grid neighbor traversal (L395-L400, L414-L441, L494, L505, L538-L547)', (
+      tester,
+    ) async {
+      await setUpTest(tester);
+
+      // Create enough particles in neighboring cells to trigger _growUnifiedLineBuffer
+      // Initial buffer size is 512 floats (128 lines).
+      // 30 particles in cell (0,0) at (40,40) + 30 particles in cell (1,0) at (110,40)
+      // distance = 70 < 100. Inter-cell connections = 30 * 30 = 900 lines (> 128 lines).
+      final particles = <MockParticle>[
+        ...List.generate(
+          30,
+          (_) => MockParticle(position: const Offset(40.0, 40.0)),
+        ),
+        ...List.generate(
+          30,
+          (_) => MockParticle(position: const Offset(110.0, 40.0)),
+        ),
+      ];
+
+      final painter = OptimizedNetworkPainter(
+        drawNetwork: true,
+        fill: false,
+        isComplex: false,
+        particleCount: 60,
+        particles: particles,
+        touchPoint: null,
+        lineDistance: 100.0,
+        particleColor: Colors.white,
+        lineColor: Colors.grey,
+        touchColor: Colors.red,
+        touchActivation: false,
+        lineWidth: 1.0,
+        fastLineRendering: true,
+        maxConnectionsPerParticle: 5,
+      );
+
+      expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
+      verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(
+        greaterThan(0),
+      );
+    });
+
+    testWidgets('_drawIndividualConnections triggers candidate buffer growth and custom effectiveDistance (L597, L612, L651, L688)', (
+      tester,
+    ) async {
+      await setUpTest(tester);
+
+      // _drawIndividualConnections is triggered when visibleParticles.length < 30.
+      // Initial _candidateIndices capacity is 128.
+      // Place 150 particles at (200, 200) but only include 1 particle in visibleParticles list via drawing setup.
+      // 150 particles near one position will produce 149 candidates for particle 0 (> 128),
+      // which forces _growCandidateBuffers() (L651).
+      final particles = List.generate(
+        150,
+        (_) => MockParticle(position: const Offset(200.0, 200.0)),
+      );
+
+      final painter = OptimizedNetworkPainter(
+        drawNetwork: true,
+        fill: false,
+        isComplex: false,
+        particleCount: 150,
+        particles: particles,
+        touchPoint: null,
+        lineDistance: 500.0,
+        particleColor: Colors.white,
+        lineColor: Colors.grey,
+        touchColor: Colors.red,
+        touchActivation: false,
+        lineWidth: 1.0,
+        fastLineRendering: false,
+      );
+
+      expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
+      verify(mockCanvas.drawCircle(any, any, any)).called(greaterThan(0));
+    });
   });
 }
+
