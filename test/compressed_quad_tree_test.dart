@@ -158,6 +158,23 @@ void main() {
       quadTree.optimize();
       expect(quadTree.getAllParticleIndices().length, greaterThan(0));
     });
+
+    test('subdivide handles remaining particles when insertion into children fails (L199-L201)', () {
+      // Create a node with capacity 4 and depth 0.
+      final node = CompressedQuadTreeNode(const Rectangle(0, 0, 100, 100), 0);
+      
+      // Insert 4 particles at identical position (10, 10) to reach max capacity (maxParticlesPerNode = 4).
+      for (int i = 0; i < 4; i++) {
+        node.insert(QuadTreeParticle(i, 10, 10));
+      }
+
+      // At this point node.particles.length == 4 and isSubdivided == false.
+      // Inserting 5th particle triggers _subdivide() -> _subdivideNormal().
+      // During subdivision, particles at (10, 10) go to NorthWest child node.
+      // Inserting 5th particle at position outside boundary or edge case verifies subdivision logic.
+      expect(node.insert(const QuadTreeParticle(4, 10, 10)), isTrue);
+      expect(node.isLeaf, isFalse);
+    });
   });
 }
 
