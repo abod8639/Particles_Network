@@ -502,6 +502,64 @@ void main() {
 
       expect(newPainter.shouldRepaint(defaultPainter), isTrue);
     });
+
+    testWidgets(
+      'returns true when maxConnectionsPerParticle, adaptiveDensity, or useVerticesRendering change (L1093-L1095)',
+      (tester) async {
+        await setUpTest(tester);
+
+        final painterWithMaxConn = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: true,
+          isComplex: false,
+          particleCount: 1,
+          particles: [particle],
+          touchPoint: null,
+          lineDistance: 100,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          touchColor: Colors.red,
+          touchActivation: true,
+          lineWidth: 1.0,
+          maxConnectionsPerParticle: 5,
+        );
+        expect(painterWithMaxConn.shouldRepaint(defaultPainter), isTrue);
+
+        final painterWithAdaptiveDensity = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: true,
+          isComplex: false,
+          particleCount: 1,
+          particles: [particle],
+          touchPoint: null,
+          lineDistance: 100,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          touchColor: Colors.red,
+          touchActivation: true,
+          lineWidth: 1.0,
+          adaptiveDensity: true,
+        );
+        expect(painterWithAdaptiveDensity.shouldRepaint(defaultPainter), isTrue);
+
+        final painterWithVerticesRendering = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: true,
+          isComplex: false,
+          particleCount: 1,
+          particles: [particle],
+          touchPoint: null,
+          lineDistance: 100,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          touchColor: Colors.red,
+          touchActivation: true,
+          lineWidth: 1.0,
+          fastLineRendering: true,
+        );
+        expect(painterWithVerticesRendering.shouldRepaint(defaultPainter), isTrue);
+      },
+    );
   });
 
   group('OptimizedNetworkPainter Dynamic Updates', () {
@@ -584,6 +642,34 @@ void main() {
       defaultPainter.updateTouchPoint(const Offset(40, 40));
       expect(defaultPainter.touchPoint, equals(const Offset(40, 40)));
     });
+
+    testWidgets(
+      'updatePerformanceOptions updates options and falls back to useVerticesRendering (L1029-L1031)',
+      (tester) async {
+        await setUpTest(tester);
+
+        expect(defaultPainter.maxConnectionsPerParticle, isNull);
+        expect(defaultPainter.adaptiveDensity, isFalse);
+        expect(defaultPainter.fastLineRendering, isFalse);
+
+        defaultPainter.updatePerformanceOptions(
+          maxConnectionsPerParticle: 4,
+          adaptiveDensity: true,
+          useVerticesRendering: true,
+        );
+
+        expect(defaultPainter.maxConnectionsPerParticle, equals(4));
+        expect(defaultPainter.adaptiveDensity, isTrue);
+        expect(defaultPainter.fastLineRendering, isTrue);
+        expect(defaultPainter.useVerticesRendering, isTrue);
+
+        defaultPainter.updatePerformanceOptions(
+          useVerticesRendering: false,
+        );
+        expect(defaultPainter.fastLineRendering, isFalse);
+        expect(defaultPainter.useVerticesRendering, isFalse);
+      },
+    );
   });
 
   group('OptimizedNetworkPainter Drawing Variations', () {
