@@ -658,6 +658,37 @@ void main() {
     expect(network.gravityCenter, isNull);
     expect(network.hoverEffect, isFalse);
     expect(network.touchFeatures, const TouchFeatures());
+    expect(network.maxConnectionsPerParticle, isNull);
+    expect(network.adaptiveDensity, isFalse);
+    expect(network.fastLineRendering, isFalse);
+    expect(network.useVerticesRendering, isFalse);
+    expect(network.enableAdaptivePerformance, isFalse);
+  });
+
+  test('ParticleNetwork constructor handles fastLineRendering and useVerticesRendering aliases', () {
+    const network1 = ParticleNetwork(useVerticesRendering: true);
+    expect(network1.fastLineRendering, isTrue);
+    expect(network1.useVerticesRendering, isTrue);
+
+    const network2 = ParticleNetwork(fastLineRendering: true);
+    expect(network2.fastLineRendering, isTrue);
+    expect(network2.useVerticesRendering, isTrue);
+
+    const network3 = ParticleNetwork(
+      fastLineRendering: false,
+      useVerticesRendering: true,
+    );
+    expect(network3.fastLineRendering, isFalse);
+    expect(network3.useVerticesRendering, isFalse);
+
+    const network4 = ParticleNetwork(
+      maxConnectionsPerParticle: 4,
+      adaptiveDensity: true,
+      enableAdaptivePerformance: true,
+    );
+    expect(network4.maxConnectionsPerParticle, equals(4));
+    expect(network4.adaptiveDensity, isTrue);
+    expect(network4.enableAdaptivePerformance, isTrue);
   });
 
   testWidgets('ParticleNetworkState factory getter and setter', (
@@ -793,4 +824,148 @@ void main() {
       expect(painter.touchPoint, equals(Offset.infinite));
     },
   );
+
+  testWidgets(
+    'ParticleNetwork didUpdateWidget updates painter performance options',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleNetwork(
+                maxConnectionsPerParticle: null,
+                adaptiveDensity: false,
+                fastLineRendering: false,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      CustomPaint customPaint = tester.widget(
+        find.descendant(
+          of: find.byType(ParticleNetwork),
+          matching: find.byType(CustomPaint),
+        ),
+      );
+      var painter = customPaint.painter as OptimizedNetworkPainter;
+      expect(painter.maxConnectionsPerParticle, isNull);
+      expect(painter.adaptiveDensity, isFalse);
+      expect(painter.fastLineRendering, isFalse);
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleNetwork(
+                maxConnectionsPerParticle: 3,
+                adaptiveDensity: true,
+                fastLineRendering: true,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      customPaint = tester.widget(
+        find.descendant(
+          of: find.byType(ParticleNetwork),
+          matching: find.byType(CustomPaint),
+        ),
+      );
+      painter = customPaint.painter as OptimizedNetworkPainter;
+      expect(painter.maxConnectionsPerParticle, equals(3));
+      expect(painter.adaptiveDensity, isTrue);
+      expect(painter.fastLineRendering, isTrue);
+    },
+  );
+
+  testWidgets(
+    'ParticleNetwork adjusts line distance and max connections when enableAdaptivePerformance is true',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleNetwork(
+                lineDistance: 100.0,
+                maxConnectionsPerParticle: 10,
+                enableAdaptivePerformance: true,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final customPaintFinder = find.descendant(
+        of: find.byType(ParticleNetwork),
+        matching: find.byType(CustomPaint),
+      );
+
+      var customPaint = tester.widget<CustomPaint>(customPaintFinder);
+      var painter = customPaint.painter as OptimizedNetworkPainter;
+      expect(painter.lineDistance, equals(100.0));
+      expect(painter.maxConnectionsPerParticle, equals(10));
+
+      // Simulate 5 frames with 30ms frame time (exceeding budget of 16.67ms)
+      for (int i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 30));
+      }
+
+      customPaint = tester.widget<CustomPaint>(customPaintFinder);
+      painter = customPaint.painter as OptimizedNetworkPainter;
+
+      // Adaptive controller should have throttled lineDistance and maxConnectionsPerParticle
+      expect(painter.lineDistance, lessThan(100.0));
+      expect(painter.maxConnectionsPerParticle, lessThan(10));
+    },
+  );
+
+  testWidgets(
+    'ParticleNetwork does not adjust line distance when enableAdaptivePerformance is false',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleNetwork(
+                lineDistance: 100.0,
+                maxConnectionsPerParticle: 10,
+                enableAdaptivePerformance: false,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final customPaintFinder = find.descendant(
+        of: find.byType(ParticleNetwork),
+        matching: find.byType(CustomPaint),
+      );
+
+      var customPaint = tester.widget<CustomPaint>(customPaintFinder);
+      var painter = customPaint.painter as OptimizedNetworkPainter;
+      expect(painter.lineDistance, equals(100.0));
+      expect(painter.maxConnectionsPerParticle, equals(10));
+
+      for (int i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 30));
+      }
+
+      customPaint = tester.widget<CustomPaint>(customPaintFinder);
+      painter = customPaint.painter as OptimizedNetworkPainter;
+
+      expect(painter.lineDistance, equals(100.0));
+      expect(painter.maxConnectionsPerParticle, equals(10));
+    },
+  );
 }
+
