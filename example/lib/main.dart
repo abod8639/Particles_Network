@@ -42,29 +42,29 @@ class ParticleControllerScreen extends StatefulWidget {
 
 class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   // --- UI Constants ---
-  static const double _controlPanelHeight = 390.0;
+  static const double _controlPanelHeight = 380.0;
   static const Duration _animationDuration = Duration(milliseconds: 400);
 
   // --- Particle Network Configuration Variables ---
   bool _drawNetwork = true;
   bool _isFill = false;
-  bool _isComplex = false;
+  bool _isComplex = true;
   bool _touchActivation = true;
   double _lineWidth = 1.0;
-  int _particleCount = 500;
-  double _maxSpeed = 1.5;
+  int _particleCount = 300;
+  double _maxSpeed = 2.5;
   double _maxSize = 2.0;
-  double _lineDistance = 50.0;
+  double _lineDistance = 100.0;
   GravityType _gravityType = GravityType.none;
   double _gravityStrength = 0.1;
   Offset _gravityDirection = const Offset(0, 1);
   final bool _hoverEffect = false;
 
   // --- Touch Features Variables ---
-  double _touchSpeed = 0.012;
-  double _touchForce = 0.42;
-  double _maxTouchSpeed = 3.0;
-  double _touchLineDistance = 100.0;
+  double _touchSpeed = 0.12;
+  double _touchForce = 1.42;
+  double _maxTouchSpeed = 4.0;
+  double _touchLineDistance = 200.0;
 
   // --- Styling Variables ---
   Color _particleColor = Colors.white;
@@ -652,10 +652,11 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            isSelected ? const SizedBox.shrink() : const SizedBox(height: 19),
             // Sunken well for the color swatch
             Container(
-              width: isSelected ? 26 : 80,
-              height: isSelected ? 26 : 10,
+              width: isSelected ? 26 : 100,
+              height: isSelected ? 26 : 8,
               padding: const EdgeInsets.all(3),
               decoration: BoxDecoration(
                 shape: isSelected ? BoxShape.circle : BoxShape.rectangle,
@@ -689,14 +690,14 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
               children: [
                 Icon(
                   icon,
-                  size: 11,
+                  size: 13,
                   color: Colors.white.withValues(alpha: 0.65),
                 ),
                 const SizedBox(width: 4),
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: Colors.white.withValues(alpha: 0.85),
                   ),
@@ -720,11 +721,15 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       Colors.purpleAccent,
       Colors.cyanAccent,
       Colors.pinkAccent,
+      Colors.tealAccent,
+      Colors.deepOrangeAccent,
+      Colors.yellowAccent
     ];
 
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
+        buttonPadding: EdgeInsets.zero,
         backgroundColor: const Color(0xFF22262C),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
@@ -748,8 +753,8 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
         ),
         content: Wrap(
           alignment: WrapAlignment.center,
-          spacing: 12,
-          runSpacing: 12,
+          spacing: 10,
+          runSpacing: 10,
           children: palette
               .map(
                 (color) => GestureDetector(
@@ -758,8 +763,8 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                     Navigator.pop(context);
                   },
                   child: Container(
-                    width: 42,
-                    height: 42,
+                    width: 50,
+                    height: 50,
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
@@ -772,8 +777,8 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                         ),
                         BoxShadow(
                           color: Colors.white.withValues(alpha: 0.08),
-                          offset: const Offset(-2, -2),
-                          blurRadius: 4,
+                          offset: const Offset(-1, -1),
+                          blurRadius: 2,
                         ),
                       ],
                     ),
@@ -898,7 +903,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
             Text(
               label,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 13,
                 fontWeight: value ? FontWeight.bold : FontWeight.w500,
                 color: value
                     ? _controllerColor
@@ -940,7 +945,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
     ValueChanged<double> onChanged,
   ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal:3 ),
+      padding: const EdgeInsets.symmetric(horizontal: 3),
       child: Row(
         children: [
           SizedBox(
@@ -956,9 +961,8 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           ),
           Expanded(
             child: SliderTheme(
-              
               data: SliderThemeData(
-                padding:const EdgeInsetsGeometry.symmetric(horizontal: 10),
+                padding: const EdgeInsetsGeometry.symmetric(horizontal: 10),
                 trackHeight: 4,
                 activeTrackColor: _controllerColor,
                 inactiveTrackColor: const Color(0xFF16181C),
@@ -1181,7 +1185,7 @@ class _FPSChartPainter extends CustomPainter {
   final ListQueue<double> values;
   final Color color;
 
-  static const double _maxFps = 72.0;
+  static const double _maxFps = 120.0;
   static const double _chartWidth = 80.0;
 
   @override
