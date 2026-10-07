@@ -15,49 +15,49 @@ import 'package:particles_network/src/simulation/particle_simulation.dart';
 
 /// A Flutter widget that renders an interactive particle network visualization.
 class ParticleNetwork extends StatefulWidget {
-  /// Total number of particles in the visualization [default: 60].
+  /// Total number of particles in the visualization (default: 60).
   final int particleCount;
 
-  /// Maximum speed of particles in pixels per frame [default: 0.5].
+  /// Maximum speed of particles in pixels per frame (default: 0.5).
   final double maxSpeed;
 
-  /// Maximum radius of particles in pixels [default: 1.5].
+  /// Maximum radius of particles in pixels (default: 1.5).
   final double maxSize;
 
-  /// Stroke width of connection lines in pixels [default: 0.5].
+  /// Stroke width of connection lines in pixels (default: 0.5).
   final double lineWidth;
 
-  /// Maximum connection distance between particles in pixels [default: 100].
+  /// Maximum connection distance between particles in pixels (default: 100).
   final double lineDistance;
 
-  /// Base color of all particles [default: Colors.white].
+  /// Base color of all particles (default: Colors.white).
   final Color particleColor;
 
   /// Color of connection lines between particles.
   final Color lineColor;
 
-  /// Highlight color for touch interactions [default: Colors.amber].
+  /// Highlight color for touch interactions (default: Colors.amber).
   final Color touchColor;
 
-  /// Whether touch interactions are enabled [default: true].
+  /// Whether touch interactions are enabled (default: true).
   final bool touchActivation;
 
-  /// Whether the painting logic is complex [default: false].
+  /// Whether the painting logic is complex (default: false).
   final bool isComplex;
 
-  /// Whether to fill particles (true) or stroke them (false) [default: true].
+  /// Whether to fill particles (true) or stroke them (false) (default: true).
   final bool fill;
 
-  /// Whether to draw connecting lines between particles [default: true].
+  /// Whether to draw connecting lines between particles (default: true).
   final bool drawNetwork;
 
-  /// The type of gravity effect to apply [default: GravityType.none].
+  /// The type of gravity effect to apply (default: [GravityType.none]).
   final GravityType gravityType;
 
-  /// The strength of the applied gravity force [default: 0.1].
+  /// The strength of the applied gravity force (default: 0.1).
   final double gravityStrength;
 
-  /// The direction vector for global gravity [default: Offset(0, 1) - downwards].
+  /// The direction vector for global gravity (default: `Offset(0, 1)` - downwards).
   final Offset gravityDirection;
 
   /// The center point for point-based gravity effects.
@@ -113,8 +113,7 @@ class ParticleNetwork extends StatefulWidget {
     bool? fastLineRendering,
     bool? useVerticesRendering,
     this.enableAdaptivePerformance = false,
-  }) : fastLineRendering =
-            fastLineRendering ?? useVerticesRendering ?? false;
+  }) : fastLineRendering = fastLineRendering ?? useVerticesRendering ?? false;
 
   @override
   State<ParticleNetwork> createState() => ParticleNetworkState();
@@ -151,8 +150,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
       type: widget.gravityType,
       strength: widget.gravityStrength,
       direction: widget.gravityDirection,
-      center: widget.gravityCenter ??
-          Offset(size.width / 2, size.height / 2),
+      center: widget.gravityCenter ?? Offset(size.width / 2, size.height / 2),
     );
   }
 
@@ -205,9 +203,10 @@ class ParticleNetworkState extends State<ParticleNetwork>
         if (_lastFrameMicros != 0) {
           final int deltaUs = now - _lastFrameMicros;
           if (deltaUs > 0) {
-            _adaptiveController.recordFrameTime(Duration(microseconds: deltaUs));
-            final double adjustedDist =
-                _adaptiveController.getAdjustedLineDistance(widget.lineDistance);
+            _adaptiveController
+                .recordFrameTime(Duration(microseconds: deltaUs));
+            final double adjustedDist = _adaptiveController
+                .getAdjustedLineDistance(widget.lineDistance);
             if (adjustedDist != _painter.lineDistance) {
               _painter.updateLineDistance(adjustedDist);
             }
@@ -224,7 +223,8 @@ class ParticleNetworkState extends State<ParticleNetwork>
       _lastFrameMicros = now;
       simulation.step();
       frameNotifier.value = now;
-    })..start();
+    })
+      ..start();
   }
 
   @override
@@ -325,7 +325,8 @@ class ParticleNetworkState extends State<ParticleNetwork>
         _generateParticles(constraints.biggest);
 
         return MouseRegion(
-          onHover: hover ? (event) => _updateTouchPoint(event.localPosition) : null,
+          onHover:
+              hover ? (event) => _updateTouchPoint(event.localPosition) : null,
           onExit: hover ? (_) => _updateTouchPoint(Offset.infinite) : null,
           child: GestureDetector(
             onPanDown: (d) => _updateTouchPoint(d.localPosition),
