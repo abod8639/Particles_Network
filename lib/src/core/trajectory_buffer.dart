@@ -68,11 +68,12 @@ class TrajectoryBuffer {
     final int stateLen = _particleCount * 6;
     if (_simState.length < stateLen) _simState = Float64List(stateLen);
     if (_simAccelerated.length < _particleCount) {
-      _simAccelerated = List<bool>.filled(_particleCount, false, growable: true);
+      _simAccelerated =
+          List<bool>.filled(_particleCount, false, growable: true);
     }
     for (int i = 0, o = 0; i < _particleCount; i++, o += 6) {
       final Particle p = particles[i];
-      _simState[o]     = p.x;
+      _simState[o] = p.x;
       _simState[o + 1] = p.y;
       _simState[o + 2] = p.vx;
       _simState[o + 3] = p.vy;
@@ -84,8 +85,7 @@ class TrajectoryBuffer {
     // Clone working particles state for the simulation run — we still need
     // a Particle list because IParticleController.updateParticles takes one.
     // Reuse a cached list to avoid repeated allocations.
-    final List<Particle> simParticles =
-        _getCachedSimParticles(particles);
+    final List<Particle> simParticles = _getCachedSimParticles(particles);
 
     int offset = 0;
     for (int f = 0; f < capacity; f++) {
@@ -141,7 +141,7 @@ class TrajectoryBuffer {
   }
 
   /// Advances to the next frame and updates [particles] positions and velocities.
-  /// Returns [true] if successfully updated from buffer, [false] if buffer reached the end.
+  /// Returns `true` if successfully updated from buffer, `false` if buffer reached the end.
   bool advance(List<Particle> particles) {
     if (!_isValid || _particleCount != particles.length) {
       return false;
@@ -156,8 +156,8 @@ class TrajectoryBuffer {
     for (int i = 0; i < _particleCount; i++) {
       final Particle p = particles[i];
       // Direct field writes — avoids Offset allocation (2N objects/frame saved)
-      p.x  = _buffer[offset++];
-      p.y  = _buffer[offset++];
+      p.x = _buffer[offset++];
+      p.y = _buffer[offset++];
       p.vx = _buffer[offset++];
       p.vy = _buffer[offset++];
     }
