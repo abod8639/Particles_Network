@@ -1,19 +1,14 @@
-# particles\_network
-
-Transform your Flutter app's UI with a high-performance particle network animation that responds to touch and adapts seamlessly to any screen size.
-
 <div align="center">
 
-#  Particles Network
+# Particles Network
 
-**High-performance, GPU-accelerated particle systems for Flutter with advanced physics.**
+**High-performance, physics-driven particle simulation engine for Flutter — meticulously crafted with deep respect for user devices, battery life, and hardware resources.**
 
 <a href="https://github.com/abod8639/Particles_Network">
   <img src="assets/Picsart_25-05-10_12-57-34-680.png" width="450" alt="Particles Network Banner" style="border-radius: 12px;">
 </a>
 
 <p align="center">
-
   <a href="https://github.com/abod8639/Particles_Network/actions"><img src="https://github.com/abod8639/Particles_Network/actions/workflows/flutter-ci.yml/badge.svg" alt="CI Status"></a>
   <a href="https://pub.dev/packages/particles_network"><img src="https://img.shields.io/pub/v/particles_network?color=blue&label=pub.dev&logo=dart" alt="Pub Version"></a>
   <a href="https://codecov.io/gh/abod8639/Particles_Network"><img src="https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg" alt="Code Coverage"></a>
@@ -33,19 +28,22 @@ Transform your Flutter app's UI with a high-performance particle network animati
   <a href="https://github.com/abod8639/Particles_Network"><b>GitHub</b></a> •
   <a href="https://pub.dev/packages/particles_network"><b>Pub.dev</b></a> •
   <a href="https://particle-network-example.web.app"><b>Live Demo</b></a> •
-  <a href="#-gravity-simulation-guide"><b>Documentation</b></a>
+  <a href="#configuration-options"><b>API Reference</b></a>
 </p>
 
 </div>
+
+> ### Engineering Philosophy: Built with Respect for Hardware & Developers
+> **Particles Network is built differently.** Designed from the ground up with obsessive attention to detail, every data structure, spatial query, and draw call is engineered with surgical precision to minimize memory allocations, eliminate garbage collection pauses, and deliver silky-smooth 60/120 FPS animations without exhausting your users' device resources.
 
 ---
 
 ## Table of Contents
 
+- [Engineering Philosophy](#-engineering-philosophy-built-with-respect-for-hardware--developers)
 - [Features](#features)
 - [Demo](#demo)
 - [Live Demo](#live-demo)
-- [Use Cases](#use-cases)
 - [Performance Benchmarks](#performance-benchmarks)
 - [Quick Start](#quick-start)
 - [Installation](#installation)
@@ -54,25 +52,12 @@ Transform your Flutter app's UI with a high-performance particle network animati
   - [Touch Features Configuration](#touch-features-configuration)
 - [Gravity Simulation Guide](#gravity-simulation-guide)
   - [Global Gravity](#1-global-gravity)
-  - [Point Gravity](#2-point-gravity-attractors--repellers)
-- [Advanced Usage](#advanced-usage)
-  - [Theme Integration](#theme-integration)
-  - [Background Usage](#background-usage)
-  - [Performance Tips](#performance-tips)
+  - [Point Gravity (Attractors & Repellers)](#2-point-gravity-attractors--repellers)
 - [Architecture & Performance](#architecture--performance)
-  - [Adaptive Performance Scaling](#adaptive-performance-scaling)
-  - [Fast Single-Call Line Rendering](#fast-single-call-line-rendering)
-  - [Bounded O(N) Connection Scaling](#bounded-on-connection-scaling)
-  - [GPU-Accelerated Rendering](#gpu-accelerated-rendering)
-  - [Spatial Partitioning](#spatial-partitioning)
-  - [Zero-Allocation Color LUT](#zero-allocation-color-lut)
-  - [Touch Inactivity Bypass](#touch-inactivity-bypass)
-  - [Deterministic Trajectory Precomputation](#deterministic-trajectory-precomputation)
 - [Examples](#examples)
 - [Troubleshooting](#troubleshooting)
 - [FAQ](#faq)
 - [Migration Guide](#migration-guide)
-- [Credits & Acknowledgments](#credits--acknowledgments)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -80,62 +65,55 @@ Transform your Flutter app's UI with a high-performance particle network animati
 
 ## Features
 
-* **Advanced Physics Engine**
+* **Physics & Force Engine**
+  * **Dual Gravity Modes**: Seamless simulation of directional Global gravity and Point-source (attraction/repulsion) gravity.
+  * **Mass-Proportional Dynamics**: Particle mass scales with radius; heavier nodes resist velocity shifts naturally.
+  * **Realistic Gesture Dynamics**: Touch attraction, viscous damping, velocity capping, and smooth deceleration recovery.
+  * **Trajectory Preservation**: Maintains smooth inertia vectors during deceleration and settling.
 
-  * **Integrated Gravity System**: Support for Global and Point gravity
-  * **Interactive Forces**: Create attraction points or repulsion fields
-  * **Mass-based Simulation**: Larger particles respond differently to forces
-  * **True Trajectory Preservation**: Maintains natural velocity direction vectors during particle deceleration and inertia settling
-  * **Ultra-High Performance & Zero Allocations**
-    * **Adaptive Performance Scaling (`enableAdaptivePerformance`)**: Real-time FPS monitoring with `AdaptivePerformanceController` that auto-adjusts connection density and rendering quality to maintain stable 60/120 FPS under heavy loads.
-    * **Fast Single-Call Line Rendering (`fastLineRendering`)**: Batched point-to-point drawing pipeline minimizing CPU-to-GPU state transitions.
-    * **$O(N)$ Connection Limiting (`maxConnectionsPerParticle`)**: Bounded connection capacity per node, eliminating $O(N^2)$ slowdowns in dense scenes.
-    * **Adaptive Density (`adaptiveDensity`)**: Automatically scales connection radius in dense particle regions to prevent visual clutter and CPU bottlenecks.
-    * **Zero-Allocation Color LUT (`_lineColorLut`)**: Precomputed 256-level alpha lookup table with inverse distance precomputation ($255.0 / \text{lineDistance}$), completely eliminating `Color` allocations and GC overhead during connection rendering.
-    * **Touch Inactivity Bypass (`isTouchActive`)**: Skips all touch physics calculations, distance queries, and forced QuadTree rebuilds when the screen is idle.
-    * **Precalculated Trajectory Buffer (`TrajectoryBuffer`)**: Deterministic trajectory precomputation during idle states for smooth 120 FPS playback with zero per-frame physics computation.
-    * **GPU-accelerated rendering via Fragment Shaders** for smooth performance
-    * Advanced QuadTree spatial partitioning for O(log n) neighbor searches
-    * Compressed QuadTree structure for optimal memory usage
+* **High-Throughput Rendering & Zero Allocations**
+  * **Adaptive Performance Scaling (`enableAdaptivePerformance`)**: Auto-balances connection distance and density when frame rate drops, ensuring consistent 60/120 FPS.
+  * **Batched Line Rendering (`fastLineRendering`)**: Combines line segment coordinates into flat `Float32List` buffers rendered in a single `canvas.drawRawPoints` call.
+  * **Bounded $O(N)$ Connections (`maxConnectionsPerParticle`)**: Enforces per-node degree limits to prevent $O(N^2)$ exponential slowdowns in crowded views.
+  * **Adaptive Density (`adaptiveDensity`)**: Automatically scales down connection radii in dense clusters.
+  * **Zero-Allocation Color LUT**: Precomputed 256-level opacity table eliminates per-frame `Color` allocations and Garbage Collection (GC) pauses.
+  * **Spatial Partitioning**: Hierarchical `CompressedQuadTree` structure delivers $O(\log N)$ neighbor lookups.
+  * **Touch Inactivity Bypass**: Bypasses proximity checks and force routines when no pointer is active.
 
-* **Rich Customization**
-
-  * Control particle count, speed, size, and colors
-  * **Full Gravity Control**: Adjust strength, direction, and type
-  * **Advanced Touch Physics (`TouchFeatures`)**: Fine-grained control over attraction force, damping, velocity cap, and smooth deceleration decay rates
-  * Adjust connection distance and line thickness
-  * Enable or disable touch interactions and hover tracking
+* **Developer Friendly**
+  * Zero external dependencies beyond Flutter SDK.
+  * Fully reactive to screen resize and parent layout constraints.
+  * Direct exports of core classes (`ParticleNetwork`, `GravityType`, `TouchFeatures`).
 
 ---
 
 ## Demo
-<!-- image demo -->
-![demo image](https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/image.png)
-  <!-- git demo -->
+
 <p align="center">
-  <h3>Particle Effects</h3>
-  
+  <img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/image.png" alt="Demo Preview" width="650">
+</p>
+
+<p align="center">
   <table align="center">
     <tr align="center">
       <td><b>Default Network</b></td>
-      <td><b>Bold Lines</b></td>
-      <td><b>Gravity Effect</b></td>
+      <td><b>Bold Connections</b></td>
+      <td><b>Global Gravity</b></td>
     </tr>
     <tr>
-      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang.gif" width="220"></td>
-      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang1.gif" width="220"></td>
-      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang2.gif" width="220"></td>
+      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang.gif" width="220" alt="Default"></td>
+      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang1.gif" width="220" alt="Bold Lines"></td>
+      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang2.gif" width="220" alt="Gravity"></td>
     </tr>
-    <tr><td colspan="3" height="10"></td></tr>
     <tr align="center">
-      <td><b>Mass Gravity Effect</b></td>
-      <td><b>Complex Optimized</b></td>
-      <td><b>Particle no stroke</b></td>
+      <td><b>Mass-based Gravity</b></td>
+      <td><b>Optimized Density</b></td>
+      <td><b>Stroke Mode</b></td>
     </tr>
     <tr>
-      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang3.gif" width="220"></td>
-      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang4.gif" width="220"></td>
-      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang5.gif" width="220"></td>
+      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang3.gif" width="220" alt="Mass Gravity"></td>
+      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang4.gif" width="220" alt="Complex"></td>
+      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang5.gif" width="220" alt="No Stroke"></td>
     </tr>
   </table>
 </p>
@@ -144,7 +122,7 @@ Transform your Flutter app's UI with a high-performance particle network animati
 
 ## Live Demo
 
-Experience the performance and fluid animations directly in your browser:
+Experience interactive physics and high frame rates directly in your browser:
 
 <p align="center">
   <a href="https://particle-network-example.web.app">
@@ -152,37 +130,17 @@ Experience the performance and fluid animations directly in your browser:
   </a>
 </p>
 
-> [!TIP]
-> For the best experience on web, our demo uses **CanvasKit** rendering to ensure smooth 60 FPS performance for the particle physics and shaders.
-
----
-
-## Use Cases
-
-Perfect for creating stunning visual effects in:
-
-- **Landing Pages** - Create memorable first impressions
-- **Game Backgrounds** - Add dynamic ambiance to game menus
-- **App Onboarding** - Engage users with interactive tutorials
-- **Portfolio Sites** - Showcase your creativity
-- **Marketing Pages** - Capture attention with motion
-- **Data Visualization** - Animated backgrounds for dashboards
-- **Event Websites** - Create excitement and energy
-
 ---
 
 ## Performance Benchmarks
 
-| Metric | Before Optimization | After Optimization | Improvement |
+| Benchmark Scenario | Standard Loop | Optimized Engine | Gain |
 | :--- | :---: | :---: | :---: |
-| **Rendering 100 frames (500 particles)** | **4,608 ms** (~46 ms/frame) | **496 ms** (~4.9 ms/frame) | **9.3x Faster (89.2% reduction)** |
-| **Physics Update Loop (1,000 particles, 1,000 frames)** | ~120 ms | **45 ms** | **2.6x Faster** |
-| **Framerate (500 particles)** | ~21 FPS | **> 120 FPS** | Ultra-fluid rendering |
-| **Connection Color Allocations** | Thousands of `Color` instances/sec | **0 allocations (`_lineColorLut`)** | **100% GC pressure eliminated** |
-| **Touch calculations when idle** | Executed every frame | **0 calculations (`isTouchActive`)** | **100% idle overhead eliminated** |
-
-> [!NOTE]
-> Performance may vary based on device specifications, screen resolution, and other running applications. These benchmarks use default settings with `drawNetwork: true` and `fill: true`.
+| **500 Particles (100 Frames Render)** | 4,608 ms (~46 ms/frame) | **496 ms** (~4.9 ms/frame) | **9.3x Faster** |
+| **1,000 Particles (1,000 Frames Physics)** | ~120 ms | **45 ms** | **2.6x Faster** |
+| **Framerate (500 Particles)** | ~21 FPS | **> 120 FPS** | Rock-solid smooth |
+| **Line Color Heap Allocations** | Thousands of `Color`/sec | **0 (`_lineColorLut`)** | **100% GC pressure eliminated** |
+| **Idle Touch Calculation Overhead** | Every frame | **0 (`isTouchActive`)** | **Zero idle CPU waste** |
 
 ---
 
@@ -192,36 +150,23 @@ Perfect for creating stunning visual effects in:
 import 'package:flutter/material.dart';
 import 'package:particles_network/particles_network.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: Scaffold(
         backgroundColor: Colors.black,
         body: ParticleNetwork(
-          particleCount: 100,
-          maxSpeed: 1.5,
-          maxSize: 1.5,
-          lineWidth: 1.0,
-          lineDistance: 100,
+          particleCount: 300,
+          lineDistance: 80,
           particleColor: Colors.white,
-          lineColor: Colors.teal,
-          touchColor: Colors.amber,
+          lineColor: Colors.tealAccent,
           touchActivation: true,
-          isComplex: false,
-          fill: true,
-          drawNetwork: true,
-          gravityType: GravityType.none,
-          gravityStrength: 0.1,
-          gravityDirection: const Offset(0, 1),
-          gravityCenter: null,
-          hoverEffect: true,
         ),
       ),
     );
@@ -233,7 +178,7 @@ class MyApp extends StatelessWidget {
 
 ## Installation
 
-Add the package to your `pubspec.yaml`:
+Add `particles_network` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
@@ -246,222 +191,133 @@ Then run:
 flutter pub get
 ```
 
-### Platform-Specific Setup
-
-#### Web (Recommended)
-For optimal performance on web, use **CanvasKit** renderer:
-
-```bash
-# Development
-flutter run -d chrome --wasm
-# Production build
-flutter build web --wasm
-```
-
-#### Mobile (Android/iOS)
-No additional setup required! The package works out of the box.
-
-#### Desktop (Windows/macOS/Linux)
-No additional setup required! The package works out of the box.
-
 ---
 
 ## Platform Support
 
-| Platform | Support | Performance | Notes                         |
-|----------|---------|-------------|-------------------------------|
-|  Android | ✅ Full |  Excellent  | Hardware acceleration enabled |
-|  iOS     | ✅ Full |  Excellent  | Optimized for Metal rendering |
-|  Web     | ✅ Full |  Very Good  | Best with CanvasKit renderer  |
-|  Windows | ✅ Full |  Excellent  | DirectX acceleration          |
-|  macOS   | ✅ Full |  Excellent  | Metal acceleration            |
-|  Linux   | ✅ Full |  Very Good  | OpenGL acceleration           |
+| Platform | Support | Graphics Pipeline |
+| :--- | :---: | :--- |
+| **Android** | Full | Hardware Accelerated (Impeller / Skia) |
+| **iOS** | Full | Metal Accelerated (Impeller) |
+| **Web** | Full | WebAssembly & CanvasKit (`--wasm`) |
+| **macOS** | Full | Metal Native |
+| **Windows** | Full | DirectX Native |
+| **Linux** | Full | OpenGL Native |
 
-**Minimum Requirements:**
-- Flutter SDK: `>=3.10.0`
-- Dart SDK: `^3.0.0`
+**Requirements:**
+- Flutter SDK `>=3.10.0`
+- Dart SDK `>=3.0.0 <4.0.0`
 
 ---
 
 ## Configuration Options
 
-| Property                     | Type            | Default        | Description                                                          |
-| ---------------------------- | --------------- | -------------- | -------------------------------------------------------------------- |
-| `particleCount`              | `int`           | `60`           | Number of particles in the system                                    |
-| `maxSpeed`                   | `double`        | `0.5`          | Maximum initial velocity of particles                                |
-| `maxSize`                    | `double`        | `1.5`          | Maximum particle radius                                              |
-| `lineWidth`                  | `double`        | `0.5`          | Thickness of connection lines                                        |
-| `lineDistance`               | `double`        | `100`          | Max distance for a connection to form                                |
-| `particleColor`              | `Color`         | `Colors.white` | Color of the particles                                               |
-| `lineColor`                  | `Color`         | `Colors.teal`  | Color of the connections                                             |
-| `touchColor`                 | `Color`         | `Colors.amber` | Highlight color on touch/proximity                                   |
-| `touchActivation`            | `bool`          | `true`         | Enables interactive touch effects                                    |
-| `touchFeatures`              | `TouchFeatures` | `const TouchFeatures()` | Fine-grained touch dynamics (force, damping, decay rate, max speed) |
-| `hoverEffect`                | `bool?`         | `false`        | Enables/Disables mouse hover effects (Web & Desktop)                 |
-| `isComplex`                  | `bool`          | `false`        | Optimized mode for 500+ particles                                    |
-| `fill`                       | `bool`          | `true`         | Whether to fill or outline particles                                 |
-| `drawNetwork`                | `bool`          | `true`         | Enables/Disables connection lines                                    |
-| `maxConnectionsPerParticle`  | `int?`          | `null`         | Bounding edge limit per node to $O(N)$ for massive performance boost |
-| `adaptiveDensity`            | `bool`          | `false`        | Automatically scales down connection distance in dense networks      |
-| `fastLineRendering`          | `bool`          | `false`        | Single draw-call line rendering (alias: `useVerticesRendering`)      |
-| `enableAdaptivePerformance`  | `bool`          | `false`        | Dynamically monitors FPS and auto-tunes quality to maintain 60 FPS   |
-| `gravityType`                | `GravityType`   | `none`         | Type of physics simulation (`none`, `global`, `point`)               |
-| `gravityStrength`            | `double`        | `0.1`          | Intensity of the force ($F = ma$ applied)                            |
-| `gravityDirection`           | `Offset`        | `(0, 1)`       | Direction vector for `GravityType.global`                            |
-| `gravityCenter`              | `Offset?`       | `center`       | Center coordinates for `GravityType.point`                           |
+| Property | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `particleCount` | `int` | `60` | Number of particles in the system. |
+| `maxSpeed` | `double` | `0.5` | Maximum base wandering velocity (px/frame). |
+| `maxSize` | `double` | `1.5` | Maximum particle radius in pixels. |
+| `lineWidth` | `double` | `0.5` | Thickness of connection lines. |
+| `lineDistance` | `double` | `100.0` | Maximum distance threshold for drawing connections. |
+| `particleColor` | `Color` | `Colors.white` | Particle fill or outline color. |
+| `lineColor` | `Color` | `Color(0xFF64FFB4)` | Color of connection lines. |
+| `touchColor` | `Color` | `Colors.amber` | Highlight color for particles near touch position. |
+| `touchActivation` | `bool` | `true` | Enables touch and gesture interactions. |
+| `touchFeatures` | `TouchFeatures` | `const TouchFeatures()` | Fine-grained touch physics and response configuration. |
+| `hoverEffect` | `bool?` | `false` | Enables cursor tracking on desktop and web. |
+| `isComplex` | `bool` | `false` | Optimized mode for high particle counts (300+). |
+| `fill` | `bool` | `true` | `true` for filled circles, `false` for stroked outlines. |
+| `drawNetwork` | `bool` | `true` | Whether to draw connection lines between particles. |
+| `maxConnectionsPerParticle` | `int?` | `null` | Limits lines per particle, bounding edge complexity to $O(N)$. |
+| `adaptiveDensity` | `bool` | `false` | Automatically reduces line distance in crowded areas. |
+| `fastLineRendering` | `bool` | `false` | Batched single-call line drawing using `canvas.drawRawPoints`. |
+| `enableAdaptivePerformance`| `bool` | `false` | Dynamically throttles effects during frame spikes to keep 60 FPS. |
+| `gravityType` | `GravityType` | `GravityType.none` | Physics type: `none`, `global`, or `point`. |
+| `gravityStrength` | `double` | `0.1` | Force intensity ($F = m \cdot a$). Negative values repel in point gravity. |
+| `gravityDirection` | `Offset` | `Offset(0, 1)` | Direction vector for `GravityType.global`. |
+| `gravityCenter` | `Offset?` | `null` | Focus position for `GravityType.point` (defaults to viewport center). |
+
+---
 
 ### Touch Features Configuration
 
-The `TouchFeatures` class provides granular physics parameters for interactive gestures:
+Fine-tune interaction dynamics with `TouchFeatures`:
 
 | Property | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `force` / `pullForce` | `double` | `0.42` | Attraction pull force towards the active pointer position |
-| `speed` / `decayRate` | `double` | `0.42` | Settling rate controls how smoothly particles return to cruising speed after touch release |
-| `damping` | `double` | `0.985` | Fluid drag coefficient applied to particles within the touch field |
-| `maxTouchSpeed` | `double` | `5.5` | Strict velocity cap during touch attraction |
-| `lineDistance` | `double?` | `null` | Custom connection distance around touch point (defaults to network `lineDistance`) |
+| `force` / `pullForce` | `double` | `0.42` | Attraction strength toward the touch point. |
+| `speed` / `decayRate` | `double` | `0.42` | Recovery rate back to cruising speed after touch release. |
+| `damping` | `double` | `0.985` | Drag coefficient within the touch field. |
+| `maxTouchSpeed` | `double` | `5.5` | Strict speed ceiling during touch attraction. |
+| `lineDistance` | `double?` | `null` | Touch interaction radius (defaults to widget `lineDistance`). |
+
+```dart
+ParticleNetwork(
+  touchActivation: true,
+  touchFeatures: const TouchFeatures(
+    force: 0.5,
+    damping: 0.98,
+    maxTouchSpeed: 6.0,
+    decayRate: 0.02,
+  ),
+)
+```
 
 ---
 
 ## Gravity Simulation Guide
 
-The library now features a realistic physics engine that simulates mass and forces.
-
 ### 1. Global Gravity
-Simulates a constant force field across the entire viewport (like natural Earth gravity).
-* **Usage**: Set `gravityType: GravityType.global`.
-* **Direction**: Use `gravityDirection` to control where the particles "fall". `Offset(0, 1)` is down, `Offset(1, 0)` is right.
+Simulates uniform directional gravity across the entire canvas (e.g. falling snow, floating bubbles).
 
 ```dart
 ParticleNetwork(
   gravityType: GravityType.global,
-  gravityStrength: 0.5,
-  gravityDirection: Offset(0, 1), // Standard downward fall
+  gravityStrength: 0.3,
+  gravityDirection: const Offset(0, 1), // Downward fall
 )
 ```
 
 ### 2. Point Gravity (Attractors & Repellers)
-Simulates a force emanating from or towards a specific point in space.
-* **Attraction (Black Hole)**: Use a **positive** `gravityStrength`. Particles will accelerate towards the `gravityCenter`.
-* **Repulsion (Shield)**: Use a **negative** `gravityStrength`. Particles will be pushed away from the `gravityCenter`.
+Simulates forces directed relative to a point source in space.
+- **Attraction (Black Hole)**: Positive `gravityStrength` draws particles inward.
+- **Repulsion (Force Field)**: Negative `gravityStrength` pushes particles outward.
+- **Center**: If `gravityCenter` is omitted (`null`), it automatically centers on the widget.
 
 ```dart
+// Repulsion shield focused on center
 ParticleNetwork(
   gravityType: GravityType.point,
-  gravityStrength: -1.5, // Repulsion effect
-  gravityCenter: Offset(width / 2, height / 2),
+  gravityStrength: -1.2, // Negative = Repulsion
 )
 ```
 
 > [!NOTE]
-> Physical properties like **Mass** are automatically calculated based on the particle's `size`. Larger particles will feel heavier and respond more realistically to the applied forces.
-
-
----
-
-## Advanced Usage
-
-### Theme Integration
-
-```dart
-AnimatedBuilder(
-  animation: Theme.of(context),
-  builder: (context, _) => ParticleNetwork(
-    particleColor: Theme.of(context).primaryColor,
-    lineColor: Theme.of(context).colorScheme.secondary,
-    // other configs...
-  ),
-)
-```
-
-### Background Usage
-
-```dart
-Stack(
-  children: [
-    ParticleNetwork(/* configuration */),
-    YourAppContent(),
-  ],
-)
-```
-
-### Performance Tips
-
-* Reduce `particleCount` and `lineDistance` for weaker devices
-* Use `isComplex: true` for high-density scenes
-* Use `fill: false` for better performance and lighter visuals
-
----
-
-### Simplified API
-
-The package now exports core types directly from the main entry point, making it easier to use without managing multiple imports:
-
-```dart
-import 'package:particles_network/particles_network.dart';
-
-// Access directly:
-// GravityType, GravityConfig, Particle
-```
+> Particle **mass** is calculated automatically from radius. Larger particles naturally have greater inertia and resist velocity changes more than smaller ones.
 
 ---
 
 ## Architecture & Performance
 
-This package combines advanced CPU-side spatial partitioning with **GPU-side rendering using Fragment Shaders** and dynamic runtime governors to achieve optimal performance even with high particle counts.
+### 1. Batched Flat-Buffer Line Rendering (`fastLineRendering`)
+Instead of issuing individual `canvas.drawLine` commands per connection (which induces CPU-GPU context switches), `fastLineRendering: true` aggregates segment pairs into pre-allocated `Float32List` buckets and draws them with batched `canvas.drawRawPoints(PointMode.lines, ...)` calls.
 
-### Adaptive Performance Scaling
+### 2. Bounded $O(N)$ Degree Limiting (`maxConnectionsPerParticle`)
+Unbounded proximity checks in dense meshes produce up to $\frac{N(N-1)}{2}$ edges ($O(N^2)$). Capping connections per particle (e.g. `maxConnectionsPerParticle: 4`) provides a predictable $O(N)$ complexity ceiling, maintaining high frame rates even with 1,000+ particles.
 
-The `AdaptivePerformanceController` actively monitors real-time frame rate to eliminate stutter on lower-end devices or during sudden rendering spikes:
-- Automatically throttles connection density and max connection ranges when frame delivery time exceeds threshold.
-- Automatically restores full quality when performance headroom recovers.
-- Activated by simply setting `enableAdaptivePerformance: true`.
-
-### Fast Single-Call Line Rendering
-
-Traditional custom painters invoke `canvas.drawLine` repeatedly for every pair of connected particles, resulting in hundreds of CPU-GPU transitions per frame.
-- Enabling `fastLineRendering: true` batches connection endpoints into a single flat point buffer.
-- Drastically reduces draw-call overhead on both **Impeller** and **CanvasKit/WASM** rendering engines.
-
-### Bounded $O(N)$ Connection Scaling
-
-In dense networks, pairwise proximity checks can generate up to $\frac{N(N-1)}{2}$ edges ($O(N^2)$), causing frame rates to collapse at 500+ particles.
-- Setting `maxConnectionsPerParticle: 4` (or similar) enforces an upper bound on connection degree per particle.
-- Limits total line segments to a predictable $O(N)$ upper bound, enabling smooth rendering of 1,000+ particles.
-
-### GPU-Accelerated Rendering
-
-The particle network uses **Fragment Shaders** for rendering, which offloads the drawing work to the GPU. This allows for:
-- Smooth 60 FPS performance even with 500+ particles
-- Efficient rendering of complex visual effects
-- Reduced CPU usage for better battery life
-
-> [!TIP]
-> For web deployments, compile with WebAssembly (`--wasm`) for hardware-accelerated CanvasKit / Skwasm shader performance.
-
-### Spatial Partitioning
-
-The package uses an advanced **Compressed QuadTree** spatial data structure for efficient particle management.
+### 3. Spatial Partitioning via `CompressedQuadTree`
+The engine leverages hierarchical space-partitioning to accelerate proximity queries from $O(N^2)$ brute-force distance checks down to $O(\log N)$:
 
 ```dart
-final quadTree = CompressedQuadTreeNode(
-  Rectangle(0, 0, screenWidth, screenHeight),
-);
+// Spatial partitioning architecture
+final quadTree = CompressedQuadTree(Rectangle(0, 0, width, height));
 
-particles.forEach((particle) => 
-  quadTree.insert(QuadTreeParticle(
-    particle.id, 
-    particle.x, 
-    particle.y
-  ))
-);
+for (int i = 0; i < particles.length; i++) {
+  quadTree.insert(QuadTreeParticle(i, particles[i].x, particles[i].y));
+}
 
-final nearbyParticles = quadTree.queryCircle(
-  touchX, 
-  touchY, 
-  searchRadius
-);
+// O(log N) proximity query
+final nearbyParticleIndices = quadTree.queryCircle(touchX, touchY, radius);
 ```
 
 ![QuadTree Visualization](https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/250530_22h33m09s_screenshot.png)
@@ -472,47 +328,50 @@ final nearbyParticles = quadTree.queryCircle(
 * Smart node consolidation and rebalancing
 * Memory-efficient structure with typed arrays and sparse representation
 
-### Zero-Allocation Color LUT (`_lineColorLut`)
+### 4. Zero-Allocation Color LUT (`_lineColorLut`)
+Opacity alpha gradients for connection lines are looked up in a precomputed 256-entry table using pre-calculated inverse distances ($255.0 / \text{lineDistance}$). This completely eliminates runtime `Color.withAlpha` allocations and GC pauses during the render cycle.
 
-To prevent micro-stutters and frame drops caused by Garbage Collector (GC) pauses during connection rendering:
-- **Precomputed 256-Level Alpha Table**: A lookup table `List<Color> _lineColorLut` stores all 256 opacity gradations for the configured `lineColor`.
-- **Precomputed Inverse Distance**: Precalculates the inverse distance constant ($255.0 / \text{lineDistance}$) upon initialization.
-- **Zero Allocations**: Replaces expensive dynamic `color.withAlpha(...)` allocations and division operations per connection with an instantaneous $O(1)$ table lookup, eliminating thousands of short-lived `Color` objects per second from the heap.
-### Deterministic Trajectory Precomputation (`TrajectoryBuffer`)
-
-- Precomputes future particle coordinates and velocities in a compact, flat `Float64List` buffer when the screen is idle.
-- Eliminates per-frame CPU physics calculation during unattended playback.
-- Seamlessly falls back to real-time physics calculation when touched, and smoothly regenerates future trajectory batches once touch ends.
+### 5. Hardware Stewardship & Battery Conservation
+To ensure animations run smoothly without punishing consumer hardware:
+* **Zero GC Pressure**: The hot rendering loop avoids transient object allocations, preventing Dart Garbage Collector pauses that cause micro-stutters.
+* **Passive Power Saving**: Proximity and gesture calculations completely shut down when the screen is idle, letting CPU cores rest.
+* **Proactive Thermal & Battery Protection**: `enableAdaptivePerformance` dynamically throttles connection workloads during rendering spikes to avoid device overheating and excessive battery drain.
 
 ---
 
 ## Examples
 
-### 1. Simple Background Animation
+### 1. Background Visual for Landing Pages
 
 ```dart
 import 'package:flutter/material.dart';
 import 'package:particles_network/particles_network.dart';
 
-class HomePage extends StatelessWidget {
+class LandingBackgroundPage extends StatelessWidget {
+  const LandingBackgroundPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF0F172A),
       body: Stack(
         children: [
-          // Particle background
-          ParticleNetwork(
-            particleCount: 80,
-            maxSpeed: 1.0,
-            particleColor: Colors.blue.shade200,
-            lineColor: Colors.blue.shade100,
-            touchActivation: false,
+          const Positioned.fill(
+            child: ParticleNetwork(
+              particleCount: 75,
+              maxSpeed: 0.6,
+              particleColor: Color(0xFF38BDF8),
+              lineColor: Color(0xFF0284C7),
+              touchActivation: true,
+            ),
           ),
-          // Your content
           Center(
             child: Text(
               'Welcome',
-              style: TextStyle(fontSize: 48, color: Colors.white),
+              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
           ),
         ],
@@ -522,357 +381,125 @@ class HomePage extends StatelessWidget {
 }
 ```
 
-### 2. Interactive Touch Effect
+### 2. Black Hole Particle Siphon
 
 ```dart
-ParticleNetwork(
-  particleCount: 120,
-  maxSpeed: 2.0,
-  lineDistance: 150,
-  touchActivation: true,
-  touchColor: Colors.amber,
-  particleColor: Colors.white,
+const ParticleNetwork(
+  particleCount: 160,
+  gravityType: GravityType.point,
+  gravityStrength: 1.5, // Positive value attracts toward center
+  particleColor: Colors.deepPurpleAccent,
+  lineColor: Colors.purple,
+)
+```
+
+### 3. High-Density Ultra-Smooth Preset (v1.9.6)
+
+```dart
+const ParticleNetwork(
+  particleCount: 500,
+  lineDistance: 30,
+  isComplex: true,
+  fill: false,
+  // 1.9.6 Performance Governors:
+  fastLineRendering: true,
+  maxConnectionsPerParticle: 4,
+  adaptiveDensity: true,
+  enableAdaptivePerformance: true,
+  particleColor: Colors.cyanAccent,
   lineColor: Colors.teal,
 )
 ```
 
-### 3. Gravity Simulation - Falling Particles
+### 4. Theme-Aware Reactive Particles
 
 ```dart
-ParticleNetwork(
-  particleCount: 100,
-  gravityType: GravityType.global,
-  gravityStrength: 0.5,
-  gravityDirection: Offset(0, 1), // Downward
-  particleColor: Colors.white,
-  lineColor: Colors.blue,
-)
-```
+import 'package:flutter/material.dart';
+import 'package:particles_network/particles_network.dart';
 
-### 4. Black Hole Effect
+class ThemedParticleView extends StatelessWidget {
+  const ThemedParticleView({super.key});
 
-```dart
-ParticleNetwork(
-  particleCount: 150,
-  gravityType: GravityType.point,
-  gravityStrength: 1.2, // Positive = attraction
-  gravityCenter: Offset(screenWidth / 2, screenHeight / 2),
-  particleColor: Colors.purple,
-  lineColor: Colors.purpleAccent,
-)
-```
-
-### 5. Repulsion Field
-
-```dart
-ParticleNetwork(
-  particleCount: 100,
-  gravityType: GravityType.point,
-  gravityStrength: -1.5, // Negative = repulsion
-  gravityCenter: Offset(screenWidth / 2, screenHeight / 2),
-  particleColor: Colors.red,
-  lineColor: Colors.orange,
-)
-```
-
-### 6. High-Density Optimized Scene
-
-```dart
-ParticleNetwork(
-  particleCount: 400,
-  lineDistance: 60,
-  isComplex: true, // Enable optimization for 500+ particles
-  maxSpeed: 0.8,
-  fill: false, // Outline mode for better performance
-  particleColor: Colors.cyan,
-  lineColor: Colors.cyanAccent,
-)
-```
-
-### 7. Dynamic Theme-Aware Particles
-
-```dart
-class ThemedParticles extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return ParticleNetwork(
-      particleCount: 100,
-      particleColor: isDark ? Colors.white : Colors.black,
-      lineColor: isDark ? Colors.teal : Colors.blue,
-      touchColor: Theme.of(context).colorScheme.primary,
+      particleCount: 90,
+      particleColor: isDark ? Colors.white70 : Colors.black87,
+      lineColor: theme.colorScheme.primary,
+      touchColor: theme.colorScheme.secondary,
     );
   }
 }
-```
-
-### 8. Adaptive Performance & Fluid Touch Dynamics (New in 1.9.6)
-
-```dart
-ParticleNetwork(
-  particleCount: 200,
-  maxSpeed: 0.8,
-  lineDistance: 120,
-  particleColor: Colors.white,
-  lineColor: Colors.cyanAccent,
-  // 1.9.6 Adaptive Performance Options:
-  enableAdaptivePerformance: true, // Dynamically maintains 60 FPS
-  fastLineRendering: true,          // Batched single-call rendering
-  maxConnectionsPerParticle: 4,     // Limits edge complexity to O(N)
-  adaptiveDensity: true,           // Scales distance in crowded spots
-  // 1.9.6 Advanced Touch Dynamics:
-  touchActivation: true,
-  touchFeatures: const TouchFeatures(
-    force: 0.5,                    // Attraction pull intensity
-    damping: 0.985,                // Viscous fluid drag
-    maxTouchSpeed: 5.0,            // Speed limit during touch
-    decayRate: 0.02,               // Smooth deceleration settling rate
-  ),
-)
 ```
 
 ---
 
 ## Troubleshooting
 
-### Issue: Low FPS on Web
-
-**Solution:** Compile using WebAssembly (`--wasm`) for maximum performance with Skwasm and CanvasKit:
-```bash
-# Development
-flutter run -d chrome --wasm
-
-# Production build
-flutter build web --wasm
-```
-
-### Issue: Particles Not Visible
-
-**Possible Causes:**
-1. **Color Mismatch**: Ensure `particleColor` contrasts with the background
-2. **Size Too Small**: Increase `maxSize` parameter (default is 1.5)
-3. **Count Too Low**: Increase `particleCount` for more visibility
-
-**Solution:**
-```dart
-ParticleNetwork(
-  particleCount: 100, // Increase if needed
-  maxSize: 3.0,       // Make particles larger
-  particleColor: Colors.white, // Ensure contrast
-  // ...
-)
-```
-
-### Issue: Touch Interaction Not Working
-
-**Solution:** Ensure `touchActivation` is set to `true`:
-```dart
-ParticleNetwork(
-  touchActivation: true,
-  touchColor: Colors.amber, // Visible highlight color
-  // ...
-)
-```
-
-### Issue: Performance Degradation with Many Particles
-
-**Solution:** Enable complex mode and optimize settings:
-```dart
-ParticleNetwork(
-  particleCount: 500,
-  isComplex: true,        // Enable optimization
-  fill: false,            // Use outline mode
-  lineDistance: 80,       // Reduce connection distance
-  drawNetwork: true,      // Can disable if needed
-  // ...
-)
-```
-
-### Issue: Gravity Not Working
-
-**Solution:** Ensure gravity type is set correctly:
-```dart
-// For global gravity
-ParticleNetwork(
-  gravityType: GravityType.global,  // Must be set
-  gravityStrength: 0.5,              // Non-zero value
-  gravityDirection: Offset(0, 1),    // Direction vector
-)
-
-// For point gravity
-ParticleNetwork(
-  gravityType: GravityType.point,    // Must be set
-  gravityStrength: 1.0,              // Non-zero value
-  gravityCenter: Offset(200, 200),   // Valid coordinates
-)
-```
+| Symptom | Likely Cause | Solution |
+| :--- | :--- | :--- |
+| **Particles not visible** | Low contrast with background | Set contrasting `particleColor` (e.g. `Colors.white` on dark backgrounds). |
+| **Touch does not respond** | `touchActivation` disabled | Ensure `touchActivation: true` and that parent widgets do not block gestures. |
+| **Frame drops on low-end hardware** | Too many connections | Enable `fastLineRendering: true`, set `maxConnectionsPerParticle: 3`, or use `enableAdaptivePerformance: true`. |
+| **Web stutter** | HTML/Canvas renderer | Build web apps with CanvasKit / Wasm: `flutter build web --wasm`. |
 
 ---
 
 ## FAQ
 
-### Q: What's the recommended particle count?
-
-**A:** It depends on your target platform:
-- **Mobile**: 60-150 particles for smooth 60 FPS
-- **Web (CanvasKit)**: 100-300 particles
-- **Desktop**: 200-500 particles
-- **High-end devices with `isComplex: true`**: 500-1000 particles
-
-### Q: Can I use this as a background widget?
-
-**A:** Yes! Simply wrap it in a `Stack`:
+### How do I configure particle count per device?
+Pass values conditionally based on viewport width or screen size:
 ```dart
-Stack(
-  children: [
-    ParticleNetwork(/* config */),
-    YourContent(),
-  ],
-)
+final count = MediaQuery.sizeOf(context).width < 600 ? 50 : 150;
+ParticleNetwork(key: ValueKey(count), particleCount: count)
 ```
 
-### Q: Does this work on all platforms?
+### Can I place other widgets above the network?
+Yes. Place `ParticleNetwork` inside a `Stack` as the first child, and layer your interactive UI on top.
 
-**A:** Yes! The package supports:
-- ✅ Android
-- ✅ iOS
-- ✅ Web (best with CanvasKit)
-- ✅ Windows
-- ✅ macOS
-- ✅ Linux
-
-### Q: How do I create a "snow falling" effect?
-
-**A:** Use global gravity with downward direction:
-```dart
-ParticleNetwork(
-  gravityType: GravityType.global,
-  gravityStrength: 0.3,
-  gravityDirection: Offset(0, 1),
-  particleColor: Colors.white,
-  maxSpeed: 0.5,
-)
-```
-
-### Q: Can I disable the connection lines?
-
-**A:** Yes, set `drawNetwork: false`:
-```dart
-ParticleNetwork(
-  drawNetwork: false,
-  // ...
-)
-```
-
-### Q: What's the difference between `fill: true` and `fill: false`?
-
-**A:** 
-- `fill: true` - Particles are filled circles (default, more visible)
-- `fill: false` - Particles are outlined circles (better performance, lighter look)
-
-### Q: How do I make particles respond to mouse/touch?
-
-**A:** Enable touch activation:
-```dart
-ParticleNetwork(
-  touchActivation: true,
-  touchColor: Colors.amber, // Highlight color
-  lineDistance: 150,        // Interaction radius
-)
-```
-
-Note: Some properties like `particleCount`, `maxSpeed`, and `maxSize` require a widget rebuild to take effect. You can force this by changing the widget's `key`.
+### Does `ParticleNetwork` stop animating when offscreen?
+The animation loop uses Flutter's `TickerProvider`, which automatically pauses when the host route or modal is obscured or disposed.
 
 ---
 
 ## Migration Guide
 
 ### Migrating to 1.9.6
+Version 1.9.6 is fully backwards-compatible with all `1.x` APIs.
 
-Version 1.9.6 is **100% backward compatible** with all existing `1.x` implementations.
-
-**New Capabilities in 1.9.6:**
-- **Dynamic FPS Governor**: Enable `enableAdaptivePerformance: true` for automatic quality adaptation.
-- **Fast Line Rendering**: Enable `fastLineRendering: true` to minimize GPU draw calls.
-- **Connection Degree Limiter**: Set `maxConnectionsPerParticle` to cap connections per particle and eliminate $O(N^2)$ spikes.
-- **Density Adaptation**: Enable `adaptiveDensity: true` to auto-scale connection radius in dense clusters.
-- **Fine-Grained Touch Physics**: Pass `touchFeatures: TouchFeatures(...)` for customized drag, pull, damping, and decay rate.
-
-**Example Migration Config:**
+To take advantage of 1.9.6 performance features, simply add the optional flags:
 ```dart
 ParticleNetwork(
-  // Existing parameters remain unchanged:
-  particleCount: 150,
-  particleColor: Colors.white,
-  lineColor: Colors.teal,
-
-  // New in 1.9.6 (all optional):
+  particleCount: 200,
+  // New optional optimizations in 1.9.6:
   enableAdaptivePerformance: true,
   fastLineRendering: true,
   maxConnectionsPerParticle: 4,
   adaptiveDensity: true,
   touchFeatures: const TouchFeatures(
-    force: 0.45,
-    damping: 0.98,
-    maxTouchSpeed: 5.0,
-    decayRate: 0.015,
+    force: 0.5,
+    damping: 0.985,
   ),
 )
 ```
-
-**Recommended Updates:**
-1. Update your `pubspec.yaml`:
-   ```yaml
-   dependencies:
-     particles_network: ^1.9.6
-   ```
-
-2. Run:
-   ```bash
-   flutter pub get
-   ```
-
----
-
-## Credits & Acknowledgments
-
-This package is built with:
-- **Flutter** - Google's UI toolkit for building beautiful, natively compiled applications
-- **Fragment Shaders** - GPU-accelerated rendering for optimal performance
-- **QuadTree Algorithm** - Efficient spatial partitioning for particle management
-
-**Inspired by:**
-- Classic particle.js effects
-- Modern web animation libraries
-- Physics simulation principles
-
-**Special Thanks:**
-- The Flutter team for the amazing framework
-- The open-source community for continuous feedback and contributions
-- All developers who have starred, used, and contributed to this package
 
 ---
 
 ## Contributing
 
-We welcome contributions! See the [contributing guide](https://github.com/abod8639/particles_network/tree/main/CONTRIBUTING.md) for more details.
+Contributions, bug reports, and suggestions are welcome!
+- Check out the [Contributing Guide](CONTRIBUTING.md).
+- Submit issues or pull requests on [GitHub](https://github.com/abod8639/Particles_Network).
 
-**Ways to Contribute:**
-- Report bugs via [GitHub Issues](https://github.com/abod8639/Particles_Network/issues)
-- Suggest features or improvements
-- Improve documentation
-- Submit pull requests
-- Star the repository if you find it useful!
+---
 
 ## License
 
-This package is released under the [MIT License](LICENSE).
-
----
+This package is licensed under the [MIT License](LICENSE).
 
 <div align="center">
   Crafted with care and ❤️  by <a href="https://github.com/abod8639">Dexter</a>
 </div>
-
----
