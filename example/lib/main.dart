@@ -105,14 +105,14 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
         child: Column(
           children: [
             // Animated Header Panel for Controls
-            AnimatedContainer(
+            AnimatedCrossFade(
               duration: _animationDuration,
-              curve: Curves.easeInOut,
-              height: _showPanel ? _controlPanelHeight : 0,
-              child: SingleChildScrollView(
-                physics: const NeverScrollableScrollPhysics(),
-                child: _buildAdvancedControlPanel(),
-              ),
+              crossFadeState: _showPanel
+                  ? CrossFadeState.showFirst
+                  : CrossFadeState.showSecond,
+              sizeCurve: Curves.easeInOut,
+              firstChild: _buildAdvancedControlPanel(),
+              secondChild: const SizedBox(width: double.infinity, height: 0),
             ),
 
             // The Particle Network Display Area
@@ -142,12 +142,12 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                 alignment: Alignment.topRight,
                 showChart: _showChart,
                 child: ParticleNetwork(
-                  // touchFeatures: TouchFeatures(
-                  //   speed: _touchSpeed,
-                  //   force: _touchForce,
-                  //   maxTouchSpeed: _maxTouchSpeed,
-                  //   lineDistance: _touchLineDistance,
-                  // ),
+                  touchFeatures: TouchFeatures(
+                    speed: _touchSpeed,
+                    force: _touchForce,
+                    maxTouchSpeed: _maxTouchSpeed,
+                    lineDistance: _touchLineDistance,
+                  ),
                   key: _particleKey,
                   drawNetwork: _drawNetwork,
                   fill: _isFill,
