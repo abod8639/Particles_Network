@@ -83,7 +83,9 @@ void main() {
       expect(quadTree.isLeaf, isFalse); // Should subdivide
     });
 
-    test('normal subdivision creates all 4 quadrants when particles are distributed', () {
+    test(
+        'normal subdivision creates all 4 quadrants when particles are distributed',
+        () {
       const p1 = QuadTreeParticle(1, 25, 25); // NW
       const p2 = QuadTreeParticle(2, 75, 75); // SE
       const p3 = QuadTreeParticle(3, 25, 75); // SW
@@ -98,10 +100,13 @@ void main() {
       expect(quadTree.particles, isEmpty);
     });
 
-    test('retains particle in node if it cannot be inserted into any child during subdivision', () {
+    test(
+        'retains particle in node if it cannot be inserted into any child during subdivision',
+        () {
       // Simulate an uninsertable particle already stored in node
       const validParticle = QuadTreeParticle(1, 25, 25); // NW
-      const outOfBoundsParticle = QuadTreeParticle(999, -10, -10); // Outside all child boundaries
+      const outOfBoundsParticle =
+          QuadTreeParticle(999, -10, -10); // Outside all child boundaries
 
       quadTree.particles.add(validParticle);
       quadTree.particles.add(outOfBoundsParticle);
@@ -120,8 +125,10 @@ void main() {
       expect(quadTree.particles.length, equals(1));
 
       // Valid particles are distributed to children
-      expect(quadTree.children[Quadrant.northWest]!.particles, contains(validParticle));
-      expect(quadTree.children[Quadrant.southEast]!.particles, contains(newParticle));
+      expect(quadTree.children[Quadrant.northWest]!.particles,
+          contains(validParticle));
+      expect(quadTree.children[Quadrant.southEast]!.particles,
+          contains(newParticle));
     });
   });
 
@@ -137,14 +144,6 @@ void main() {
 
       for (var i = 0; i < particles.length; i++) {
         quadTree.insert(particles[i]);
-        print('After inserting particle ${i + 1}:');
-        print('isLeaf: ${quadTree.isLeaf}');
-        print('children count: ${quadTree.children.length}');
-        if (!quadTree.isLeaf) {
-          print(
-            'child quadrants: ${quadTree.children.keys.map((q) => q.name).join(', ')}',
-          );
-        }
       }
 
       expect(
