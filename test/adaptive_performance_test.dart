@@ -70,5 +70,37 @@ void main() {
       expect(controller.scaleFactor, equals(1.0));
       expect(controller.monitor.recordedFrameCount, equals(0));
     });
+    test('normal frame times reset consecutive drop and smooth counters (L176-L179)', () {
+      // 2 consecutive dropped frames (> 20.83ms)
+      controller.recordFrameTime(const Duration(milliseconds: 25));
+      controller.recordFrameTime(const Duration(milliseconds: 25));
+
+      // Normal frame within [14.17ms, 20.83ms] (16ms) triggers the else branch (L176-L179)
+      controller.recordFrameTime(const Duration(milliseconds: 16));
+
+      // Another dropped frame: since consecutiveDrops was reset to 0, count is now 1 (< 3)
+      // and scaleFactor should remain 1.0 (not step down to 0.9)
+      controller.recordFrameTime(const Duration(milliseconds: 25));
+      expect(controller.scaleFactor, equals(1.0));
+
+      // Force scale down to 0.9
+      controller.recordFrameTime(const Duration(milliseconds: 25));
+      controller.recordFrameTime(const Duration(milliseconds: 25));
+      expect(controller.scaleFactor, closeTo(0.9, 0.001));
+
+      // 10 smooth frames (< 14.17ms)
+      for (int i = 0; i < 10; i++) {
+        controller.recordFrameTime(const Duration(milliseconds: 10));
+      }
+
+      // Normal frame resets consecutiveSmooth to 0 (L176-L179)
+      controller.recordFrameTime(const Duration(milliseconds: 16));
+
+      // 10 more smooth frames: total smooth after reset is 10 (< 15), so scale does not recover yet
+      for (int i = 0; i < 10; i++) {
+        controller.recordFrameTime(const Duration(milliseconds: 10));
+      }
+      expect(controller.scaleFactor, closeTo(0.9, 0.001));
+    });
   });
 }
