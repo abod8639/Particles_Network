@@ -29,7 +29,7 @@ class TouchFeatures {
     this.maxTouchSpeed = 5.5,
     this.damping = 0.985,
     this.lineDistance,
-  })  : speed = speed ?? decayRate ?? 0.012,
+  })  : speed = speed ?? decayRate ?? 0.4,
         force = force ?? pullForce ?? 0.42;
 
   /// Alias for [speed] (decay rate).
