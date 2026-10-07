@@ -299,22 +299,25 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
             _buildNeuCard(
               title: "Line Dynamics",
               icon: Icons.linear_scale_rounded,
-              child: Column(
+              child: Row(
                 children: [
-                  _buildSlider(
-                    "Line Width",
-                    _lineWidth,
-                    0.1,
-                    20.0,
-                    (v) => setState(() => _lineWidth = v),
+                  Expanded(
+                    child: _buildSlider(
+                      "Line Width",
+                      _lineWidth,
+                      0.1,
+                      20.0,
+                      (v) => setState(() => _lineWidth = v),
+                    ),
                   ),
-                  _buildSlider(
+                  Expanded(
+                      child: _buildSlider(
                     "Line Dist",
                     _lineDistance,
                     0,
-                    500,
+                    200,
                     (v) => setState(() => _lineDistance = v),
-                  ),
+                  ))
                 ],
               ),
             ),
@@ -359,16 +362,16 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
             ),
             // Gravity Settings
             _buildNeuCard(
+              title: "Touch Interaction",
+              icon: Icons.touch_app_rounded,
+              child: _buildTouchFeaturesSection(),
+            ),
+            _buildNeuCard(
               title: "Gravity Settings",
               icon: Icons.public_rounded,
               child: _buildGravitySection(),
             ),
             // Touch Features Settings
-            _buildNeuCard(
-              title: "Touch Interaction",
-              icon: Icons.touch_app_rounded,
-              child: _buildTouchFeaturesSection(),
-            ),
           ],
         ),
       ),
@@ -482,42 +485,40 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
         Expanded(
           child: Column(
             children: [
-          
-          _buildSlider(
-            "Touch Speed",
-            _touchSpeed,
-            0.005,
-            0.08,
-            (v) => setState(() => _touchSpeed = v),
-          ),
-          _buildSlider(
-            "Touch Force",
-            _touchForce,
-            0.05,
-            1.5,
-            (v) => setState(() => _touchForce = v),
-          ),
+              _buildSlider(
+                "Touch Speed",
+                _touchSpeed,
+                0.005,
+                0.08,
+                (v) => setState(() => _touchSpeed = v),
+              ),
+              _buildSlider(
+                "Touch Force",
+                _touchForce,
+                0.05,
+                1.5,
+                (v) => setState(() => _touchForce = v),
+              ),
             ],
           ),
         ),
         Expanded(
           child: Column(
             children: [
-              
-          _buildSlider(
-            "Max Touch Speed",
-            _maxTouchSpeed,
-            1.0,
-            5.0,
-            (v) => setState(() => _maxTouchSpeed = v),
-          ),
-          _buildSlider(
-            "Touch Line Dist",
-            _touchLineDistance,
-            0,
-            500,
-            (v) => setState(() => _touchLineDistance = v),
-          ),
+              _buildSlider(
+                "Max Touch Speed",
+                _maxTouchSpeed,
+                1.0,
+                5.0,
+                (v) => setState(() => _maxTouchSpeed = v),
+              ),
+              _buildSlider(
+                "Touch Line Dist",
+                _touchLineDistance,
+                0,
+                500,
+                (v) => setState(() => _touchLineDistance = v),
+              ),
             ],
           ),
         ),
@@ -653,11 +654,11 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           children: [
             // Sunken well for the color swatch
             Container(
-              width:isSelected? 26:80,
-              height:isSelected? 26:10,
+              width: isSelected ? 26 : 80,
+              height: isSelected ? 26 : 10,
               padding: const EdgeInsets.all(3),
               decoration: BoxDecoration(
-                shape:isSelected? BoxShape.circle:BoxShape.rectangle,
+                shape: isSelected ? BoxShape.circle : BoxShape.rectangle,
                 color: const Color(0xFF181A1E),
                 boxShadow: const [
                   BoxShadow(
@@ -669,7 +670,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
               ),
               child: Container(
                 decoration: BoxDecoration(
-                  shape:isSelected? BoxShape.circle:BoxShape.rectangle,
+                  shape: isSelected ? BoxShape.circle : BoxShape.rectangle,
                   color: currentColor,
                   boxShadow: [
                     BoxShadow(
@@ -852,7 +853,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       onTap: () => onChanged(!value),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
         decoration: BoxDecoration(
           color: value ? const Color(0xFF191B20) : const Color(0xFF22262C),
           borderRadius: BorderRadius.circular(12),
@@ -939,7 +940,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
     ValueChanged<double> onChanged,
   ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal:3 ),
       child: Row(
         children: [
           SizedBox(
@@ -955,7 +956,9 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           ),
           Expanded(
             child: SliderTheme(
+              
               data: SliderThemeData(
+                padding:const EdgeInsetsGeometry.symmetric(horizontal: 10),
                 trackHeight: 4,
                 activeTrackColor: _controllerColor,
                 inactiveTrackColor: const Color(0xFF16181C),
@@ -973,7 +976,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
             ),
           ),
           Container(
-            width: 44,
+            width: 50,
             alignment: Alignment.center,
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
             decoration: BoxDecoration(
@@ -994,7 +997,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
             child: Text(
               value.toStringAsFixed(1),
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 12,
                 fontFamily: 'monospace',
                 fontWeight: FontWeight.bold,
                 color: _controllerColor,
