@@ -167,7 +167,7 @@ void main() {
   group('TouchFeatures', () {
     test('default values are set correctly', () {
       const features = TouchFeatures();
-      expect(features.speed, equals(0.4));
+      expect(features.speed, equals(0.42));
       expect(features.decayRate, equals(0.42));
       expect(features.force, equals(0.42));
       expect(features.pullForce, equals(0.42));
