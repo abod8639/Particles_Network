@@ -332,6 +332,44 @@ void main() {
         expect(particle.velocity.dx < initialVelocity.dx, isTrue);
         expect(particle.velocity.dy, equals(0)); // لا يوجد تسارع على محور Y
       });
+
+      test('should maintain straight line direction during deceleration after drag/acceleration', () {
+        // Particle was initially moving upward (0, -1) with cruising speed 1.0
+        final particle = createMockParticle(
+          position: const Offset(200, 200),
+          velocity: const Offset(4, 4), // Accelerated diagonally down-right (direction 45 degrees)
+        );
+        particle.defaultVelocity = const Offset(0, -1); // Initial default velocity was upward
+        particle.wasAccelerated = true;
+        particle.decayRate = 0.05;
+
+        // Over several frames, velocity should decelerate but maintain vx == vy (straight 45-degree line)
+        double previousSpeed = particle.velocity.distance;
+        for (int frame = 0; frame < 20; frame++) {
+          particle.update(const Size(1000, 1000));
+          final double currentSpeed = particle.velocity.distance;
+
+          // Speed must monotonically decrease towards default speed (1.0)
+          expect(currentSpeed, lessThanOrEqualTo(previousSpeed));
+          // Direction must remain exactly at 45 degrees (vx == vy > 0) without curving back to (0, -1)
+          expect(particle.velocity.dx, greaterThan(0));
+          expect(particle.velocity.dy, greaterThan(0));
+          expect(particle.velocity.dx, closeTo(particle.velocity.dy, 1e-9));
+
+          previousSpeed = currentSpeed;
+        }
+
+        // Run until deceleration completes and settles
+        while (particle.wasAccelerated) {
+          particle.update(const Size(1000, 1000));
+        }
+
+        // Settled cruising speed should equal initial cruising speed (1.0)
+        expect(particle.velocity.distance, closeTo(1.0, 0.02));
+        // Direction must STILL be exactly down-right (vx == vy)
+        expect(particle.velocity.dx, closeTo(particle.velocity.dy, 1e-9));
+        expect(particle.velocity.dx, greaterThan(0));
+      });
     });
   });
 
