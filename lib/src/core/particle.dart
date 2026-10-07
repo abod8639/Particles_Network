@@ -4,6 +4,8 @@
 /// velocity and simulating particle behavior.
 library;
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 /// The Particle class represents a single particle in the particle network.
@@ -130,18 +132,56 @@ class Particle {
     x += vx;
     y += vy;
 
-    // If the particle was accelerated (e.g. by touch), gradually return to default.
+    // If the particle was accelerated (e.g. by touch), gradually return to cruising speed
+    // in the same direction, keeping the trajectory straight without veering off course.
     if (wasAccelerated) {
-      final double diffX = vx - defaultVx;
-      final double diffY = vy - defaultVy;
-      const double speedThreshold = 0.01;
-      if (diffX * diffX + diffY * diffY < speedThreshold * speedThreshold) {
-        vx = defaultVx;
-        vy = defaultVy;
+      final double currentSpeedSq = vx * vx + vy * vy;
+      if (currentSpeedSq < 1e-12) {
+        vx = 0.0;
+        vy = 0.0;
         wasAccelerated = false;
       } else {
-        vx += (defaultVx - vx) * decayRate;
-        vy += (defaultVy - vy) * decayRate;
+        final double defaultSpeedSq =
+            defaultVx * defaultVx + defaultVy * defaultVy;
+        if (defaultSpeedSq < 1e-12) {
+          const double speedThreshold = 0.01;
+          final double currentSpeed = math.sqrt(currentSpeedSq);
+          if (currentSpeed < speedThreshold) {
+            vx = 0.0;
+            vy = 0.0;
+            defaultVx = 0.0;
+            defaultVy = 0.0;
+            wasAccelerated = false;
+          } else {
+            final double rate = decayRate.clamp(0.0, 1.0);
+            final double scale = 1.0 - rate;
+            vx *= scale;
+            vy *= scale;
+          }
+        } else {
+          final double currentSpeed = math.sqrt(currentSpeedSq);
+          final double defaultSpeed = math.sqrt(defaultSpeedSq);
+          const double speedThreshold = 0.01;
+          final double speedDiff = currentSpeed - defaultSpeed;
+
+          if (speedDiff.abs() < speedThreshold) {
+            final double scale = defaultSpeed / currentSpeed;
+            vx *= scale;
+            vy *= scale;
+            defaultVx = vx;
+            defaultVy = vy;
+            wasAccelerated = false;
+          } else {
+            final double rate = decayRate.clamp(0.0, 1.0);
+            final double newSpeed =
+                currentSpeed + (defaultSpeed - currentSpeed) * rate;
+            final double scale = newSpeed / currentSpeed;
+            vx *= scale;
+            vy *= scale;
+            defaultVx = (vx / newSpeed) * defaultSpeed;
+            defaultVy = (vy / newSpeed) * defaultSpeed;
+          }
+        }
       }
     }
 
