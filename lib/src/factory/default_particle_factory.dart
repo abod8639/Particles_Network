@@ -12,7 +12,7 @@ import 'package:particles_network/src/factory/particle_factory.dart';
 ///
 /// This factory generates particles with:
 /// - Random positions within the specified bounds
-/// - Random velocities within [-maxSpeed, maxSpeed] range
+/// - Random velocities within `[-maxSpeed, maxSpeed]` range
 /// - Random sizes between 1 and maxSize
 /// - Uniform color (configurable)
 class DefaultParticleFactory implements IParticleFactory {
