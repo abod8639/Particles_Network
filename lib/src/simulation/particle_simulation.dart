@@ -51,7 +51,9 @@ class ParticleSimulation {
 
   /// Advances the simulation by one frame with zero allocations.
   void step() {
-    if (particles.isEmpty || currentSize.width <= 0 || currentSize.height <= 0) {
+    if (particles.isEmpty ||
+        currentSize.width <= 0 ||
+        currentSize.height <= 0) {
       return;
     }
     controller.updateParticles(

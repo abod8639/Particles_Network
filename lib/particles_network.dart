@@ -45,11 +45,7 @@ export 'package:particles_network/src/simulation/particle_simulation.dart'
 export 'package:particles_network/src/spatial/compressed_quad_tree.dart'
     show CompressedQuadTree;
 export 'package:particles_network/src/spatial/compressed_quad_tree_node.dart'
-    show
-        QuadTreeParticle,
-        Quadrant,
-        CompressedPath,
-        CompressedQuadTreeNode;
+    show QuadTreeParticle, Quadrant, CompressedPath, CompressedQuadTreeNode;
 export 'package:particles_network/src/spatial/spatial_grid.dart'
     show SpatialGrid;
 export 'package:particles_network/src/widgets/particle_network_widget.dart'

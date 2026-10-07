@@ -159,10 +159,12 @@ void main() {
       expect(quadTree.getAllParticleIndices().length, greaterThan(0));
     });
 
-    test('subdivide handles remaining particles when insertion into children fails (L199-L201)', () {
+    test(
+        'subdivide handles remaining particles when insertion into children fails (L199-L201)',
+        () {
       // Create a node with capacity 4 and depth 0.
       final node = CompressedQuadTreeNode(const Rectangle(0, 0, 100, 100), 0);
-      
+
       // Insert 4 particles at identical position (10, 10) to reach max capacity (maxParticlesPerNode = 4).
       for (int i = 0; i < 4; i++) {
         node.insert(QuadTreeParticle(i, 10, 10));
@@ -188,4 +190,3 @@ class _MockParticle extends Particle {
           isVisible: true,
         );
 }
-

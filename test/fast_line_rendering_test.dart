@@ -87,11 +87,14 @@ void main() {
         fastLineRendering: true,
       );
 
-      expect(() => painter.paint(mockCanvas, const Size(200, 200)), returnsNormally);
+      expect(() => painter.paint(mockCanvas, const Size(200, 200)),
+          returnsNormally);
       verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(1);
     });
 
-    test('adaptiveDensity scales effective line distance for dense particle sets', () {
+    test(
+        'adaptiveDensity scales effective line distance for dense particle sets',
+        () {
       final particles = List.generate(
         100,
         (i) => Particle(
@@ -118,7 +121,8 @@ void main() {
         adaptiveDensity: true,
       );
 
-      expect(() => painter.paint(mockCanvas, const Size(100, 100)), returnsNormally);
+      expect(() => painter.paint(mockCanvas, const Size(100, 100)),
+          returnsNormally);
     });
 
     test('updatePerformanceOptions updates painter flags dynamically', () {

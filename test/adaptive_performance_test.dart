@@ -70,7 +70,9 @@ void main() {
       expect(controller.scaleFactor, equals(1.0));
       expect(controller.monitor.recordedFrameCount, equals(0));
     });
-    test('normal frame times reset consecutive drop and smooth counters (L176-L179)', () {
+    test(
+        'normal frame times reset consecutive drop and smooth counters (L176-L179)',
+        () {
       // 2 consecutive dropped frames (> 20.83ms)
       controller.recordFrameTime(const Duration(milliseconds: 25));
       controller.recordFrameTime(const Duration(milliseconds: 25));

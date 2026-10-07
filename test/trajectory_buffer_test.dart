@@ -140,7 +140,9 @@ void main() {
         expect(buffer.isValid, isFalse);
       });
 
-      test('invalidates previously valid buffer when re-precomputing with invalid parameters', () {
+      test(
+          'invalidates previously valid buffer when re-precomputing with invalid parameters',
+          () {
         buffer.precompute(
           particles: particles,
           bounds: size,
@@ -159,7 +161,9 @@ void main() {
     });
 
     group('cached sim particles refresh (subsequent precompute)', () {
-      test('refreshes existing cached simulation particle states without reallocation', () {
+      test(
+          'refreshes existing cached simulation particle states without reallocation',
+          () {
         // First precompute initializes the cached sim particles
         buffer.precompute(
           particles: particles,

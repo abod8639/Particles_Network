@@ -143,8 +143,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     bool? fastLineRendering,
     bool? useVerticesRendering,
     super.repaint,
-  }) : fastLineRendering =
-            fastLineRendering ?? useVerticesRendering ?? false {
+  }) : fastLineRendering = fastLineRendering ?? useVerticesRendering ?? false {
     final int baseAlpha = (lineColor.a * 255.0).round().clamp(0, 255);
     _lineColorLut = List<Color>.generate(
       256,
@@ -182,8 +181,9 @@ class OptimizedNetworkPainter extends CustomPainter {
     _distBucketTable = Int32List(1025);
     for (int i = 0; i <= 1024; i++) {
       final double ratio = math.sqrt(i / 1024.0);
-      _distBucketTable[i] =
-          ((1.0 - ratio) * (_numLineBuckets - 1)).round().clamp(0, _numLineBuckets - 1);
+      _distBucketTable[i] = ((1.0 - ratio) * (_numLineBuckets - 1))
+          .round()
+          .clamp(0, _numLineBuckets - 1);
     }
 
     particlePaint = Paint()
@@ -472,8 +472,7 @@ class OptimizedNetworkPainter extends CustomPainter {
       final int cy = cell ~/ cols;
 
       final int east = (cx < cols - 1) ? cell + 1 : -1;
-      final int southWest =
-          (cy < rows - 1 && cx > 0) ? cell + cols - 1 : -1;
+      final int southWest = (cy < rows - 1 && cx > 0) ? cell + cols - 1 : -1;
       final int south = (cy < rows - 1) ? cell + cols : -1;
       final int southEast =
           (cy < rows - 1 && cx < cols - 1) ? cell + cols + 1 : -1;
@@ -612,11 +611,9 @@ class OptimizedNetworkPainter extends CustomPainter {
   ]) {
     final double dist = effectiveDistance ?? lineDistance;
     final double maxDistSq = dist * dist;
-    final double invLineDistance =
-        dist > 0 ? 255.0 / dist : 0.0;
+    final double invLineDistance = dist > 0 ? 255.0 / dist : 0.0;
     final int maxLines = isComplex ? (maxConnectionsPerParticle ?? 3) : 5;
-    final int denseThreshold =
-        isComplex ? (dist ~/ 4) : (dist ~/ 1.5);
+    final int denseThreshold = isComplex ? (dist ~/ 4) : (dist ~/ 1.5);
 
     final List<int> nearbyIndices = _intListPool.acquire();
 
@@ -741,8 +738,7 @@ class OptimizedNetworkPainter extends CustomPainter {
       final int cy = cell ~/ cols;
 
       final int east = (cx < cols - 1) ? cell + 1 : -1;
-      final int southWest =
-          (cy < rows - 1 && cx > 0) ? cell + cols - 1 : -1;
+      final int southWest = (cy < rows - 1 && cx > 0) ? cell + cols - 1 : -1;
       final int south = (cy < rows - 1) ? cell + cols : -1;
       final int southEast =
           (cy < rows - 1 && cx < cols - 1) ? cell + cols + 1 : -1;
@@ -1064,8 +1060,9 @@ class OptimizedNetworkPainter extends CustomPainter {
     _invMaxDistSq = maxDistSq > 0 ? 1.0 / maxDistSq : 0.0;
     for (int i = 0; i <= 1024; i++) {
       final double ratio = math.sqrt(i / 1024.0);
-      _distBucketTable[i] =
-          ((1.0 - ratio) * (_numLineBuckets - 1)).round().clamp(0, _numLineBuckets - 1);
+      _distBucketTable[i] = ((1.0 - ratio) * (_numLineBuckets - 1))
+          .round()
+          .clamp(0, _numLineBuckets - 1);
     }
   }
 

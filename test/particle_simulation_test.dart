@@ -6,7 +6,9 @@ import 'package:particles_network/src/simulation/particle_simulation.dart';
 
 void main() {
   group('ParticleSimulation Tests', () {
-    test('initializes with correct particleCount and empty particles before updateSize', () {
+    test(
+        'initializes with correct particleCount and empty particles before updateSize',
+        () {
       final sim = ParticleSimulation(particleCount: 20);
 
       expect(sim.particleCount, equals(20));
@@ -14,7 +16,8 @@ void main() {
       expect(sim.currentSize, equals(Size.zero));
     });
 
-    test('updateSize generates particles matching particleCount when size > 0', () {
+    test('updateSize generates particles matching particleCount when size > 0',
+        () {
       final sim = ParticleSimulation(particleCount: 15);
       sim.updateSize(const Size(500, 500));
 
@@ -109,7 +112,8 @@ void main() {
       expect(() => sim.step(), returnsNormally);
     });
 
-    test('step advances particle positions via controller when initialized', () {
+    test('step advances particle positions via controller when initialized',
+        () {
       final sim = ParticleSimulation(particleCount: 5);
       sim.updateSize(const Size(500, 500));
       final initialPositions = sim.particles.map((p) => p.position).toList();

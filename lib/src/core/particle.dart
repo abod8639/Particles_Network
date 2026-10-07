@@ -215,7 +215,8 @@ class Particle {
     }
 
     const double margin = 50.0;
-    isVisible = x >= -margin && x <= w + margin && y >= -margin && y <= h + margin;
+    isVisible =
+        x >= -margin && x <= w + margin && y >= -margin && y <= h + margin;
   }
 
   /// Handles collisions with the screen boundaries by reversing the velocity.

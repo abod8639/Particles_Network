@@ -51,7 +51,9 @@ void main() {
         expect(particle.ay, -1.5);
       });
 
-      test('defaultVelocity getter and setter should update defaultVx and defaultVy', () {
+      test(
+          'defaultVelocity getter and setter should update defaultVx and defaultVy',
+          () {
         final particle = createMockParticle(
           velocity: const Offset(1, 2),
         );
@@ -81,7 +83,8 @@ void main() {
       });
 
       test('applyForce should accumulate multiple forces', () {
-        final particle = createMockParticle(size: 1.0); // mass = 1.0, invMass = 1.0
+        final particle =
+            createMockParticle(size: 1.0); // mass = 1.0, invMass = 1.0
 
         particle.applyForce(const Offset(2.0, 3.0));
         particle.applyForce(const Offset(-1.0, 4.0));
@@ -91,7 +94,9 @@ void main() {
     });
 
     group('Screen Boundaries', () {
-      test('handleScreenBoundaries should reverse vx and defaultVx at left boundary (x < 0)', () {
+      test(
+          'handleScreenBoundaries should reverse vx and defaultVx at left boundary (x < 0)',
+          () {
         final particle = createMockParticle(
           position: const Offset(-5, 50),
           velocity: const Offset(-2, 3),
@@ -106,7 +111,9 @@ void main() {
         expect(particle.defaultVy, 3);
       });
 
-      test('handleScreenBoundaries should not reverse vx if already moving inwards from left (vx > 0)', () {
+      test(
+          'handleScreenBoundaries should not reverse vx if already moving inwards from left (vx > 0)',
+          () {
         final particle = createMockParticle(
           position: const Offset(-5, 50),
           velocity: const Offset(2, 3),
@@ -119,7 +126,9 @@ void main() {
         expect(particle.defaultVx, 2);
       });
 
-      test('handleScreenBoundaries should reverse vx and defaultVx at right boundary (x > width)', () {
+      test(
+          'handleScreenBoundaries should reverse vx and defaultVx at right boundary (x > width)',
+          () {
         final particle = createMockParticle(
           position: const Offset(105, 50),
           velocity: const Offset(2, 3),
@@ -132,7 +141,9 @@ void main() {
         expect(particle.defaultVx, -2);
       });
 
-      test('handleScreenBoundaries should not reverse vx if already moving inwards from right (vx < 0)', () {
+      test(
+          'handleScreenBoundaries should not reverse vx if already moving inwards from right (vx < 0)',
+          () {
         final particle = createMockParticle(
           position: const Offset(105, 50),
           velocity: const Offset(-2, 3),
@@ -145,7 +156,9 @@ void main() {
         expect(particle.defaultVx, -2);
       });
 
-      test('handleScreenBoundaries should reverse vy and defaultVy at top boundary (y < 0)', () {
+      test(
+          'handleScreenBoundaries should reverse vy and defaultVy at top boundary (y < 0)',
+          () {
         final particle = createMockParticle(
           position: const Offset(50, -5),
           velocity: const Offset(3, -2),
@@ -160,7 +173,9 @@ void main() {
         expect(particle.defaultVx, 3);
       });
 
-      test('handleScreenBoundaries should not reverse vy if already moving inwards from top (vy > 0)', () {
+      test(
+          'handleScreenBoundaries should not reverse vy if already moving inwards from top (vy > 0)',
+          () {
         final particle = createMockParticle(
           position: const Offset(50, -5),
           velocity: const Offset(3, 2),
@@ -173,7 +188,9 @@ void main() {
         expect(particle.defaultVy, 2);
       });
 
-      test('handleScreenBoundaries should reverse vy and defaultVy at bottom boundary (y > height)', () {
+      test(
+          'handleScreenBoundaries should reverse vy and defaultVy at bottom boundary (y > height)',
+          () {
         final particle = createMockParticle(
           position: const Offset(50, 105),
           velocity: const Offset(3, 2),
@@ -186,7 +203,9 @@ void main() {
         expect(particle.defaultVy, -2);
       });
 
-      test('handleScreenBoundaries should not reverse vy if already moving inwards from bottom (vy < 0)', () {
+      test(
+          'handleScreenBoundaries should not reverse vy if already moving inwards from bottom (vy < 0)',
+          () {
         final particle = createMockParticle(
           position: const Offset(50, 105),
           velocity: const Offset(3, -2),
@@ -199,7 +218,9 @@ void main() {
         expect(particle.defaultVy, -2);
       });
 
-      test('handleScreenBoundaries should leave velocities unchanged when within bounds', () {
+      test(
+          'handleScreenBoundaries should leave velocities unchanged when within bounds',
+          () {
         final particle = createMockParticle(
           position: const Offset(50, 50),
           velocity: const Offset(3, 4),
@@ -227,7 +248,8 @@ void main() {
 
       test('should mark particle as visible on the margin boundaries', () {
         // -margin <= x <= width + margin, -margin <= y <= height + margin
-        final particle1 = createMockParticle(position: const Offset(-50.0, -50.0));
+        final particle1 =
+            createMockParticle(position: const Offset(-50.0, -50.0));
         particle1.updateVisibility(bounds);
         expect(particle1.isVisible, isTrue);
 
@@ -238,20 +260,25 @@ void main() {
         expect(particle2.isVisible, isTrue);
       });
 
-      test('should mark particle as not visible when exceeding margin limits', () {
-        final particleLeft = createMockParticle(position: Offset(-margin - 0.1, 100));
+      test('should mark particle as not visible when exceeding margin limits',
+          () {
+        final particleLeft =
+            createMockParticle(position: Offset(-margin - 0.1, 100));
         particleLeft.updateVisibility(bounds);
         expect(particleLeft.isVisible, isFalse);
 
-        final particleRight = createMockParticle(position: Offset(bounds.width + margin + 0.1, 100));
+        final particleRight = createMockParticle(
+            position: Offset(bounds.width + margin + 0.1, 100));
         particleRight.updateVisibility(bounds);
         expect(particleRight.isVisible, isFalse);
 
-        final particleTop = createMockParticle(position: Offset(100, -margin - 0.1));
+        final particleTop =
+            createMockParticle(position: Offset(100, -margin - 0.1));
         particleTop.updateVisibility(bounds);
         expect(particleTop.isVisible, isFalse);
 
-        final particleBottom = createMockParticle(position: Offset(100, bounds.height + margin + 0.1));
+        final particleBottom = createMockParticle(
+            position: Offset(100, bounds.height + margin + 0.1));
         particleBottom.updateVisibility(bounds);
         expect(particleBottom.isVisible, isFalse);
       });
@@ -390,13 +417,17 @@ void main() {
         expect(particle.velocity.dy, equals(0)); // لا يوجد تسارع على محور Y
       });
 
-      test('should maintain straight line direction during deceleration after drag/acceleration', () {
+      test(
+          'should maintain straight line direction during deceleration after drag/acceleration',
+          () {
         // Particle was initially moving upward (0, -1) with cruising speed 1.0
         final particle = createMockParticle(
           position: const Offset(200, 200),
-          velocity: const Offset(4, 4), // Accelerated diagonally down-right (direction 45 degrees)
+          velocity: const Offset(
+              4, 4), // Accelerated diagonally down-right (direction 45 degrees)
         );
-        particle.defaultVelocity = const Offset(0, -1); // Initial default velocity was upward
+        particle.defaultVelocity =
+            const Offset(0, -1); // Initial default velocity was upward
         particle.wasAccelerated = true;
         particle.decayRate = 0.05;
 
@@ -433,7 +464,8 @@ void main() {
   group('computeVelocity', () {
     const Offset defaultVel = Offset(2.0, 3.0);
 
-    test('returns defaultVelocity when difference is within speedThreshold', () {
+    test('returns defaultVelocity when difference is within speedThreshold',
+        () {
       const Offset currentVel = Offset(2.02, 3.02);
       // distance is sqrt(0.02^2 + 0.02^2) = sqrt(0.0008) ≈ 0.02828 < 0.05
       final result = computeVelocity(currentVel, defaultVel, 0.05);
@@ -441,7 +473,9 @@ void main() {
       expect(result, equals(defaultVel));
     });
 
-    test('returns lerped velocity when difference is greater than speedThreshold', () {
+    test(
+        'returns lerped velocity when difference is greater than speedThreshold',
+        () {
       const Offset currentVel = Offset(10.0, 15.0);
       const double decayRate = 0.1;
       final expected = Offset.lerp(currentVel, defaultVel, decayRate)!;

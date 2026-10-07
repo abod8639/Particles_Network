@@ -19,7 +19,8 @@ class TouchInteractionHandler {
   double lineDistance;
 
   /// Effective distance for touch interactions
-  double get effectiveLineDistance => touchFeatures.lineDistance ?? lineDistance;
+  double get effectiveLineDistance =>
+      touchFeatures.lineDistance ?? lineDistance;
 
   // Color to use for touch interactions
   Color touchColor;

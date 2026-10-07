@@ -665,7 +665,9 @@ void main() {
     expect(network.enableAdaptivePerformance, isFalse);
   });
 
-  test('ParticleNetwork constructor handles fastLineRendering and useVerticesRendering aliases', () {
+  test(
+      'ParticleNetwork constructor handles fastLineRendering and useVerticesRendering aliases',
+      () {
     const network1 = ParticleNetwork(useVerticesRendering: true);
     expect(network1.fastLineRendering, isTrue);
     expect(network1.useVerticesRendering, isTrue);
@@ -968,4 +970,3 @@ void main() {
     },
   );
 }
-

@@ -49,7 +49,9 @@ void main() {
       expect(tracker.acceleratedParticleCount, greaterThan(0));
     });
 
-    test('clamps velocity to maxTouchSpeed when speedSq > maxTouchSpeedSq (L113-L117)', () {
+    test(
+        'clamps velocity to maxTouchSpeed when speedSq > maxTouchSpeedSq (L113-L117)',
+        () {
       final p = Particle(
         position: const Offset(90, 90),
         velocity: Offset.zero,
@@ -84,7 +86,8 @@ void main() {
   });
 
   group('TouchInteractionHandler', () {
-    test('drawTouchLines returns immediately when touchPoint is null (L136)', () {
+    test('drawTouchLines returns immediately when touchPoint is null (L136)',
+        () {
       final mockCanvas = MockCanvas();
       final particles = [
         Particle(
@@ -189,7 +192,8 @@ void main() {
       expect(features.damping, equals(0.95));
     });
 
-    test('applies custom TouchFeatures to particle acceleration and decayRate', () {
+    test('applies custom TouchFeatures to particle acceleration and decayRate',
+        () {
       final p = Particle(
         position: const Offset(100, 100),
         velocity: Offset.zero,

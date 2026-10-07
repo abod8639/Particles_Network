@@ -199,4 +199,3 @@ class AdaptivePerformanceController {
     monitor.clear();
   }
 }
-

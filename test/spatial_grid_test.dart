@@ -14,7 +14,8 @@ void main() {
         // width = 100, cellSize = 50 -> cols = (100 / 50).ceil() + 1 = 3 (indices 0, 1, 2)
         // rows = 3 (indices 0, 1, 2)
         final particles = [
-          createMockParticle(position: const Offset(250.0, 25.0)), // cx = 5 >= cols (3)
+          createMockParticle(
+              position: const Offset(250.0, 25.0)), // cx = 5 >= cols (3)
         ];
         final visibleIndices = [0];
 
@@ -36,7 +37,8 @@ void main() {
       test('clamps cy to rows - 1 when particle y produces cy >= rows', () {
         // height = 100, cellSize = 50 -> rows = 3 (indices 0, 1, 2)
         final particles = [
-          createMockParticle(position: const Offset(25.0, 300.0)), // cy = 6 >= rows (3)
+          createMockParticle(
+              position: const Offset(25.0, 300.0)), // cy = 6 >= rows (3)
         ];
         final visibleIndices = [0];
 
@@ -55,7 +57,9 @@ void main() {
         expect(output, contains(0));
       });
 
-      test('clamps both cx and cy to cols - 1 and rows - 1 for particles beyond bottom-right', () {
+      test(
+          'clamps both cx and cy to cols - 1 and rows - 1 for particles beyond bottom-right',
+          () {
         final particles = [
           createMockParticle(position: const Offset(500.0, 500.0)),
         ];
@@ -103,7 +107,8 @@ void main() {
         expect(grid.rows, greaterThan(0));
 
         // Store which cells were active
-        final activeCellsCopy = grid.activeCells.sublist(0, grid.activeCellsCount);
+        final activeCellsCopy =
+            grid.activeCells.sublist(0, grid.activeCellsCount);
 
         grid.clear();
 
@@ -122,7 +127,9 @@ void main() {
         expect(output, isEmpty);
       });
 
-      test('resets entire cellHeads range when activeCellsCount == 0 but cellHeads is not empty', () {
+      test(
+          'resets entire cellHeads range when activeCellsCount == 0 but cellHeads is not empty',
+          () {
         // Build with empty visibleIndices -> cellHeads is allocated, but activeCellsCount == 0
         grid.build([], [], 100.0, 100.0);
 
@@ -143,7 +150,8 @@ void main() {
         expect(grid.cellHeads.every((head) => head == -1), isTrue);
       });
 
-      test('handles clear() on freshly initialized SpatialGrid without errors', () {
+      test('handles clear() on freshly initialized SpatialGrid without errors',
+          () {
         final freshGrid = SpatialGrid(cellSize: 50.0);
 
         expect(() => freshGrid.clear(), returnsNormally);
