@@ -540,7 +540,8 @@ void main() {
           lineWidth: 1.0,
           adaptiveDensity: true,
         );
-        expect(painterWithAdaptiveDensity.shouldRepaint(defaultPainter), isTrue);
+        expect(
+            painterWithAdaptiveDensity.shouldRepaint(defaultPainter), isTrue);
 
         final painterWithVerticesRendering = OptimizedNetworkPainter(
           drawNetwork: true,
@@ -557,7 +558,8 @@ void main() {
           lineWidth: 1.0,
           fastLineRendering: true,
         );
-        expect(painterWithVerticesRendering.shouldRepaint(defaultPainter), isTrue);
+        expect(
+            painterWithVerticesRendering.shouldRepaint(defaultPainter), isTrue);
       },
     );
   });
@@ -577,8 +579,10 @@ void main() {
       expect(defaultPainter.particleColor, equals(Colors.purple));
       expect(defaultPainter.lineColor, equals(Colors.yellow));
       expect(defaultPainter.touchColor, equals(Colors.cyan));
-      expect(defaultPainter.particlePaint.color.toARGB32(), equals(Colors.purple.value));
-      expect(defaultPainter.linePaint.color.toARGB32(), equals(Colors.yellow.value));
+      expect(defaultPainter.particlePaint.color.toARGB32(),
+          equals(Colors.purple.toARGB32()));
+      expect(defaultPainter.linePaint.color.toARGB32(),
+          equals(Colors.yellow.toARGB32()));
     });
 
     testWidgets('updateLineWidth updates line width and bucket paints', (
@@ -799,7 +803,8 @@ void main() {
       );
     });
 
-    testWidgets('clamps particle size bucket to _maxParticleSizeBuckets - 1 (L277)', (
+    testWidgets(
+        'clamps particle size bucket to _maxParticleSizeBuckets - 1 (L277)', (
       tester,
     ) async {
       await setUpTest(tester);
@@ -808,7 +813,9 @@ void main() {
         6,
         (i) => MockParticle(
           position: Offset(50.0 + i * 10, 50.0),
-          size: i == 0 ? 100.0 : 2.0, // size 100 -> bucket 200 >= 64, capped to 63
+          size: i == 0
+              ? 100.0
+              : 2.0, // size 100 -> bucket 200 >= 64, capped to 63
         ),
       );
       final painter = OptimizedNetworkPainter(
@@ -832,7 +839,9 @@ void main() {
       );
     });
 
-    testWidgets('_growCandidateBuffers grows buffer when candidates exceed initial capacity of 128 (L312-L321, L610)', (
+    testWidgets(
+        '_growCandidateBuffers grows buffer when candidates exceed initial capacity of 128 (L312-L321, L610)',
+        (
       tester,
     ) async {
       await setUpTest(tester);
@@ -868,7 +877,9 @@ void main() {
       );
     });
 
-    testWidgets('_growBucket expands raw line buckets in same cell during normal batched connections (L345-L350, L505)', (
+    testWidgets(
+        '_growBucket expands raw line buckets in same cell during normal batched connections (L345-L350, L505)',
+        (
       tester,
     ) async {
       await setUpTest(tester);
@@ -905,7 +916,9 @@ void main() {
       );
     });
 
-    testWidgets('_growBucket expands raw line buckets in neighboring cells via _connectWithCell (L345-L350, L560)', (
+    testWidgets(
+        '_growBucket expands raw line buckets in neighboring cells via _connectWithCell (L345-L350, L560)',
+        (
       tester,
     ) async {
       await setUpTest(tester);
@@ -946,7 +959,9 @@ void main() {
       );
     });
 
-    testWidgets('_growBucket expands raw line buckets in complex batched connections (L345-L350, L636)', (
+    testWidgets(
+        '_growBucket expands raw line buckets in complex batched connections (L345-L350, L636)',
+        (
       tester,
     ) async {
       await setUpTest(tester);
@@ -981,7 +996,9 @@ void main() {
       );
     });
 
-    testWidgets('useVerticesRendering getter and setter alias fastLineRendering (L81)', (
+    testWidgets(
+        'useVerticesRendering getter and setter alias fastLineRendering (L81)',
+        (
       tester,
     ) async {
       await setUpTest(tester);
@@ -1006,7 +1023,9 @@ void main() {
       expect(painter.useVerticesRendering, isTrue);
     });
 
-    testWidgets('_drawFastUnifiedConnections with intra-cell and neighbor-cell buffer growth, grid neighbor traversal, and max connections capping (L395-L400, L414-L440, L494, L505, L538)', (
+    testWidgets(
+        '_drawFastUnifiedConnections with intra-cell and neighbor-cell buffer growth, grid neighbor traversal, and max connections capping (L395-L400, L414-L440, L494, L505, L538)',
+        (
       tester,
     ) async {
       await setUpTest(tester);
@@ -1052,7 +1071,9 @@ void main() {
       );
     });
 
-    testWidgets('_drawFastUnifiedConnections handles maxConnectionsPerParticle skips in same-cell and neighbor cells (L414-L417, L434-L438, L494)', (
+    testWidgets(
+        '_drawFastUnifiedConnections handles maxConnectionsPerParticle skips in same-cell and neighbor cells (L414-L417, L434-L438, L494)',
+        (
       tester,
     ) async {
       await setUpTest(tester);
@@ -1106,7 +1127,9 @@ void main() {
       );
     });
 
-    testWidgets('_drawBatchedConnectionsFast skips particles when maxConnectionsPerParticle is exceeded (L763)', (
+    testWidgets(
+        '_drawBatchedConnectionsFast skips particles when maxConnectionsPerParticle is exceeded (L763)',
+        (
       tester,
     ) async {
       await setUpTest(tester);
@@ -1148,7 +1171,9 @@ void main() {
       );
     });
 
-    testWidgets('_drawIndividualConnections triggers candidate buffer growth and covers effectiveDistance fallback (L597, L612, L651)', (
+    testWidgets(
+        '_drawIndividualConnections triggers candidate buffer growth and covers effectiveDistance fallback (L597, L612, L651)',
+        (
       tester,
     ) async {
       await setUpTest(tester);
@@ -1174,7 +1199,8 @@ void main() {
         touchActivation: false,
         lineWidth: 1.0,
         fastLineRendering: false,
-        adaptiveDensity: false, // ensures effectiveDistance is null -> tests ?? lineDistance (L597, L612)
+        adaptiveDensity:
+            false, // ensures effectiveDistance is null -> tests ?? lineDistance (L597, L612)
       );
 
       // Force candidate buffer to be smaller than the number of neighbor candidates
@@ -1201,10 +1227,13 @@ void main() {
         adaptiveDensity: true,
       );
 
-      expect(() => adaptivePainter.paint(mockCanvas, testScreenSize), returnsNormally);
+      expect(() => adaptivePainter.paint(mockCanvas, testScreenSize),
+          returnsNormally);
     });
 
-    testWidgets('_drawBatchedConnections covers effectiveDistance fallback and active density (L694)', (
+    testWidgets(
+        '_drawBatchedConnections covers effectiveDistance fallback and active density (L694)',
+        (
       tester,
     ) async {
       await setUpTest(tester);
@@ -1212,7 +1241,8 @@ void main() {
       // Batched connections require visibleParticles.length >= 30
       final particles = List.generate(
         35,
-        (i) => MockParticle(position: Offset(50.0 + (i % 6) * 10, 50.0 + (i ~/ 6) * 10)),
+        (i) => MockParticle(
+            position: Offset(50.0 + (i % 6) * 10, 50.0 + (i ~/ 6) * 10)),
       );
 
       // 1) adaptiveDensity: false -> effectiveDistance is null -> tests ?? lineDistance (L694)
@@ -1256,8 +1286,8 @@ void main() {
         adaptiveDensity: true,
       );
 
-      expect(() => adaptivePainter.paint(mockCanvas, testScreenSize), returnsNormally);
+      expect(() => adaptivePainter.paint(mockCanvas, testScreenSize),
+          returnsNormally);
     });
   });
 }
-
