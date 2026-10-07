@@ -82,6 +82,47 @@ void main() {
       quadTree.insert(p3);
       expect(quadTree.isLeaf, isFalse); // Should subdivide
     });
+
+    test('normal subdivision creates all 4 quadrants when particles are distributed', () {
+      const p1 = QuadTreeParticle(1, 25, 25); // NW
+      const p2 = QuadTreeParticle(2, 75, 75); // SE
+      const p3 = QuadTreeParticle(3, 25, 75); // SW
+
+      expect(quadTree.insert(p1), isTrue);
+      expect(quadTree.insert(p2), isTrue);
+      expect(quadTree.isLeaf, isTrue);
+
+      expect(quadTree.insert(p3), isTrue);
+      expect(quadTree.isLeaf, isFalse);
+      expect(quadTree.children.length, equals(4));
+      expect(quadTree.particles, isEmpty);
+    });
+
+    test('retains particle in node if it cannot be inserted into any child during subdivision', () {
+      // Simulate an uninsertable particle already stored in node
+      const validParticle = QuadTreeParticle(1, 25, 25); // NW
+      const outOfBoundsParticle = QuadTreeParticle(999, -10, -10); // Outside all child boundaries
+
+      quadTree.particles.add(validParticle);
+      quadTree.particles.add(outOfBoundsParticle);
+      expect(quadTree.isLeaf, isTrue);
+
+      // Inserting a particle in a different quadrant (SE) triggers normal subdivision
+      const newParticle = QuadTreeParticle(2, 75, 75); // SE
+      expect(quadTree.insert(newParticle), isTrue);
+
+      // Node should now be subdivided into 4 children
+      expect(quadTree.isLeaf, isFalse);
+      expect(quadTree.children.length, equals(4));
+
+      // The uninsertable particle remains in the parent node's particles list
+      expect(quadTree.particles, contains(outOfBoundsParticle));
+      expect(quadTree.particles.length, equals(1));
+
+      // Valid particles are distributed to children
+      expect(quadTree.children[Quadrant.northWest]!.particles, contains(validParticle));
+      expect(quadTree.children[Quadrant.southEast]!.particles, contains(newParticle));
+    });
   });
 
   group('Path Compression', () {
