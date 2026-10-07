@@ -3,17 +3,17 @@ library;
 
 /// Configuration class for touch interaction behavior and physics.
 class TouchFeatures {
-  /// The recovery/settling decay rate after touch release [default: 0.012].
+  /// The recovery/settling decay rate after touch release (default: 0.42).
   /// Controls how gradually particles return to cruising speed after being dragged/touched.
   final double speed;
 
-  /// Attraction pull force towards touch point [default: 0.42].
+  /// Attraction pull force towards touch point (default: 0.42).
   final double force;
 
-  /// Maximum velocity cap for particles during touch interaction [default: 5.5].
+  /// Maximum velocity cap for particles during touch interaction (default: 5.5).
   final double maxTouchSpeed;
 
-  /// Fluid damping factor applied to particles inside the touch field [default: 0.985].
+  /// Fluid damping factor applied to particles inside the touch field (default: 0.985).
   final double damping;
 
   /// Maximum connection distance for touch interactions.
