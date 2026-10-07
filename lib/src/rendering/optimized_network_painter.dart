@@ -236,7 +236,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     final List<int> visibleParticles = _visibleParticles;
 
     if (drawNetwork) {
-      double effectiveDistance = lineDistance;
+      double? effectiveDistance;
       if (adaptiveDensity &&
           size.width > 0 &&
           size.height > 0 &&
@@ -249,8 +249,9 @@ class OptimizedNetworkPainter extends CustomPainter {
         effectiveDistance = lineDistance * factor;
       }
 
+      final double distance = effectiveDistance ?? lineDistance;
       _spatialGrid.updateCellSize(
-        effectiveDistance > 0 ? effectiveDistance : 100.0,
+        distance > 0 ? distance : 100.0,
       );
       _spatialGrid.build(particles, visibleParticles, size.width, size.height);
 
@@ -598,9 +599,9 @@ class OptimizedNetworkPainter extends CustomPainter {
     if (fastLineRendering) {
       _drawFastUnifiedConnections(canvas, dist);
     } else if (visibleParticles.length < 30) {
-      _drawIndividualConnections(canvas, visibleParticles, dist);
+      _drawIndividualConnections(canvas, visibleParticles, effectiveDistance);
     } else {
-      _drawBatchedConnections(canvas, visibleParticles, dist);
+      _drawBatchedConnections(canvas, visibleParticles, effectiveDistance);
     }
   }
 
@@ -1107,5 +1108,16 @@ class OptimizedNetworkPainter extends CustomPainter {
         oldDelegate.maxConnectionsPerParticle != maxConnectionsPerParticle ||
         oldDelegate.adaptiveDensity != adaptiveDensity ||
         oldDelegate.useVerticesRendering != useVerticesRendering;
+  }
+
+  @visibleForTesting
+  void setCandidateBufferCapacityForTesting(int capacity) {
+    _candidateIndices = Int32List(capacity);
+    _candidateDistSq = Float64List(capacity);
+  }
+
+  @visibleForTesting
+  void setUnifiedLineBufferCapacityForTesting(int capacity) {
+    _unifiedLineBuffer = Float32List(capacity);
   }
 }
