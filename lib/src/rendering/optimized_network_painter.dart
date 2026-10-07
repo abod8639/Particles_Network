@@ -613,7 +613,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     final double maxDistSq = dist * dist;
     final double invLineDistance =
         dist > 0 ? 255.0 / dist : 0.0;
-    final int maxLines = isComplex ? 3 : 5;
+    final int maxLines = isComplex ? (maxConnectionsPerParticle ?? 3) : 5;
     final int denseThreshold =
         isComplex ? (dist ~/ 4) : (dist ~/ 1.5);
 
@@ -657,8 +657,9 @@ class OptimizedNetworkPainter extends CustomPainter {
         }
 
         if (candidateCount > 0) {
+          final bool isThrottled = candidateCount > denseThreshold;
           int drawCount = candidateCount;
-          if (candidateCount > denseThreshold) {
+          if (isThrottled) {
             _selectTopKClosest(candidateCount, maxLines);
             drawCount = maxLines < candidateCount ? maxLines : candidateCount;
           }
@@ -668,8 +669,13 @@ class OptimizedNetworkPainter extends CustomPainter {
             final int neighborIdx = _candidateIndices[c];
             final Particle neighbor = particles[neighborIdx];
             final double distance = math.sqrt(_candidateDistSq[c]);
-            final int alpha =
+            int alpha =
                 (255 - (distance * invLineDistance)).toInt().clamp(0, 255);
+            if (isThrottled && drawCount > 1) {
+              final double rankFade =
+                  ((drawCount - c) / drawCount).clamp(0.0, 1.0);
+              alpha = (alpha * rankFade).toInt().clamp(0, 255);
+            }
             linePaint.color = _lineColorLut[alpha];
             canvas.drawLine(pos, Offset(neighbor.x, neighbor.y), linePaint);
           }
@@ -908,8 +914,8 @@ class OptimizedNetworkPainter extends CustomPainter {
 
     try {
       final int count = visibleParticles.length;
-      final int maxLines = 3;
-      final int denseThreshold = lineDistance ~/ 4;
+      final int maxLines = maxConnectionsPerParticle ?? 5;
+      final int denseThreshold = lineDistance ~/ 3;
 
       for (int i = 0; i < count; i++) {
         final int index = visibleParticles[i];
@@ -947,8 +953,9 @@ class OptimizedNetworkPainter extends CustomPainter {
         }
 
         if (candidateCount > 0) {
+          final bool isThrottled = candidateCount > denseThreshold;
           int drawCount = candidateCount;
-          if (candidateCount > denseThreshold) {
+          if (isThrottled) {
             _selectTopKClosest(candidateCount, maxLines);
             drawCount = maxLines < candidateCount ? maxLines : candidateCount;
           }
@@ -959,7 +966,14 @@ class OptimizedNetworkPainter extends CustomPainter {
             final double distSq = _candidateDistSq[c];
             final int tableIdx =
                 ((distSq * _invMaxDistSq) * 1024).toInt().clamp(0, 1024);
-            final int bucket = _distBucketTable[tableIdx];
+            int bucket = _distBucketTable[tableIdx];
+
+            if (isThrottled && drawCount > 1) {
+              final double rankFade =
+                  ((drawCount - c) / drawCount).clamp(0.0, 1.0);
+              bucket =
+                  (bucket * rankFade).round().clamp(0, _numLineBuckets - 1);
+            }
 
             final int off = _rawOffsets[bucket];
             Float32List raw = _rawBuckets[bucket];
