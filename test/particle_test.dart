@@ -274,6 +274,63 @@ void main() {
         },
       );
 
+      test(
+        'should reset wasAccelerated to false and zero velocities when current speed is negligible',
+        () {
+          final particle = createMockParticle(
+            position: const Offset(50, 50),
+            velocity: Offset.zero,
+          );
+          particle.wasAccelerated = true;
+
+          particle.update(const Size(100, 100));
+
+          expect(particle.vx, equals(0.0));
+          expect(particle.vy, equals(0.0));
+          expect(particle.wasAccelerated, isFalse);
+        },
+      );
+
+      test(
+        'should decay velocity towards zero when accelerated and defaultVelocity is zero',
+        () {
+          final particle = createMockParticle(
+            position: const Offset(50, 50),
+            velocity: const Offset(4.0, 0.0),
+          );
+          particle.defaultVelocity = Offset.zero;
+          particle.wasAccelerated = true;
+          particle.decayRate = 0.1;
+
+          particle.update(const Size(500, 500));
+
+          // Speed should decrease according to decayRate (scale = 1.0 - 0.1 = 0.9)
+          expect(particle.vx, closeTo(3.6, 1e-6));
+          expect(particle.vy, equals(0.0));
+          expect(particle.wasAccelerated, isTrue);
+        },
+      );
+
+      test(
+        'should stop and reset wasAccelerated when speed drops below threshold with zero defaultVelocity',
+        () {
+          final particle = createMockParticle(
+            position: const Offset(50, 50),
+            velocity: const Offset(0.005, 0.0),
+          );
+          particle.defaultVelocity = Offset.zero;
+          particle.wasAccelerated = true;
+
+          particle.update(const Size(500, 500));
+
+          expect(particle.vx, equals(0.0));
+          expect(particle.vy, equals(0.0));
+          expect(particle.defaultVx, equals(0.0));
+          expect(particle.defaultVy, equals(0.0));
+          expect(particle.wasAccelerated, isFalse);
+        },
+      );
+
       test('should update position based on velocity', () {
         final particle = createMockParticle(
           position: const Offset(10, 10),
