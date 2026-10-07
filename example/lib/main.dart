@@ -52,7 +52,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   bool _touchActivation = true;
   double _lineWidth = 1.0;
   int _particleCount = 300;
-  double _maxSpeed = 2.5;
+  double _maxSpeed = 5;
   double _maxSize = 2.0;
   double _lineDistance = 100.0;
   GravityType _gravityType = GravityType.none;
@@ -61,14 +61,14 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   final bool _hoverEffect = false;
 
   // --- Touch Features Variables ---
-  double _touchSpeed = 0.12;
-  double _touchForce = 1.42;
-  double _maxTouchSpeed = 4.0;
-  double _touchLineDistance = 200.0;
+  double _touchSpeed = 0.4;
+  double _touchForce = 0.42;
+  double _maxTouchSpeed = 5.0;
+  double _touchLineDistance = 150.0;
 
   // --- Styling Variables ---
-  Color _particleColor = Colors.white;
-  Color _lineColor = Colors.white;
+  Color _particleColor = Colors.deepPurple;
+  Color _lineColor = Colors.lightBlue;
   Color _touchColor = Colors.amber;
   final Color _controllerColor = Colors.tealAccent;
 
