@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:particles_network/src/core/particle.dart';
 import 'package:particles_network/src/core/rectangle.dart';
 import 'package:particles_network/src/interaction/touch_interaction_handler.dart';
+import 'package:particles_network/src/rendering/line_vertex_batch.dart';
 import 'package:particles_network/src/rendering/object_pool.dart';
 import 'package:particles_network/src/rendering/particle_filter.dart';
 import 'package:particles_network/src/rendering/performance_utils.dart';
@@ -88,6 +89,19 @@ class OptimizedNetworkPainter extends CustomPainter {
   /// keeps its soft look instead of lines popping in and out.
   int? maxLinesPerFrame;
 
+  /// How connection lines are rasterized (default: [LineRenderer.stroke]).
+  ///
+  /// [LineRenderer.vertices] submits every batched connection as triangle
+  /// quads in a single `drawVertices` call, which is far cheaper on the GPU
+  /// for large line counts.
+  LineRenderer lineRenderer;
+
+  /// Logical-to-physical pixel ratio of the target display (default: 1.0).
+  ///
+  /// Used by [LineRenderer.vertices] to keep lines at least one physical
+  /// pixel thick (thinner lines fade instead of dropping out).
+  double devicePixelRatio;
+
   /// Whether [paint] applies touch physics itself (default: true).
   ///
   /// [ParticleNetwork] sets this to false and calls [stepTouchPhysics] from
@@ -104,6 +118,10 @@ class OptimizedNetworkPainter extends CustomPainter {
 
   // Feedback correction applied on top of the analytic line-budget radius.
   double _budgetCorrection = 1.0;
+
+  // Triangle batch used by LineRenderer.vertices.
+  final LineVertexBatch _lineVertexBatch = LineVertexBatch();
+  final Paint _vertexPaint = Paint();
 
   // Optimized sub-components
   late final TouchInteractionHandler _touchHandler;
@@ -169,6 +187,8 @@ class OptimizedNetworkPainter extends CustomPainter {
     bool? useVerticesRendering,
     this.maxLinesPerFrame,
     this.simulateTouchInPaint = true,
+    this.lineRenderer = LineRenderer.stroke,
+    this.devicePixelRatio = 1.0,
     super.repaint,
   }) : fastLineRendering = fastLineRendering ?? useVerticesRendering ?? false {
     final int baseAlpha = (lineColor.a * 255.0).round().clamp(0, 255);
@@ -679,7 +699,18 @@ class OptimizedNetworkPainter extends CustomPainter {
     }
 
     _lastFrameLineCount = _unifiedLineCount ~/ 4;
-    if (_unifiedLineCount > 0) {
+    if (_unifiedLineCount > 0 && lineRenderer == LineRenderer.vertices) {
+      final double width = _vertexLineWidth();
+      _lineVertexBatch
+        ..clear()
+        ..addSegments(
+          _unifiedLineBuffer,
+          _unifiedLineCount,
+          _scaledArgb(linePaint.color, lineWidth / width),
+          width * 0.5,
+        )
+        ..draw(canvas, _vertexPaint);
+    } else if (_unifiedLineCount > 0) {
       canvas.drawRawPoints(
         PointMode.lines,
         Float32List.sublistView(_unifiedLineBuffer, 0, _unifiedLineCount),
@@ -801,6 +832,11 @@ class OptimizedNetworkPainter extends CustomPainter {
       _drawBatchedConnectionsFast(maxDistSq);
     }
 
+    if (lineRenderer == LineRenderer.vertices) {
+      _drawBucketsAsVertices(canvas);
+      return;
+    }
+
     int lineCount = 0;
     for (int b = 0; b < _numLineBuckets; b++) {
       final int rawCount = _rawOffsets[b];
@@ -814,6 +850,41 @@ class OptimizedNetworkPainter extends CustomPainter {
       }
     }
     _lastFrameLineCount = lineCount;
+  }
+
+  /// Quad thickness for [LineRenderer.vertices]: [lineWidth], but never
+  /// thinner than one physical pixel so lines cannot drop out of coverage.
+  double _vertexLineWidth() {
+    final double minWidth = devicePixelRatio > 0 ? 1.0 / devicePixelRatio : 1.0;
+    return lineWidth > minWidth ? lineWidth : minWidth;
+  }
+
+  /// [color] as ARGB with its alpha multiplied by [alphaScale].
+  static int _scaledArgb(Color color, double alphaScale) {
+    final int argb = color.toARGB32();
+    if (alphaScale >= 1.0) return argb;
+    final int alpha = ((argb >>> 24) * alphaScale).round().clamp(0, 255);
+    return (alpha << 24) | (argb & 0x00FFFFFF);
+  }
+
+  void _drawBucketsAsVertices(Canvas canvas) {
+    final double width = _vertexLineWidth();
+    final double alphaScale = lineWidth / width;
+    final double halfWidth = width * 0.5;
+    final LineVertexBatch batch = _lineVertexBatch..clear();
+
+    int lineCount = 0;
+    for (int b = 0; b < _numLineBuckets; b++) {
+      final int rawCount = _rawOffsets[b];
+      if (rawCount == 0) continue;
+      lineCount += rawCount ~/ 4;
+      final int argb = _scaledArgb(_lineBucketPaints[b].color, alphaScale);
+      // Fully transparent buckets add GPU work without visible output.
+      if ((argb >>> 24) == 0) continue;
+      batch.addSegments(_rawBuckets[b], rawCount, argb, halfWidth);
+    }
+    _lastFrameLineCount = lineCount;
+    batch.draw(canvas, _vertexPaint);
   }
 
   void _drawBatchedConnectionsFast(double maxDistSq) {
@@ -1136,7 +1207,9 @@ class OptimizedNetworkPainter extends CustomPainter {
     bool? useVerticesRendering,
     int? maxLinesPerFrame,
     bool clearMaxLinesPerFrame = false,
+    LineRenderer? lineRenderer,
   }) {
+    if (lineRenderer != null) this.lineRenderer = lineRenderer;
     if (clearMaxLinesPerFrame) {
       this.maxLinesPerFrame = null;
       _budgetCorrection = 1.0;
@@ -1221,6 +1294,7 @@ class OptimizedNetworkPainter extends CustomPainter {
         oldDelegate.maxConnectionsPerParticle != maxConnectionsPerParticle ||
         oldDelegate.adaptiveDensity != adaptiveDensity ||
         oldDelegate.maxLinesPerFrame != maxLinesPerFrame ||
+        oldDelegate.lineRenderer != lineRenderer ||
         oldDelegate.useVerticesRendering != useVerticesRendering;
   }
 
