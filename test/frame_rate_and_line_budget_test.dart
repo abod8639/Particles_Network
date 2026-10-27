@@ -236,6 +236,19 @@ void main() {
       expect(painter.maxLinesPerFrame, isNull);
       expect(painter.lastFrameLineDistance, 100);
     });
+
+    test('can be updated at runtime (L1003-L1006)', () {
+      final particles = _uniformParticles(1500, size);
+      final painter = _painter(particles, maxLinesPerFrame: 4000);
+      _paintFrames(painter, size, 5);
+      expect(painter.maxLinesPerFrame, 4000);
+
+      painter.updatePerformanceOptions(maxLinesPerFrame: 1500);
+      expect(painter.maxLinesPerFrame, 1500);
+
+      _paintFrames(painter, size, 30);
+      expect(painter.lastFrameLineCount, inInclusiveRange(1100, 1900));
+    });
   });
 
   group('ParticleNetwork widget', () {
