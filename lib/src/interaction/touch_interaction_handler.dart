@@ -69,6 +69,16 @@ class TouchInteractionHandler {
     List<int> visibleParticles,
     AccelerationTracker tracker,
   ) {
+    applyTouchPhysicsScaled(visibleParticles, tracker, 1.0);
+  }
+
+  /// Same as [applyTouchPhysics], but integrates over [timeScale] 60 Hz
+  /// reference frames so the pull feels identical at any refresh rate.
+  void applyTouchPhysicsScaled(
+    List<int> visibleParticles,
+    AccelerationTracker tracker,
+    double timeScale,
+  ) {
     final Offset? touch = touchPoint;
     if (touch == null) return; // Exit if no current touch
 
@@ -77,7 +87,11 @@ class TouchInteractionHandler {
     final double maxDist = effectiveLineDistance;
     final double maxDistSq = maxDist * maxDist;
     final double pullForce = touchFeatures.force;
-    final double touchDamping = touchFeatures.damping;
+    final double t = timeScale;
+    final double touchDamping = t == 1.0
+        ? touchFeatures.damping
+        : math.pow(touchFeatures.damping, t).toDouble();
+    final double frameForce = force * t;
     final double maxTouchSpeed = touchFeatures.maxTouchSpeed;
     final double maxTouchSpeedSq = maxTouchSpeed * maxTouchSpeed;
     final double touchSpeed = touchFeatures.speed;
@@ -93,8 +107,8 @@ class TouchInteractionHandler {
 
       // Only affect particles within the interaction distance (avoid sqrt if out of range)
       if (distSq < maxDistSq) {
-        p.vx += dx * force;
-        p.vy += dy * force;
+        p.vx += dx * frameForce;
+        p.vy += dy * frameForce;
 
         final double dist = math.sqrt(distSq);
         // Linear falloff: responsive attraction that smoothly reaches 0 at maxDist
@@ -106,8 +120,9 @@ class TouchInteractionHandler {
         final double ny = dy * invDist;
 
         // Stronger, responsive pull force for fluid drag response
-        double vx = (p.vx + nx * (pullForce * falloff)) * touchDamping;
-        double vy = (p.vy + ny * (pullForce * falloff)) * touchDamping;
+        final double pull = pullForce * falloff * t;
+        double vx = (p.vx + nx * pull) * touchDamping;
+        double vy = (p.vy + ny * pull) * touchDamping;
 
         // Terminal speed limit from touchFeatures
         final double speedSq = vx * vx + vy * vy;
