@@ -674,6 +674,31 @@ void main() {
         expect(defaultPainter.useVerticesRendering, isFalse);
       },
     );
+
+    testWidgets(
+      'updatePerformanceOptions updates maxLinesPerFrame and resets budget correction (L1003-L1006)',
+      (tester) async {
+        await setUpTest(tester);
+
+        expect(defaultPainter.maxLinesPerFrame, isNull);
+
+        // Update with new maxLinesPerFrame
+        defaultPainter.updatePerformanceOptions(maxLinesPerFrame: 250);
+        expect(defaultPainter.maxLinesPerFrame, equals(250));
+
+        // When passing the same maxLinesPerFrame, it remains unchanged
+        defaultPainter.updatePerformanceOptions(maxLinesPerFrame: 250);
+        expect(defaultPainter.maxLinesPerFrame, equals(250));
+
+        // When passing a different maxLinesPerFrame
+        defaultPainter.updatePerformanceOptions(maxLinesPerFrame: 500);
+        expect(defaultPainter.maxLinesPerFrame, equals(500));
+
+        // When clearing maxLinesPerFrame
+        defaultPainter.updatePerformanceOptions(clearMaxLinesPerFrame: true);
+        expect(defaultPainter.maxLinesPerFrame, isNull);
+      },
+    );
   });
 
   group('OptimizedNetworkPainter Drawing Variations', () {
