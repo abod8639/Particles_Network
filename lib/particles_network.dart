@@ -5,7 +5,7 @@
 library;
 
 export 'package:particles_network/src/core/particle.dart'
-    show Particle, computeVelocity, createMockParticle;
+    show Particle, computeVelocity, createMockParticle, scaleFrameRate;
 export 'package:particles_network/src/core/rectangle.dart' show Rectangle;
 export 'package:particles_network/src/core/trajectory_buffer.dart'
     show TrajectoryBuffer;
@@ -20,7 +20,7 @@ export 'package:particles_network/src/interaction/touch_interaction_handler.dart
 export 'package:particles_network/src/physics/gravity_config.dart'
     show GravityType, GravityConfig;
 export 'package:particles_network/src/physics/particle_controller.dart'
-    show IParticleController;
+    show IParticleController, ITimeScaledParticleController;
 export 'package:particles_network/src/physics/particle_updater.dart'
     show ParticleUpdater;
 export 'package:particles_network/src/rendering/object_pool.dart'
