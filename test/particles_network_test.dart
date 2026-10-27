@@ -1,3 +1,4 @@
+import 'dart:ui' show FrameTiming;
 import 'dart:math';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -915,10 +916,21 @@ void main() {
       expect(painter.lineDistance, equals(100.0));
       expect(painter.maxConnectionsPerParticle, equals(10));
 
-      // Simulate 5 frames with 30ms frame time (exceeding budget of 16.67ms)
-      for (int i = 0; i < 5; i++) {
-        await tester.pump(const Duration(milliseconds: 30));
-      }
+      // Report 5 frames whose raster phase took 30ms (budget is 16.67ms).
+      // Adaptivity is driven by engine FrameTiming, not tick intervals.
+      final timings = List<FrameTiming>.generate(5, (int i) {
+        final int start = i * 40000;
+        return FrameTiming(
+          vsyncStart: start,
+          buildStart: start,
+          buildFinish: start + 4000,
+          rasterStart: start + 4000,
+          rasterFinish: start + 34000,
+          rasterFinishWallTime: start + 34000,
+        );
+      });
+      tester.binding.platformDispatcher.onReportTimings!(timings);
+      await tester.pump(const Duration(milliseconds: 16));
 
       customPaint = tester.widget<CustomPaint>(customPaintFinder);
       painter = customPaint.painter as OptimizedNetworkPainter;
