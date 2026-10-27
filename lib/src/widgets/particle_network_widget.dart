@@ -8,6 +8,7 @@ import 'package:particles_network/src/factory/particle_factory.dart';
 import 'package:particles_network/src/interaction/touch_features.dart';
 import 'package:particles_network/src/physics/gravity_config.dart';
 import 'package:particles_network/src/physics/particle_controller.dart';
+import 'package:particles_network/src/rendering/line_vertex_batch.dart';
 import 'package:particles_network/src/rendering/object_pool.dart';
 import 'package:particles_network/src/rendering/optimized_network_painter.dart';
 import 'package:particles_network/src/rendering/performance_utils.dart';
@@ -99,9 +100,9 @@ class ParticleNetwork extends StatefulWidget {
   /// flat no matter how many particles are shown. `null` (default) keeps
   /// [lineDistance] fixed.
   ///
-  /// Measured on a Galaxy S10 (Impeller, full screen): about 2000 lines
-  /// sustain 60 FPS; 4000 lines run at ~36 FPS. Start around 2000 on phones
-  /// and raise it on desktop.
+  /// Measured on a Galaxy S10 (Impeller, full screen): with the default
+  /// [LineRenderer.stroke], about 2000 lines sustain 60 FPS; with
+  /// [LineRenderer.vertices], 15000 lines still run at ~64 FPS.
   final int? maxLinesPerFrame;
 
   /// Whether motion speed is independent of the display refresh rate
@@ -113,6 +114,14 @@ class ParticleNetwork extends StatefulWidget {
   /// time, so motion looks the same on every display and stays smooth when
   /// frames are dropped. On 60 Hz displays both modes look the same.
   final bool frameRateIndependent;
+
+  /// How connection lines are rasterized (default: [LineRenderer.stroke]).
+  ///
+  /// [LineRenderer.vertices] draws the whole network as triangles in a
+  /// single `drawVertices` call instead of engine-stroked segments, which
+  /// cuts GPU cost for line-heavy scenes substantially. Lines get square ends
+  /// instead of round caps, which is invisible at typical widths (≤ 1 px).
+  final LineRenderer lineRenderer;
 
   /// Creates a [ParticleNetwork] widget with customizable visualization parameters.
   const ParticleNetwork({
@@ -142,6 +151,7 @@ class ParticleNetwork extends StatefulWidget {
     this.enableAdaptivePerformance = false,
     this.maxLinesPerFrame,
     this.frameRateIndependent = false,
+    this.lineRenderer = LineRenderer.stroke,
   }) : fastLineRendering = fastLineRendering ?? useVerticesRendering ?? false;
 
   @override
@@ -207,6 +217,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
       adaptiveDensity: widget.adaptiveDensity,
       fastLineRendering: widget.fastLineRendering,
       maxLinesPerFrame: widget.maxLinesPerFrame,
+      lineRenderer: widget.lineRenderer,
       simulateTouchInPaint: false,
       repaint: frameNotifier,
     );
@@ -363,13 +374,15 @@ class ParticleNetworkState extends State<ParticleNetwork>
             oldWidget.maxConnectionsPerParticle ||
         widget.adaptiveDensity != oldWidget.adaptiveDensity ||
         widget.fastLineRendering != oldWidget.fastLineRendering ||
-        widget.maxLinesPerFrame != oldWidget.maxLinesPerFrame) {
+        widget.maxLinesPerFrame != oldWidget.maxLinesPerFrame ||
+        widget.lineRenderer != oldWidget.lineRenderer) {
       _painter.updatePerformanceOptions(
         maxConnectionsPerParticle: widget.maxConnectionsPerParticle,
         adaptiveDensity: widget.adaptiveDensity,
         fastLineRendering: widget.fastLineRendering,
         maxLinesPerFrame: widget.maxLinesPerFrame,
         clearMaxLinesPerFrame: widget.maxLinesPerFrame == null,
+        lineRenderer: widget.lineRenderer,
       );
     }
 
@@ -399,6 +412,8 @@ class ParticleNetworkState extends State<ParticleNetwork>
   @override
   Widget build(BuildContext context) {
     final bool hover = widget.hoverEffect ?? false;
+    _painter.devicePixelRatio =
+        MediaQuery.maybeDevicePixelRatioOf(context) ?? 1.0;
 
     return LayoutBuilder(
       builder: (context, constraints) {
