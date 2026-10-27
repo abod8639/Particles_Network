@@ -3,7 +3,7 @@ import 'package:example/main.dart';
 
 void main() {
   testWidgets('ExampleApp smoke test', (WidgetTester tester) async {
-    await tester.pumpWidget(const ParticleControllerScreen());
+    await tester.pumpWidget(const MyApp());
     expect(find.byType(ParticleControllerScreen), findsOneWidget);
   });
 }
