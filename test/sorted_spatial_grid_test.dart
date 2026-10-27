@@ -78,6 +78,41 @@ void main() {
       final grid = SortedSpatialGrid()..build(ps, visible, 1920, 1080, 1);
       expect(grid.cols * grid.rows, lessThan(2000 * 2));
     });
+
+    test(
+        'resets cols and rows to 0 when dimensions, radius, or count are non-positive (L68-L69)',
+        () {
+      final grid = SortedSpatialGrid();
+      const size = Size(100, 100);
+      final ps = _scatter(10, size, 1);
+      final visible = [0, 1, 2];
+
+      // Build with valid parameters first
+      grid.build(ps, visible, 100, 100, 20);
+      expect(grid.cols, greaterThan(0));
+      expect(grid.rows, greaterThan(0));
+
+      // width <= 0
+      grid.build(ps, visible, 0, 100, 20);
+      expect(grid.cols, equals(0));
+      expect(grid.rows, equals(0));
+
+      // height <= 0
+      grid.build(ps, visible, 100, -10, 20);
+      expect(grid.cols, equals(0));
+      expect(grid.rows, equals(0));
+
+      // radius <= 0
+      grid.build(ps, visible, 100, 100, 0);
+      expect(grid.cols, equals(0));
+      expect(grid.rows, equals(0));
+
+      // visible is empty (n == 0)
+      grid.build(ps, [], 100, 100, 20);
+      expect(grid.cols, equals(0));
+      expect(grid.rows, equals(0));
+      expect(grid.count, equals(0));
+    });
   });
 
   group('Sorted pair search matches brute force', () {
