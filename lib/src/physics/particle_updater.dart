@@ -9,11 +9,21 @@ import 'package:particles_network/src/physics/gravity_config.dart';
 import 'package:particles_network/src/physics/particle_controller.dart';
 
 /// Default particle controller implementing basic Euler integration physics with gravity support.
-class ParticleUpdater implements IParticleController {
+class ParticleUpdater implements ITimeScaledParticleController {
   @override
   void updateParticles(
     List<Particle> particles,
     Size bounds, {
+    GravityConfig gravity = const GravityConfig(),
+  }) {
+    updateParticlesScaled(particles, bounds, 1.0, gravity: gravity);
+  }
+
+  @override
+  void updateParticlesScaled(
+    List<Particle> particles,
+    Size bounds,
+    double timeScale, {
     GravityConfig gravity = const GravityConfig(),
   }) {
     final bool hasGlobalGravity =
@@ -43,7 +53,7 @@ class ParticleUpdater implements IParticleController {
           p.applyForceRaw(dx * scale, dy * scale);
         }
       }
-      p.update(bounds);
+      p.advance(bounds, timeScale);
     }
   }
 }
