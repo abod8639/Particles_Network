@@ -14,7 +14,8 @@ const List<String> _metrics = [
 ];
 
 Map<String, dynamic> _load(String path) {
-  final data = jsonDecode(File(path).readAsStringSync()) as Map<String, dynamic>;
+  final data =
+      jsonDecode(File(path).readAsStringSync()) as Map<String, dynamic>;
   return data['scenarios'] as Map<String, dynamic>;
 }
 
