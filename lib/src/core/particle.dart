@@ -117,20 +117,32 @@ class Particle {
 
   /// Updates the particle's position and velocity based on its current state with zero allocations.
   ///
+  /// Advances the particle by exactly one 60 Hz reference frame. Equivalent to
+  /// `advance(bounds, 1.0)`.
+  void update(Size bounds) => advance(bounds, 1.0);
+
+  /// Advances the particle by [timeScale] reference frames (1.0 = 1/60 s).
+  ///
+  /// Velocities stay expressed in pixels per reference frame, so a
+  /// [timeScale] of 0.5 on a 120 Hz display moves the particle the same
+  /// distance per second as 1.0 on a 60 Hz display.
+  ///
   /// Boundary collision detection and visibility update are inlined here to
   /// eliminate 2 virtual method calls per particle per frame on the hot path.
-  void update(Size bounds) {
-    // Apply accumulated acceleration to velocity
-    vx += ax;
-    vy += ay;
+  void advance(Size bounds, double timeScale) {
+    final double t = timeScale;
+
+    // Apply accumulated acceleration to velocity (semi-implicit Euler)
+    vx += ax * t;
+    vy += ay * t;
 
     // Reset acceleration for the next frame
     ax = 0.0;
     ay = 0.0;
 
     // Update the position by adding the velocity.
-    x += vx;
-    y += vy;
+    x += vx * t;
+    y += vy * t;
 
     // If the particle was accelerated (e.g. by touch), gradually return to cruising speed
     // in the same direction, keeping the trajectory straight without veering off course.
@@ -153,7 +165,7 @@ class Particle {
             defaultVy = 0.0;
             wasAccelerated = false;
           } else {
-            final double rate = decayRate.clamp(0.0, 1.0);
+            final double rate = scaleFrameRate(decayRate, t);
             final double scale = 1.0 - rate;
             vx *= scale;
             vy *= scale;
@@ -172,7 +184,7 @@ class Particle {
             defaultVy = vy;
             wasAccelerated = false;
           } else {
-            final double rate = decayRate.clamp(0.0, 1.0);
+            final double rate = scaleFrameRate(decayRate, t);
             final double newSpeed =
                 currentSpeed + (defaultSpeed - currentSpeed) * rate;
             final double scale = newSpeed / currentSpeed;
@@ -255,6 +267,16 @@ class Particle {
         y >= -margin &&
         y <= bounds.height + margin;
   }
+}
+
+/// Converts a per-reference-frame blend [rate] (0..1) into the equivalent
+/// rate over [timeScale] reference frames, so exponential decays converge at
+/// the same speed regardless of display refresh rate.
+@pragma('vm:prefer-inline')
+double scaleFrameRate(double rate, double timeScale) {
+  final double r = rate.clamp(0.0, 1.0);
+  if (timeScale == 1.0) return r;
+  return 1.0 - math.pow(1.0 - r, timeScale).toDouble();
 }
 
 /// Computes the velocity with gradual decay to return to the default velocity.
