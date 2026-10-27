@@ -182,9 +182,9 @@ flutter drive --profile --driver=test_driver/perf_driver.dart --target=integrati
 
 ### Test suites: 1.9.6 vs 1.9.7
 
-| Suite | 1.9.6 (pub.dev) | Current source |
+| Suite | 1.9.6 (pub.dev) | 1.9.7 |
 | :--- | :---: | :---: |
-| Library unit tests (`flutter test`) | 276 / 276 pass | 318 / 318 pass |
+| Library unit tests (`flutter test`) | 276 / 276 pass | 324 / 324 pass |
 
 The extra tests in the current source cover the line budget, frame-rate independent motion, the vertices renderer (including a pixel comparison against strokes) and the cell-sorted search (checked against brute force).
 
@@ -258,7 +258,7 @@ Add `particles_network` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  particles_network: ^1.9.6
+  particles_network: ^1.9.7
 ```
 
 Then run:
@@ -281,8 +281,8 @@ flutter pub get
 | **Linux** | Full | OpenGL Native |
 
 **Requirements:**
-- Flutter SDK `>=3.10.0`
-- Dart SDK `>=3.0.0 <4.0.0`
+- Flutter SDK `>=3.27.0`
+- Dart SDK `>=3.6.0 <4.0.0`
 
 ---
 
@@ -309,7 +309,7 @@ flutter pub get
 | `fastLineRendering` | `bool` | `false` | Batched single-call line drawing using `canvas.drawRawPoints`. |
 | `enableAdaptivePerformance`| `bool` | `false` | Throttles line distance/connections when real frame cost (engine `FrameTiming`) exceeds the display's frame budget. |
 | `maxLinesPerFrame` | `int?` | `null` | Line budget: shrinks connection radius so line count (the main GPU cost) stays near this value at any particle count. ~2000 sustains 60 FPS on a Galaxy S10. |
-| `lineRenderer` | `LineRenderer` | `LineRenderer.stroke` | `LineRenderer.vertices` draws all connections as triangles in one `drawVertices` call: 4–10x faster on line-heavy scenes, with square line ends. |
+| `lineRenderer` | `LineRenderer` | `LineRenderer.stroke` | `LineRenderer.vertices` draws connections as triangles with one `drawVertices` call per opacity level: 4–10x faster on line-heavy scenes, with square line ends. |
 | `frameRateIndependent` | `bool` | `false` | Integrates motion over real time so speed is identical at 60/90/120 Hz and smooth through dropped frames. |
 | `gravityType` | `GravityType` | `GravityType.none` | Physics type: `none`, `global`, or `point`. |
 | `gravityStrength` | `double` | `0.1` | Force intensity ($F = m \cdot a$). Negative values repel in point gravity. |
@@ -555,6 +555,22 @@ The animation loop uses Flutter's `TickerProvider`, which automatically pauses w
 ---
 
 ## Migration Guide
+
+### Migrating to 1.9.7
+The new options are all opt-in, and the defaults draw and move exactly as in 1.9.6. Things to check:
+- The minimum is now Flutter 3.27 / Dart 3.6. The `Color` component APIs the painter uses do not exist in older SDKs.
+- Widget tests that triggered `enableAdaptivePerformance` by pumping long tick intervals must now feed `FrameTiming`s through `tester.binding.platformDispatcher.onReportTimings`.
+
+To use the new performance features:
+```dart
+ParticleNetwork(
+  particleCount: 5000,
+  // New optional options in 1.9.7:
+  lineRenderer: LineRenderer.vertices, // triangle lines, 4–10x faster on line-heavy scenes
+  maxLinesPerFrame: 15000,             // keep line count (GPU cost) flat as particleCount grows
+  frameRateIndependent: true,          // same speed at 60/90/120 Hz
+)
+```
 
 ### Migrating to 1.9.6
 Version 1.9.6 is fully backwards-compatible with all `1.x` APIs.

@@ -237,7 +237,7 @@ Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  particles_network: ^1.9.6
+  particles_network: ^1.9.7
 ```
 
 Then run:
@@ -278,8 +278,8 @@ No additional setup required! The package works out of the box.
 |  Linux   | ✅ Full |  Very Good  | OpenGL acceleration           |
 
 **Minimum Requirements:**
-- Flutter SDK: `>=3.10.0`
-- Dart SDK: `^3.0.0`
+- Flutter SDK: `>=3.27.0`
+- Dart SDK: `^3.6.0`
 
 ---
 
@@ -305,6 +305,9 @@ No additional setup required! The package works out of the box.
 | `adaptiveDensity`            | `bool`          | `false`        | Automatically scales down connection distance in dense networks      |
 | `fastLineRendering`          | `bool`          | `false`        | Single draw-call line rendering (alias: `useVerticesRendering`)      |
 | `enableAdaptivePerformance`  | `bool`          | `false`        | Dynamically monitors FPS and auto-tunes quality to maintain 60 FPS   |
+| `lineRenderer`               | `LineRenderer`  | `stroke`       | `LineRenderer.vertices` draws lines as triangles, 4–10x faster       |
+| `maxLinesPerFrame`           | `int?`          | `null`         | Line budget: shrinks line distance to keep line count near this value |
+| `frameRateIndependent`       | `bool`          | `false`        | Same motion speed at 60/90/120 Hz and through dropped frames         |
 | `gravityType`                | `GravityType`   | `none`         | Type of physics simulation (`none`, `global`, `point`)               |
 | `gravityStrength`            | `double`        | `0.1`          | Intensity of the force ($F = ma$ applied)                            |
 | `gravityDirection`           | `Offset`        | `(0, 1)`       | Direction vector for `GravityType.global`                            |
@@ -788,6 +791,24 @@ Note: Some properties like `particleCount`, `maxSpeed`, and `maxSize` require a 
 
 ## Migration Guide
 
+### Migrating to 1.9.7
+
+Version 1.9.7 keeps every existing option and default unchanged. It needs Flutter `>=3.27.0` / Dart `>=3.6.0`.
+
+**New Capabilities in 1.9.7 (all optional):**
+- **Triangle Line Renderer**: `lineRenderer: LineRenderer.vertices` draws connections as indexed triangles, 4–10x faster on line-heavy scenes, with square line ends.
+- **Line Budget**: `maxLinesPerFrame` shrinks the connection radius so the line count stays near the budget at any particle count.
+- **Frame-Rate Independent Motion**: `frameRateIndependent: true` keeps speeds identical at 60/90/120 Hz and through dropped frames.
+
+```dart
+ParticleNetwork(
+  particleCount: 5000,
+  lineRenderer: LineRenderer.vertices,
+  maxLinesPerFrame: 15000,
+  frameRateIndependent: true,
+)
+```
+
 ### Migrating to 1.9.6
 
 Version 1.9.6 is **100% backward compatible** with all existing `1.x` implementations.
@@ -825,7 +846,7 @@ ParticleNetwork(
 1. Update your `pubspec.yaml`:
    ```yaml
    dependencies:
-     particles_network: ^1.9.6
+     particles_network: ^1.9.7
    ```
 
 2. Run:
