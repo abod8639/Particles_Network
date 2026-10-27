@@ -49,18 +49,32 @@ class ParticleSimulation {
             ),
         controller = controller ?? ParticleUpdater();
 
-  /// Advances the simulation by one frame with zero allocations.
-  void step() {
+  /// Advances the simulation with zero allocations.
+  ///
+  /// [timeScale] is the elapsed time in 60 Hz reference frames (1.0 = 1/60 s).
+  /// Controllers that do not implement [ITimeScaledParticleController] always
+  /// advance by exactly one frame.
+  void step([double timeScale = 1.0]) {
     if (particles.isEmpty ||
         currentSize.width <= 0 ||
         currentSize.height <= 0) {
       return;
     }
-    controller.updateParticles(
-      particles,
-      currentSize,
-      gravity: gravityConfig,
-    );
+    final IParticleController c = controller;
+    if (c is ITimeScaledParticleController) {
+      c.updateParticlesScaled(
+        particles,
+        currentSize,
+        timeScale,
+        gravity: gravityConfig,
+      );
+    } else {
+      c.updateParticles(
+        particles,
+        currentSize,
+        gravity: gravityConfig,
+      );
+    }
   }
 
   /// Updates viewport dimensions and handles particle generation or resizing.
