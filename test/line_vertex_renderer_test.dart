@@ -97,30 +97,35 @@ double _greenEnergy(Uint8List rgba) {
 
 void main() {
   group('LineVertexBatch', () {
-    test('emits two triangles per segment around the segment axis', () {
+    test('emits an indexed quad around the segment axis', () {
       final batch = LineVertexBatch();
-      batch.addSegments(
-        Float32List.fromList([0, 0, 10, 0]),
-        4,
-        0x80FF0000,
-        1.0,
-      );
+      batch.addSegments(Float32List.fromList([0, 0, 10, 0]), 4, 1.0);
 
       expect(batch.lineCount, 1);
+      // A(0,1) B(0,-1) C(10,1) D(10,-1)
+      expect(batch.positions, [0, 1, 0, -1, 10, 1, 10, -1]);
+      // Triangles A,B,C and C,B,D; the next quad starts at vertex 4.
       expect(
-        batch.positions,
-        // A(0,1) B(0,-1) C(10,1) | C(10,1) B(0,-1) D(10,-1)
-        [0, 1, 0, -1, 10, 1, 10, 1, 0, -1, 10, -1],
-      );
-      expect(batch.colors.toSet(), {
-        Int32List.fromList([0x80FF0000])[0]
-      });
+          LineVertexBatch.indicesFor(2), [0, 1, 2, 2, 1, 3, 4, 5, 6, 6, 5, 7]);
+    });
+
+    test('splits draws so 16-bit indices never overflow', () {
+      final int lines = LineVertexBatch.maxQuadsPerDraw + 10;
+      final segments = Float32List(lines * 4);
+      for (int i = 0; i < lines; i++) {
+        segments[i * 4 + 2] = 5;
+        segments[i * 4 + 3] = 5;
+      }
+      final batch = LineVertexBatch()..addSegments(segments, lines * 4, 0.5);
+      final canvas = _CountingCanvas();
+      batch.draw(canvas, Paint());
+
+      expect(canvas.vertexCalls, 2);
     });
 
     test('skips zero-length segments', () {
       final batch = LineVertexBatch()
-        ..addSegments(
-            Float32List.fromList([5, 5, 5, 5, 0, 0, 0, 3]), 8, 0xFFFFFFFF, 0.5);
+        ..addSegments(Float32List.fromList([5, 5, 5, 5, 0, 0, 0, 3]), 8, 0.5);
       expect(batch.lineCount, 1);
     });
 
@@ -132,23 +137,22 @@ void main() {
         segments[i * 4 + 2] = i.toDouble();
         segments[i * 4 + 3] = 10;
       }
-      batch.addSegments(segments, 4 * 1000, 0xFFFFFFFF, 0.5);
+      batch.addSegments(segments, 4 * 1000, 0.5);
       batch.addSegments(
         Float32List.sublistView(segments, 4 * 1000),
         4 * 1000,
-        0xFFFFFFFF,
         0.5,
       );
 
       expect(batch.lineCount, 2000);
       // First vertex of line 0 and of line 1999 (x offset by -halfWidth).
       expect(batch.positions[0], closeTo(-0.5, 1e-6));
-      expect(batch.positions[1999 * 12], closeTo(1998.5, 1e-3));
+      expect(batch.positions[1999 * 8], closeTo(1998.5, 1e-3));
     });
 
     test('clear() resets without shrinking', () {
       final batch = LineVertexBatch()
-        ..addSegments(Float32List.fromList([0, 0, 1, 1]), 4, 0xFFFFFFFF, 1)
+        ..addSegments(Float32List.fromList([0, 0, 1, 1]), 4, 1)
         ..clear();
       expect(batch.lineCount, 0);
       expect(batch.positions, isEmpty);
@@ -163,7 +167,7 @@ void main() {
       ('isComplex', true, false),
       ('fastLineRendering', false, true),
     ]) {
-      test('$name: one drawVertices call, no stroked lines', () {
+      test('$name: drawVertices per opacity level, no stroked lines', () {
         final particles = _particles(400, size);
         final painter = _painter(
           particles,
@@ -174,7 +178,9 @@ void main() {
         final canvas = _CountingCanvas();
         painter.paint(canvas, size);
 
-        expect(canvas.vertexCalls, 1);
+        // One call for the single-colour unified path, at most one per
+        // visible opacity bucket otherwise.
+        expect(canvas.vertexCalls, fast ? 1 : inInclusiveRange(2, 31));
         expect(canvas.rawLineCalls, 0);
         expect(canvas.lineCalls, 0);
         expect(painter.lastFrameLineCount, greaterThan(100));
