@@ -117,8 +117,9 @@ class ParticleNetwork extends StatefulWidget {
 
   /// How connection lines are rasterized (default: [LineRenderer.stroke]).
   ///
-  /// [LineRenderer.vertices] draws the whole network as triangles in a
-  /// single `drawVertices` call instead of engine-stroked segments, which
+  /// [LineRenderer.vertices] draws the network as indexed triangles (one
+  /// `drawVertices` call per opacity level) instead of engine-stroked
+  /// segments, which
   /// cuts GPU cost for line-heavy scenes substantially. Lines get square ends
   /// instead of round caps, which is invisible at typical widths (≤ 1 px).
   final LineRenderer lineRenderer;
