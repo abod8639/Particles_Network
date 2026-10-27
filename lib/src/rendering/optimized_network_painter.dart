@@ -80,6 +80,31 @@ class OptimizedNetworkPainter extends CustomPainter {
   bool get useVerticesRendering => fastLineRendering;
   set useVerticesRendering(bool value) => fastLineRendering = value;
 
+  /// Target upper bound on connection lines drawn per frame.
+  ///
+  /// When set, the connection radius shrinks automatically so that the line
+  /// count stays near this budget regardless of particle count or screen
+  /// size. Line opacity fades relative to the reduced radius, so the network
+  /// keeps its soft look instead of lines popping in and out.
+  int? maxLinesPerFrame;
+
+  /// Whether [paint] applies touch physics itself (default: true).
+  ///
+  /// [ParticleNetwork] sets this to false and calls [stepTouchPhysics] from
+  /// its ticker instead, keeping simulation and rendering decoupled.
+  bool simulateTouchInPaint;
+
+  /// Number of connection lines drawn in the most recent [paint] call.
+  int get lastFrameLineCount => _lastFrameLineCount;
+  int _lastFrameLineCount = 0;
+
+  /// Connection radius actually used in the most recent [paint] call.
+  double get lastFrameLineDistance => _lastFrameLineDistance;
+  double _lastFrameLineDistance = 0;
+
+  // Feedback correction applied on top of the analytic line-budget radius.
+  double _budgetCorrection = 1.0;
+
   // Optimized sub-components
   late final TouchInteractionHandler _touchHandler;
   late final CompressedQuadTree _quadTree;
@@ -142,6 +167,8 @@ class OptimizedNetworkPainter extends CustomPainter {
     this.adaptiveDensity = false,
     bool? fastLineRendering,
     bool? useVerticesRendering,
+    this.maxLinesPerFrame,
+    this.simulateTouchInPaint = true,
     super.repaint,
   }) : fastLineRendering = fastLineRendering ?? useVerticesRendering ?? false {
     final int baseAlpha = (lineColor.a * 255.0).round().clamp(0, 255);
@@ -220,6 +247,59 @@ class OptimizedNetworkPainter extends CustomPainter {
     _touchHandler.touchPoint = newPoint;
   }
 
+  bool get _isTouchActive =>
+      touchActivation &&
+      touchPoint != null &&
+      touchPoint!.isFinite &&
+      touchPoint != Offset.infinite;
+
+  /// Applies touch attraction to the currently visible particles, integrated
+  /// over [timeScale] 60 Hz reference frames.
+  ///
+  /// Only needed when [simulateTouchInPaint] is false.
+  void stepTouchPhysics([double timeScale = 1.0]) {
+    if (!_isTouchActive) return;
+    // Refresh: the particle list may have shrunk since the last paint.
+    ParticleFilter.getVisibleParticlesTo(particles, _visibleParticles);
+    _touchHandler.applyTouchPhysicsScaled(
+      _visibleParticles,
+      _accelerationTracker,
+      timeScale,
+    );
+  }
+
+  /// Returns the connection radius that keeps the line count near
+  /// [maxLinesPerFrame], never exceeding [baseDistance].
+  ///
+  /// For N uniformly spread particles over area A, the expected number of
+  /// pairs closer than r is N² · π · r² / (2 · A); solving for r gives the
+  /// analytic radius. A feedback factor learned from the measured line count
+  /// corrects for clustering (gravity, touch) and screen-edge effects.
+  double _budgetedDistance(double baseDistance, Size size, int count) {
+    final int? budget = maxLinesPerFrame;
+    if (budget == null || count < 2) return baseDistance;
+    if (budget <= 0) return 0;
+    final double area = size.width * size.height;
+    final double analytic =
+        math.sqrt(2.0 * area * budget / (math.pi * count * count));
+    final double r = analytic * _budgetCorrection;
+    return r < baseDistance ? r : baseDistance;
+  }
+
+  void _updateBudgetCorrection(double usedDistance, double baseDistance) {
+    final int? budget = maxLinesPerFrame;
+    if (budget == null || budget <= 0) return;
+    final int lines = _lastFrameLineCount;
+    // Not budget-limited and under budget: nothing to correct.
+    if (usedDistance >= baseDistance && lines <= budget) return;
+    final double ratio = budget / (lines > 0 ? lines : 1);
+    if (ratio > 0.9 && ratio < 1.1) return;
+    // Lines scale with r², so r scales with sqrt(ratio); take half of that
+    // step (ratio^0.25) to converge without oscillating.
+    _budgetCorrection =
+        (_budgetCorrection * math.pow(ratio, 0.25)).clamp(0.2, 5.0);
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     _accelerationTracker.resetFrame();
@@ -249,7 +329,22 @@ class OptimizedNetworkPainter extends CustomPainter {
         effectiveDistance = lineDistance * factor;
       }
 
-      final double distance = effectiveDistance ?? lineDistance;
+      final double baseDistance = effectiveDistance ?? lineDistance;
+      final double distance = _budgetedDistance(
+        baseDistance,
+        size,
+        visibleParticles.length,
+      );
+      if (distance != baseDistance) effectiveDistance = distance;
+      _lastFrameLineDistance = distance;
+
+      // Fade lines relative to the budgeted radius; otherwise relative to
+      // lineDistance as before.
+      final double alphaDistance =
+          maxLinesPerFrame != null ? distance : lineDistance;
+      final double alphaDistSq = alphaDistance * alphaDistance;
+      _invMaxDistSq = alphaDistSq > 0 ? 1.0 / alphaDistSq : 0.0;
+
       _spatialGrid.updateCellSize(
         distance > 0 ? distance : 100.0,
       );
@@ -270,16 +365,19 @@ class OptimizedNetworkPainter extends CustomPainter {
       }
 
       _drawConnections(canvas, visibleParticles, effectiveDistance);
+      _updateBudgetCorrection(distance, baseDistance);
+    } else {
+      _lastFrameLineCount = 0;
     }
 
-    final bool isTouchActive = touchActivation &&
-        touchPoint != null &&
-        touchPoint!.isFinite &&
-        touchPoint != Offset.infinite;
-
-    if (isTouchActive) {
+    if (_isTouchActive) {
       _touchHandler.drawTouchLines(canvas, visibleParticles);
-      _touchHandler.applyTouchPhysics(visibleParticles, _accelerationTracker);
+      if (simulateTouchInPaint) {
+        _touchHandler.applyTouchPhysics(
+          visibleParticles,
+          _accelerationTracker,
+        );
+      }
       _quadTreeManager.forceRebuild();
     }
 
@@ -580,6 +678,7 @@ class OptimizedNetworkPainter extends CustomPainter {
       }
     }
 
+    _lastFrameLineCount = _unifiedLineCount ~/ 4;
     if (_unifiedLineCount > 0) {
       canvas.drawRawPoints(
         PointMode.lines,
@@ -616,6 +715,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     final int denseThreshold = isComplex ? (dist ~/ 4) : (dist ~/ 1.5);
 
     final List<int> nearbyIndices = _intListPool.acquire();
+    int lineCount = 0;
 
     try {
       final int count = visibleParticles.length;
@@ -677,10 +777,12 @@ class OptimizedNetworkPainter extends CustomPainter {
             linePaint.color = _lineColorLut[alpha];
             canvas.drawLine(pos, Offset(neighbor.x, neighbor.y), linePaint);
           }
+          lineCount += drawCount;
         }
       }
     } finally {
       _intListPool.release(nearbyIndices);
+      _lastFrameLineCount = lineCount;
     }
   }
 
@@ -699,8 +801,10 @@ class OptimizedNetworkPainter extends CustomPainter {
       _drawBatchedConnectionsFast(maxDistSq);
     }
 
+    int lineCount = 0;
     for (int b = 0; b < _numLineBuckets; b++) {
       final int rawCount = _rawOffsets[b];
+      lineCount += rawCount ~/ 4;
       if (rawCount > 0) {
         canvas.drawRawPoints(
           PointMode.lines,
@@ -709,6 +813,7 @@ class OptimizedNetworkPainter extends CustomPainter {
         );
       }
     }
+    _lastFrameLineCount = lineCount;
   }
 
   void _drawBatchedConnectionsFast(double maxDistSq) {
@@ -907,6 +1012,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     List<int> visibleParticles,
     double maxDistSq,
   ) {
+    final double queryRadius = math.sqrt(maxDistSq);
     final List<int> nearbyIndices = _intListPool.acquire();
 
     try {
@@ -924,7 +1030,7 @@ class OptimizedNetworkPainter extends CustomPainter {
         _spatialGrid.findNearbyParticlesToOutput(
           px,
           py,
-          lineDistance,
+          queryRadius,
           nearbyIndices,
         );
 
@@ -1028,7 +1134,17 @@ class OptimizedNetworkPainter extends CustomPainter {
     bool? adaptiveDensity,
     bool? fastLineRendering,
     bool? useVerticesRendering,
+    int? maxLinesPerFrame,
+    bool clearMaxLinesPerFrame = false,
   }) {
+    if (clearMaxLinesPerFrame) {
+      this.maxLinesPerFrame = null;
+      _budgetCorrection = 1.0;
+    } else if (maxLinesPerFrame != null &&
+        maxLinesPerFrame != this.maxLinesPerFrame) {
+      this.maxLinesPerFrame = maxLinesPerFrame;
+      _budgetCorrection = 1.0;
+    }
     if (maxConnectionsPerParticle != null) {
       this.maxConnectionsPerParticle = maxConnectionsPerParticle;
     }
@@ -1104,6 +1220,7 @@ class OptimizedNetworkPainter extends CustomPainter {
         oldDelegate.touchFeatures != touchFeatures ||
         oldDelegate.maxConnectionsPerParticle != maxConnectionsPerParticle ||
         oldDelegate.adaptiveDensity != adaptiveDensity ||
+        oldDelegate.maxLinesPerFrame != maxLinesPerFrame ||
         oldDelegate.useVerticesRendering != useVerticesRendering;
   }
 
