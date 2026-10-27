@@ -134,6 +134,35 @@ Experience interactive physics and high frame rates directly in your browser:
 
 ## Performance Benchmarks
 
+### Real-device frame timings (Galaxy S10, Impeller, profile mode, full screen)
+
+| Scenario | FPS | Raster p50 |
+| :--- | :---: | :---: |
+| Scenario | `LineRenderer.stroke` | `LineRenderer.vertices` |
+| :--- | :---: | :---: |
+| 500 particles, lines (default `lineDistance: 100`) | 15.4 FPS (raster 61 ms) | **63.8 FPS** (raster 4.9 ms) |
+| 1,000 particles, lines | 4.2 FPS | **41.8 FPS** |
+| 2,000 particles, `maxConnectionsPerParticle: 5` | 26.0 FPS | **62.4 FPS** |
+| 5,000 particles, `maxLinesPerFrame: 4000` | 33.4 FPS | **62.8 FPS** |
+| 5,000 particles, `maxLinesPerFrame: 15000` | 9.6 FPS (raster 109 ms) | **64.0 FPS** (raster 8.4 ms) |
+| 10,000 particles, `maxLinesPerFrame: 15000` | 9.0 FPS | **60.2 FPS** |
+| 20,000 particles, `maxLinesPerFrame: 15000` | — | **61.8–64.5 FPS** |
+
+| Scenario | FPS | Raster p50 |
+| :--- | :---: | :---: |
+| 500 particles, lines, `enableAdaptivePerformance` | 63.6 | 14 ms |
+| 20,000 particles, no lines | 63.0 | 8 ms |
+| 50,000 particles, no lines | 61.0 | 11 ms |
+
+Stroked lines are the main cost: on this device each one takes roughly 7 µs of GPU time, while particles alone scale to 50,000 at 60 FPS. `LineRenderer.vertices` cuts the line cost by about 10x, and the cell-sorted search keeps the UI thread under budget: 20,000 particles with 15,000 lines hold 60 FPS. Beyond that the limit is the number of lines the UI thread can find and emit. Without a budget, 2,000 particles produce about 229,000 lines per frame and run at roughly 30 FPS. To reproduce on your own device:
+
+```bash
+cd example
+flutter drive --profile --driver=test_driver/perf_driver.dart --target=integration_test/perf_benchmark_test.dart
+```
+
+### CPU-side microbenchmarks
+
 | Benchmark Scenario | Standard Loop | Optimized Engine | Gain |
 | :--- | :---: | :---: | :---: |
 | **500 Particles (100 Frames Render)** | 4,608 ms (~46 ms/frame) | **496 ms** (~4.9 ms/frame) | **9.3x Faster** |
@@ -231,7 +260,10 @@ flutter pub get
 | `maxConnectionsPerParticle` | `int?` | `null` | Limits lines per particle, bounding edge complexity to $O(N)$. |
 | `adaptiveDensity` | `bool` | `false` | Automatically reduces line distance in crowded areas. |
 | `fastLineRendering` | `bool` | `false` | Batched single-call line drawing using `canvas.drawRawPoints`. |
-| `enableAdaptivePerformance`| `bool` | `false` | Dynamically throttles effects during frame spikes to keep 60 FPS. |
+| `enableAdaptivePerformance`| `bool` | `false` | Throttles line distance/connections when real frame cost (engine `FrameTiming`) exceeds the display's frame budget. |
+| `maxLinesPerFrame` | `int?` | `null` | Line budget: shrinks connection radius so line count (the main GPU cost) stays near this value at any particle count. ~2000 sustains 60 FPS on a Galaxy S10. |
+| `lineRenderer` | `LineRenderer` | `LineRenderer.stroke` | `LineRenderer.vertices` draws all connections as triangles in one `drawVertices` call: 4–10x faster on line-heavy scenes, with square line ends. |
+| `frameRateIndependent` | `bool` | `false` | Integrates motion over real time so speed is identical at 60/90/120 Hz and smooth through dropped frames. |
 | `gravityType` | `GravityType` | `GravityType.none` | Physics type: `none`, `global`, or `point`. |
 | `gravityStrength` | `double` | `0.1` | Force intensity ($F = m \cdot a$). Negative values repel in point gravity. |
 | `gravityDirection` | `Offset` | `Offset(0, 1)` | Direction vector for `GravityType.global`. |
@@ -301,6 +333,15 @@ ParticleNetwork(
 
 ### 1. Batched Flat-Buffer Line Rendering (`fastLineRendering`)
 Instead of issuing individual `canvas.drawLine` commands per connection (which induces CPU-GPU context switches), `fastLineRendering: true` aggregates segment pairs into pre-allocated `Float32List` buckets and draws them with batched `canvas.drawRawPoints(PointMode.lines, ...)` calls.
+
+### Triangle Line Renderer (`LineRenderer.vertices`)
+Engine strokes are tessellated one segment at a time. With `LineRenderer.vertices`, the painter instead expands each connection into an indexed quad (4 vertices, two triangles) `lineWidth` thick, and submits each opacity level with one `canvas.drawVertices` call. The connections and their fades are the same as with strokes; only the GPU path changes.
+
+### Cell-Sorted SoA Neighbour Search (`SortedSpatialGrid`)
+Each frame, the batched and `fastLineRendering` paths counting-sort the visible particles by grid cell into flat `Float64List` coordinate arrays. Because cells are stored row-major, the candidates for a particle are just two contiguous memory ranges: the rest of its own cell plus the east cell, then the south-west, south and south-east cells. The pair loop therefore scans sequential typed memory instead of following per-cell linked lists and dereferencing `Particle` objects. The cell size is `max(r, sqrt(A / N))`, so the grid stays about the size of the particle count even when a line budget shrinks `r` to a few pixels.
+
+### Line Budget (`maxLinesPerFrame`)
+The number of connections grows as $\frac{N^2 \pi r^2}{2A}$, so it grows quadratically with particle count, and on real devices line rasterization dominates frame time. Given a budget $B$, the painter picks $r = \sqrt{\frac{2AB}{\pi N^2}}$ and corrects it every frame from the measured line count, which handles clustered particles. Frame cost then stays flat however many particles you add.
 
 ### 2. Bounded $O(N)$ Degree Limiting (`maxConnectionsPerParticle`)
 Unbounded proximity checks in dense meshes produce up to $\frac{N(N-1)}{2}$ edges ($O(N^2)$). Capping connections per particle (e.g. `maxConnectionsPerParticle: 4`) provides a predictable $O(N)$ complexity ceiling, maintaining high frame rates even with 1,000+ particles.
@@ -443,7 +484,8 @@ class ThemedParticleView extends StatelessWidget {
 | :--- | :--- | :--- |
 | **Particles not visible** | Low contrast with background | Set contrasting `particleColor` (e.g. `Colors.white` on dark backgrounds). |
 | **Touch does not respond** | `touchActivation` disabled | Ensure `touchActivation: true` and that parent widgets do not block gestures. |
-| **Frame drops on low-end hardware** | Too many connections | Enable `fastLineRendering: true`, set `maxConnectionsPerParticle: 3`, or use `enableAdaptivePerformance: true`. |
+| **Frame drops on low-end hardware** | Too many connections | Use `lineRenderer: LineRenderer.vertices`, set a line budget (`maxLinesPerFrame: 2000` with strokes, `15000` with vertices), set `maxConnectionsPerParticle: 3`, or use `enableAdaptivePerformance: true`. |
+| **Particles move faster on 120 Hz phones** | Speed is per frame by default | Set `frameRateIndependent: true`. |
 | **Web stutter** | HTML/Canvas renderer | Build web apps with CanvasKit / Wasm: `flutter build web --wasm`. |
 
 ---
