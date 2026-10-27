@@ -981,4 +981,101 @@ void main() {
       expect(painter.maxConnectionsPerParticle, equals(10));
     },
   );
+
+  testWidgets(
+    'ParticleNetwork didUpdateWidget updates enableAdaptivePerformance (L392)',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleNetwork(
+                lineDistance: 100.0,
+                maxConnectionsPerParticle: 10,
+                enableAdaptivePerformance: false,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final customPaintFinder = find.descendant(
+        of: find.byType(ParticleNetwork),
+        matching: find.byType(CustomPaint),
+      );
+
+      var customPaint = tester.widget<CustomPaint>(customPaintFinder);
+      var painter = customPaint.painter as OptimizedNetworkPainter;
+      expect(painter.lineDistance, equals(100.0));
+
+      final timings = List<FrameTiming>.generate(5, (int i) {
+        final int start = i * 40000;
+        return FrameTiming(
+          vsyncStart: start,
+          buildStart: start,
+          buildFinish: start + 4000,
+          rasterStart: start + 4000,
+          rasterFinish: start + 34000,
+          rasterFinishWallTime: start + 34000,
+        );
+      });
+
+      // While false, reporting slow timings does not throttle line distance
+      tester.binding.platformDispatcher.onReportTimings!(timings);
+      await tester.pump(const Duration(milliseconds: 16));
+
+      customPaint = tester.widget<CustomPaint>(customPaintFinder);
+      painter = customPaint.painter as OptimizedNetworkPainter;
+      expect(painter.lineDistance, equals(100.0));
+
+      // Toggle enableAdaptivePerformance from false to true via didUpdateWidget
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleNetwork(
+                lineDistance: 100.0,
+                maxConnectionsPerParticle: 10,
+                enableAdaptivePerformance: true,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Now reporting slow timings throttles lineDistance
+      tester.binding.platformDispatcher.onReportTimings!(timings);
+      await tester.pump(const Duration(milliseconds: 16));
+
+      customPaint = tester.widget<CustomPaint>(customPaintFinder);
+      painter = customPaint.painter as OptimizedNetworkPainter;
+      expect(painter.lineDistance, lessThan(100.0));
+
+      // Toggle enableAdaptivePerformance back to false via didUpdateWidget
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleNetwork(
+                lineDistance: 100.0,
+                maxConnectionsPerParticle: 10,
+                enableAdaptivePerformance: false,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      customPaint = tester.widget<CustomPaint>(customPaintFinder);
+      painter = customPaint.painter as OptimizedNetworkPainter;
+      expect(painter.lineDistance, equals(100.0));
+      expect(painter.maxConnectionsPerParticle, equals(10));
+    },
+  );
 }
