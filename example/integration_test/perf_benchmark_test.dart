@@ -9,9 +9,18 @@
 //     --driver=test_driver/perf_driver.dart \
 //     --target=integration_test/perf_benchmark_test.dart
 //
-// Optional: --dart-define=PERF_FILTER=lines   (run only scenarios whose
-// name contains the given text) and --dart-define=PERF_SECONDS=8.
+// Optional:
+//   --dart-define=PERF_FILTER=lines_500,budget  run only scenarios whose name
+//                                              contains any listed text
+//   --dart-define=PERF_SECONDS=8                measurement window
+//   --dart-define=PERF_SCREENSHOTS=true         also save a screenshot per
+//                                              scenario to build/perf/shots
+//                                              (skews timings; run separately)
+//
+// Every `lines_*` scenario also runs as `<name>_vtx` with
+// LineRenderer.vertices for a direct stroke-vs-vertices comparison.
 // ignore_for_file: avoid_print
+import 'dart:io' show Platform;
 import 'dart:math' as math;
 import 'dart:ui';
 
@@ -23,31 +32,52 @@ import 'package:particles_network/particles_network.dart';
 
 const String _filter = String.fromEnvironment('PERF_FILTER');
 const int _seconds = int.fromEnvironment('PERF_SECONDS', defaultValue: 5);
+const bool _screenshots = bool.fromEnvironment('PERF_SCREENSHOTS');
 const Duration _warmup = Duration(seconds: 1);
 
 class PerfScenario {
   final String name;
-  final ParticleNetwork Function() build;
+  final ParticleNetwork Function(LineRenderer renderer) build;
 
   const PerfScenario(this.name, this.build);
 }
 
-final List<PerfScenario> scenarios = [
+bool _selected(String name) =>
+    _filter.isEmpty ||
+    _filter.split(',').any((String f) => f.isNotEmpty && name.contains(f));
+
+/// [_baseScenarios] with stroke lines, each line scenario immediately
+/// followed by a `_vtx` twin using [LineRenderer.vertices]. Running the pair
+/// back to back keeps both under the same thermal state, which on phones can
+/// shift results by 30% or more over a long run.
+final List<(String, ParticleNetwork Function())> scenarios = [
+  for (final s in _baseScenarios) ...[
+    (s.name, () => s.build(LineRenderer.stroke)),
+    if (s.name.startsWith('lines_'))
+      ('${s.name}_vtx', () => s.build(LineRenderer.vertices)),
+  ],
+];
+
+final List<PerfScenario> _baseScenarios = [
   PerfScenario(
     'lines_500',
-    () => const ParticleNetwork(particleCount: 500, touchActivation: false),
+    (r) => ParticleNetwork(
+        lineRenderer: r, particleCount: 500, touchActivation: false),
   ),
   PerfScenario(
     'lines_1000',
-    () => const ParticleNetwork(particleCount: 1000, touchActivation: false),
+    (r) => ParticleNetwork(
+        lineRenderer: r, particleCount: 1000, touchActivation: false),
   ),
   PerfScenario(
     'lines_2000',
-    () => const ParticleNetwork(particleCount: 2000, touchActivation: false),
+    (r) => ParticleNetwork(
+        lineRenderer: r, particleCount: 2000, touchActivation: false),
   ),
   PerfScenario(
     'lines_2000_maxconn5',
-    () => const ParticleNetwork(
+    (r) => ParticleNetwork(
+      lineRenderer: r,
       particleCount: 2000,
       maxConnectionsPerParticle: 5,
       touchActivation: false,
@@ -55,7 +85,8 @@ final List<PerfScenario> scenarios = [
   ),
   PerfScenario(
     'lines_2000_fast',
-    () => const ParticleNetwork(
+    (r) => ParticleNetwork(
+      lineRenderer: r,
       particleCount: 2000,
       fastLineRendering: true,
       touchActivation: false,
@@ -63,7 +94,8 @@ final List<PerfScenario> scenarios = [
   ),
   PerfScenario(
     'lines_5000_budget2k',
-    () => const ParticleNetwork(
+    (r) => ParticleNetwork(
+      lineRenderer: r,
       particleCount: 5000,
       maxLinesPerFrame: 2000,
       touchActivation: false,
@@ -71,7 +103,8 @@ final List<PerfScenario> scenarios = [
   ),
   PerfScenario(
     'lines_5000_budget4k',
-    () => const ParticleNetwork(
+    (r) => ParticleNetwork(
+      lineRenderer: r,
       particleCount: 5000,
       maxLinesPerFrame: 4000,
       touchActivation: false,
@@ -79,7 +112,8 @@ final List<PerfScenario> scenarios = [
   ),
   PerfScenario(
     'lines_5000_budget15k',
-    () => const ParticleNetwork(
+    (r) => ParticleNetwork(
+      lineRenderer: r,
       particleCount: 5000,
       maxLinesPerFrame: 15000,
       touchActivation: false,
@@ -87,7 +121,8 @@ final List<PerfScenario> scenarios = [
   ),
   PerfScenario(
     'lines_10000_budget15k',
-    () => const ParticleNetwork(
+    (r) => ParticleNetwork(
+      lineRenderer: r,
       particleCount: 10000,
       maxLinesPerFrame: 15000,
       touchActivation: false,
@@ -95,7 +130,8 @@ final List<PerfScenario> scenarios = [
   ),
   PerfScenario(
     'lines_2000_budget15k_fri',
-    () => const ParticleNetwork(
+    (r) => ParticleNetwork(
+      lineRenderer: r,
       particleCount: 2000,
       maxLinesPerFrame: 15000,
       frameRateIndependent: true,
@@ -104,7 +140,8 @@ final List<PerfScenario> scenarios = [
   ),
   PerfScenario(
     'lines_500_adaptive',
-    () => const ParticleNetwork(
+    (r) => ParticleNetwork(
+      lineRenderer: r,
       particleCount: 500,
       enableAdaptivePerformance: true,
       touchActivation: false,
@@ -112,7 +149,8 @@ final List<PerfScenario> scenarios = [
   ),
   PerfScenario(
     'points_5000',
-    () => const ParticleNetwork(
+    (r) => ParticleNetwork(
+      lineRenderer: r,
       particleCount: 5000,
       drawNetwork: false,
       touchActivation: false,
@@ -120,7 +158,8 @@ final List<PerfScenario> scenarios = [
   ),
   PerfScenario(
     'points_20000',
-    () => const ParticleNetwork(
+    (r) => ParticleNetwork(
+      lineRenderer: r,
       particleCount: 20000,
       drawNetwork: false,
       touchActivation: false,
@@ -128,7 +167,8 @@ final List<PerfScenario> scenarios = [
   ),
   PerfScenario(
     'points_50000',
-    () => const ParticleNetwork(
+    (r) => ParticleNetwork(
+      lineRenderer: r,
       particleCount: 50000,
       drawNetwork: false,
       touchActivation: false,
@@ -204,17 +244,23 @@ void main() {
   final Map<String, Object> report = {};
   const Duration window = Duration(seconds: _seconds);
 
-  for (final scenario in scenarios) {
-    if (_filter.isNotEmpty && !scenario.name.contains(_filter)) continue;
+  for (final (String name, ParticleNetwork Function() buildNetwork)
+      in scenarios) {
+    if (!_selected(name)) continue;
 
-    testWidgets(scenario.name, (tester) async {
+    testWidgets(name, (tester) async {
+      // The binding restores the normal surface after every test.
+      if (_screenshots && Platform.isAndroid) {
+        await binding.convertFlutterSurfaceToImage();
+      }
       await tester.pumpWidget(
         MaterialApp(
           debugShowCheckedModeBanner: false,
-          home: ColoredBox(color: Colors.black, child: scenario.build()),
+          home: ColoredBox(color: Colors.black, child: buildNetwork()),
         ),
       );
       await Future<void>.delayed(_warmup);
+      if (_screenshots) await binding.takeScreenshot(name);
 
       final List<double> build = [];
       final List<double> raster = [];
@@ -237,13 +283,12 @@ void main() {
         PlatformDispatcher.instance.views.first.display.refreshRate,
         1.0,
       );
-      final result =
-          PerfResult(scenario.name, refreshRate, build, raster, total);
+      final result = PerfResult(name, refreshRate, build, raster, total);
       final json = result.toJson(window);
-      report[scenario.name] = json;
-      binding.reportData = {'scenarios': report};
+      report[name] = json;
+      (binding.reportData ??= <String, dynamic>{})['scenarios'] = report;
 
-      print('PERF ${scenario.name.padRight(24)} '
+      print('PERF ${name.padRight(24)} '
           'fps=${json['fps']} jank=${json['jank_ratio']} '
           'build p50/p90=${json['build_p50_ms']}/${json['build_p90_ms']}ms '
           'raster p50/p90=${json['raster_p50_ms']}/${json['raster_p90_ms']}ms');
