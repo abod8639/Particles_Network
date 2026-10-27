@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
@@ -82,6 +83,77 @@ void main() {
       expect(p.velocity.dx, closeTo(p.velocity.dy, 1e-5));
       expect(p.velocity.dx, greaterThan(0));
       expect(p.velocity.dy, greaterThan(0));
+    });
+
+    test('returns immediately when touchPoint is null (L83)', () {
+      final p = Particle(
+        position: const Offset(100, 100),
+        velocity: Offset.zero,
+        color: Colors.white,
+        size: 2,
+      );
+
+      final handler = TouchInteractionHandler(
+        particles: [p],
+        touchPoint: null,
+        lineDistance: 100.0,
+        touchColor: Colors.amber,
+        linePaint: Paint(),
+      );
+
+      final tracker = AccelerationTracker();
+      handler.applyTouchPhysics([0], tracker);
+
+      expect(p.wasAccelerated, isFalse);
+      expect(p.velocity, Offset.zero);
+      expect(tracker.acceleratedParticleCount, equals(0));
+
+      handler.applyTouchPhysicsScaled([0], tracker, 2.0);
+
+      expect(p.wasAccelerated, isFalse);
+      expect(p.velocity, Offset.zero);
+      expect(tracker.acceleratedParticleCount, equals(0));
+    });
+
+    test(
+        'applyTouchPhysicsScaled calculates damping with math.pow when timeScale != 1.0 (L93)',
+        () {
+      final p = Particle(
+        position: const Offset(100, 100),
+        velocity: Offset.zero,
+        color: Colors.white,
+        size: 2,
+      );
+
+      const double damping = 0.8;
+      const double forceValue = 1.0;
+      const double timeScale = 2.0;
+
+      final handler = TouchInteractionHandler(
+        particles: [p],
+        touchPoint: const Offset(110, 100),
+        lineDistance: 100.0,
+        touchColor: Colors.amber,
+        linePaint: Paint(),
+        touchFeatures: const TouchFeatures(
+          force: forceValue,
+          damping: damping,
+          maxTouchSpeed: 20.0,
+        ),
+      );
+
+      final tracker = AccelerationTracker();
+      handler.applyTouchPhysicsScaled([0], tracker, timeScale);
+
+      final double expectedDamping = math.pow(damping, timeScale).toDouble();
+      final double expectedVx =
+          (10.0 * handler.force * timeScale + forceValue * 0.9 * timeScale) *
+              expectedDamping;
+
+      expect(p.wasAccelerated, isTrue);
+      expect(p.velocity.dx, closeTo(expectedVx, 1e-5));
+      expect(p.velocity.dy, closeTo(0.0, 1e-5));
+      expect(tracker.acceleratedParticleCount, equals(1));
     });
   });
 
