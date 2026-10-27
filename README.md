@@ -8,19 +8,40 @@
   <img src="assets/Picsart_25-05-10_12-57-34-680.png" width="450" alt="Particles Network Banner" style="border-radius: 12px;">
 </a>
 
-<p align="center">
+
+[![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=&logo=Flutter&logoColor=white)]()
+[![downloads](https://img.shields.io/pub/dm/particles_network)](https://pub.dev/packages/particles_network/score)
+[![Dart](https://img.shields.io/badge/Dart-%230175C2.svg?style=&logo=dart&logoColor=white)]()
+
+[![Platform](https://img.shields.io/badge/Platform-Flutter%20%7C%20Web%20--%20Linux%20--%20Windows%20--%20MacOS%20--%20Android%20--%20iOS-02569B?style=&logo=flutter)](https://pub.dev/packages/particles_network)
+
+[![Pub Points](https://img.shields.io/pub/points/particles_network?style=&logo=dart&color=2E8B57)](https://pub.dev/packages/particles_network/score)
+[![Pub Likes](https://img.shields.io/pub/likes/particles_network?style=&logo=flutter&color=blueviolet)](https://pub.dev/packages/particles_network)
+[![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg?style=&)](https://opensource.org/licenses/MIT)
+[![GitHub Stars](https://img.shields.io/github/stars/abod8639/particles_network?style=&logo=github&color=gold)](https://github.com/abod8639/particles_network)
+
+[![Codecov](https://img.shields.io/codecov/c/github/abod8639/particles_network?style=&logo=codecov&logoColor=white)](https://codecov.io/gh/abod8639/particles_network)
+[![Pub Version](https://img.shields.io/pub/v/particles_network?style=&logo=dart&color=blue)](https://pub.dev/packages/particles_network)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Try%20Online-purple?style=&logo=googlechrome&logoColor=white)](https://particle-network-example.web.app/)
+
+[Live Demo](https://particle-network-example.web.app/) • [Features](#features) • [What's New](#whats-new) • [Quick Start](#quick-start) • [Algorithms](#procedural-noise-algorithms) • [Controller](#controller-usage) • [Error Handling](#error-handling) • [Architecture](#architecture--performance)
+
+</div>
+
+<!-- <p align="center">
   <a href="https://github.com/abod8639/Particles_Network/actions"><img src="https://github.com/abod8639/Particles_Network/actions/workflows/flutter-ci.yml/badge.svg" alt="CI Status"></a>
   <a href="https://pub.dev/packages/particles_network"><img src="https://img.shields.io/pub/v/particles_network?color=blue&label=pub.dev&logo=dart" alt="Pub Version"></a>
   <a href="https://codecov.io/gh/abod8639/Particles_Network"><img src="https://codecov.io/gh/abod8639/Particles_Network/branch/main/graph/badge.svg" alt="Code Coverage"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-purple.svg" alt="License: MIT"></a>
 </p>
 
+[![downloads](https://img.shields.io/pub/dm/particles_network)](https://pub.dev/packages/particles_network/score)
 <p align="center">
   <a href="https://github.com/abod8639/Particles_Network/stargazers"><img src="https://img.shields.io/github/stars/abod8639/Particles_Network?style=flat&logo=github&color=blue" alt="GitHub stars"></a>
   <img src="https://img.shields.io/pub/likes/particles_network?logo=flutter&color=gold" alt="Pub Likes">
   <img src="https://img.shields.io/pub/points/particles_network?logo=dart&color=blue" alt="Pub Points">
   <a href="https://particle-network-example.web.app"><img src="https://img.shields.io/badge/Demo-Live_Preview-EA4335?logo=firebase" alt="Live Demo"></a>
-</p>
+</p> -->
 
 ---
 
@@ -136,8 +157,6 @@ Experience interactive physics and high frame rates directly in your browser:
 
 ### Real-device frame timings (Galaxy S10, Impeller, profile mode, full screen)
 
-| Scenario | FPS | Raster p50 |
-| :--- | :---: | :---: |
 | Scenario | `LineRenderer.stroke` | `LineRenderer.vertices` |
 | :--- | :---: | :---: |
 | 500 particles, lines (default `lineDistance: 100`) | 15.4 FPS (raster 61 ms) | **63.8 FPS** (raster 4.9 ms) |
@@ -160,6 +179,34 @@ Stroked lines are the main cost: on this device each one takes roughly 7 µs of 
 cd example
 flutter drive --profile --driver=test_driver/perf_driver.dart --target=integration_test/perf_benchmark_test.dart
 ```
+
+### Test suites: 1.9.6 vs 1.9.7
+
+| Suite | 1.9.6 (pub.dev) | Current source |
+| :--- | :---: | :---: |
+| Library unit tests (`flutter test`) | 276 / 276 pass | 318 / 318 pass |
+
+The extra tests in the current source cover the line budget, frame-rate independent motion, the vertices renderer (including a pixel comparison against strokes) and the cell-sorted search (checked against brute force).
+
+### Comparing against the published 1.9.6 release
+`example/integration_test/perf_compat_test.dart` uses only constructor options that already existed in 1.9.6, so the same file measures both versions. To compare, run it once as-is (current source), then once with the example's dependency switched to the release:
+
+```yaml
+# example/pubspec.yaml
+dependencies:
+  particles_network: 1.9.6   # instead of `path: ../`
+```
+
+```bash
+cd example
+# With `path: ../`:
+PERF_LABEL=current flutter drive --profile --driver=test_driver/perf_driver.dart --target=integration_test/perf_compat_test.dart
+# After switching to `particles_network: 1.9.6` and running `flutter pub get`:
+PERF_LABEL=v196 flutter drive --profile --driver=test_driver/perf_driver.dart --target=integration_test/perf_compat_test.dart
+dart run tool/compare_perf.dart build/perf/v196.json build/perf/current.json
+```
+
+Alternate the versions (1.9.6, current, 1.9.6, current) and keep the machine otherwise idle. On emulators the GPU is translated to the host's GPU, so other GPU or build work on the host changes the results a lot.
 
 ### CPU-side microbenchmarks
 
