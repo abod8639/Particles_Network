@@ -19,6 +19,7 @@ import 'package:particles_network/src/rendering/particle_filter.dart';
 import 'package:particles_network/src/rendering/performance_utils.dart';
 import 'package:particles_network/src/spatial/compressed_quad_tree.dart';
 import 'package:particles_network/src/spatial/compressed_quad_tree_node.dart';
+import 'package:particles_network/src/spatial/sorted_spatial_grid.dart';
 import 'package:particles_network/src/spatial/spatial_grid.dart';
 
 /// The main painter class for rendering an optimized particle network.
@@ -91,9 +92,9 @@ class OptimizedNetworkPainter extends CustomPainter {
 
   /// How connection lines are rasterized (default: [LineRenderer.stroke]).
   ///
-  /// [LineRenderer.vertices] submits every batched connection as triangle
-  /// quads in a single `drawVertices` call, which is far cheaper on the GPU
-  /// for large line counts.
+  /// [LineRenderer.vertices] submits batched connections as indexed triangle
+  /// quads (one `drawVertices` call per opacity level), which is far cheaper
+  /// on the GPU for large line counts.
   LineRenderer lineRenderer;
 
   /// Logical-to-physical pixel ratio of the target display (default: 1.0).
@@ -119,7 +120,7 @@ class OptimizedNetworkPainter extends CustomPainter {
   // Feedback correction applied on top of the analytic line-budget radius.
   double _budgetCorrection = 1.0;
 
-  // Triangle batch used by LineRenderer.vertices.
+  // Triangle batch used by LineRenderer.vertices, reused per opacity bucket.
   final LineVertexBatch _lineVertexBatch = LineVertexBatch();
   final Paint _vertexPaint = Paint();
 
@@ -127,6 +128,7 @@ class OptimizedNetworkPainter extends CustomPainter {
   late final TouchInteractionHandler _touchHandler;
   late final CompressedQuadTree _quadTree;
   late final SpatialGrid _spatialGrid;
+  final SortedSpatialGrid _sortedGrid = SortedSpatialGrid();
 
   // Reusable painting objects (initialized once for performance)
   late final Paint particlePaint;
@@ -365,10 +367,27 @@ class OptimizedNetworkPainter extends CustomPainter {
       final double alphaDistSq = alphaDistance * alphaDistance;
       _invMaxDistSq = alphaDistSq > 0 ? 1.0 / alphaDistSq : 0.0;
 
-      _spatialGrid.updateCellSize(
-        distance > 0 ? distance : 100.0,
-      );
-      _spatialGrid.build(particles, visibleParticles, size.width, size.height);
+      // The batched and unified paths scan a cell-sorted SoA grid; the
+      // isComplex and small-network paths query the linked-list grid.
+      if (fastLineRendering || (!isComplex && visibleParticles.length >= 30)) {
+        _sortedGrid.build(
+          particles,
+          visibleParticles,
+          size.width,
+          size.height,
+          distance > 0 ? distance : 100.0,
+        );
+      } else {
+        _spatialGrid.updateCellSize(
+          distance > 0 ? distance : 100.0,
+        );
+        _spatialGrid.build(
+          particles,
+          visibleParticles,
+          size.width,
+          size.height,
+        );
+      }
 
       if (showQuadTree && _quadTreeManager.shouldRebuild()) {
         _quadTree.clear();
@@ -518,197 +537,18 @@ class OptimizedNetworkPainter extends CustomPainter {
     _unifiedLineBuffer = newBuf;
   }
 
-  void _connectUnifiedWithCell(
-    int p1,
-    double p1x,
-    double p1y,
-    int neighborCell,
-    double maxDistSq,
-    Int32List cellHeads,
-    Int32List particleNext,
-    int? maxConn,
-  ) {
-    int p2 = cellHeads[neighborCell];
-    while (p2 != -1) {
-      if (maxConn != null && _connectionCounts[p2] >= maxConn) {
-        p2 = particleNext[p2];
-        continue;
-      }
-
-      final Particle particle2 = particles[p2];
-      final double dx = p1x - particle2.x;
-      final double dy = p1y - particle2.y;
-      final double distSq = dx * dx + dy * dy;
-
-      if (distSq <= maxDistSq) {
-        if (_unifiedLineCount + 4 > _unifiedLineBuffer.length) {
-          _growUnifiedLineBuffer(_unifiedLineCount + 4);
-        }
-        _unifiedLineBuffer[_unifiedLineCount] = p1x;
-        _unifiedLineBuffer[_unifiedLineCount + 1] = p1y;
-        _unifiedLineBuffer[_unifiedLineCount + 2] = particle2.x;
-        _unifiedLineBuffer[_unifiedLineCount + 3] = particle2.y;
-        _unifiedLineCount += 4;
-
-        if (maxConn != null) {
-          _connectionCounts[p1]++;
-          _connectionCounts[p2]++;
-          if (_connectionCounts[p1] >= maxConn) break;
-        }
-      }
-      p2 = particleNext[p2];
-    }
-  }
-
   void _drawFastUnifiedConnections(Canvas canvas, double effectiveDistance) {
-    final int cols = _spatialGrid.cols;
-    final int rows = _spatialGrid.rows;
-    if (cols <= 0 || rows <= 0) return;
-
-    final double maxDistSq = effectiveDistance * effectiveDistance;
     _unifiedLineCount = 0;
-
-    final Int32List cellHeads = _spatialGrid.cellHeads;
-    final Int32List particleNext = _spatialGrid.particleNext;
-    final Int32List activeCells = _spatialGrid.activeCells;
-    final int activeCount = _spatialGrid.activeCellsCount;
-
-    final int? maxConn = maxConnectionsPerParticle;
-    if (maxConn != null) {
-      if (_connectionCounts.length < particles.length) {
-        _connectionCounts = Int32List(particles.length);
-      }
-      _connectionCounts.fillRange(0, particles.length, 0);
-    }
-
-    for (int a = 0; a < activeCount; a++) {
-      final int cell = activeCells[a];
-      final int p1Head = cellHeads[cell];
-      if (p1Head == -1) continue;
-
-      final int cx = cell % cols;
-      final int cy = cell ~/ cols;
-
-      final int east = (cx < cols - 1) ? cell + 1 : -1;
-      final int southWest = (cy < rows - 1 && cx > 0) ? cell + cols - 1 : -1;
-      final int south = (cy < rows - 1) ? cell + cols : -1;
-      final int southEast =
-          (cy < rows - 1 && cx < cols - 1) ? cell + cols + 1 : -1;
-
-      int p1 = p1Head;
-      while (p1 != -1) {
-        if (maxConn != null && _connectionCounts[p1] >= maxConn) {
-          p1 = particleNext[p1];
-          continue;
-        }
-
-        final Particle particle1 = particles[p1];
-        final double p1x = particle1.x;
-        final double p1y = particle1.y;
-
-        int p2 = particleNext[p1];
-        while (p2 != -1) {
-          if (maxConn != null && _connectionCounts[p2] >= maxConn) {
-            p2 = particleNext[p2];
-            continue;
-          }
-
-          final Particle particle2 = particles[p2];
-          final double dx = p1x - particle2.x;
-          final double dy = p1y - particle2.y;
-          final double distSq = dx * dx + dy * dy;
-
-          if (distSq <= maxDistSq) {
-            if (_unifiedLineCount + 4 > _unifiedLineBuffer.length) {
-              _growUnifiedLineBuffer(_unifiedLineCount + 4);
-            }
-            _unifiedLineBuffer[_unifiedLineCount] = p1x;
-            _unifiedLineBuffer[_unifiedLineCount + 1] = p1y;
-            _unifiedLineBuffer[_unifiedLineCount + 2] = particle2.x;
-            _unifiedLineBuffer[_unifiedLineCount + 3] = particle2.y;
-            _unifiedLineCount += 4;
-
-            if (maxConn != null) {
-              _connectionCounts[p1]++;
-              _connectionCounts[p2]++;
-              if (_connectionCounts[p1] >= maxConn) break;
-            }
-          }
-          p2 = particleNext[p2];
-        }
-
-        if (maxConn == null || _connectionCounts[p1] < maxConn) {
-          if (east != -1) {
-            _connectUnifiedWithCell(
-              p1,
-              p1x,
-              p1y,
-              east,
-              maxDistSq,
-              cellHeads,
-              particleNext,
-              maxConn,
-            );
-          }
-        }
-        if (maxConn == null || _connectionCounts[p1] < maxConn) {
-          if (southWest != -1) {
-            _connectUnifiedWithCell(
-              p1,
-              p1x,
-              p1y,
-              southWest,
-              maxDistSq,
-              cellHeads,
-              particleNext,
-              maxConn,
-            );
-          }
-        }
-        if (maxConn == null || _connectionCounts[p1] < maxConn) {
-          if (south != -1) {
-            _connectUnifiedWithCell(
-              p1,
-              p1x,
-              p1y,
-              south,
-              maxDistSq,
-              cellHeads,
-              particleNext,
-              maxConn,
-            );
-          }
-        }
-        if (maxConn == null || _connectionCounts[p1] < maxConn) {
-          if (southEast != -1) {
-            _connectUnifiedWithCell(
-              p1,
-              p1x,
-              p1y,
-              southEast,
-              maxDistSq,
-              cellHeads,
-              particleNext,
-              maxConn,
-            );
-          }
-        }
-
-        p1 = particleNext[p1];
-      }
-    }
+    _collectSortedConnections(effectiveDistance * effectiveDistance, true);
 
     _lastFrameLineCount = _unifiedLineCount ~/ 4;
     if (_unifiedLineCount > 0 && lineRenderer == LineRenderer.vertices) {
       final double width = _vertexLineWidth();
+      _vertexPaint.color =
+          Color(_scaledArgb(linePaint.color, lineWidth / width));
       _lineVertexBatch
         ..clear()
-        ..addSegments(
-          _unifiedLineBuffer,
-          _unifiedLineCount,
-          _scaledArgb(linePaint.color, lineWidth / width),
-          width * 0.5,
-        )
+        ..addSegments(_unifiedLineBuffer, _unifiedLineCount, width * 0.5)
         ..draw(canvas, _vertexPaint);
     } else if (_unifiedLineCount > 0) {
       canvas.drawRawPoints(
@@ -871,7 +711,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     final double width = _vertexLineWidth();
     final double alphaScale = lineWidth / width;
     final double halfWidth = width * 0.5;
-    final LineVertexBatch batch = _lineVertexBatch..clear();
+    final LineVertexBatch batch = _lineVertexBatch;
 
     int lineCount = 0;
     for (int b = 0; b < _numLineBuckets; b++) {
@@ -881,202 +721,148 @@ class OptimizedNetworkPainter extends CustomPainter {
       final int argb = _scaledArgb(_lineBucketPaints[b].color, alphaScale);
       // Fully transparent buckets add GPU work without visible output.
       if ((argb >>> 24) == 0) continue;
-      batch.addSegments(_rawBuckets[b], rawCount, argb, halfWidth);
+      _vertexPaint.color = Color(argb);
+      batch
+        ..clear()
+        ..addSegments(_rawBuckets[b], rawCount, halfWidth)
+        ..draw(canvas, _vertexPaint);
     }
     _lastFrameLineCount = lineCount;
-    batch.draw(canvas, _vertexPaint);
   }
 
   void _drawBatchedConnectionsFast(double maxDistSq) {
-    final int cols = _spatialGrid.cols;
-    final int rows = _spatialGrid.rows;
+    _collectSortedConnections(maxDistSq, false);
+  }
+
+  /// Finds every pair of visible particles closer than `sqrt(maxDistSq)`
+  /// using [_sortedGrid], appending each to the alpha buckets or, when
+  /// [unified], to the single-colour unified buffer.
+  ///
+  /// Cells are row-major and counting-sorted, so for a particle `i` in cell
+  /// `c` the candidates form just two contiguous ranges:
+  /// * the rest of its own cell plus the east cell (`c`, `c + 1` are
+  ///   adjacent in memory), and
+  /// * the south-west, south and south-east cells (`c + cols - 1` to
+  ///   `c + cols + 1`, also adjacent).
+  /// Together with the cells that scan *into* `c`, this visits each pair of
+  /// neighbouring cells exactly once.
+  void _collectSortedConnections(double maxDistSq, bool unified) {
+    final SortedSpatialGrid grid = _sortedGrid;
+    final int cols = grid.cols;
+    final int rows = grid.rows;
     if (cols <= 0 || rows <= 0) return;
 
-    final Int32List cellHeads = _spatialGrid.cellHeads;
-    final Int32List particleNext = _spatialGrid.particleNext;
-    final Int32List activeCells = _spatialGrid.activeCells;
-    final int activeCount = _spatialGrid.activeCellsCount;
+    final Int32List start = grid.cellStart;
+    final Float64List xs = grid.xs;
+    final Float64List ys = grid.ys;
 
     final int? maxConn = maxConnectionsPerParticle;
-    if (maxConn != null) {
-      if (_connectionCounts.length < particles.length) {
-        _connectionCounts = Int32List(particles.length);
+    final bool capped = maxConn != null;
+    final int cap = maxConn ?? 0;
+    final Int32List counts;
+    if (capped) {
+      if (_connectionCounts.length < grid.count) {
+        _connectionCounts = Int32List(grid.count);
       }
-      _connectionCounts.fillRange(0, particles.length, 0);
+      _connectionCounts.fillRange(0, grid.count, 0);
     }
+    // Indexed by sorted position, not by particle index.
+    counts = _connectionCounts;
 
-    for (int a = 0; a < activeCount; a++) {
-      final int cell = activeCells[a];
-      final int p1Head = cellHeads[cell];
-      if (p1Head == -1) continue;
+    for (int cy = 0; cy < rows; cy++) {
+      final bool hasSouth = cy < rows - 1;
+      final int rowBase = cy * cols;
+      for (int cx = 0; cx < cols; cx++) {
+        final int c = rowBase + cx;
+        final int cellEnd = start[c + 1];
+        int i = start[c];
+        if (i == cellEnd) continue;
 
-      final int cx = cell % cols;
-      final int cy = cell ~/ cols;
-
-      final int east = (cx < cols - 1) ? cell + 1 : -1;
-      final int southWest = (cy < rows - 1 && cx > 0) ? cell + cols - 1 : -1;
-      final int south = (cy < rows - 1) ? cell + cols : -1;
-      final int southEast =
-          (cy < rows - 1 && cx < cols - 1) ? cell + cols + 1 : -1;
-
-      int p1 = p1Head;
-      while (p1 != -1) {
-        if (maxConn != null && _connectionCounts[p1] >= maxConn) {
-          p1 = particleNext[p1];
-          continue;
+        final bool hasEast = cx < cols - 1;
+        final int nearEnd = hasEast ? start[c + 2] : cellEnd;
+        int southStart = 0;
+        int southEnd = 0;
+        if (hasSouth) {
+          final int south = c + cols;
+          southStart = start[cx > 0 ? south - 1 : south];
+          southEnd = start[(hasEast ? south + 1 : south) + 1];
         }
 
-        final Particle particle1 = particles[p1];
-        final double p1x = particle1.x;
-        final double p1y = particle1.y;
+        for (; i < cellEnd; i++) {
+          if (capped && counts[i] >= cap) continue;
+          final double x1 = xs[i];
+          final double y1 = ys[i];
 
-        int p2 = particleNext[p1];
-        while (p2 != -1) {
-          if (maxConn != null && _connectionCounts[p2] >= maxConn) {
-            p2 = particleNext[p2];
-            continue;
-          }
-
-          final Particle particle2 = particles[p2];
-          final double dx = p1x - particle2.x;
-          final double dy = p1y - particle2.y;
-          final double distSq = dx * dx + dy * dy;
-
-          if (distSq <= maxDistSq) {
-            int tableIdx = ((distSq * _invMaxDistSq) * 1024).toInt();
-            if (tableIdx > 1024) tableIdx = 1024;
-            final int bucket = _distBucketTable[tableIdx];
-
-            final int off = _rawOffsets[bucket];
-            Float32List raw = _rawBuckets[bucket];
-            if (off + 4 > raw.length) {
-              raw = _growBucket(bucket, off + 4);
+          pairs:
+          {
+            for (int j = i + 1; j < nearEnd; j++) {
+              if (capped && counts[j] >= cap) continue;
+              final double dx = x1 - xs[j];
+              final double dy = y1 - ys[j];
+              final double distSq = dx * dx + dy * dy;
+              if (distSq <= maxDistSq) {
+                _emitConnection(unified, x1, y1, xs[j], ys[j], distSq);
+                if (capped) {
+                  counts[j]++;
+                  if (++counts[i] >= cap) break pairs;
+                }
+              }
             }
-            raw[off] = p1x;
-            raw[off + 1] = p1y;
-            raw[off + 2] = particle2.x;
-            raw[off + 3] = particle2.y;
-            _rawOffsets[bucket] = off + 4;
-
-            if (maxConn != null) {
-              _connectionCounts[p1]++;
-              _connectionCounts[p2]++;
-              if (_connectionCounts[p1] >= maxConn) break;
+            for (int j = southStart; j < southEnd; j++) {
+              if (capped && counts[j] >= cap) continue;
+              final double dx = x1 - xs[j];
+              final double dy = y1 - ys[j];
+              final double distSq = dx * dx + dy * dy;
+              if (distSq <= maxDistSq) {
+                _emitConnection(unified, x1, y1, xs[j], ys[j], distSq);
+                if (capped) {
+                  counts[j]++;
+                  if (++counts[i] >= cap) break pairs;
+                }
+              }
             }
           }
-          p2 = particleNext[p2];
         }
-
-        if (maxConn == null || _connectionCounts[p1] < maxConn) {
-          if (east != -1) {
-            _connectWithCell(
-              p1x,
-              p1y,
-              east,
-              maxDistSq,
-              cellHeads,
-              particleNext,
-              p1,
-              maxConn,
-            );
-          }
-        }
-        if (maxConn == null || _connectionCounts[p1] < maxConn) {
-          if (southWest != -1) {
-            _connectWithCell(
-              p1x,
-              p1y,
-              southWest,
-              maxDistSq,
-              cellHeads,
-              particleNext,
-              p1,
-              maxConn,
-            );
-          }
-        }
-        if (maxConn == null || _connectionCounts[p1] < maxConn) {
-          if (south != -1) {
-            _connectWithCell(
-              p1x,
-              p1y,
-              south,
-              maxDistSq,
-              cellHeads,
-              particleNext,
-              p1,
-              maxConn,
-            );
-          }
-        }
-        if (maxConn == null || _connectionCounts[p1] < maxConn) {
-          if (southEast != -1) {
-            _connectWithCell(
-              p1x,
-              p1y,
-              southEast,
-              maxDistSq,
-              cellHeads,
-              particleNext,
-              p1,
-              maxConn,
-            );
-          }
-        }
-
-        p1 = particleNext[p1];
       }
     }
   }
 
-  void _connectWithCell(
-    double p1x,
-    double p1y,
-    int neighborCell,
-    double maxDistSq,
-    Int32List cellHeads,
-    Int32List particleNext, [
-    int? p1Index,
-    int? maxConn,
-  ]) {
-    int p2 = cellHeads[neighborCell];
-    while (p2 != -1) {
-      if (maxConn != null && p1Index != null) {
-        if (_connectionCounts[p2] >= maxConn) {
-          p2 = particleNext[p2];
-          continue;
-        }
+  @pragma('vm:prefer-inline')
+  void _emitConnection(
+    bool unified,
+    double x1,
+    double y1,
+    double x2,
+    double y2,
+    double distSq,
+  ) {
+    if (unified) {
+      final int off = _unifiedLineCount;
+      if (off + 4 > _unifiedLineBuffer.length) {
+        _growUnifiedLineBuffer(off + 4);
       }
-
-      final Particle particle2 = particles[p2];
-      final double dx = p1x - particle2.x;
-      final double dy = p1y - particle2.y;
-      final double distSq = dx * dx + dy * dy;
-
-      if (distSq <= maxDistSq) {
-        int tableIdx = ((distSq * _invMaxDistSq) * 1024).toInt();
-        if (tableIdx > 1024) tableIdx = 1024;
-        final int bucket = _distBucketTable[tableIdx];
-
-        final int off = _rawOffsets[bucket];
-        Float32List raw = _rawBuckets[bucket];
-        if (off + 4 > raw.length) {
-          raw = _growBucket(bucket, off + 4);
-        }
-        raw[off] = p1x;
-        raw[off + 1] = p1y;
-        raw[off + 2] = particle2.x;
-        raw[off + 3] = particle2.y;
-        _rawOffsets[bucket] = off + 4;
-
-        if (maxConn != null && p1Index != null) {
-          _connectionCounts[p1Index]++;
-          _connectionCounts[p2]++;
-          if (_connectionCounts[p1Index] >= maxConn) break;
-        }
-      }
-      p2 = particleNext[p2];
+      final Float32List buf = _unifiedLineBuffer;
+      buf[off] = x1;
+      buf[off + 1] = y1;
+      buf[off + 2] = x2;
+      buf[off + 3] = y2;
+      _unifiedLineCount = off + 4;
+      return;
     }
+
+    int tableIdx = ((distSq * _invMaxDistSq) * 1024).toInt();
+    if (tableIdx > 1024) tableIdx = 1024;
+    final int bucket = _distBucketTable[tableIdx];
+    final int off = _rawOffsets[bucket];
+    Float32List raw = _rawBuckets[bucket];
+    if (off + 4 > raw.length) {
+      raw = _growBucket(bucket, off + 4);
+    }
+    raw[off] = x1;
+    raw[off + 1] = y1;
+    raw[off + 2] = x2;
+    raw[off + 3] = y2;
+    _rawOffsets[bucket] = off + 4;
   }
 
   void _drawBatchedConnectionsComplex(
