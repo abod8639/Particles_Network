@@ -22,3 +22,20 @@ abstract class IParticleController {
     GravityConfig gravity = const GravityConfig(),
   });
 }
+
+/// A [IParticleController] that can advance the simulation by a fractional
+/// number of 60 Hz reference frames, enabling frame-rate independent motion.
+///
+/// [ParticleSimulation] uses [updateParticlesScaled] when the controller
+/// implements this interface, and falls back to
+/// [IParticleController.updateParticles] (one reference frame per tick)
+/// otherwise, so existing custom controllers keep working unchanged.
+abstract class ITimeScaledParticleController implements IParticleController {
+  /// Advances all particles by [timeScale] reference frames (1.0 = 1/60 s).
+  void updateParticlesScaled(
+    List<Particle> particles,
+    Size bounds,
+    double timeScale, {
+    GravityConfig gravity = const GravityConfig(),
+  });
+}
