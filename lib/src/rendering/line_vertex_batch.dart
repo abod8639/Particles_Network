@@ -3,8 +3,8 @@
 /// Stroked lines (`drawRawPoints(PointMode.lines)` / `drawLine`) are
 /// tessellated by the engine one segment at a time, which makes line-heavy
 /// frames GPU bound. [LineVertexBatch] instead turns every segment into a
-/// thin quad (two triangles) with per-vertex colors, so the whole network is
-/// submitted as a single `drawVertices` call.
+/// thin indexed quad (two triangles), so a whole batch of same-coloured lines
+/// is submitted with a single `drawVertices` call.
 library;
 
 import 'dart:math' as math;
@@ -16,34 +16,59 @@ enum LineRenderer {
   /// Engine strokes via `drawRawPoints` / `drawLine` (default, round caps).
   stroke,
 
-  /// One `drawVertices` call with a two-triangle quad per line. Much cheaper
-  /// on the GPU for large line counts; lines have square ends.
+  /// Two-triangle quads per line, one `drawVertices` call per opacity
+  /// level. Much cheaper on the GPU for large line counts; lines have
+  /// square ends.
   vertices,
 }
 
-/// Accumulates line segments as triangle quads for one `drawVertices` call.
+/// Accumulates line segments as indexed triangle quads drawn with one
+/// paint colour.
+///
+/// Each segment becomes 4 vertices and 6 shared `Uint16` indices (two
+/// triangles), so the data copied into the engine per line is 32 bytes of
+/// positions plus 12 bytes of indices. Draws are split into chunks of at most
+/// [maxQuadsPerDraw] quads so indices fit in 16 bits.
 ///
 /// Buffers are reused across frames and only grow, so steady-state frames
-/// perform no Dart heap allocations apart from the native [Vertices] handle.
+/// perform no Dart heap allocations apart from the native [Vertices] handles.
 class LineVertexBatch {
-  // 6 vertices × 2 coordinates per line.
-  static const int _floatsPerLine = 12;
-  static const int _verticesPerLine = 6;
+  /// Largest number of quads per `drawVertices` call (65532 vertices).
+  static const int maxQuadsPerDraw = 16383;
+
+  // 4 vertices × 2 coordinates per line.
+  static const int _floatsPerLine = 8;
+
+  // Index pattern [0,1,2, 2,1,3, 4,5,6, 6,5,7, ...] shared by every batch.
+  static final Uint16List _quadIndices = () {
+    final Uint16List indices = Uint16List(maxQuadsPerDraw * 6);
+    for (int q = 0; q < maxQuadsPerDraw; q++) {
+      final int v = q * 4;
+      final int i = q * 6;
+      indices[i] = v;
+      indices[i + 1] = v + 1;
+      indices[i + 2] = v + 2;
+      indices[i + 3] = v + 2;
+      indices[i + 4] = v + 1;
+      indices[i + 5] = v + 3;
+    }
+    return indices;
+  }();
 
   Float32List _positions = Float32List(_floatsPerLine * 512);
-  Int32List _colors = Int32List(_verticesPerLine * 512);
   int _lineCount = 0;
 
   /// Number of quads currently in the batch.
   int get lineCount => _lineCount;
 
-  /// Raw vertex positions (x, y pairs) of the current batch.
+  /// Raw vertex positions (x, y pairs), 4 vertices per quad:
+  /// `p1 + n, p1 - n, p2 + n, p2 - n` where `n` is the half-width normal.
   Float32List get positions =>
       Float32List.sublistView(_positions, 0, _lineCount * _floatsPerLine);
 
-  /// Raw per-vertex ARGB colors of the current batch.
-  Int32List get colors =>
-      Int32List.sublistView(_colors, 0, _lineCount * _verticesPerLine);
+  /// Triangle indices for the first [quads] quads of a chunk.
+  static Uint16List indicesFor(int quads) =>
+      Uint16List.sublistView(_quadIndices, 0, quads * 6);
 
   /// Removes all quads, keeping the allocated buffers.
   void clear() {
@@ -57,28 +82,18 @@ class LineVertexBatch {
     final Float32List positions = Float32List(newLines * _floatsPerLine);
     positions.setRange(0, _lineCount * _floatsPerLine, _positions);
     _positions = positions;
-    final Int32List colors = Int32List(newLines * _verticesPerLine);
-    colors.setRange(0, _lineCount * _verticesPerLine, _colors);
-    _colors = colors;
   }
 
   /// Appends the segments stored in [segments] as `x1, y1, x2, y2` groups
-  /// (the first [floatCount] values), all with color [argb] and a total
-  /// thickness of `2 * halfWidth`. Zero-length segments are skipped.
-  void addSegments(
-    Float32List segments,
-    int floatCount,
-    int argb,
-    double halfWidth,
-  ) {
+  /// (the first [floatCount] values) with a total thickness of
+  /// `2 * halfWidth`. Zero-length segments are skipped.
+  void addSegments(Float32List segments, int floatCount, double halfWidth) {
     final int segmentCount = floatCount ~/ 4;
     if (segmentCount == 0) return;
     _ensureCapacity(_lineCount + segmentCount);
 
     final Float32List pos = _positions;
-    final Int32List col = _colors;
     int p = _lineCount * _floatsPerLine;
-    int c = _lineCount * _verticesPerLine;
     int added = 0;
 
     for (int i = 0; i < floatCount; i += 4) {
@@ -96,52 +111,40 @@ class LineVertexBatch {
       final double nx = -dy * scale;
       final double ny = dx * scale;
 
-      // Triangle 1: A, B, C — Triangle 2: C, B, D
-      //   A = p1 + n, B = p1 - n, C = p2 + n, D = p2 - n
-      final double ax = x1 + nx, ay = y1 + ny;
-      final double bx = x1 - nx, by = y1 - ny;
-      final double cx = x2 + nx, cy = y2 + ny;
-      final double ex = x2 - nx, ey = y2 - ny;
-
-      pos[p] = ax;
-      pos[p + 1] = ay;
-      pos[p + 2] = bx;
-      pos[p + 3] = by;
-      pos[p + 4] = cx;
-      pos[p + 5] = cy;
-      pos[p + 6] = cx;
-      pos[p + 7] = cy;
-      pos[p + 8] = bx;
-      pos[p + 9] = by;
-      pos[p + 10] = ex;
-      pos[p + 11] = ey;
+      pos[p] = x1 + nx;
+      pos[p + 1] = y1 + ny;
+      pos[p + 2] = x1 - nx;
+      pos[p + 3] = y1 - ny;
+      pos[p + 4] = x2 + nx;
+      pos[p + 5] = y2 + ny;
+      pos[p + 6] = x2 - nx;
+      pos[p + 7] = y2 - ny;
       p += _floatsPerLine;
-
-      col[c] = argb;
-      col[c + 1] = argb;
-      col[c + 2] = argb;
-      col[c + 3] = argb;
-      col[c + 4] = argb;
-      col[c + 5] = argb;
-      c += _verticesPerLine;
-
       added++;
     }
     _lineCount += added;
   }
 
-  /// Draws all accumulated quads with a single `drawVertices` call.
-  ///
-  /// Vertex colors are used as-is ([BlendMode.dst] ignores the paint color);
-  /// [paint] still controls how the result composites onto the canvas.
+  /// Draws all accumulated quads filled with [paint]'s colour, using as few
+  /// `drawVertices` calls as the 16-bit index limit allows.
   void draw(Canvas canvas, Paint paint) {
-    if (_lineCount == 0) return;
-    final Vertices vertices = Vertices.raw(
-      VertexMode.triangles,
-      positions,
-      colors: colors,
-    );
-    canvas.drawVertices(vertices, BlendMode.dst, paint);
-    vertices.dispose();
+    int first = 0;
+    while (first < _lineCount) {
+      final int remaining = _lineCount - first;
+      final int quads =
+          remaining < maxQuadsPerDraw ? remaining : maxQuadsPerDraw;
+      final Vertices vertices = Vertices.raw(
+        VertexMode.triangles,
+        Float32List.sublistView(
+          _positions,
+          first * _floatsPerLine,
+          (first + quads) * _floatsPerLine,
+        ),
+        indices: indicesFor(quads),
+      );
+      canvas.drawVertices(vertices, BlendMode.srcOver, paint);
+      vertices.dispose();
+      first += quads;
+    }
   }
 }
