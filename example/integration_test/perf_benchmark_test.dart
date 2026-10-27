@@ -62,6 +62,55 @@ final List<PerfScenario> scenarios = [
     ),
   ),
   PerfScenario(
+    'lines_5000_budget2k',
+    () => const ParticleNetwork(
+      particleCount: 5000,
+      maxLinesPerFrame: 2000,
+      touchActivation: false,
+    ),
+  ),
+  PerfScenario(
+    'lines_5000_budget4k',
+    () => const ParticleNetwork(
+      particleCount: 5000,
+      maxLinesPerFrame: 4000,
+      touchActivation: false,
+    ),
+  ),
+  PerfScenario(
+    'lines_5000_budget15k',
+    () => const ParticleNetwork(
+      particleCount: 5000,
+      maxLinesPerFrame: 15000,
+      touchActivation: false,
+    ),
+  ),
+  PerfScenario(
+    'lines_10000_budget15k',
+    () => const ParticleNetwork(
+      particleCount: 10000,
+      maxLinesPerFrame: 15000,
+      touchActivation: false,
+    ),
+  ),
+  PerfScenario(
+    'lines_2000_budget15k_fri',
+    () => const ParticleNetwork(
+      particleCount: 2000,
+      maxLinesPerFrame: 15000,
+      frameRateIndependent: true,
+      touchActivation: false,
+    ),
+  ),
+  PerfScenario(
+    'lines_500_adaptive',
+    () => const ParticleNetwork(
+      particleCount: 500,
+      enableAdaptivePerformance: true,
+      touchActivation: false,
+    ),
+  ),
+  PerfScenario(
     'points_5000',
     () => const ParticleNetwork(
       particleCount: 5000,
@@ -110,6 +159,10 @@ class PerfResult {
   double fps(Duration window) => frames / (window.inMicroseconds / 1e6);
 
   /// Fraction of frames whose build or raster exceeded the vsync budget.
+  ///
+  /// Raster duration can include time spent waiting on the GPU, so a frame
+  /// may count here while the app still holds its refresh rate; treat [fps]
+  /// as the headline number and this as an early-warning signal.
   double get jankRatio {
     if (frames == 0) return 0;
     int janky = 0;
