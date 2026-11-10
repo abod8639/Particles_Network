@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 // Version-comparison frame benchmark for ParticleNetwork.
 //
 // Uses only constructor parameters that already existed in

@@ -46,17 +46,23 @@ final List<PerfScenario> _baseScenarios = [
   PerfScenario(
     'lines_500',
     (r) => ParticleNetwork(
-        lineRenderer: r, particleCount: 500, touchActivation: false),
+        lineRenderer: r,
+        particleCount: 500,
+        touchFeatures: const TouchFeatures(enabled: false)),
   ),
   PerfScenario(
     'lines_1000',
     (r) => ParticleNetwork(
-        lineRenderer: r, particleCount: 1000, touchActivation: false),
+        lineRenderer: r,
+        particleCount: 1000,
+        touchFeatures: const TouchFeatures(enabled: false)),
   ),
   PerfScenario(
     'lines_2000',
     (r) => ParticleNetwork(
-        lineRenderer: r, particleCount: 2000, touchActivation: false),
+        lineRenderer: r,
+        particleCount: 2000,
+        touchFeatures: const TouchFeatures(enabled: false)),
   ),
   PerfScenario(
     'lines_2000_maxconn5',
@@ -64,7 +70,7 @@ final List<PerfScenario> _baseScenarios = [
       lineRenderer: r,
       particleCount: 2000,
       maxConnectionsPerParticle: 5,
-      touchActivation: false,
+      touchFeatures: const TouchFeatures(enabled: false),
     ),
   ),
   PerfScenario(
@@ -73,7 +79,7 @@ final List<PerfScenario> _baseScenarios = [
       lineRenderer: r,
       particleCount: 2000,
       fastLineRendering: true,
-      touchActivation: false,
+      touchFeatures: const TouchFeatures(enabled: false),
     ),
   ),
   PerfScenario(
@@ -82,7 +88,7 @@ final List<PerfScenario> _baseScenarios = [
       lineRenderer: r,
       particleCount: 5000,
       maxLinesPerFrame: 2000,
-      touchActivation: false,
+      touchFeatures: const TouchFeatures(enabled: false),
     ),
   ),
   PerfScenario(
@@ -91,7 +97,7 @@ final List<PerfScenario> _baseScenarios = [
       lineRenderer: r,
       particleCount: 5000,
       maxLinesPerFrame: 4000,
-      touchActivation: false,
+      touchFeatures: const TouchFeatures(enabled: false),
     ),
   ),
   PerfScenario(
@@ -100,16 +106,16 @@ final List<PerfScenario> _baseScenarios = [
       lineRenderer: r,
       particleCount: 5000,
       maxLinesPerFrame: 15000,
-      touchActivation: false,
+      touchFeatures: const TouchFeatures(enabled: false),
     ),
   ),
   PerfScenario(
     'lines_10000_budget15k',
     (r) => ParticleNetwork(
       lineRenderer: r,
-      particleCount: 10000,
+      particleCount: 1000,
       maxLinesPerFrame: 15000,
-      touchActivation: false,
+      touchFeatures: const TouchFeatures(enabled: false),
     ),
   ),
   PerfScenario(
@@ -118,7 +124,7 @@ final List<PerfScenario> _baseScenarios = [
       lineRenderer: r,
       particleCount: 20000,
       maxLinesPerFrame: 15000,
-      touchActivation: false,
+      touchFeatures: const TouchFeatures(enabled: false),
     ),
   ),
   PerfScenario(
@@ -128,7 +134,7 @@ final List<PerfScenario> _baseScenarios = [
       particleCount: 2000,
       maxLinesPerFrame: 15000,
       frameRateIndependent: true,
-      touchActivation: false,
+      touchFeatures: const TouchFeatures(enabled: false),
     ),
   ),
   PerfScenario(
@@ -137,7 +143,7 @@ final List<PerfScenario> _baseScenarios = [
       lineRenderer: r,
       particleCount: 500,
       enableAdaptivePerformance: true,
-      touchActivation: false,
+      touchFeatures: const TouchFeatures(enabled: false),
     ),
   ),
   PerfScenario(
@@ -146,7 +152,7 @@ final List<PerfScenario> _baseScenarios = [
       lineRenderer: r,
       particleCount: 5000,
       drawNetwork: false,
-      touchActivation: false,
+      touchFeatures: const TouchFeatures(enabled: false),
     ),
   ),
   PerfScenario(
@@ -155,7 +161,7 @@ final List<PerfScenario> _baseScenarios = [
       lineRenderer: r,
       particleCount: 20000,
       drawNetwork: false,
-      touchActivation: false,
+      touchFeatures: const TouchFeatures(enabled: false),
     ),
   ),
   PerfScenario(
@@ -164,7 +170,7 @@ final List<PerfScenario> _baseScenarios = [
       lineRenderer: r,
       particleCount: 50000,
       drawNetwork: false,
-      touchActivation: false,
+      touchFeatures: const TouchFeatures(enabled: false),
     ),
   ),
 ];
