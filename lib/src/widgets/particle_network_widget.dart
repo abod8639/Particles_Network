@@ -1,13 +1,14 @@
 /// ParticleNetwork widget and state implementation.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:particles_network/src/core/particle.dart';
 import 'package:particles_network/src/factory/particle_factory.dart';
 import 'package:particles_network/src/interaction/touch_features.dart';
-import 'package:particles_network/src/physics/gravity_config.dart';
 import 'package:particles_network/src/physics/particle_controller.dart';
+import 'package:particles_network/src/physics/particle_gravity.dart';
 import 'package:particles_network/src/rendering/line_vertex_batch.dart';
 import 'package:particles_network/src/rendering/object_pool.dart';
 import 'package:particles_network/src/rendering/optimized_network_painter.dart';
@@ -52,17 +53,71 @@ class ParticleNetwork extends StatefulWidget {
   /// Whether to draw connecting lines between particles (default: true).
   final bool drawNetwork;
 
+  /// Gravity configuration for the particle network.
+  ///
+  /// Controls global or point gravity effects.
+  /// Prefer using this parameter over the deprecated individual gravity parameters.
+  final ParticleGravity? gravity;
+
   /// The type of gravity effect to apply (default: [GravityType.none]).
+  ///
+  /// Deprecated: Use [gravity] with [ParticleGravity.gravityType] instead.
+  /// This parameter will be removed in particles_network 2.0.0.
+  @Deprecated(
+    'Use gravity (ParticleGravity) instead. This parameter will be removed in particles_network 2.0.0.',
+  )
   final GravityType gravityType;
 
   /// The strength of the applied gravity force (default: 0.1).
+  ///
+  /// Deprecated: Use [gravity] with [ParticleGravity.gravityStrength] instead.
+  /// This parameter will be removed in particles_network 2.0.0.
+  @Deprecated(
+    'Use gravity (ParticleGravity) instead. This parameter will be removed in particles_network 2.0.0.',
+  )
   final double gravityStrength;
 
   /// The direction vector for global gravity (default: `Offset(0, 1)` - downwards).
+  ///
+  /// Deprecated: Use [gravity] with [ParticleGravity.gravityDirection] instead.
+  /// This parameter will be removed in particles_network 2.0.0.
+  @Deprecated(
+    'Use gravity (ParticleGravity) instead. This parameter will be removed in particles_network 2.0.0.',
+  )
   final Offset gravityDirection;
 
   /// The center point for point-based gravity effects.
+  ///
+  /// Deprecated: Use [gravity] with [ParticleGravity.gravityCenter] instead.
+  /// This parameter will be removed in particles_network 2.0.0.
+  @Deprecated(
+    'Use gravity (ParticleGravity) instead. This parameter will be removed in particles_network 2.0.0.',
+  )
   final Offset? gravityCenter;
+
+  /// Checks whether deprecated individual gravity parameters were configured.
+  bool get usedLegacyGravity =>
+      gravity == null &&
+      (gravityType != GravityType.none ||
+          gravityStrength != 0.1 ||
+          gravityDirection != const Offset(0, 1) ||
+          gravityCenter != null);
+
+  /// Tracks whether the deprecation warning for legacy gravity parameters has been logged.
+  @visibleForTesting
+  static bool hasWarnedLegacyGravity = false;
+
+  /// Logs a warning in debug mode when deprecated gravity parameters are used.
+  static void _logLegacyGravityDeprecationWarning() {
+    if (hasWarnedLegacyGravity) return;
+    hasWarnedLegacyGravity = true;
+    debugPrint(
+      '[particles_network] DEPRECATION WARNING: The gravity parameters '
+      '("gravityType", "gravityStrength", "gravityDirection", "gravityCenter") '
+      'in ParticleNetwork are deprecated and will be removed in version 2.0.0. '
+      'Please use "gravity: ParticleGravity(...)" instead.',
+    );
+  }
 
   /// Whether hover effects are enabled.
   final bool? hoverEffect;
@@ -139,9 +194,22 @@ class ParticleNetwork extends StatefulWidget {
     this.isComplex = false,
     this.fill = true,
     this.drawNetwork = true,
+    this.gravity,
+    @Deprecated(
+      'Use gravity (ParticleGravity) instead. This parameter will be removed in particles_network 2.0.0.',
+    )
     this.gravityType = GravityType.none,
+    @Deprecated(
+      'Use gravity (ParticleGravity) instead. This parameter will be removed in particles_network 2.0.0.',
+    )
     this.gravityStrength = 0.1,
+    @Deprecated(
+      'Use gravity (ParticleGravity) instead. This parameter will be removed in particles_network 2.0.0.',
+    )
     this.gravityDirection = const Offset(0, 1),
+    @Deprecated(
+      'Use gravity (ParticleGravity) instead. This parameter will be removed in particles_network 2.0.0.',
+    )
     this.gravityCenter,
     this.hoverEffect = false,
     this.touchFeatures = const TouchFeatures(),
@@ -190,8 +258,15 @@ class ParticleNetworkState extends State<ParticleNetwork>
 
   late OptimizedNetworkPainter _painter;
 
-  GravityConfig _buildGravityConfig(Size size) {
-    return GravityConfig(
+  ParticleGravity _buildGravityConfig(Size size) {
+    if (widget.gravity != null) {
+      final g = widget.gravity!;
+      if (g.center == null && size != Size.zero) {
+        return g.copyWith(center: Offset(size.width / 2, size.height / 2));
+      }
+      return g;
+    }
+    return ParticleGravity(
       type: widget.gravityType,
       strength: widget.gravityStrength,
       direction: widget.gravityDirection,
@@ -279,6 +354,10 @@ class ParticleNetworkState extends State<ParticleNetwork>
   void initState() {
     super.initState();
 
+    if (kDebugMode && widget.usedLegacyGravity) {
+      ParticleNetwork._logLegacyGravityDeprecationWarning();
+    }
+
     _adaptiveController = AdaptivePerformanceController(
       targetFrameTimeMs: _displayFrameBudgetMs(),
     );
@@ -313,6 +392,11 @@ class ParticleNetworkState extends State<ParticleNetwork>
   @override
   void didUpdateWidget(ParticleNetwork oldWidget) {
     super.didUpdateWidget(oldWidget);
+
+    if (kDebugMode && widget.usedLegacyGravity) {
+      ParticleNetwork._logLegacyGravityDeprecationWarning();
+    }
+
     bool factoryChanged = false;
     if (widget.maxSpeed != oldWidget.maxSpeed ||
         widget.maxSize != oldWidget.maxSize ||
@@ -329,7 +413,8 @@ class ParticleNetworkState extends State<ParticleNetwork>
       simulation.updateParticleCount(widget.particleCount);
     }
 
-    if (widget.gravityType != oldWidget.gravityType ||
+    if (widget.gravity != oldWidget.gravity ||
+        widget.gravityType != oldWidget.gravityType ||
         widget.gravityStrength != oldWidget.gravityStrength ||
         widget.gravityDirection != oldWidget.gravityDirection ||
         widget.gravityCenter != oldWidget.gravityCenter) {
