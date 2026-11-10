@@ -2,8 +2,8 @@ import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:particles_network/src/core/particle.dart';
-import 'package:particles_network/src/physics/gravity_config.dart';
 import 'package:particles_network/src/physics/particle_controller.dart';
+import 'package:particles_network/src/physics/particle_gravity.dart';
 
 /// Precalculates and buffers particle trajectory positions and velocities
 /// when no external interactions (e.g. touch) are applied.
@@ -51,7 +51,7 @@ class TrajectoryBuffer {
     required List<Particle> particles,
     required Size bounds,
     required IParticleController controller,
-    GravityConfig gravity = const GravityConfig(),
+    ParticleGravity gravity = const ParticleGravity(),
   }) {
     if (particles.isEmpty || bounds.width <= 0 || bounds.height <= 0) {
       _isValid = false;
