@@ -7,8 +7,8 @@ import 'dart:ui';
 import 'package:particles_network/src/core/particle.dart';
 import 'package:particles_network/src/factory/default_particle_factory.dart';
 import 'package:particles_network/src/factory/particle_factory.dart';
-import 'package:particles_network/src/physics/gravity_config.dart';
 import 'package:particles_network/src/physics/particle_controller.dart';
+import 'package:particles_network/src/physics/particle_gravity.dart';
 import 'package:particles_network/src/physics/particle_updater.dart';
 
 /// Independent simulation controller managing the particles lifecycle and physics updates.
@@ -29,14 +29,17 @@ class ParticleSimulation {
   Size currentSize = Size.zero;
 
   /// Cached gravity configuration.
-  GravityConfig gravityConfig;
+  ParticleGravity gravityConfig;
+
+  /// Exposes gravity configuration.
+  ParticleGravity get gravity => gravityConfig;
 
   /// Creates a [ParticleSimulation].
   ParticleSimulation({
     required this.particleCount,
     IParticleFactory? factory,
     IParticleController? controller,
-    this.gravityConfig = const GravityConfig(),
+    this.gravityConfig = const ParticleGravity(),
     double maxSpeed = 0.5,
     double maxSize = 1.5,
     Color particleColor = const Color(0xFFFFFFFF),
@@ -108,7 +111,7 @@ class ParticleSimulation {
   }
 
   /// Updates the gravity configuration.
-  void updateGravity(GravityConfig config) {
+  void updateGravity(ParticleGravity config) {
     gravityConfig = config;
   }
 
