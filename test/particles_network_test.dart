@@ -853,6 +853,41 @@ void main() {
     expect(legacyWidget.usedLegacyGravity, isTrue);
   });
 
+  test('ParticleNetwork detects usedLegacyTouchColor correctly', () {
+    const modern = ParticleNetwork(
+      touchFeatures: TouchFeatures(color: Colors.blue),
+    );
+    expect(modern.usedLegacyTouchColor, isFalse);
+    expect(modern.touchColor, Colors.blue);
+
+    const defaultWidget = ParticleNetwork();
+    expect(defaultWidget.usedLegacyTouchColor, isFalse);
+    expect(defaultWidget.touchColor, Colors.amber);
+
+    const legacyWidget = ParticleNetwork(
+      touchColor: Colors.purple,
+    );
+    expect(legacyWidget.usedLegacyTouchColor, isTrue);
+    expect(legacyWidget.touchColor, Colors.purple);
+  });
+
+  test('TouchFeatures color property and copyWith', () {
+    const defaultFeatures = TouchFeatures();
+    expect(defaultFeatures.color, Colors.amber);
+    expect(defaultFeatures.touchColor, Colors.amber);
+
+    const custom = TouchFeatures(color: Colors.teal);
+    expect(custom.color, Colors.teal);
+    expect(custom.touchColor, Colors.teal);
+
+    const alias = TouchFeatures(touchColor: Colors.pink);
+    expect(alias.color, Colors.pink);
+
+    final copied = custom.copyWith(color: Colors.deepOrange);
+    expect(copied.color, Colors.deepOrange);
+    expect(copied.speed, custom.speed);
+  });
+
   testWidgets(
     'GestureDetector onPanCancel updates touchPoint to Offset.infinite',
     (WidgetTester tester) async {
