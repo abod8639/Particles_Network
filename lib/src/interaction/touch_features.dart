@@ -5,6 +5,12 @@ import 'package:flutter/material.dart';
 
 /// Configuration class for touch interaction behavior and physics.
 class TouchFeatures {
+  /// Whether touch interactions and proximity effects are enabled (default: true).
+  final bool enabled;
+
+  /// Compatibility alias for [enabled].
+  bool get touchActivation => enabled;
+
   /// The recovery/settling decay rate after touch release (default: 0.42).
   /// Controls how gradually particles return to cruising speed after being dragged/touched.
   final double speed;
@@ -30,6 +36,8 @@ class TouchFeatures {
 
   /// Creates a [TouchFeatures] configuration.
   const TouchFeatures({
+    bool? enabled,
+    bool? touchActivation,
     double? speed,
     double? decayRate,
     double? force,
@@ -39,7 +47,8 @@ class TouchFeatures {
     this.lineDistance,
     Color? color,
     Color? touchColor,
-  })  : speed = speed ?? decayRate ?? 0.42,
+  })  : enabled = touchActivation ?? enabled ?? true,
+        speed = speed ?? decayRate ?? 0.42,
         force = force ?? pullForce ?? 0.42,
         color = touchColor ?? color ?? Colors.amber;
 
@@ -51,6 +60,7 @@ class TouchFeatures {
 
   /// Creates a copy of this [TouchFeatures] with updated parameters.
   TouchFeatures copyWith({
+    bool? enabled,
     double? speed,
     double? force,
     double? maxTouchSpeed,
@@ -59,6 +69,7 @@ class TouchFeatures {
     Color? color,
   }) {
     return TouchFeatures(
+      enabled: enabled ?? this.enabled,
       speed: speed ?? this.speed,
       force: force ?? this.force,
       maxTouchSpeed: maxTouchSpeed ?? this.maxTouchSpeed,
@@ -73,6 +84,7 @@ class TouchFeatures {
       identical(this, other) ||
       other is TouchFeatures &&
           runtimeType == other.runtimeType &&
+          enabled == other.enabled &&
           speed == other.speed &&
           force == other.force &&
           maxTouchSpeed == other.maxTouchSpeed &&
@@ -81,11 +93,19 @@ class TouchFeatures {
           color == other.color;
 
   @override
-  int get hashCode =>
-      Object.hash(speed, force, maxTouchSpeed, damping, lineDistance, color);
+  int get hashCode => Object.hash(
+        enabled,
+        speed,
+        force,
+        maxTouchSpeed,
+        damping,
+        lineDistance,
+        color,
+      );
 
   @override
   String toString() =>
-      'TouchFeatures(speed: $speed, force: $force, maxTouchSpeed: $maxTouchSpeed, '
-      'damping: $damping, lineDistance: $lineDistance, color: $color)';
+      'TouchFeatures(enabled: $enabled, speed: $speed, force: $force, '
+      'maxTouchSpeed: $maxTouchSpeed, damping: $damping, '
+      'lineDistance: $lineDistance, color: $color)';
 }
