@@ -176,7 +176,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     required this.particleColor,
     required this.lineColor,
     Color? touchColor,
-    required this.touchActivation,
+    bool? touchActivation,
     required this.lineWidth,
     required this.isComplex,
     required this.fill,
@@ -193,6 +193,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     this.devicePixelRatio = 1.0,
     super.repaint,
   })  : touchColor = touchColor ?? touchFeatures.color,
+        touchActivation = touchActivation ?? touchFeatures.enabled,
         fastLineRendering = fastLineRendering ?? useVerticesRendering ?? false {
     final int baseAlpha = (lineColor.a * 255.0).round().clamp(0, 255);
     _lineColorLut = List<Color>.generate(
@@ -1068,6 +1069,7 @@ class OptimizedNetworkPainter extends CustomPainter {
   void updateTouchFeatures(TouchFeatures features) {
     touchFeatures = features;
     _touchHandler.touchFeatures = features;
+    touchActivation = features.enabled;
     if (features.color != touchColor) {
       touchColor = features.color;
       _touchHandler.rebuildTouchColorLut(features.color);
