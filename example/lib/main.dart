@@ -58,6 +58,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   GravityType _gravityType = GravityType.none;
   double _gravityStrength = 0.1;
   Offset _gravityDirection = const Offset(0, 1);
+  Offset? _gravityCenter;
   final bool _hoverEffect = false;
 
   // --- Touch Features Variables ---
@@ -147,6 +148,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                     force: _touchForce,
                     maxTouchSpeed: _maxTouchSpeed,
                     lineDistance: _touchLineDistance,
+                    color: _touchColor,
                   ),
                   key: _particleKey,
                   drawNetwork: _drawNetwork,
@@ -160,10 +162,12 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                   lineDistance: _lineDistance,
                   particleColor: _particleColor,
                   lineColor: _lineColor,
-                  touchColor: _touchColor,
-                  gravityType: _gravityType,
-                  gravityStrength: _gravityStrength,
-                  gravityDirection: _gravityDirection,
+                  gravity: ParticleGravity(
+                    gravityType: _gravityType,
+                    gravityStrength: _gravityStrength,
+                    gravityDirection: _gravityDirection,
+                    gravityCenter: _gravityCenter,
+                  ),
                   hoverEffect: _hoverEffect,
                 ),
               ),
