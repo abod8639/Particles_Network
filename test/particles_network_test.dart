@@ -790,6 +790,70 @@ void main() {
   );
 
   testWidgets(
+    'ParticleNetwork didUpdateWidget updates simulation gravity using ParticleGravity',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleNetwork(
+                gravity: ParticleGravity.none(),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final state = tester.state<ParticleNetworkState>(
+        find.byType(ParticleNetwork),
+      );
+      expect(state.simulation.gravityConfig.type, GravityType.none);
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleNetwork(
+                gravity: ParticleGravity(
+                  gravityType: GravityType.point,
+                  gravityStrength: 0.9,
+                  gravityDirection: Offset(0, -1),
+                  gravityCenter: Offset(120, 120),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(state.simulation.gravityConfig.type, GravityType.point);
+      expect(state.simulation.gravityConfig.strength, 0.9);
+      expect(state.simulation.gravityConfig.direction, const Offset(0, -1));
+      expect(state.simulation.gravityConfig.center, const Offset(120, 120));
+    },
+  );
+
+  test('ParticleNetwork detects usedLegacyGravity correctly', () {
+    const modern = ParticleNetwork(
+      gravity: ParticleGravity(gravityType: GravityType.global),
+    );
+    expect(modern.usedLegacyGravity, isFalse);
+
+    const defaultWidget = ParticleNetwork();
+    expect(defaultWidget.usedLegacyGravity, isFalse);
+
+    const legacyWidget = ParticleNetwork(
+      gravityType: GravityType.global,
+      gravityStrength: 0.5,
+    );
+    expect(legacyWidget.usedLegacyGravity, isTrue);
+  });
+
+  testWidgets(
     'GestureDetector onPanCancel updates touchPoint to Offset.infinite',
     (WidgetTester tester) async {
       await tester.pumpWidget(
