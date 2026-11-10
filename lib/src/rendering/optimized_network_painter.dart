@@ -175,7 +175,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     required this.lineDistance,
     required this.particleColor,
     required this.lineColor,
-    required this.touchColor,
+    Color? touchColor,
     required this.touchActivation,
     required this.lineWidth,
     required this.isComplex,
@@ -192,7 +192,8 @@ class OptimizedNetworkPainter extends CustomPainter {
     this.lineRenderer = LineRenderer.stroke,
     this.devicePixelRatio = 1.0,
     super.repaint,
-  }) : fastLineRendering = fastLineRendering ?? useVerticesRendering ?? false {
+  })  : touchColor = touchColor ?? touchFeatures.color,
+        fastLineRendering = fastLineRendering ?? useVerticesRendering ?? false {
     final int baseAlpha = (lineColor.a * 255.0).round().clamp(0, 255);
     _lineColorLut = List<Color>.generate(
       256,
@@ -257,7 +258,7 @@ class OptimizedNetworkPainter extends CustomPainter {
       particles: particles,
       touchPoint: touchPoint,
       lineDistance: lineDistance,
-      touchColor: touchColor,
+      touchColor: this.touchColor,
       linePaint: linePaint,
       touchFeatures: touchFeatures,
     );
@@ -1067,6 +1068,10 @@ class OptimizedNetworkPainter extends CustomPainter {
   void updateTouchFeatures(TouchFeatures features) {
     touchFeatures = features;
     _touchHandler.touchFeatures = features;
+    if (features.color != touchColor) {
+      touchColor = features.color;
+      _touchHandler.rebuildTouchColorLut(features.color);
+    }
   }
 
   @override
