@@ -4,7 +4,7 @@ library;
 import 'dart:ui';
 
 import 'package:particles_network/src/core/particle.dart';
-import 'package:particles_network/src/physics/gravity_config.dart';
+import 'package:particles_network/src/physics/particle_gravity.dart';
 
 /// Abstract interface for controlling particle behavior and physics.
 ///
@@ -19,7 +19,7 @@ abstract class IParticleController {
   void updateParticles(
     List<Particle> particles,
     Size bounds, {
-    GravityConfig gravity = const GravityConfig(),
+    ParticleGravity gravity = const ParticleGravity(),
   });
 }
 
@@ -36,6 +36,6 @@ abstract class ITimeScaledParticleController implements IParticleController {
     List<Particle> particles,
     Size bounds,
     double timeScale, {
-    GravityConfig gravity = const GravityConfig(),
+    ParticleGravity gravity = const ParticleGravity(),
   });
 }
