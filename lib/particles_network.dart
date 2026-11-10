@@ -17,8 +17,10 @@ export 'package:particles_network/src/interaction/touch_features.dart'
     show TouchFeatures;
 export 'package:particles_network/src/interaction/touch_interaction_handler.dart'
     show TouchInteractionHandler;
-export 'package:particles_network/src/physics/gravity_config.dart'
-    show GravityType, GravityConfig;
+export 'package:particles_network/src/physics/legacy/legacy_gravity_config.dart'
+    show GravityConfig;
+export 'package:particles_network/src/physics/particle_gravity.dart'
+    show GravityType, ParticleGravity;
 export 'package:particles_network/src/physics/particle_controller.dart'
     show IParticleController, ITimeScaledParticleController;
 export 'package:particles_network/src/physics/particle_updater.dart'
