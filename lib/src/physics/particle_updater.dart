@@ -5,8 +5,8 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:particles_network/src/core/particle.dart';
-import 'package:particles_network/src/physics/gravity_config.dart';
 import 'package:particles_network/src/physics/particle_controller.dart';
+import 'package:particles_network/src/physics/particle_gravity.dart';
 
 /// Default particle controller implementing basic Euler integration physics with gravity support.
 class ParticleUpdater implements ITimeScaledParticleController {
@@ -14,7 +14,7 @@ class ParticleUpdater implements ITimeScaledParticleController {
   void updateParticles(
     List<Particle> particles,
     Size bounds, {
-    GravityConfig gravity = const GravityConfig(),
+    ParticleGravity gravity = const ParticleGravity(),
   }) {
     updateParticlesScaled(particles, bounds, 1.0, gravity: gravity);
   }
@@ -24,7 +24,7 @@ class ParticleUpdater implements ITimeScaledParticleController {
     List<Particle> particles,
     Size bounds,
     double timeScale, {
-    GravityConfig gravity = const GravityConfig(),
+    ParticleGravity gravity = const ParticleGravity(),
   }) {
     final bool hasGlobalGravity =
         gravity.type == GravityType.global && gravity.strength != 0;
@@ -35,8 +35,9 @@ class ParticleUpdater implements ITimeScaledParticleController {
         hasGlobalGravity ? gravity.direction.dy * gStrength : 0.0;
     final bool isPointGravity =
         gravity.type == GravityType.point && gStrength != 0;
-    final double cx = gravity.center.dx;
-    final double cy = gravity.center.dy;
+    final Offset center = gravity.center ?? Offset.zero;
+    final double cx = center.dx;
+    final double cy = center.dy;
 
     final int count = particles.length;
     for (int i = 0; i < count; i++) {
