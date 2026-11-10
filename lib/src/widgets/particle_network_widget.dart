@@ -7,6 +7,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:particles_network/src/core/particle.dart';
 import 'package:particles_network/src/factory/particle_factory.dart';
 import 'package:particles_network/src/interaction/touch_features.dart';
+import 'package:particles_network/src/legacy/legacy_deprecation_logger.dart';
 import 'package:particles_network/src/physics/particle_controller.dart';
 import 'package:particles_network/src/physics/particle_gravity.dart';
 import 'package:particles_network/src/rendering/line_vertex_batch.dart';
@@ -38,8 +39,23 @@ class ParticleNetwork extends StatefulWidget {
   /// Color of connection lines between particles.
   final Color lineColor;
 
+  /// Explicitly provided legacy touch highlight color, if any.
+  final Color? _touchColor;
+
   /// Highlight color for touch interactions (default: Colors.amber).
-  final Color touchColor;
+  ///
+  /// Deprecated: Configure touch highlight color via [touchFeatures]
+  /// using [TouchFeatures.color] instead. This parameter will be removed in particles_network 2.0.0.
+  @Deprecated(
+    'Use touchFeatures (TouchFeatures(color: ...)) instead. This parameter will be removed in particles_network 2.0.0.',
+  )
+  Color get touchColor => _touchColor ?? touchFeatures.color;
+
+  /// Effective color used for touch highlight.
+  Color get effectiveTouchColor => _touchColor ?? touchFeatures.color;
+
+  /// Checks whether the deprecated [touchColor] parameter was explicitly configured.
+  bool get usedLegacyTouchColor => _touchColor != null;
 
   /// Whether touch interactions are enabled (default: true).
   final bool touchActivation;
@@ -102,22 +118,6 @@ class ParticleNetwork extends StatefulWidget {
           gravityStrength != 0.1 ||
           gravityDirection != const Offset(0, 1) ||
           gravityCenter != null);
-
-  /// Tracks whether the deprecation warning for legacy gravity parameters has been logged.
-  @visibleForTesting
-  static bool hasWarnedLegacyGravity = false;
-
-  /// Logs a warning in debug mode when deprecated gravity parameters are used.
-  static void _logLegacyGravityDeprecationWarning() {
-    if (hasWarnedLegacyGravity) return;
-    hasWarnedLegacyGravity = true;
-    debugPrint(
-      '[particles_network] DEPRECATION WARNING: The gravity parameters '
-      '("gravityType", "gravityStrength", "gravityDirection", "gravityCenter") '
-      'in ParticleNetwork are deprecated and will be removed in version 2.0.0. '
-      'Please use "gravity: ParticleGravity(...)" instead.',
-    );
-  }
 
   /// Whether hover effects are enabled.
   final bool? hoverEffect;
@@ -189,7 +189,10 @@ class ParticleNetwork extends StatefulWidget {
     this.lineDistance = 100,
     this.particleColor = Colors.white,
     this.lineColor = const Color.fromARGB(255, 100, 255, 180),
-    this.touchColor = Colors.amber,
+    @Deprecated(
+      'Use touchFeatures (TouchFeatures(color: ...)) instead. This parameter will be removed in particles_network 2.0.0.',
+    )
+    Color? touchColor,
     this.touchActivation = true,
     this.isComplex = false,
     this.fill = true,
@@ -221,7 +224,8 @@ class ParticleNetwork extends StatefulWidget {
     this.maxLinesPerFrame,
     this.frameRateIndependent = false,
     this.lineRenderer = LineRenderer.stroke,
-  }) : fastLineRendering = fastLineRendering ?? useVerticesRendering ?? false;
+  })  : _touchColor = touchColor,
+        fastLineRendering = fastLineRendering ?? useVerticesRendering ?? false;
 
   @override
   State<ParticleNetwork> createState() => ParticleNetworkState();
@@ -287,8 +291,11 @@ class ParticleNetworkState extends State<ParticleNetwork>
       lineDistance: widget.lineDistance,
       particleColor: widget.particleColor,
       lineColor: widget.lineColor,
-      touchColor: widget.touchColor,
-      touchFeatures: widget.touchFeatures,
+      touchColor: widget.effectiveTouchColor,
+      touchFeatures: widget._touchColor != null &&
+              widget.touchFeatures.color == Colors.amber
+          ? widget.touchFeatures.copyWith(color: widget.effectiveTouchColor)
+          : widget.touchFeatures,
       maxConnectionsPerParticle: widget.maxConnectionsPerParticle,
       adaptiveDensity: widget.adaptiveDensity,
       fastLineRendering: widget.fastLineRendering,
@@ -354,8 +361,21 @@ class ParticleNetworkState extends State<ParticleNetwork>
   void initState() {
     super.initState();
 
-    if (kDebugMode && widget.usedLegacyGravity) {
-      ParticleNetwork._logLegacyGravityDeprecationWarning();
+    if (kDebugMode) {
+      if (widget.usedLegacyGravity) {
+        LegacyDeprecationLogger.warn(
+          deprecatedApi:
+              'ParticleNetwork(gravityType, gravityStrength, gravityDirection, gravityCenter)',
+          replacement: 'ParticleNetwork(gravity: ParticleGravity(...))',
+        );
+      }
+      if (widget.usedLegacyTouchColor) {
+        LegacyDeprecationLogger.warn(
+          deprecatedApi: 'ParticleNetwork(touchColor)',
+          replacement:
+              'ParticleNetwork(touchFeatures: TouchFeatures(color: ...))',
+        );
+      }
     }
 
     _adaptiveController = AdaptivePerformanceController(
@@ -393,8 +413,21 @@ class ParticleNetworkState extends State<ParticleNetwork>
   void didUpdateWidget(ParticleNetwork oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (kDebugMode && widget.usedLegacyGravity) {
-      ParticleNetwork._logLegacyGravityDeprecationWarning();
+    if (kDebugMode) {
+      if (widget.usedLegacyGravity) {
+        LegacyDeprecationLogger.warn(
+          deprecatedApi:
+              'ParticleNetwork(gravityType, gravityStrength, gravityDirection, gravityCenter)',
+          replacement: 'ParticleNetwork(gravity: ParticleGravity(...))',
+        );
+      }
+      if (widget.usedLegacyTouchColor) {
+        LegacyDeprecationLogger.warn(
+          deprecatedApi: 'ParticleNetwork(touchColor)',
+          replacement:
+              'ParticleNetwork(touchFeatures: TouchFeatures(color: ...))',
+        );
+      }
     }
 
     bool factoryChanged = false;
@@ -422,13 +455,15 @@ class ParticleNetworkState extends State<ParticleNetwork>
     }
 
     // Targeted painter updates
+    final currentTouchColor = widget.effectiveTouchColor;
+    final oldTouchColor = oldWidget.effectiveTouchColor;
     if (widget.particleColor != oldWidget.particleColor ||
         widget.lineColor != oldWidget.lineColor ||
-        widget.touchColor != oldWidget.touchColor) {
+        currentTouchColor != oldTouchColor) {
       _painter.updateColors(
         particleColor: widget.particleColor,
         lineColor: widget.lineColor,
-        touchColor: widget.touchColor,
+        touchColor: currentTouchColor,
       );
     }
 
