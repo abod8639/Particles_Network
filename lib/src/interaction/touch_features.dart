@@ -1,7 +1,7 @@
 /// Configuration class for touch interaction behavior and physics.
 library;
 
-import 'dart:ui';
+import 'package:flutter/material.dart';
 
 /// Configuration class for touch interaction behavior and physics.
 class TouchFeatures {
@@ -22,7 +22,7 @@ class TouchFeatures {
   /// If null, defaults to the network's lineDistance.
   final double? lineDistance;
 
-  /// Highlight color for touch interactions (default: const Color(0xFFFFC107) / Colors.amber).
+  /// Highlight color for touch interactions (default: Colors.amber).
   final Color color;
 
   /// Compatibility alias for [color].
@@ -41,7 +41,7 @@ class TouchFeatures {
     Color? touchColor,
   })  : speed = speed ?? decayRate ?? 0.42,
         force = force ?? pullForce ?? 0.42,
-        color = touchColor ?? color ?? const Color(0xFFFFC107);
+        color = touchColor ?? color ?? Colors.amber;
 
   /// Alias for [speed] (decay rate).
   double get decayRate => speed;
