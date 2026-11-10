@@ -875,17 +875,41 @@ void main() {
     const defaultFeatures = TouchFeatures();
     expect(defaultFeatures.color, Colors.amber);
     expect(defaultFeatures.touchColor, Colors.amber);
+    expect(defaultFeatures.enabled, isTrue);
+    expect(defaultFeatures.touchActivation, isTrue);
 
-    const custom = TouchFeatures(color: Colors.teal);
+    const custom = TouchFeatures(color: Colors.teal, enabled: false);
     expect(custom.color, Colors.teal);
     expect(custom.touchColor, Colors.teal);
+    expect(custom.enabled, isFalse);
+    expect(custom.touchActivation, isFalse);
 
-    const alias = TouchFeatures(touchColor: Colors.pink);
+    const alias = TouchFeatures(touchColor: Colors.pink, touchActivation: false);
     expect(alias.color, Colors.pink);
+    expect(alias.enabled, isFalse);
 
-    final copied = custom.copyWith(color: Colors.deepOrange);
+    final copied = custom.copyWith(color: Colors.deepOrange, enabled: true);
     expect(copied.color, Colors.deepOrange);
+    expect(copied.enabled, isTrue);
     expect(copied.speed, custom.speed);
+  });
+
+  test('ParticleNetwork detects usedLegacyTouchActivation correctly', () {
+    const modern = ParticleNetwork(
+      touchFeatures: TouchFeatures(enabled: false),
+    );
+    expect(modern.usedLegacyTouchActivation, isFalse);
+    expect(modern.touchActivation, isFalse);
+
+    const defaultWidget = ParticleNetwork();
+    expect(defaultWidget.usedLegacyTouchActivation, isFalse);
+    expect(defaultWidget.touchActivation, isTrue);
+
+    const legacyWidget = ParticleNetwork(
+      touchActivation: false,
+    );
+    expect(legacyWidget.usedLegacyTouchActivation, isTrue);
+    expect(legacyWidget.touchActivation, isFalse);
   });
 
   testWidgets(
