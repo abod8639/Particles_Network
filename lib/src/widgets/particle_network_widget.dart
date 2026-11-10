@@ -57,8 +57,24 @@ class ParticleNetwork extends StatefulWidget {
   /// Checks whether the deprecated [touchColor] parameter was explicitly configured.
   bool get usedLegacyTouchColor => _touchColor != null;
 
+  /// Explicitly provided legacy touch activation flag, if any.
+  final bool? _touchActivation;
+
   /// Whether touch interactions are enabled (default: true).
-  final bool touchActivation;
+  ///
+  /// Deprecated: Configure touch activation via [touchFeatures]
+  /// using [TouchFeatures.enabled] instead. This parameter will be removed in particles_network 2.0.0.
+  @Deprecated(
+    'Use touchFeatures (TouchFeatures(enabled: ...)) instead. This parameter will be removed in particles_network 2.0.0.',
+  )
+  bool get touchActivation => _touchActivation ?? touchFeatures.enabled;
+
+  /// Effective flag used for touch activation.
+  bool get effectiveTouchActivation =>
+      _touchActivation ?? touchFeatures.enabled;
+
+  /// Checks whether the deprecated [touchActivation] parameter was explicitly configured.
+  bool get usedLegacyTouchActivation => _touchActivation != null;
 
   /// Whether the painting logic is complex (default: false).
   final bool isComplex;
@@ -193,7 +209,10 @@ class ParticleNetwork extends StatefulWidget {
       'Use touchFeatures (TouchFeatures(color: ...)) instead. This parameter will be removed in particles_network 2.0.0.',
     )
     Color? touchColor,
-    this.touchActivation = true,
+    @Deprecated(
+      'Use touchFeatures (TouchFeatures(enabled: ...)) instead. This parameter will be removed in particles_network 2.0.0.',
+    )
+    bool? touchActivation,
     this.isComplex = false,
     this.fill = true,
     this.drawNetwork = true,
@@ -225,6 +244,7 @@ class ParticleNetwork extends StatefulWidget {
     this.frameRateIndependent = false,
     this.lineRenderer = LineRenderer.stroke,
   })  : _touchColor = touchColor,
+        _touchActivation = touchActivation,
         fastLineRendering = fastLineRendering ?? useVerticesRendering ?? false;
 
   @override
@@ -285,17 +305,23 @@ class ParticleNetworkState extends State<ParticleNetwork>
       isComplex: widget.isComplex,
       lineWidth: widget.lineWidth,
       particleCount: widget.particleCount,
-      touchActivation: widget.touchActivation,
+      touchActivation: widget.effectiveTouchActivation,
       particles: simulation.particles,
       touchPoint: touchPoint,
       lineDistance: widget.lineDistance,
       particleColor: widget.particleColor,
       lineColor: widget.lineColor,
       touchColor: widget.effectiveTouchColor,
-      touchFeatures: widget._touchColor != null &&
-              widget.touchFeatures.color == Colors.amber
-          ? widget.touchFeatures.copyWith(color: widget.effectiveTouchColor)
-          : widget.touchFeatures,
+      touchFeatures: widget.touchFeatures.copyWith(
+        color: widget._touchColor != null &&
+                widget.touchFeatures.color == Colors.amber
+            ? widget.effectiveTouchColor
+            : null,
+        enabled: widget._touchActivation != null &&
+                widget.touchFeatures.enabled == true
+            ? widget.effectiveTouchActivation
+            : null,
+      ),
       maxConnectionsPerParticle: widget.maxConnectionsPerParticle,
       adaptiveDensity: widget.adaptiveDensity,
       fastLineRendering: widget.fastLineRendering,
@@ -376,6 +402,13 @@ class ParticleNetworkState extends State<ParticleNetwork>
               'ParticleNetwork(touchFeatures: TouchFeatures(color: ...))',
         );
       }
+      if (widget.usedLegacyTouchActivation) {
+        LegacyDeprecationLogger.warn(
+          deprecatedApi: 'ParticleNetwork(touchActivation)',
+          replacement:
+              'ParticleNetwork(touchFeatures: TouchFeatures(enabled: ...))',
+        );
+      }
     }
 
     _adaptiveController = AdaptivePerformanceController(
@@ -428,6 +461,13 @@ class ParticleNetworkState extends State<ParticleNetwork>
               'ParticleNetwork(touchFeatures: TouchFeatures(color: ...))',
         );
       }
+      if (widget.usedLegacyTouchActivation) {
+        LegacyDeprecationLogger.warn(
+          deprecatedApi: 'ParticleNetwork(touchActivation)',
+          replacement:
+              'ParticleNetwork(touchFeatures: TouchFeatures(enabled: ...))',
+        );
+      }
     }
 
     bool factoryChanged = false;
@@ -475,15 +515,17 @@ class ParticleNetworkState extends State<ParticleNetwork>
       _painter.updateLineDistance(widget.lineDistance);
     }
 
+    final currentTouchActivation = widget.effectiveTouchActivation;
+    final oldTouchActivation = oldWidget.effectiveTouchActivation;
     if (widget.drawNetwork != oldWidget.drawNetwork ||
         widget.fill != oldWidget.fill ||
         widget.isComplex != oldWidget.isComplex ||
-        widget.touchActivation != oldWidget.touchActivation) {
+        currentTouchActivation != oldTouchActivation) {
       _painter.updateRenderFlags(
         drawNetwork: widget.drawNetwork,
         fill: widget.fill,
         isComplex: widget.isComplex,
-        touchActivation: widget.touchActivation,
+        touchActivation: currentTouchActivation,
       );
     }
 
