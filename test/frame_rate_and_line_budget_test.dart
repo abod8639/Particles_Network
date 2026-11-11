@@ -259,8 +259,10 @@ void main() {
           height: 400,
           child: ParticleNetwork(
             particleCount: count,
-            maxLinesPerFrame: budget,
-            frameRateIndependent: fri,
+            performance: NetworkPerformance(
+              maxLinesPerFrame: budget,
+              frameRateIndependent: fri,
+            ),
           ),
         ),
       );
