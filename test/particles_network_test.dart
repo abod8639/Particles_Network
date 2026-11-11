@@ -662,27 +662,15 @@ void main() {
     expect(network.maxConnectionsPerParticle, isNull);
     expect(network.adaptiveDensity, isFalse);
     expect(network.fastLineRendering, isFalse);
-    expect(network.useVerticesRendering, isFalse);
     expect(network.enableAdaptivePerformance, isFalse);
   });
 
-  test(
-      'ParticleNetwork constructor handles fastLineRendering and useVerticesRendering aliases',
-      () {
-    const network1 = ParticleNetwork(useVerticesRendering: true);
+  test('ParticleNetwork constructor handles fastLineRendering', () {
+    const network1 = ParticleNetwork(fastLineRendering: true);
     expect(network1.fastLineRendering, isTrue);
-    expect(network1.useVerticesRendering, isTrue);
 
-    const network2 = ParticleNetwork(fastLineRendering: true);
-    expect(network2.fastLineRendering, isTrue);
-    expect(network2.useVerticesRendering, isTrue);
-
-    const network3 = ParticleNetwork(
-      fastLineRendering: false,
-      useVerticesRendering: true,
-    );
-    expect(network3.fastLineRendering, isFalse);
-    expect(network3.useVerticesRendering, isFalse);
+    const network2 = ParticleNetwork(fastLineRendering: false);
+    expect(network2.fastLineRendering, isFalse);
 
     const network4 = ParticleNetwork(
       maxConnectionsPerParticle: 4,
