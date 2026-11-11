@@ -504,7 +504,7 @@ void main() {
     });
 
     testWidgets(
-      'returns true when maxConnectionsPerParticle, adaptiveDensity, or useVerticesRendering change (L1093-L1095)',
+      'returns true when maxConnectionsPerParticle, adaptiveDensity, or fastLineRendering change (L1093-L1095)',
       (tester) async {
         await setUpTest(tester);
 
@@ -648,7 +648,7 @@ void main() {
     });
 
     testWidgets(
-      'updatePerformanceOptions updates options and falls back to useVerticesRendering (L1029-L1031)',
+      'updatePerformanceOptions updates options',
       (tester) async {
         await setUpTest(tester);
 
@@ -659,19 +659,17 @@ void main() {
         defaultPainter.updatePerformanceOptions(
           maxConnectionsPerParticle: 4,
           adaptiveDensity: true,
-          useVerticesRendering: true,
+          fastLineRendering: true,
         );
 
         expect(defaultPainter.maxConnectionsPerParticle, equals(4));
         expect(defaultPainter.adaptiveDensity, isTrue);
         expect(defaultPainter.fastLineRendering, isTrue);
-        expect(defaultPainter.useVerticesRendering, isTrue);
 
         defaultPainter.updatePerformanceOptions(
-          useVerticesRendering: false,
+          fastLineRendering: false,
         );
         expect(defaultPainter.fastLineRendering, isFalse);
-        expect(defaultPainter.useVerticesRendering, isFalse);
 
         defaultPainter.updatePerformanceOptions(
           clearMaxConnectionsPerParticle: true,
@@ -1103,33 +1101,6 @@ void main() {
       verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(
         greaterThan(0),
       );
-    });
-
-    testWidgets(
-        'useVerticesRendering getter and setter alias fastLineRendering (L81)',
-        (
-      tester,
-    ) async {
-      await setUpTest(tester);
-      final painter = OptimizedNetworkPainter(
-        drawNetwork: true,
-        fill: false,
-        isComplex: false,
-        particleCount: 1,
-        particles: [particle],
-        touchPoint: null,
-        lineDistance: 100.0,
-        particleColor: Colors.white,
-        lineColor: Colors.grey,
-        touchColor: Colors.red,
-        touchActivation: false,
-        lineWidth: 1.0,
-      );
-
-      expect(painter.useVerticesRendering, equals(painter.fastLineRendering));
-      painter.useVerticesRendering = true;
-      expect(painter.fastLineRendering, isTrue);
-      expect(painter.useVerticesRendering, isTrue);
     });
 
     testWidgets(
