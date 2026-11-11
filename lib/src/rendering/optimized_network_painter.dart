@@ -555,12 +555,13 @@ class OptimizedNetworkPainter extends CustomPainter {
     if (_unifiedLineCount > 0 && lineRenderer == LineRenderer.vertices) {
       final double width = _vertexLineWidth();
       _vertexPaint.color =
-          Color(_scaledArgb(linePaint.color, lineWidth / width));
+          Color(_scaledArgb(lineColor, lineWidth / width));
       _lineVertexBatch
         ..clear()
         ..addSegments(_unifiedLineBuffer, _unifiedLineCount, width * 0.5)
         ..draw(canvas, _vertexPaint);
     } else if (_unifiedLineCount > 0) {
+      linePaint.color = lineColor;
       canvas.drawRawPoints(
         PointMode.lines,
         Float32List.sublistView(_unifiedLineBuffer, 0, _unifiedLineCount),
@@ -603,6 +604,7 @@ class OptimizedNetworkPainter extends CustomPainter {
 
     final List<int> nearbyIndices = _intListPool.acquire();
     int lineCount = 0;
+    final Color previousColor = linePaint.color;
 
     try {
       final int count = visibleParticles.length;
@@ -689,6 +691,7 @@ class OptimizedNetworkPainter extends CustomPainter {
         }
       }
     } finally {
+      linePaint.color = previousColor;
       _intListPool.release(nearbyIndices);
       _lastFrameLineCount = lineCount;
     }
