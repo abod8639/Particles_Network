@@ -157,24 +157,29 @@ class TouchInteractionHandler {
     final double maxDistSq = maxDist * maxDist;
     final double invMaxDist = maxDist > 0 ? 1.0 / maxDist : 0.0;
 
-    final int count = visibleParticles.length;
-    for (int idx = 0; idx < count; idx++) {
-      final Particle p = particles[visibleParticles[idx]];
-      final double dx = tx - p.x;
-      if (dx > maxDist || dx < -maxDist) continue;
-      final double dy = ty - p.y;
-      if (dy > maxDist || dy < -maxDist) continue;
-      final double distSq = dx * dx + dy * dy;
+    final Color previousColor = linePaint.color;
+    try {
+      final int count = visibleParticles.length;
+      for (int idx = 0; idx < count; idx++) {
+        final Particle p = particles[visibleParticles[idx]];
+        final double dx = tx - p.x;
+        if (dx > maxDist || dx < -maxDist) continue;
+        final double dy = ty - p.y;
+        if (dy > maxDist || dy < -maxDist) continue;
+        final double distSq = dx * dx + dy * dy;
 
-      // Only draw lines for particles within the connection distance
-      if (distSq < maxDistSq) {
-        final double distance = math.sqrt(distSq);
-        // Smooth linear falloff: 1.0 at touch, 0.0 at maxDist
-        final double opacity = 1.0 - (distance * invMaxDist);
-        final int alpha = (255 * opacity).toInt().clamp(0, 255);
-        linePaint.color = _touchColorLut[alpha];
-        canvas.drawLine(Offset(p.x, p.y), touch, linePaint);
+        // Only draw lines for particles within the connection distance
+        if (distSq < maxDistSq) {
+          final double distance = math.sqrt(distSq);
+          // Smooth linear falloff: 1.0 at touch, 0.0 at maxDist
+          final double opacity = 1.0 - (distance * invMaxDist);
+          final int alpha = (255 * opacity).toInt().clamp(0, 255);
+          linePaint.color = _touchColorLut[alpha];
+          canvas.drawLine(Offset(p.x, p.y), touch, linePaint);
+        }
       }
+    } finally {
+      linePaint.color = previousColor;
     }
   }
 }
