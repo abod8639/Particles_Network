@@ -14,6 +14,7 @@ import 'package:particles_network/src/core/particle.dart';
 import 'package:particles_network/src/core/rectangle.dart';
 import 'package:particles_network/src/interaction/touch_interaction_handler.dart';
 import 'package:particles_network/src/rendering/line_vertex_batch.dart';
+import 'package:particles_network/src/rendering/network_performance.dart';
 import 'package:particles_network/src/rendering/object_pool.dart';
 import 'package:particles_network/src/rendering/particle_filter.dart';
 import 'package:particles_network/src/rendering/performance_utils.dart';
@@ -66,17 +67,32 @@ class OptimizedNetworkPainter extends CustomPainter {
   /// Advanced touch interaction features and physics configuration.
   TouchFeatures touchFeatures;
 
+  /// Performance settings and optimizations for rendering.
+  NetworkPerformance performance;
+
   /// Maximum number of connection lines a single particle can emit.
   ///
   /// Clamping connections guarantees strict O(N) rendering complexity, preventing
   /// explosive line counts and maintaining high FPS in dense particle clusters.
-  int? maxConnectionsPerParticle;
+  int? get maxConnectionsPerParticle => performance.maxConnectionsPerParticle;
+  set maxConnectionsPerParticle(int? value) {
+    performance = performance.copyWith(
+      maxConnectionsPerParticle: value,
+      clearMaxConnectionsPerParticle: value == null,
+    );
+  }
 
   /// Whether to automatically scale down connection distance in dense networks.
-  bool adaptiveDensity;
+  bool get adaptiveDensity => performance.adaptiveDensity;
+  set adaptiveDensity(bool value) {
+    performance = performance.copyWith(adaptiveDensity: value);
+  }
 
   /// Whether to use ultra-fast single draw-call line rendering.
-  bool fastLineRendering;
+  bool get fastLineRendering => performance.fastLineRendering;
+  set fastLineRendering(bool value) {
+    performance = performance.copyWith(fastLineRendering: value);
+  }
 
   /// Target upper bound on connection lines drawn per frame.
   ///
@@ -84,14 +100,26 @@ class OptimizedNetworkPainter extends CustomPainter {
   /// count stays near this budget regardless of particle count or screen
   /// size. Line opacity fades relative to the reduced radius, so the network
   /// keeps its soft look instead of lines popping in and out.
-  int? maxLinesPerFrame;
+  int? get maxLinesPerFrame => performance.maxLinesPerFrame;
+  set maxLinesPerFrame(int? value) {
+    if (value != performance.maxLinesPerFrame) {
+      _budgetCorrection = 1.0;
+    }
+    performance = performance.copyWith(
+      maxLinesPerFrame: value,
+      clearMaxLinesPerFrame: value == null,
+    );
+  }
 
   /// How connection lines are rasterized (default: [LineRenderer.stroke]).
   ///
   /// [LineRenderer.vertices] submits batched connections as indexed triangle
   /// quads (one `drawVertices` call per opacity level), which is far cheaper
   /// on the GPU for large line counts.
-  LineRenderer lineRenderer;
+  LineRenderer get lineRenderer => performance.lineRenderer;
+  set lineRenderer(LineRenderer value) {
+    performance = performance.copyWith(lineRenderer: value);
+  }
 
   /// Logical-to-physical pixel ratio of the target display (default: 1.0).
   ///
@@ -186,18 +214,25 @@ class OptimizedNetworkPainter extends CustomPainter {
     required this.fill,
     required this.drawNetwork,
     this.touchFeatures = const TouchFeatures(),
+    NetworkPerformance performance = const NetworkPerformance(),
     this.showQuadTree = false,
-    this.maxConnectionsPerParticle,
-    this.adaptiveDensity = false,
+    int? maxConnectionsPerParticle,
+    bool? adaptiveDensity,
     bool? fastLineRendering,
-    this.maxLinesPerFrame,
+    int? maxLinesPerFrame,
     this.simulateTouchInPaint = true,
-    this.lineRenderer = LineRenderer.stroke,
+    LineRenderer? lineRenderer,
     this.devicePixelRatio = 1.0,
     super.repaint,
   })  : touchColor = touchColor ?? touchFeatures.color,
         touchActivation = touchActivation ?? touchFeatures.enabled,
-        fastLineRendering = fastLineRendering ?? false {
+        performance = performance.copyWith(
+          maxConnectionsPerParticle: maxConnectionsPerParticle,
+          adaptiveDensity: adaptiveDensity,
+          fastLineRendering: fastLineRendering,
+          maxLinesPerFrame: maxLinesPerFrame,
+          lineRenderer: lineRenderer,
+        ) {
     final int baseAlpha = (lineColor.a * 255.0).round().clamp(0, 255);
     _lineColorLut = List<Color>.generate(
       256,
@@ -1042,6 +1077,15 @@ class OptimizedNetworkPainter extends CustomPainter {
     }
   }
 
+  /// Updates all performance settings at once using [NetworkPerformance].
+  void updatePerformance(NetworkPerformance newPerformance) {
+    if (newPerformance == performance) return;
+    if (newPerformance.maxLinesPerFrame != performance.maxLinesPerFrame) {
+      _budgetCorrection = 1.0;
+    }
+    performance = newPerformance;
+  }
+
   /// Updates performance and rendering strategy options.
   void updatePerformanceOptions({
     int? maxConnectionsPerParticle,
@@ -1139,11 +1183,7 @@ class OptimizedNetworkPainter extends CustomPainter {
         oldDelegate.particleColor != particleColor ||
         oldDelegate.lineColor != lineColor ||
         oldDelegate.touchFeatures != touchFeatures ||
-        oldDelegate.maxConnectionsPerParticle != maxConnectionsPerParticle ||
-        oldDelegate.adaptiveDensity != adaptiveDensity ||
-        oldDelegate.maxLinesPerFrame != maxLinesPerFrame ||
-        oldDelegate.lineRenderer != lineRenderer ||
-        oldDelegate.fastLineRendering != fastLineRendering;
+        oldDelegate.performance != performance;
   }
 
   @visibleForTesting
