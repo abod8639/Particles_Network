@@ -36,8 +36,14 @@ class TouchFeatures {
     bool? enabled,
     bool? touchActivation,
     double? speed,
+    @Deprecated(
+      'Use speed instead. This parameter will be removed in particles_network 2.0.0.',
+    )
     double? decayRate,
     double? force,
+    @Deprecated(
+      'Use force instead. This parameter will be removed in particles_network 2.0.0.',
+    )
     double? pullForce,
     this.maxTouchSpeed = 5.5,
     this.damping = 0.985,
@@ -47,10 +53,20 @@ class TouchFeatures {
         speed = speed ?? decayRate ?? 0.42,
         force = force ?? pullForce ?? 0.42;
 
-  /// Alias for [speed] (decay rate).
+  /// Compatibility alias for [speed] (decay rate).
+  ///
+  /// Deprecated: Use [speed] instead. This property will be removed in particles_network 2.0.0.
+  @Deprecated(
+    'Use speed instead. This property will be removed in particles_network 2.0.0.',
+  )
   double get decayRate => speed;
 
-  /// Alias for [force] (pull force).
+  /// Compatibility alias for [force] (pull force).
+  ///
+  /// Deprecated: Use [force] instead. This property will be removed in particles_network 2.0.0.
+  @Deprecated(
+    'Use force instead. This property will be removed in particles_network 2.0.0.',
+  )
   double get pullForce => force;
 
   /// Creates a copy of this [TouchFeatures] with updated parameters.
@@ -62,11 +78,19 @@ class TouchFeatures {
     double? damping,
     double? lineDistance,
     Color? color,
+    @Deprecated(
+      'Use speed instead. This parameter will be removed in particles_network 2.0.0.',
+    )
+    double? decayRate,
+    @Deprecated(
+      'Use force instead. This parameter will be removed in particles_network 2.0.0.',
+    )
+    double? pullForce,
   }) {
     return TouchFeatures(
       enabled: enabled ?? this.enabled,
-      speed: speed ?? this.speed,
-      force: force ?? this.force,
+      speed: speed ?? decayRate ?? this.speed,
+      force: force ?? pullForce ?? this.force,
       maxTouchSpeed: maxTouchSpeed ?? this.maxTouchSpeed,
       damping: damping ?? this.damping,
       lineDistance: lineDistance ?? this.lineDistance,
