@@ -303,7 +303,7 @@ No additional setup required! The package works out of the box.
 | `drawNetwork`                | `bool`          | `true`         | Enables/Disables connection lines                                    |
 | `maxConnectionsPerParticle`  | `int?`          | `null`         | Bounding edge limit per node to $O(N)$ for massive performance boost |
 | `adaptiveDensity`            | `bool`          | `false`        | Automatically scales down connection distance in dense networks      |
-| `fastLineRendering`          | `bool`          | `false`        | Single draw-call line rendering (alias: `useVerticesRendering`)      |
+| `fastLineRendering`          | `bool`          | `false`        | Single draw-call line rendering                                      |
 | `enableAdaptivePerformance`  | `bool`          | `false`        | Dynamically monitors FPS and auto-tunes quality to maintain 60 FPS   |
 | `lineRenderer`               | `LineRenderer`  | `stroke`       | `LineRenderer.vertices` draws lines as triangles, 4–10x faster       |
 | `maxLinesPerFrame`           | `int?`          | `null`         | Line budget: shrinks line distance to keep line count near this value |
