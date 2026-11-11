@@ -342,6 +342,8 @@ class ParticleNetworkState extends State<ParticleNetwork>
       _painter.updateLineDistance(widget.lineDistance);
       if (widget.maxConnectionsPerParticle != null) {
         _painter.maxConnectionsPerParticle = widget.maxConnectionsPerParticle;
+      } else {
+        _painter.maxConnectionsPerParticle = null;
       }
     }
     _timingsCallbackRegistered = enabled;
@@ -541,6 +543,8 @@ class ParticleNetworkState extends State<ParticleNetwork>
         widget.lineRenderer != oldWidget.lineRenderer) {
       _painter.updatePerformanceOptions(
         maxConnectionsPerParticle: widget.maxConnectionsPerParticle,
+        clearMaxConnectionsPerParticle:
+            widget.maxConnectionsPerParticle == null,
         adaptiveDensity: widget.adaptiveDensity,
         fastLineRendering: widget.fastLineRendering,
         maxLinesPerFrame: widget.maxLinesPerFrame,
