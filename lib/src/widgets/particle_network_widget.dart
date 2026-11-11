@@ -10,7 +10,7 @@ import 'package:particles_network/src/interaction/touch_features.dart';
 import 'package:particles_network/src/legacy/legacy_deprecation_logger.dart';
 import 'package:particles_network/src/physics/particle_controller.dart';
 import 'package:particles_network/src/physics/particle_gravity.dart';
-import 'package:particles_network/src/rendering/line_vertex_batch.dart';
+import 'package:particles_network/src/rendering/network_performance.dart';
 import 'package:particles_network/src/rendering/object_pool.dart';
 import 'package:particles_network/src/rendering/optimized_network_painter.dart';
 import 'package:particles_network/src/rendering/performance_utils.dart';
@@ -141,56 +141,8 @@ class ParticleNetwork extends StatefulWidget {
   /// Advanced touch interaction features and physics configuration.
   final TouchFeatures touchFeatures;
 
-  /// Maximum number of connection lines a single particle can emit.
-  ///
-  /// Setting this bounds the total connection count to O(N) instead of O(N^2),
-  /// dramatically improving performance for large particle counts.
-  final int? maxConnectionsPerParticle;
-
-  /// Whether to automatically scale down connection distance in dense networks.
-  final bool adaptiveDensity;
-
-  /// Whether to use ultra-fast single draw-call line rendering.
-  final bool fastLineRendering;
-
-  /// Whether to dynamically monitor frame cost and adapt quality to keep up
-  /// with the display refresh rate.
-  ///
-  /// Uses the engine's [FrameTiming] build and raster durations, so it reacts
-  /// to real GPU load rather than to the interval between ticks.
-  final bool enableAdaptivePerformance;
-
-  /// Target upper bound on connection lines drawn per frame.
-  ///
-  /// Line rasterization is usually the dominant cost of a particle network,
-  /// and the line count grows with the square of [particleCount]. Setting a
-  /// budget shrinks the connection radius automatically so frame cost stays
-  /// flat no matter how many particles are shown. `null` (default) keeps
-  /// [lineDistance] fixed.
-  ///
-  /// Measured on a Galaxy S10 (Impeller, full screen): with the default
-  /// [LineRenderer.stroke], about 2000 lines sustain 60 FPS; with
-  /// [LineRenderer.vertices], 15000 lines still run at ~64 FPS.
-  final int? maxLinesPerFrame;
-
-  /// Whether motion speed is independent of the display refresh rate
-  /// (default: false).
-  ///
-  /// When false, particles move [maxSpeed] pixels per frame, so they move
-  /// twice as fast on a 120 Hz display as on a 60 Hz one. When true, speeds
-  /// are interpreted as pixels per 1/60 s and integrated over the real elapsed
-  /// time, so motion looks the same on every display and stays smooth when
-  /// frames are dropped. On 60 Hz displays both modes look the same.
-  final bool frameRateIndependent;
-
-  /// How connection lines are rasterized (default: [LineRenderer.stroke]).
-  ///
-  /// [LineRenderer.vertices] draws the network as indexed triangles (one
-  /// `drawVertices` call per opacity level) instead of engine-stroked
-  /// segments, which
-  /// cuts GPU cost for line-heavy scenes substantially. Lines get square ends
-  /// instead of round caps, which is invisible at typical widths (≤ 1 px).
-  final LineRenderer lineRenderer;
+  /// Advanced performance settings and rendering optimizations.
+  final NetworkPerformance performance;
 
   /// Creates a [ParticleNetwork] widget with customizable visualization parameters.
   const ParticleNetwork({
@@ -232,13 +184,7 @@ class ParticleNetwork extends StatefulWidget {
     this.gravityCenter,
     this.hoverEffect = false,
     this.touchFeatures = const TouchFeatures(),
-    this.maxConnectionsPerParticle,
-    this.adaptiveDensity = false,
-    this.fastLineRendering = false,
-    this.enableAdaptivePerformance = false,
-    this.maxLinesPerFrame,
-    this.frameRateIndependent = false,
-    this.lineRenderer = LineRenderer.stroke,
+    this.performance = const NetworkPerformance(),
   })  : _touchColor = touchColor,
         _touchActivation = touchActivation;
 
@@ -317,11 +263,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
             ? widget.effectiveTouchActivation
             : null,
       ),
-      maxConnectionsPerParticle: widget.maxConnectionsPerParticle,
-      adaptiveDensity: widget.adaptiveDensity,
-      fastLineRendering: widget.fastLineRendering,
-      maxLinesPerFrame: widget.maxLinesPerFrame,
-      lineRenderer: widget.lineRenderer,
+      performance: widget.performance,
       simulateTouchInPaint: false,
       repaint: frameNotifier,
     );
@@ -335,8 +277,9 @@ class ParticleNetworkState extends State<ParticleNetwork>
       SchedulerBinding.instance.removeTimingsCallback(_onFrameTimings);
       _adaptiveController.reset();
       _painter.updateLineDistance(widget.lineDistance);
-      if (widget.maxConnectionsPerParticle != null) {
-        _painter.maxConnectionsPerParticle = widget.maxConnectionsPerParticle;
+      if (widget.performance.maxConnectionsPerParticle != null) {
+        _painter.maxConnectionsPerParticle =
+            widget.performance.maxConnectionsPerParticle;
       } else {
         _painter.maxConnectionsPerParticle = null;
       }
@@ -358,7 +301,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
     if (adjustedDist != _painter.lineDistance) {
       _painter.updateLineDistance(adjustedDist);
     }
-    final int? maxConn = widget.maxConnectionsPerParticle;
+    final int? maxConn = widget.performance.maxConnectionsPerParticle;
     if (maxConn != null) {
       final int adjustedConn =
           _adaptiveController.getAdjustedMaxConnections(maxConn);
@@ -421,12 +364,12 @@ class ParticleNetworkState extends State<ParticleNetwork>
     );
 
     _initPainter();
-    _setAdaptiveTimings(widget.enableAdaptivePerformance);
+    _setAdaptiveTimings(widget.performance.enableAdaptivePerformance);
 
     ticker = createTicker((elapsed) {
       final int now = elapsed.inMicroseconds;
       double timeScale = 1.0;
-      if (widget.frameRateIndependent && _lastFrameMicros != 0) {
+      if (widget.performance.frameRateIndependent && _lastFrameMicros != 0) {
         timeScale = (now - _lastFrameMicros) / 16666.667;
         if (timeScale < 0) timeScale = 0;
         if (timeScale > _maxTimeScale) timeScale = _maxTimeScale;
@@ -530,27 +473,12 @@ class ParticleNetworkState extends State<ParticleNetwork>
       _painter.updateTouchFeatures(widget.touchFeatures);
     }
 
-    if (widget.maxConnectionsPerParticle !=
-            oldWidget.maxConnectionsPerParticle ||
-        widget.adaptiveDensity != oldWidget.adaptiveDensity ||
-        widget.fastLineRendering != oldWidget.fastLineRendering ||
-        widget.maxLinesPerFrame != oldWidget.maxLinesPerFrame ||
-        widget.lineRenderer != oldWidget.lineRenderer) {
-      _painter.updatePerformanceOptions(
-        maxConnectionsPerParticle: widget.maxConnectionsPerParticle,
-        clearMaxConnectionsPerParticle:
-            widget.maxConnectionsPerParticle == null,
-        adaptiveDensity: widget.adaptiveDensity,
-        fastLineRendering: widget.fastLineRendering,
-        maxLinesPerFrame: widget.maxLinesPerFrame,
-        clearMaxLinesPerFrame: widget.maxLinesPerFrame == null,
-        lineRenderer: widget.lineRenderer,
-      );
-    }
-
-    if (widget.enableAdaptivePerformance !=
-        oldWidget.enableAdaptivePerformance) {
-      _setAdaptiveTimings(widget.enableAdaptivePerformance);
+    if (widget.performance != oldWidget.performance) {
+      _painter.updatePerformance(widget.performance);
+      if (widget.performance.enableAdaptivePerformance !=
+          oldWidget.performance.enableAdaptivePerformance) {
+        _setAdaptiveTimings(widget.performance.enableAdaptivePerformance);
+      }
     }
   }
 
