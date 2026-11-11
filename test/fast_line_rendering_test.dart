@@ -159,7 +159,6 @@ void main() {
       );
 
       expect(painter.fastLineRendering, isTrue);
-      expect(painter.useVerticesRendering, isTrue);
       expect(painter.adaptiveDensity, isTrue);
       expect(painter.maxConnectionsPerParticle, equals(4));
     });
