@@ -672,6 +672,11 @@ void main() {
         );
         expect(defaultPainter.fastLineRendering, isFalse);
         expect(defaultPainter.useVerticesRendering, isFalse);
+
+        defaultPainter.updatePerformanceOptions(
+          clearMaxConnectionsPerParticle: true,
+        );
+        expect(defaultPainter.maxConnectionsPerParticle, isNull);
       },
     );
 
@@ -901,6 +906,85 @@ void main() {
         greaterThan(0),
       );
     });
+
+    testWidgets(
+      '_drawBatchedConnectionsComplex respects maxConnectionsPerParticle when isComplex is true',
+      (tester) async {
+        await setUpTest(tester);
+
+        // 40 particles packed closely together so each particle is within lineDistance of all others.
+        // Without maxConnectionsPerParticle, total lines would be 40 * 39 / 2 = 780 lines.
+        // With maxConnectionsPerParticle = 2, total lines must not exceed 40 * 2 / 2 = 40 lines.
+        final particles = List.generate(
+          40,
+          (i) => MockParticle(
+            position: Offset(100.0 + (i % 5) * 5.0, 100.0 + (i ~/ 5) * 5.0),
+            size: 2.0,
+          ),
+        );
+
+        final painter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: false,
+          isComplex: true,
+          particleCount: particles.length,
+          particles: particles,
+          touchPoint: null,
+          lineDistance: 100.0,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          touchColor: Colors.red,
+          touchActivation: false,
+          lineWidth: 1.0,
+          maxConnectionsPerParticle: 2,
+        );
+
+        painter.paint(mockCanvas, testScreenSize);
+
+        // Theoretical upper bound is 40 * 2 / 2 = 40 lines.
+        expect(painter.lastFrameLineCount, lessThanOrEqualTo(40));
+        expect(painter.lastFrameLineCount, greaterThan(0));
+      },
+    );
+
+    testWidgets(
+      '_drawIndividualConnections respects maxConnectionsPerParticle when visibleParticles < 30 and isComplex is true',
+      (tester) async {
+        await setUpTest(tester);
+
+        // 10 particles close together.
+        // Without cap, 10 * 9 / 2 = 45 lines.
+        // With cap = 2, total lines must be <= 10.
+        final particles = List.generate(
+          10,
+          (i) => MockParticle(
+            position: Offset(100.0 + i * 4.0, 100.0),
+            size: 2.0,
+          ),
+        );
+
+        final painter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: false,
+          isComplex: true,
+          particleCount: particles.length,
+          particles: particles,
+          touchPoint: null,
+          lineDistance: 100.0,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          touchColor: Colors.red,
+          touchActivation: false,
+          lineWidth: 1.0,
+          maxConnectionsPerParticle: 2,
+        );
+
+        painter.paint(mockCanvas, testScreenSize);
+
+        expect(painter.lastFrameLineCount, lessThanOrEqualTo(10));
+        expect(painter.lastFrameLineCount, greaterThan(0));
+      },
+    );
 
     testWidgets(
         '_growBucket expands raw line buckets in same cell during normal batched connections (L345-L350, L505)',
