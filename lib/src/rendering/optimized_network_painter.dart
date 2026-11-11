@@ -167,6 +167,14 @@ class OptimizedNetworkPainter extends CustomPainter {
   // Connection count tracking buffer for strict O(N) capping
   Int32List _connectionCounts = Int32List(0);
 
+  Int32List _getClearedConnectionCounts(int minSize) {
+    if (_connectionCounts.length < minSize) {
+      _connectionCounts = Int32List(minSize);
+    }
+    _connectionCounts.fillRange(0, minSize, 0);
+    return _connectionCounts;
+  }
+
   /// Constructor with dependency initialization
   OptimizedNetworkPainter({
     required this.particleCount,
@@ -584,8 +592,14 @@ class OptimizedNetworkPainter extends CustomPainter {
     final double dist = effectiveDistance ?? lineDistance;
     final double maxDistSq = dist * dist;
     final double invLineDistance = dist > 0 ? 255.0 / dist : 0.0;
-    final int maxLines = isComplex ? (maxConnectionsPerParticle ?? 3) : 5;
+    final int defaultMaxLines = isComplex ? 3 : 5;
     final int denseThreshold = isComplex ? (dist ~/ 4) : (dist ~/ 1.5);
+
+    final int? maxConn = maxConnectionsPerParticle;
+    final bool capped = maxConn != null;
+    final int cap = maxConn ?? 0;
+    final Int32List? counts =
+        capped ? _getClearedConnectionCounts(particles.length) : null;
 
     final List<int> nearbyIndices = _intListPool.acquire();
     int lineCount = 0;
@@ -594,6 +608,8 @@ class OptimizedNetworkPainter extends CustomPainter {
       final int count = visibleParticles.length;
       for (int i = 0; i < count; i++) {
         final int index = visibleParticles[i];
+        if (capped && counts![index] >= cap) continue;
+
         final Particle particle = particles[index];
         final double px = particle.x;
         final double py = particle.y;
@@ -611,6 +627,7 @@ class OptimizedNetworkPainter extends CustomPainter {
         for (int n = 0; n < nearbyCount; n++) {
           final int neighborIndex = nearbyIndices[n];
           if (neighborIndex <= index) continue;
+          if (capped && counts![neighborIndex] >= cap) continue;
 
           final Particle neighbor = particles[neighborIndex];
           final double dx = px - neighbor.x;
@@ -628,11 +645,24 @@ class OptimizedNetworkPainter extends CustomPainter {
         }
 
         if (candidateCount > 0) {
-          final bool isThrottled = candidateCount > denseThreshold;
           int drawCount = candidateCount;
-          if (isThrottled) {
-            _selectTopKClosest(candidateCount, maxLines);
-            drawCount = maxLines < candidateCount ? maxLines : candidateCount;
+          bool isThrottled = false;
+
+          if (capped) {
+            final int allowed = cap - counts![index];
+            if (candidateCount > allowed) {
+              _selectTopKClosest(candidateCount, allowed);
+              drawCount = allowed;
+              isThrottled = true;
+            }
+          } else {
+            isThrottled = candidateCount > denseThreshold;
+            if (isThrottled) {
+              _selectTopKClosest(candidateCount, defaultMaxLines);
+              drawCount = defaultMaxLines < candidateCount
+                  ? defaultMaxLines
+                  : candidateCount;
+            }
           }
 
           final Offset pos = Offset(px, py);
@@ -649,6 +679,11 @@ class OptimizedNetworkPainter extends CustomPainter {
             }
             linePaint.color = _lineColorLut[alpha];
             canvas.drawLine(pos, Offset(neighbor.x, neighbor.y), linePaint);
+
+            if (capped) {
+              counts![index]++;
+              counts[neighborIdx]++;
+            }
           }
           lineCount += drawCount;
         }
@@ -763,13 +798,10 @@ class OptimizedNetworkPainter extends CustomPainter {
     final int cap = maxConn ?? 0;
     final Int32List counts;
     if (capped) {
-      if (_connectionCounts.length < grid.count) {
-        _connectionCounts = Int32List(grid.count);
-      }
-      _connectionCounts.fillRange(0, grid.count, 0);
+      counts = _getClearedConnectionCounts(grid.count);
+    } else {
+      counts = _connectionCounts;
     }
-    // Indexed by sorted position, not by particle index.
-    counts = _connectionCounts;
 
     for (int cy = 0; cy < rows; cy++) {
       final bool hasSouth = cy < rows - 1;
@@ -874,13 +906,20 @@ class OptimizedNetworkPainter extends CustomPainter {
     final double queryRadius = math.sqrt(maxDistSq);
     final List<int> nearbyIndices = _intListPool.acquire();
 
+    final int? maxConn = maxConnectionsPerParticle;
+    final bool capped = maxConn != null;
+    final int cap = maxConn ?? 0;
+    final Int32List? counts =
+        capped ? _getClearedConnectionCounts(particles.length) : null;
+
     try {
       final int count = visibleParticles.length;
-      final int maxLines = maxConnectionsPerParticle ?? 5;
       final int denseThreshold = lineDistance ~/ 3;
 
       for (int i = 0; i < count; i++) {
         final int index = visibleParticles[i];
+        if (capped && counts![index] >= cap) continue;
+
         final Particle particle = particles[index];
         final double px = particle.x;
         final double py = particle.y;
@@ -898,6 +937,7 @@ class OptimizedNetworkPainter extends CustomPainter {
         for (int n = 0; n < nearbyCount; n++) {
           final int neighborIndex = nearbyIndices[n];
           if (neighborIndex <= index) continue;
+          if (capped && counts![neighborIndex] >= cap) continue;
 
           final Particle neighbor = particles[neighborIndex];
           final double dx = px - neighbor.x;
@@ -915,11 +955,23 @@ class OptimizedNetworkPainter extends CustomPainter {
         }
 
         if (candidateCount > 0) {
-          final bool isThrottled = candidateCount > denseThreshold;
           int drawCount = candidateCount;
-          if (isThrottled) {
-            _selectTopKClosest(candidateCount, maxLines);
-            drawCount = maxLines < candidateCount ? maxLines : candidateCount;
+          bool isThrottled = false;
+
+          if (capped) {
+            final int allowed = cap - counts![index];
+            if (candidateCount > allowed) {
+              _selectTopKClosest(candidateCount, allowed);
+              drawCount = allowed;
+              isThrottled = true;
+            }
+          } else {
+            isThrottled = candidateCount > denseThreshold;
+            if (isThrottled) {
+              const int maxLines = 5;
+              _selectTopKClosest(candidateCount, maxLines);
+              drawCount = maxLines < candidateCount ? maxLines : candidateCount;
+            }
           }
 
           for (int c = 0; c < drawCount; c++) {
@@ -947,6 +999,11 @@ class OptimizedNetworkPainter extends CustomPainter {
             raw[off + 2] = neighbor.x;
             raw[off + 3] = neighbor.y;
             _rawOffsets[bucket] = off + 4;
+
+            if (capped) {
+              counts![index]++;
+              counts[neighborIdx]++;
+            }
           }
         }
       }
@@ -990,6 +1047,7 @@ class OptimizedNetworkPainter extends CustomPainter {
   /// Updates performance and rendering strategy options.
   void updatePerformanceOptions({
     int? maxConnectionsPerParticle,
+    bool clearMaxConnectionsPerParticle = false,
     bool? adaptiveDensity,
     bool? fastLineRendering,
     bool? useVerticesRendering,
@@ -1006,7 +1064,9 @@ class OptimizedNetworkPainter extends CustomPainter {
       this.maxLinesPerFrame = maxLinesPerFrame;
       _budgetCorrection = 1.0;
     }
-    if (maxConnectionsPerParticle != null) {
+    if (clearMaxConnectionsPerParticle) {
+      this.maxConnectionsPerParticle = null;
+    } else if (maxConnectionsPerParticle != null) {
       this.maxConnectionsPerParticle = maxConnectionsPerParticle;
     }
     if (adaptiveDensity != null) {
