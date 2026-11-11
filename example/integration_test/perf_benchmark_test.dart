@@ -46,110 +46,128 @@ final List<PerfScenario> _baseScenarios = [
   PerfScenario(
     'lines_500',
     (r) => ParticleNetwork(
-        lineRenderer: r,
+        performance: NetworkPerformance(lineRenderer: r),
         particleCount: 500,
         touchFeatures: const TouchFeatures(enabled: false)),
   ),
   PerfScenario(
     'lines_1000',
     (r) => ParticleNetwork(
-        lineRenderer: r,
+        performance: NetworkPerformance(lineRenderer: r),
         particleCount: 1000,
         touchFeatures: const TouchFeatures(enabled: false)),
   ),
   PerfScenario(
     'lines_2000',
     (r) => ParticleNetwork(
-        lineRenderer: r,
+        performance: NetworkPerformance(lineRenderer: r),
         particleCount: 2000,
         touchFeatures: const TouchFeatures(enabled: false)),
   ),
   PerfScenario(
     'lines_2000_maxconn5',
     (r) => ParticleNetwork(
-      lineRenderer: r,
+      performance: NetworkPerformance(
+        lineRenderer: r,
+        maxConnectionsPerParticle: 5,
+      ),
       particleCount: 2000,
-      maxConnectionsPerParticle: 5,
       touchFeatures: const TouchFeatures(enabled: false),
     ),
   ),
   PerfScenario(
     'lines_2000_fast',
     (r) => ParticleNetwork(
-      lineRenderer: r,
       particleCount: 2000,
-      fastLineRendering: true,
+      performance: NetworkPerformance(
+        lineRenderer: r,
+        fastLineRendering: true,
+      ),
       touchFeatures: const TouchFeatures(enabled: false),
     ),
   ),
   PerfScenario(
     'lines_5000_budget2k',
     (r) => ParticleNetwork(
-      lineRenderer: r,
       particleCount: 5000,
-      maxLinesPerFrame: 2000,
+      performance: NetworkPerformance(
+        lineRenderer: r,
+        maxLinesPerFrame: 2000,
+      ),
       touchFeatures: const TouchFeatures(enabled: false),
     ),
   ),
   PerfScenario(
     'lines_5000_budget4k',
     (r) => ParticleNetwork(
-      lineRenderer: r,
       particleCount: 5000,
-      maxLinesPerFrame: 4000,
+      performance: NetworkPerformance(
+        lineRenderer: r,
+        maxLinesPerFrame: 4000,
+      ),
       touchFeatures: const TouchFeatures(enabled: false),
     ),
   ),
   PerfScenario(
     'lines_5000_budget15k',
     (r) => ParticleNetwork(
-      lineRenderer: r,
       particleCount: 5000,
-      maxLinesPerFrame: 15000,
+      performance: NetworkPerformance(
+        lineRenderer: r,
+        maxLinesPerFrame: 15000,
+      ),
       touchFeatures: const TouchFeatures(enabled: false),
     ),
   ),
   PerfScenario(
     'lines_10000_budget15k',
     (r) => ParticleNetwork(
-      lineRenderer: r,
       particleCount: 1000,
-      maxLinesPerFrame: 15000,
+      performance: NetworkPerformance(
+        lineRenderer: r,
+        maxLinesPerFrame: 15000,
+      ),
       touchFeatures: const TouchFeatures(enabled: false),
     ),
   ),
   PerfScenario(
     'lines_20000_budget15k',
     (r) => ParticleNetwork(
-      lineRenderer: r,
       particleCount: 20000,
-      maxLinesPerFrame: 15000,
+      performance: NetworkPerformance(
+        lineRenderer: r,
+        maxLinesPerFrame: 15000,
+      ),
       touchFeatures: const TouchFeatures(enabled: false),
     ),
   ),
   PerfScenario(
     'lines_2000_budget15k_fri',
     (r) => ParticleNetwork(
-      lineRenderer: r,
       particleCount: 2000,
-      maxLinesPerFrame: 15000,
-      frameRateIndependent: true,
+      performance: NetworkPerformance(
+        lineRenderer: r,
+        maxLinesPerFrame: 15000,
+        frameRateIndependent: true,
+      ),
       touchFeatures: const TouchFeatures(enabled: false),
     ),
   ),
   PerfScenario(
     'lines_500_adaptive',
     (r) => ParticleNetwork(
-      lineRenderer: r,
       particleCount: 500,
-      enableAdaptivePerformance: true,
+      performance: NetworkPerformance(
+        lineRenderer: r,
+        enableAdaptivePerformance: true,
+      ),
       touchFeatures: const TouchFeatures(enabled: false),
     ),
   ),
   PerfScenario(
     'points_5000',
     (r) => ParticleNetwork(
-      lineRenderer: r,
+      performance: NetworkPerformance(lineRenderer: r),
       particleCount: 5000,
       drawNetwork: false,
       touchFeatures: const TouchFeatures(enabled: false),
@@ -158,7 +176,7 @@ final List<PerfScenario> _baseScenarios = [
   PerfScenario(
     'points_20000',
     (r) => ParticleNetwork(
-      lineRenderer: r,
+      performance: NetworkPerformance(lineRenderer: r),
       particleCount: 20000,
       drawNetwork: false,
       touchFeatures: const TouchFeatures(enabled: false),
@@ -167,7 +185,7 @@ final List<PerfScenario> _baseScenarios = [
   PerfScenario(
     'points_50000',
     (r) => ParticleNetwork(
-      lineRenderer: r,
+      performance: NetworkPerformance(lineRenderer: r),
       particleCount: 50000,
       drawNetwork: false,
       touchFeatures: const TouchFeatures(enabled: false),
