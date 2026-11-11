@@ -659,27 +659,30 @@ void main() {
     expect(network.gravityCenter, isNull);
     expect(network.hoverEffect, isFalse);
     expect(network.touchFeatures, const TouchFeatures());
-    expect(network.maxConnectionsPerParticle, isNull);
-    expect(network.adaptiveDensity, isFalse);
-    expect(network.fastLineRendering, isFalse);
-    expect(network.enableAdaptivePerformance, isFalse);
+    expect(network.performance, const NetworkPerformance());
   });
 
-  test('ParticleNetwork constructor handles fastLineRendering', () {
-    const network1 = ParticleNetwork(fastLineRendering: true);
-    expect(network1.fastLineRendering, isTrue);
+  test('ParticleNetwork constructor handles NetworkPerformance', () {
+    const network1 = ParticleNetwork(
+      performance: NetworkPerformance(fastLineRendering: true),
+    );
+    expect(network1.performance.fastLineRendering, isTrue);
 
-    const network2 = ParticleNetwork(fastLineRendering: false);
-    expect(network2.fastLineRendering, isFalse);
+    const network2 = ParticleNetwork(
+      performance: NetworkPerformance(fastLineRendering: false),
+    );
+    expect(network2.performance.fastLineRendering, isFalse);
 
     const network4 = ParticleNetwork(
-      maxConnectionsPerParticle: 4,
-      adaptiveDensity: true,
-      enableAdaptivePerformance: true,
+      performance: NetworkPerformance(
+        maxConnectionsPerParticle: 4,
+        adaptiveDensity: true,
+        enableAdaptivePerformance: true,
+      ),
     );
-    expect(network4.maxConnectionsPerParticle, equals(4));
-    expect(network4.adaptiveDensity, isTrue);
-    expect(network4.enableAdaptivePerformance, isTrue);
+    expect(network4.performance.maxConnectionsPerParticle, equals(4));
+    expect(network4.performance.adaptiveDensity, isTrue);
+    expect(network4.performance.enableAdaptivePerformance, isTrue);
   });
 
   testWidgets('ParticleNetworkState factory getter and setter', (
@@ -862,19 +865,13 @@ void main() {
   test('TouchFeatures color property and copyWith', () {
     const defaultFeatures = TouchFeatures();
     expect(defaultFeatures.color, Colors.amber);
-    expect(defaultFeatures.touchColor, Colors.amber);
     expect(defaultFeatures.enabled, isTrue);
     expect(defaultFeatures.touchActivation, isTrue);
 
     const custom = TouchFeatures(color: Colors.teal, enabled: false);
     expect(custom.color, Colors.teal);
-    expect(custom.touchColor, Colors.teal);
     expect(custom.enabled, isFalse);
     expect(custom.touchActivation, isFalse);
-
-    const alias = TouchFeatures(touchColor: Colors.pink, touchActivation: false);
-    expect(alias.color, Colors.pink);
-    expect(alias.enabled, isFalse);
 
     final copied = custom.copyWith(color: Colors.deepOrange, enabled: true);
     expect(copied.color, Colors.deepOrange);
@@ -949,9 +946,11 @@ void main() {
               width: 300,
               height: 300,
               child: ParticleNetwork(
-                maxConnectionsPerParticle: null,
-                adaptiveDensity: false,
-                fastLineRendering: false,
+                performance: NetworkPerformance(
+                  maxConnectionsPerParticle: null,
+                  adaptiveDensity: false,
+                  fastLineRendering: false,
+                ),
               ),
             ),
           ),
@@ -976,9 +975,11 @@ void main() {
               width: 300,
               height: 300,
               child: ParticleNetwork(
-                maxConnectionsPerParticle: 3,
-                adaptiveDensity: true,
-                fastLineRendering: true,
+                performance: NetworkPerformance(
+                  maxConnectionsPerParticle: 3,
+                  adaptiveDensity: true,
+                  fastLineRendering: true,
+                ),
               ),
             ),
           ),
@@ -1009,8 +1010,10 @@ void main() {
               height: 300,
               child: ParticleNetwork(
                 lineDistance: 100.0,
-                maxConnectionsPerParticle: 10,
-                enableAdaptivePerformance: true,
+                performance: NetworkPerformance(
+                  maxConnectionsPerParticle: 10,
+                  enableAdaptivePerformance: true,
+                ),
               ),
             ),
           ),
@@ -1063,8 +1066,10 @@ void main() {
               height: 300,
               child: ParticleNetwork(
                 lineDistance: 100.0,
-                maxConnectionsPerParticle: 10,
-                enableAdaptivePerformance: false,
+                performance: NetworkPerformance(
+                  maxConnectionsPerParticle: 10,
+                  enableAdaptivePerformance: false,
+                ),
               ),
             ),
           ),
@@ -1104,8 +1109,10 @@ void main() {
               height: 300,
               child: ParticleNetwork(
                 lineDistance: 100.0,
-                maxConnectionsPerParticle: 10,
-                enableAdaptivePerformance: false,
+                performance: NetworkPerformance(
+                  maxConnectionsPerParticle: 10,
+                  enableAdaptivePerformance: false,
+                ),
               ),
             ),
           ),
@@ -1150,8 +1157,10 @@ void main() {
               height: 300,
               child: ParticleNetwork(
                 lineDistance: 100.0,
-                maxConnectionsPerParticle: 10,
-                enableAdaptivePerformance: true,
+                performance: NetworkPerformance(
+                  maxConnectionsPerParticle: 10,
+                  enableAdaptivePerformance: true,
+                ),
               ),
             ),
           ),
@@ -1175,8 +1184,10 @@ void main() {
               height: 300,
               child: ParticleNetwork(
                 lineDistance: 100.0,
-                maxConnectionsPerParticle: 10,
-                enableAdaptivePerformance: false,
+                performance: NetworkPerformance(
+                  maxConnectionsPerParticle: 10,
+                  enableAdaptivePerformance: false,
+                ),
               ),
             ),
           ),
