@@ -27,6 +27,8 @@ export 'package:particles_network/src/physics/particle_updater.dart'
     show ParticleUpdater;
 export 'package:particles_network/src/rendering/line_vertex_batch.dart'
     show LineRenderer, LineVertexBatch;
+export 'package:particles_network/src/rendering/network_performance.dart'
+    show NetworkPerformance;
 export 'package:particles_network/src/rendering/object_pool.dart'
     show
         ObjectPool,
