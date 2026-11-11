@@ -31,9 +31,6 @@ class TouchFeatures {
   /// Highlight color for touch interactions (default: Colors.amber).
   final Color color;
 
-  /// Compatibility alias for [color].
-  Color get touchColor => color;
-
   /// Creates a [TouchFeatures] configuration.
   const TouchFeatures({
     bool? enabled,
@@ -45,12 +42,10 @@ class TouchFeatures {
     this.maxTouchSpeed = 5.5,
     this.damping = 0.985,
     this.lineDistance,
-    Color? color,
-    Color? touchColor,
+    this.color = Colors.amber,
   })  : enabled = touchActivation ?? enabled ?? true,
         speed = speed ?? decayRate ?? 0.42,
-        force = force ?? pullForce ?? 0.42,
-        color = touchColor ?? color ?? Colors.amber;
+        force = force ?? pullForce ?? 0.42;
 
   /// Alias for [speed] (decay rate).
   double get decayRate => speed;
