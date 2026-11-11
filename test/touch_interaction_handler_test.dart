@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
@@ -236,6 +237,33 @@ void main() {
 
       // تحقق من أن هناك فقط CustomPaint واحد
       expect(customPaintFinder, findsOneWidget);
+    });
+
+    test('drawTouchLines restores linePaint color after drawing', () {
+      final particles = [
+        Particle(
+          position: const Offset(100, 100),
+          velocity: const Offset(0, 0),
+          color: Colors.white,
+          size: 1.0,
+        ),
+      ];
+
+      final linePaint = Paint()..color = Colors.green;
+      final handler = TouchInteractionHandler(
+        particles: particles,
+        touchPoint: const Offset(110, 100),
+        lineDistance: 50,
+        touchColor: Colors.amber,
+        linePaint: linePaint,
+      );
+
+      final recorder = PictureRecorder();
+      final canvas = Canvas(recorder);
+      handler.drawTouchLines(canvas, [0]);
+      recorder.endRecording().dispose();
+
+      expect(linePaint.color.toARGB32(), equals(Colors.green.toARGB32()));
     });
   });
 
