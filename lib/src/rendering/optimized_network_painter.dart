@@ -78,10 +78,6 @@ class OptimizedNetworkPainter extends CustomPainter {
   /// Whether to use ultra-fast single draw-call line rendering.
   bool fastLineRendering;
 
-  /// Compatibility alias for [fastLineRendering].
-  bool get useVerticesRendering => fastLineRendering;
-  set useVerticesRendering(bool value) => fastLineRendering = value;
-
   /// Target upper bound on connection lines drawn per frame.
   ///
   /// When set, the connection radius shrinks automatically so that the line
@@ -194,7 +190,6 @@ class OptimizedNetworkPainter extends CustomPainter {
     this.maxConnectionsPerParticle,
     this.adaptiveDensity = false,
     bool? fastLineRendering,
-    bool? useVerticesRendering,
     this.maxLinesPerFrame,
     this.simulateTouchInPaint = true,
     this.lineRenderer = LineRenderer.stroke,
@@ -202,7 +197,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     super.repaint,
   })  : touchColor = touchColor ?? touchFeatures.color,
         touchActivation = touchActivation ?? touchFeatures.enabled,
-        fastLineRendering = fastLineRendering ?? useVerticesRendering ?? false {
+        fastLineRendering = fastLineRendering ?? false {
     final int baseAlpha = (lineColor.a * 255.0).round().clamp(0, 255);
     _lineColorLut = List<Color>.generate(
       256,
@@ -1053,7 +1048,6 @@ class OptimizedNetworkPainter extends CustomPainter {
     bool clearMaxConnectionsPerParticle = false,
     bool? adaptiveDensity,
     bool? fastLineRendering,
-    bool? useVerticesRendering,
     int? maxLinesPerFrame,
     bool clearMaxLinesPerFrame = false,
     LineRenderer? lineRenderer,
@@ -1077,8 +1071,6 @@ class OptimizedNetworkPainter extends CustomPainter {
     }
     if (fastLineRendering != null) {
       this.fastLineRendering = fastLineRendering;
-    } else if (useVerticesRendering != null) {
-      this.fastLineRendering = useVerticesRendering;
     }
   }
 
@@ -1151,7 +1143,7 @@ class OptimizedNetworkPainter extends CustomPainter {
         oldDelegate.adaptiveDensity != adaptiveDensity ||
         oldDelegate.maxLinesPerFrame != maxLinesPerFrame ||
         oldDelegate.lineRenderer != lineRenderer ||
-        oldDelegate.useVerticesRendering != useVerticesRendering;
+        oldDelegate.fastLineRendering != fastLineRendering;
   }
 
   @visibleForTesting
