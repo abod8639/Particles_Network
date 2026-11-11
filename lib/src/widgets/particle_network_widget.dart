@@ -153,9 +153,6 @@ class ParticleNetwork extends StatefulWidget {
   /// Whether to use ultra-fast single draw-call line rendering.
   final bool fastLineRendering;
 
-  /// Compatibility alias for [fastLineRendering].
-  bool get useVerticesRendering => fastLineRendering;
-
   /// Whether to dynamically monitor frame cost and adapt quality to keep up
   /// with the display refresh rate.
   ///
@@ -237,15 +234,13 @@ class ParticleNetwork extends StatefulWidget {
     this.touchFeatures = const TouchFeatures(),
     this.maxConnectionsPerParticle,
     this.adaptiveDensity = false,
-    bool? fastLineRendering,
-    bool? useVerticesRendering,
+    this.fastLineRendering = false,
     this.enableAdaptivePerformance = false,
     this.maxLinesPerFrame,
     this.frameRateIndependent = false,
     this.lineRenderer = LineRenderer.stroke,
   })  : _touchColor = touchColor,
-        _touchActivation = touchActivation,
-        fastLineRendering = fastLineRendering ?? useVerticesRendering ?? false;
+        _touchActivation = touchActivation;
 
   @override
   State<ParticleNetwork> createState() => ParticleNetworkState();
