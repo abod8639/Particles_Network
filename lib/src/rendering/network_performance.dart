@@ -52,7 +52,7 @@ class NetworkPerformance {
     this.enableAdaptivePerformance = false,
     this.maxLinesPerFrame,
     this.frameRateIndependent = false,
-    this.lineRenderer = LineRenderer.stroke,
+    this.lineRenderer = LineRenderer.vertices,
   });
 
   /// High-performance preset tuned for high particle counts and smooth frame rates.
