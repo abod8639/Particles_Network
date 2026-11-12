@@ -42,8 +42,7 @@ class ParticleControllerScreen extends StatefulWidget {
 
 class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   // --- UI Constants ---
-  static const double _controlPanelHeight = 380.0;
-  static const Duration _animationDuration = Duration(milliseconds: 400);
+  static const Duration _animationDuration = Duration(milliseconds: 350);
 
   // --- Particle Network Configuration Variables ---
   bool _drawNetwork = true;
@@ -76,6 +75,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   // --- UI State ---
   bool _showPanel = true;
   bool _showChart = false;
+  int _selectedCategoryIndex = 0;
 
   /// UniqueKey is used to force a full rebuild of the ParticleNetwork
   /// when engine-critical parameters change (Count, Speed, Size).
@@ -89,90 +89,182 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
     });
   }
 
+  /// Resets all settings to their default values.
+  void _resetToDefaults() {
+    setState(() {
+      _drawNetwork = true;
+      _isFill = false;
+      _isComplex = true;
+      _touchActivation = true;
+      _lineWidth = 1.0;
+      _particleCount = 300;
+      _maxSpeed = 5.0;
+      _maxSize = 2.0;
+      _lineDistance = 100.0;
+      _gravityType = GravityType.none;
+      _gravityStrength = 0.1;
+      _gravityDirection = const Offset(0, 1);
+      _touchSpeed = 0.4;
+      _touchForce = 0.42;
+      _maxTouchSpeed = 5.0;
+      _touchLineDistance = 150.0;
+      _particleColor = Colors.deepPurple;
+      _lineColor = Colors.lightBlue;
+      _touchColor = Colors.amber;
+      _showChart = false;
+      _selectedCategoryIndex = 0;
+    });
+    _refreshEngine();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      floatingActionButton: GestureDetector(
-        onTap: _togglePanel,
-        child: Container(
-          width: 46,
-          height: 46,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: const Color(0xFF22262C),
-            border: Border.all(
-              color: _controllerColor.withValues(alpha: 0.35),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.65),
-                offset: const Offset(3, 3),
-                blurRadius: 6,
-              ),
-              BoxShadow(
-                color: Colors.white.withValues(alpha: 0.08),
-                offset: const Offset(-2, -2),
-                blurRadius: 5,
-              ),
-            ],
-          ),
-          child: Icon(
-            _showPanel ? Icons.keyboard_arrow_up_rounded : Icons.tune_rounded,
-            color: _controllerColor,
-            size: 22,
-          ),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isDesktop = constraints.maxWidth >= 800;
+
+            if (isDesktop) {
+              return Row(
+                children: [
+                  Expanded(
+                    child: _buildCanvasArea(isDesktop: true),
+                  ),
+                  AnimatedContainer(
+                    duration: _animationDuration,
+                    curve: Curves.easeInOut,
+                    width: _showPanel ? 390 : 0,
+                    child: _showPanel
+                        ? _buildAdvancedControlPanel(
+                            isDesktop: true,
+                            maxHeight: constraints.maxHeight,
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                ],
+              );
+            } else {
+              final panelMaxHeight =
+                  (constraints.maxHeight * 0.50).clamp(280.0, 420.0);
+              return Column(
+                children: [
+                  Expanded(
+                    child: _buildCanvasArea(isDesktop: false),
+                  ),
+                  AnimatedCrossFade(
+                    duration: _animationDuration,
+                    crossFadeState: _showPanel
+                        ? CrossFadeState.showFirst
+                        : CrossFadeState.showSecond,
+                    sizeCurve: Curves.easeInOut,
+                    firstChild: _buildAdvancedControlPanel(
+                      isDesktop: false,
+                      maxHeight: panelMaxHeight,
+                    ),
+                    secondChild:
+                        const SizedBox(width: double.infinity, height: 0),
+                  ),
+                ],
+              );
+            }
+          },
         ),
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Animated Header Panel for Controls
-            AnimatedCrossFade(
-              duration: _animationDuration,
-              crossFadeState: _showPanel
-                  ? CrossFadeState.showFirst
-                  : CrossFadeState.showSecond,
-              sizeCurve: Curves.easeInOut,
-              firstChild: _buildAdvancedControlPanel(),
-              secondChild: const SizedBox(width: double.infinity, height: 0),
-            ),
-            Expanded(
-              child: FPS(
-                alignment: Alignment.topRight,
-                showChart: _showChart,
-                child: ParticleNetwork(
-                  key: _particleKey,
-                  drawNetwork: _drawNetwork,
-                  fill: _isFill,
-                  isComplex: _isComplex,
-                  lineWidth: _lineWidth,
-                  particleCount: _particleCount,
-                  maxSpeed: _maxSpeed,
-                  maxSize: _maxSize,
-                  lineDistance: _lineDistance,
-                  particleColor: _particleColor,
-                  lineColor: _lineColor,
-                  hoverEffect: _hoverEffect,
-                  touchFeatures: TouchFeatures(
-                    enabled: _touchActivation,
-                    speed: _touchSpeed,
-                    force: _touchForce,
-                    maxTouchSpeed: _maxTouchSpeed,
-                    lineDistance: _touchLineDistance,
-                    color: _touchColor,
-                  ),
-                  gravity: ParticleGravity(
-                    gravityType: _gravityType,
-                    gravityStrength: _gravityStrength,
-                    gravityDirection: _gravityDirection,
-                    gravityCenter: _gravityCenter,
-                  ),
-                ),
+    );
+  }
+
+  /// Builds the canvas visualization area with live FPS overlay and floating controls
+  Widget _buildCanvasArea({required bool isDesktop}) {
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: FPS(
+            alignment: Alignment.topRight,
+            showChart: _showChart,
+            child: ParticleNetwork(
+              key: _particleKey,
+              drawNetwork: _drawNetwork,
+              fill: _isFill,
+              isComplex: _isComplex,
+              lineWidth: _lineWidth,
+              particleCount: _particleCount,
+              maxSpeed: _maxSpeed,
+              maxSize: _maxSize,
+              lineDistance: _lineDistance,
+              particleColor: _particleColor,
+              lineColor: _lineColor,
+              hoverEffect: _hoverEffect,
+              performance: const NetworkPerformance(
+                adaptiveDensity: false,
+                enableAdaptivePerformance: false,
+                fastLineRendering: false,
+                frameRateIndependent: false,
+                lineRenderer: LineRenderer.stroke,
+              ),
+              touchFeatures: TouchFeatures(
+                enabled: _touchActivation,
+                speed: _touchSpeed,
+                force: _touchForce,
+                maxTouchSpeed: _maxTouchSpeed,
+                lineDistance: _touchLineDistance,
+                color: _touchColor,
+              ),
+              gravity: ParticleGravity(
+                gravityType: _gravityType,
+                gravityStrength: _gravityStrength,
+                gravityDirection: _gravityDirection,
+                gravityCenter: _gravityCenter,
               ),
             ),
+          ),
+        ),
+        if (!_showPanel || isDesktop)
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: _buildToggleButton(isDesktop: isDesktop),
+          ),
+      ],
+    );
+  }
+
+  /// Builds the floating action button to toggle the panel
+  Widget _buildToggleButton({required bool isDesktop}) {
+    return GestureDetector(
+      onTap: _togglePanel,
+      child: Container(
+        width: 46,
+        height: 46,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: const Color(0xFF22262C),
+          border: Border.all(
+            color: _controllerColor.withValues(alpha: 0.4),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.65),
+              offset: const Offset(3, 3),
+              blurRadius: 6,
+            ),
+            BoxShadow(
+              color: Colors.white.withValues(alpha: 0.08),
+              offset: const Offset(-2, -2),
+              blurRadius: 5,
+            ),
           ],
+        ),
+        child: Icon(
+          _showPanel
+              ? (isDesktop
+                  ? Icons.chevron_right_rounded
+                  : Icons.keyboard_arrow_down_rounded)
+              : Icons.tune_rounded,
+          color: _controllerColor,
+          size: 22,
         ),
       ),
     );
@@ -227,13 +319,17 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                   Icon(icon, size: 14, color: _controllerColor),
                   const SizedBox(width: 6),
                 ],
-                Text(
-                  title.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.1,
-                    color: Colors.white.withValues(alpha: 0.7),
+                Expanded(
+                  child: Text(
+                    title.toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.1,
+                      color: Colors.white.withValues(alpha: 0.7),
+                    ),
                   ),
                 ),
               ],
@@ -247,135 +343,315 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   }
 
   /// Builds the main control panel containing all settings in Neumorphism style
-  Widget _buildAdvancedControlPanel() {
+  Widget _buildAdvancedControlPanel({
+    required bool isDesktop,
+    required double maxHeight,
+  }) {
     return Container(
-      height: _controlPanelHeight,
+      width: isDesktop ? 390 : double.infinity,
+      height: maxHeight,
       decoration: BoxDecoration(
         color: const Color(0xFF1E2126),
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+        borderRadius: isDesktop
+            ? null
+            : const BorderRadius.vertical(top: Radius.circular(22)),
+        border: isDesktop
+            ? Border(
+                left: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  width: 1,
+                ),
+              )
+            : Border(
+                top: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  width: 1,
+                ),
+              ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.7),
-            offset: const Offset(0, 10),
+            offset: isDesktop ? const Offset(-5, 0) : const Offset(0, -6),
             blurRadius: 18,
           ),
         ],
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.white.withValues(alpha: 0.05),
-            width: 1,
-          ),
-        ),
       ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
-        child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          children: [
-            // Palette & Display Options
-            _buildNeuCard(
-              title: "Palette & Display Options",
-              icon: Icons.palette_outlined,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        children: [
+          // Drag handle indicator on mobile
+          if (!isDesktop)
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(top: 8, bottom: 2),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+
+          // Header with Title & Action buttons
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 6, 10, 4),
+            child: Row(
+              children: [
+                Icon(Icons.tune_rounded, size: 16, color: _controllerColor),
+                const SizedBox(width: 8),
+                Text(
+                  "ENGINE CONTROLS",
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  color: Colors.white.withValues(alpha: 0.6),
+                  tooltip: "Reset to Defaults",
+                  onPressed: _resetToDefaults,
+                  constraints:
+                      const BoxConstraints(minWidth: 32, minHeight: 32),
+                  padding: EdgeInsets.zero,
+                ),
+                IconButton(
+                  icon: Icon(
+                    isDesktop
+                        ? Icons.chevron_right_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    size: 22,
+                  ),
+                  color: _controllerColor,
+                  tooltip: "Hide Panel",
+                  onPressed: _togglePanel,
+                  constraints:
+                      const BoxConstraints(minWidth: 32, minHeight: 32),
+                  padding: EdgeInsets.zero,
+                ),
+              ],
+            ),
+          ),
+
+          // Category Chips Bar for quick navigation
+          SizedBox(
+            height: 34,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              children: [
+                _buildCategoryChip(0, "All", Icons.apps_rounded),
+                _buildCategoryChip(1, "Display", Icons.palette_outlined),
+                _buildCategoryChip(2, "Lines", Icons.linear_scale_rounded),
+                _buildCategoryChip(3, "Engine", Icons.speed_rounded),
+                _buildCategoryChip(4, "Touch", Icons.touch_app_rounded),
+                _buildCategoryChip(5, "Gravity", Icons.public_rounded),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+
+          // Scrollable Settings Cards
+          Expanded(
+            child: ClipRRect(
+              borderRadius: isDesktop
+                  ? BorderRadius.zero
+                  : const BorderRadius.vertical(top: Radius.circular(16)),
+              child: ListView(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 children: [
-                  _buildColorSection(),
-                  const SizedBox(height: 12),
-                  Container(
-                    height: 1,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.transparent,
-                          Colors.white.withValues(alpha: 0.08),
-                          Colors.transparent,
+                  // Palette & Display Options
+                  if (_selectedCategoryIndex == 0 ||
+                      _selectedCategoryIndex == 1)
+                    _buildNeuCard(
+                      title: "Palette & Display Options",
+                      icon: Icons.palette_outlined,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildColorSection(),
+                          const SizedBox(height: 12),
+                          Container(
+                            height: 1,
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.white.withValues(alpha: 0.08),
+                                  Colors.transparent,
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          _buildSwitchesSection(),
                         ],
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildSwitchesSection(),
-                ],
-              ),
-            ),
-            // Line Dynamics
-            _buildNeuCard(
-              title: "Line Dynamics",
-              icon: Icons.linear_scale_rounded,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _buildSlider(
-                      "Line Width",
-                      _lineWidth,
-                      0.1,
-                      20.0,
-                      (v) => setState(() => _lineWidth = v),
+
+                  // Line Dynamics
+                  if (_selectedCategoryIndex == 0 ||
+                      _selectedCategoryIndex == 2)
+                    _buildNeuCard(
+                      title: "Line Dynamics",
+                      icon: Icons.linear_scale_rounded,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _buildSlider(
+                              "Line Width",
+                              _lineWidth,
+                              0.1,
+                              20.0,
+                              (v) => setState(() => _lineWidth = v),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildSlider(
+                              "Line Dist",
+                              _lineDistance,
+                              0,
+                              200,
+                              (v) => setState(() => _lineDistance = v),
+                              fractionDigits: 0,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  Expanded(
-                      child: _buildSlider(
-                    "Line Dist",
-                    _lineDistance,
-                    0,
-                    200,
-                    (v) => setState(() => _lineDistance = v),
-                  ))
+
+                  // Engine Critical Parameters
+                  if (_selectedCategoryIndex == 0 ||
+                      _selectedCategoryIndex == 3)
+                    _buildNeuCard(
+                      title: "Engine Parameters (*Rebuilds)",
+                      icon: Icons.speed_rounded,
+                      child: Column(
+                        children: [
+                          _buildSlider(
+                            "Count *",
+                            _particleCount.toDouble(),
+                            10,
+                            1000,
+                            (v) {
+                              setState(() => _particleCount = v.toInt());
+                              _refreshEngine();
+                            },
+                            fractionDigits: 0,
+                          ),
+                          _buildSlider(
+                            "Speed *",
+                            _maxSpeed,
+                            0.1,
+                            20.0,
+                            (v) {
+                              setState(() => _maxSpeed = v);
+                              _refreshEngine();
+                            },
+                          ),
+                          _buildSlider(
+                            "Max Size *",
+                            _maxSize,
+                            0.5,
+                            20.0,
+                            (v) {
+                              setState(() => _maxSize = v);
+                              _refreshEngine();
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  // Touch Interaction
+                  if (_selectedCategoryIndex == 0 ||
+                      _selectedCategoryIndex == 4)
+                    _buildNeuCard(
+                      title: "Touch Interaction",
+                      icon: Icons.touch_app_rounded,
+                      child: _buildTouchFeaturesSection(),
+                    ),
+
+                  // Gravity Settings
+                  if (_selectedCategoryIndex == 0 ||
+                      _selectedCategoryIndex == 5)
+                    _buildNeuCard(
+                      title: "Gravity Settings",
+                      icon: Icons.public_rounded,
+                      child: _buildGravitySection(),
+                    ),
                 ],
               ),
             ),
-            // Engine Critical Parameters
-            _buildNeuCard(
-              title: "Engine Parameters (*Rebuilds)",
-              icon: Icons.speed_rounded,
-              child: Column(
-                children: [
-                  _buildSlider(
-                    "Count *",
-                    _particleCount.toDouble(),
-                    10,
-                    1000,
-                    (v) {
-                      setState(() => _particleCount = v.toInt());
-                      _refreshEngine();
-                    },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Builds an interactive category filter chip
+  Widget _buildCategoryChip(int index, String label, IconData icon) {
+    final isSelected = _selectedCategoryIndex == index;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedCategoryIndex = index),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        margin: const EdgeInsets.only(right: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? _controllerColor.withValues(alpha: 0.15)
+              : const Color(0xFF22262C),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected
+                ? _controllerColor
+                : Colors.white.withValues(alpha: 0.05),
+            width: 1,
+          ),
+          boxShadow: isSelected
+              ? const [
+                  BoxShadow(
+                    color: Colors.black45,
+                    offset: Offset(1, 1),
+                    blurRadius: 2,
                   ),
-                  _buildSlider(
-                    "Speed *",
-                    _maxSpeed,
-                    0.1,
-                    20.0,
-                    (v) {
-                      setState(() => _maxSpeed = v);
-                      _refreshEngine();
-                    },
-                  ),
-                  _buildSlider(
-                    "Max Size *",
-                    _maxSize,
-                    0.5,
-                    20.0,
-                    (v) {
-                      setState(() => _maxSize = v);
-                      _refreshEngine();
-                    },
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.45),
+                    offset: const Offset(2, 2),
+                    blurRadius: 3,
                   ),
                 ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 13,
+              color: isSelected
+                  ? _controllerColor
+                  : Colors.white.withValues(alpha: 0.5),
+            ),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected
+                    ? _controllerColor
+                    : Colors.white.withValues(alpha: 0.7),
               ),
             ),
-            // Gravity Settings
-            _buildNeuCard(
-              title: "Touch Interaction",
-              icon: Icons.touch_app_rounded,
-              child: _buildTouchFeaturesSection(),
-            ),
-            _buildNeuCard(
-              title: "Gravity Settings",
-              icon: Icons.public_rounded,
-              child: _buildGravitySection(),
-            ),
-            // Touch Features Settings
           ],
         ),
       ),
@@ -395,83 +671,87 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
             _buildGravityTypeButton("Point", GravityType.point),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         _buildSlider(
           "Strength",
           _gravityStrength,
           -2.0,
           2.0,
           (v) => setState(() => _gravityStrength = v),
+          fractionDigits: 2,
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 3),
-          child: Row(
+          padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(
-                width: 85,
-                child: Text(
-                  "Direction",
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white.withValues(alpha: 0.75),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: SliderTheme(
-                  data: SliderThemeData(
-                    trackHeight: 4,
-                    activeTrackColor: _controllerColor,
-                    inactiveTrackColor: const Color(0xFF16181C),
-                    thumbColor: _controllerColor,
-                    overlayColor: _controllerColor.withValues(alpha: 0.15),
-                    thumbShape:
-                        const RoundSliderThumbShape(enabledThumbRadius: 6),
-                    trackShape: const RoundedRectSliderTrackShape(),
-                  ),
-                  child: Slider(
-                    value: math.atan2(
-                      _gravityDirection.dy,
-                      _gravityDirection.dx,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Direction Angle",
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white.withValues(alpha: 0.75),
                     ),
-                    min: -math.pi,
-                    max: math.pi,
-                    onChanged: (v) {
-                      setState(() {
-                        _gravityDirection = Offset(math.cos(v), math.sin(v));
-                      });
-                    },
                   ),
-                ),
-              ),
-              Container(
-                width: 46,
-                alignment: Alignment.center,
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF17191D),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.04),
-                    width: 1,
-                  ),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black54,
-                      offset: Offset(1, 1),
-                      blurRadius: 2,
+                  Container(
+                    alignment: Alignment.center,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF17191D),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.04),
+                        width: 1,
+                      ),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black54,
+                          offset: Offset(1, 1),
+                          blurRadius: 2,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: Text(
-                  "${_gravityDirection.dx.toStringAsFixed(1)},${_gravityDirection.dy.toStringAsFixed(1)}",
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontFamily: 'monospace',
-                    fontWeight: FontWeight.bold,
-                    color: _controllerColor,
+                    child: Text(
+                      "${_gravityDirection.dx.toStringAsFixed(1)}, ${_gravityDirection.dy.toStringAsFixed(1)}",
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontFamily: 'monospace',
+                        fontWeight: FontWeight.bold,
+                        color: _controllerColor,
+                      ),
+                    ),
                   ),
+                ],
+              ),
+              SliderTheme(
+                data: SliderThemeData(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  trackHeight: 4,
+                  activeTrackColor: _controllerColor,
+                  inactiveTrackColor: const Color(0xFF16181C),
+                  thumbColor: _controllerColor,
+                  overlayColor: _controllerColor.withValues(alpha: 0.15),
+                  thumbShape:
+                      const RoundSliderThumbShape(enabledThumbRadius: 6),
+                  trackShape: const RoundedRectSliderTrackShape(),
+                ),
+                child: Slider(
+                  value: math.atan2(
+                    _gravityDirection.dy,
+                    _gravityDirection.dx,
+                  ),
+                  min: -math.pi,
+                  max: math.pi,
+                  onChanged: (v) {
+                    setState(() {
+                      _gravityDirection = Offset(math.cos(v), math.sin(v));
+                    });
+                  },
                 ),
               ),
             ],
@@ -495,6 +775,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                 0.005,
                 0.08,
                 (v) => setState(() => _touchSpeed = v),
+                fractionDigits: 3,
               ),
               _buildSlider(
                 "Touch Force",
@@ -502,26 +783,29 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                 0.05,
                 1.5,
                 (v) => setState(() => _touchForce = v),
+                fractionDigits: 2,
               ),
             ],
           ),
         ),
+        const SizedBox(width: 8),
         Expanded(
           child: Column(
             children: [
               _buildSlider(
-                "Max Touch Speed",
+                "Max Speed",
                 _maxTouchSpeed,
                 1.0,
                 5.0,
                 (v) => setState(() => _maxTouchSpeed = v),
               ),
               _buildSlider(
-                "Touch Line Dist",
+                "Line Dist",
                 _touchLineDistance,
                 0,
                 500,
                 (v) => setState(() => _touchLineDistance = v),
+                fractionDigits: 0,
               ),
             ],
           ),
@@ -590,7 +874,6 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       children: [
         Expanded(
           child: _buildColorTile(
-            isSelected: true,
             label: "Particle",
             currentColor: _particleColor,
             icon: Icons.grain_rounded,
@@ -600,7 +883,6 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
         const SizedBox(width: 8),
         Expanded(
           child: _buildColorTile(
-            isSelected: false,
             label: "Line",
             currentColor: _lineColor,
             icon: Icons.timeline_rounded,
@@ -610,7 +892,6 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
         const SizedBox(width: 8),
         Expanded(
           child: _buildColorTile(
-            isSelected: false,
             label: "Touch",
             currentColor: _touchColor,
             icon: Icons.ads_click_rounded,
@@ -627,12 +908,11 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
     required Color currentColor,
     required IconData icon,
     required ValueChanged<Color> onSelect,
-    required bool isSelected,
   }) {
     return GestureDetector(
       onTap: () => _showColorPicker(label, onSelect),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+        padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 6),
         decoration: BoxDecoration(
           color: const Color(0xFF22262C),
           borderRadius: BorderRadius.circular(12),
@@ -656,16 +936,14 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            isSelected ? const SizedBox.shrink() : const SizedBox(height: 19),
-            // Sunken well for the color swatch
             Container(
-              width: isSelected ? 26 : 100,
-              height: isSelected ? 26 : 8,
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(
-                shape: isSelected ? BoxShape.circle : BoxShape.rectangle,
-                color: const Color(0xFF181A1E),
-                boxShadow: const [
+              width: 24,
+              height: 24,
+              padding: const EdgeInsets.all(2.5),
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFF181A1E),
+                boxShadow: [
                   BoxShadow(
                     color: Colors.black54,
                     offset: Offset(1.5, 1.5),
@@ -675,7 +953,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
               ),
               child: Container(
                 decoration: BoxDecoration(
-                  shape: isSelected ? BoxShape.circle : BoxShape.rectangle,
+                  shape: BoxShape.circle,
                   color: currentColor,
                   boxShadow: [
                     BoxShadow(
@@ -688,25 +966,28 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
               ),
             ),
             const SizedBox(height: 6),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  icon,
-                  size: 13,
-                  color: Colors.white.withValues(alpha: 0.65),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white.withValues(alpha: 0.85),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    icon,
+                    size: 13,
+                    color: Colors.white.withValues(alpha: 0.65),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 4),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white.withValues(alpha: 0.85),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -862,7 +1143,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       onTap: () => onChanged(!value),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: value ? const Color(0xFF191B20) : const Color(0xFF22262C),
           borderRadius: BorderRadius.circular(12),
@@ -907,7 +1188,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
             Text(
               label,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: value ? FontWeight.bold : FontWeight.w500,
                 color: value
                     ? _controllerColor
@@ -940,76 +1221,78 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
     );
   }
 
-  /// Builds a Neumorphic slider with a recessed numeric badge
+  /// Builds a responsive Neumorphic slider with stacked label/badge and full-width track
   Widget _buildSlider(
     String label,
     double value,
     double min,
     double max,
-    ValueChanged<double> onChanged,
-  ) {
+    ValueChanged<double> onChanged, {
+    int fractionDigits = 1,
+  }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 3),
-      child: Row(
+      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
-            width: 85,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: Colors.white.withValues(alpha: 0.75),
-              ),
-            ),
-          ),
-          Expanded(
-            child: SliderTheme(
-              data: SliderThemeData(
-                padding: const EdgeInsetsGeometry.symmetric(horizontal: 10),
-                trackHeight: 4,
-                activeTrackColor: _controllerColor,
-                inactiveTrackColor: const Color(0xFF16181C),
-                thumbColor: _controllerColor,
-                overlayColor: _controllerColor.withValues(alpha: 0.15),
-                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                trackShape: const RoundedRectSliderTrackShape(),
-              ),
-              child: Slider(
-                value: value.clamp(min, max),
-                min: min,
-                max: max,
-                onChanged: onChanged,
-              ),
-            ),
-          ),
-          Container(
-            width: 50,
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-            decoration: BoxDecoration(
-              color: const Color(0xFF17191D),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.04),
-                width: 1,
-              ),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black54,
-                  offset: Offset(1, 1),
-                  blurRadius: 2,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white.withValues(alpha: 0.75),
                 ),
-              ],
-            ),
-            child: Text(
-              value.toStringAsFixed(1),
-              style: TextStyle(
-                fontSize: 12,
-                fontFamily: 'monospace',
-                fontWeight: FontWeight.bold,
-                color: _controllerColor,
               ),
+              Container(
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF17191D),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.04),
+                    width: 1,
+                  ),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black54,
+                      offset: Offset(1, 1),
+                      blurRadius: 2,
+                    ),
+                  ],
+                ),
+                child: Text(
+                  value.toStringAsFixed(fractionDigits),
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontFamily: 'monospace',
+                    fontWeight: FontWeight.bold,
+                    color: _controllerColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SliderTheme(
+            data: SliderThemeData(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              trackHeight: 4,
+              activeTrackColor: _controllerColor,
+              inactiveTrackColor: const Color(0xFF16181C),
+              thumbColor: _controllerColor,
+              overlayColor: _controllerColor.withValues(alpha: 0.15),
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+              trackShape: const RoundedRectSliderTrackShape(),
+            ),
+            child: Slider(
+              value: value.clamp(min, max),
+              min: min,
+              max: max,
+              onChanged: onChanged,
             ),
           ),
         ],
