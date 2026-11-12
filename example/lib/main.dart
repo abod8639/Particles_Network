@@ -48,7 +48,6 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   bool _drawNetwork = true;
   bool _isFill = false;
   bool _isComplex = true;
-  bool _touchActivation = true;
   double _lineWidth = 1.0;
   int _particleCount = 300;
   double _maxSpeed = 5;
@@ -58,12 +57,14 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   double _gravityStrength = 0.1;
   Offset _gravityDirection = const Offset(0, 1);
   Offset? _gravityCenter;
-  final bool _hoverEffect = false;
 
   // --- Touch Features Variables ---
-  double _touchSpeed = 0.4;
+  bool _touchActivation = true;
+  bool _hoverEffect = false;
+  double _touchSpeed = 0.42;
   double _touchForce = 0.42;
-  double _maxTouchSpeed = 5.0;
+  double _maxTouchSpeed = 5.5;
+  double _touchDamping = 0.985;
   double _touchLineDistance = 150.0;
 
   // --- Performance Configuration Variables ---
@@ -105,6 +106,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       _isFill = false;
       _isComplex = true;
       _touchActivation = true;
+      _hoverEffect = false;
       _lineWidth = 1.0;
       _particleCount = 300;
       _maxSpeed = 5.0;
@@ -113,9 +115,10 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       _gravityType = GravityType.none;
       _gravityStrength = 0.1;
       _gravityDirection = const Offset(0, 1);
-      _touchSpeed = 0.4;
+      _touchSpeed = 0.42;
       _touchForce = 0.42;
-      _maxTouchSpeed = 5.0;
+      _maxTouchSpeed = 5.5;
+      _touchDamping = 0.985;
       _touchLineDistance = 150.0;
       _adaptiveDensity = false;
       _enableAdaptivePerformance = false;
@@ -228,6 +231,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                 maxTouchSpeed: _maxTouchSpeed,
                 lineDistance: _touchLineDistance,
                 color: _touchColor,
+                damping: _touchDamping,
               ),
               gravity: ParticleGravity(
                 gravityType: _gravityType,
@@ -627,6 +631,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   Widget _buildCategoryChip(int index, String label, IconData icon) {
     final isSelected = _selectedCategoryIndex == index;
     return GestureDetector(
+      key: ValueKey('category_chip_$label'),
       onTap: () => setState(() => _selectedCategoryIndex = index),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
@@ -992,16 +997,20 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white.withValues(alpha: 0.75),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white.withValues(alpha: 0.75),
+                  ),
                 ),
               ),
+              const SizedBox(width: 4),
               Container(
                 alignment: Alignment.center,
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -1158,56 +1167,244 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
     );
   }
 
-  /// Builds the touch features configuration section
+  /// Applies a named touch preset
+  void _applyTouchPreset(String preset) {
+    setState(() {
+      switch (preset) {
+        case "Default":
+          _touchActivation = true;
+          _touchSpeed = 0.42;
+          _touchForce = 0.42;
+          _maxTouchSpeed = 5.5;
+          _touchDamping = 0.985;
+          _touchLineDistance = 150.0;
+          break;
+        case "Magnetic":
+          _touchActivation = true;
+          _touchSpeed = 0.75;
+          _touchForce = 1.20;
+          _maxTouchSpeed = 8.0;
+          _touchDamping = 0.960;
+          _touchLineDistance = 220.0;
+          break;
+        case "Gentle":
+          _touchActivation = true;
+          _touchSpeed = 0.20;
+          _touchForce = 0.15;
+          _maxTouchSpeed = 3.0;
+          _touchDamping = 0.992;
+          _touchLineDistance = 120.0;
+          break;
+        case "Vortex":
+          _touchActivation = true;
+          _touchSpeed = 0.50;
+          _touchForce = 0.70;
+          _maxTouchSpeed = 10.0;
+          _touchDamping = 0.980;
+          _touchLineDistance = 280.0;
+          break;
+      }
+    });
+  }
+
+  /// Builds the dedicated touch features configuration section
   Widget _buildTouchFeaturesSection() {
-    return Row(
+    final isDefault = (_touchForce - 0.42).abs() < 0.01 &&
+        (_touchSpeed - 0.42).abs() < 0.01 &&
+        (_maxTouchSpeed - 5.5).abs() < 0.1;
+    final isMagnetic = (_touchForce - 1.20).abs() < 0.01;
+    final isGentle = (_touchForce - 0.15).abs() < 0.01;
+    final isVortex =
+        (_touchForce - 0.70).abs() < 0.01 && (_maxTouchSpeed - 10.0).abs() < 0.1;
+
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Column(
+        // Presets row
+        Row(
+          children: [
+            Expanded(
+              child: _buildPresetButton(
+                "Default",
+                isDefault,
+                () => _applyTouchPreset("Default"),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: _buildPresetButton(
+                "Magnetic",
+                isMagnetic,
+                () => _applyTouchPreset("Magnetic"),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: _buildPresetButton(
+                "Gentle",
+                isGentle,
+                () => _applyTouchPreset("Gentle"),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: _buildPresetButton(
+                "Vortex",
+                isVortex,
+                () => _applyTouchPreset("Vortex"),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+
+        // Toggles & Touch Color Chip
+        Center(
+          child: Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            alignment: WrapAlignment.center,
             children: [
-              _buildSlider(
-                "Touch Speed",
-                _touchSpeed,
-                0.005,
-                0.08,
-                (v) => setState(() => _touchSpeed = v),
-                fractionDigits: 3,
+              _buildNeuToggleChip(
+                label: "Touch Active",
+                icon: Icons.fingerprint_rounded,
+                value: _touchActivation,
+                onChanged: (v) => setState(() => _touchActivation = v),
               ),
-              _buildSlider(
-                "Touch Force",
-                _touchForce,
-                0.05,
-                1.5,
-                (v) => setState(() => _touchForce = v),
-                fractionDigits: 2,
+              _buildNeuToggleChip(
+                label: "Mouse Hover",
+                icon: Icons.mouse_rounded,
+                value: _hoverEffect,
+                onChanged: (v) => setState(() => _hoverEffect = v),
               ),
+              _buildTouchColorChip(),
             ],
           ),
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            children: [
-              _buildSlider(
-                "Max Speed",
-                _maxTouchSpeed,
-                1.0,
-                5.0,
-                (v) => setState(() => _maxTouchSpeed = v),
+        const SizedBox(height: 10),
+
+        // 2-column layout for physics sliders
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                children: [
+                  _buildSlider(
+                    "Attract Force",
+                    _touchForce,
+                    0.05,
+                    2.0,
+                    (v) => setState(() => _touchForce = v),
+                    fractionDigits: 2,
+                  ),
+                  _buildSlider(
+                    "Decay Speed",
+                    _touchSpeed,
+                    0.005,
+                    1.0,
+                    (v) => setState(() => _touchSpeed = v),
+                    fractionDigits: 3,
+                  ),
+                ],
               ),
-              _buildSlider(
-                "Line Dist",
-                _touchLineDistance,
-                0,
-                500,
-                (v) => setState(() => _touchLineDistance = v),
-                fractionDigits: 0,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                children: [
+                  _buildSlider(
+                    "Max Speed",
+                    _maxTouchSpeed,
+                    1.0,
+                    15.0,
+                    (v) => setState(() => _maxTouchSpeed = v),
+                    fractionDigits: 1,
+                  ),
+                  _buildSlider(
+                    "Damping",
+                    _touchDamping,
+                    0.80,
+                    0.999,
+                    (v) => setState(() => _touchDamping = v),
+                    fractionDigits: 3,
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
+        ),
+
+        // Full width slider for Touch Line Distance
+        _buildSlider(
+          "Touch Line Dist",
+          _touchLineDistance,
+          0,
+          500,
+          (v) => setState(() => _touchLineDistance = v),
+          fractionDigits: 0,
         ),
       ],
+    );
+  }
+
+  /// Builds a tactile color selection chip for touch highlight color
+  Widget _buildTouchColorChip() {
+    return GestureDetector(
+      onTap: () =>
+          _showColorPicker("Touch", (c) => setState(() => _touchColor = c)),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFF22262C),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: _touchColor.withValues(alpha: 0.5),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.6),
+              offset: const Offset(3, 3),
+              blurRadius: 5,
+            ),
+            BoxShadow(
+              color: Colors.white.withValues(alpha: 0.06),
+              offset: const Offset(-2, -2),
+              blurRadius: 4,
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _touchColor,
+                boxShadow: [
+                  BoxShadow(
+                    color: _touchColor.withValues(alpha: 0.8),
+                    blurRadius: 4,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              "Color",
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Colors.white.withValues(alpha: 0.7),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1634,16 +1831,20 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white.withValues(alpha: 0.75),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white.withValues(alpha: 0.75),
+                  ),
                 ),
               ),
+              const SizedBox(width: 4),
               Container(
                 alignment: Alignment.center,
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
