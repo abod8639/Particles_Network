@@ -66,6 +66,15 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   double _maxTouchSpeed = 5.0;
   double _touchLineDistance = 150.0;
 
+  // --- Performance Configuration Variables ---
+  bool _adaptiveDensity = false;
+  bool _enableAdaptivePerformance = false;
+  bool _fastLineRendering = false;
+  bool _frameRateIndependent = false;
+  LineRenderer _lineRenderer = LineRenderer.stroke;
+  int? _maxConnectionsPerParticle;
+  int? _maxLinesPerFrame;
+
   // --- Styling Variables ---
   Color _particleColor = Colors.deepPurple;
   Color _lineColor = Colors.lightBlue;
@@ -108,6 +117,13 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       _touchForce = 0.42;
       _maxTouchSpeed = 5.0;
       _touchLineDistance = 150.0;
+      _adaptiveDensity = false;
+      _enableAdaptivePerformance = false;
+      _fastLineRendering = false;
+      _frameRateIndependent = false;
+      _lineRenderer = LineRenderer.stroke;
+      _maxConnectionsPerParticle = null;
+      _maxLinesPerFrame = null;
       _particleColor = Colors.deepPurple;
       _lineColor = Colors.lightBlue;
       _touchColor = Colors.amber;
@@ -196,12 +212,14 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
               particleColor: _particleColor,
               lineColor: _lineColor,
               hoverEffect: _hoverEffect,
-              performance: const NetworkPerformance(
-                adaptiveDensity: false,
-                enableAdaptivePerformance: false,
-                fastLineRendering: false,
-                frameRateIndependent: false,
-                lineRenderer: LineRenderer.stroke,
+              performance: NetworkPerformance(
+                adaptiveDensity: _adaptiveDensity,
+                enableAdaptivePerformance: _enableAdaptivePerformance,
+                fastLineRendering: _fastLineRendering,
+                frameRateIndependent: _frameRateIndependent,
+                lineRenderer: _lineRenderer,
+                maxConnectionsPerParticle: _maxConnectionsPerParticle,
+                maxLinesPerFrame: _maxLinesPerFrame,
               ),
               touchFeatures: TouchFeatures(
                 enabled: _touchActivation,
@@ -449,6 +467,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                 _buildCategoryChip(3, "Engine", Icons.speed_rounded),
                 _buildCategoryChip(4, "Touch", Icons.touch_app_rounded),
                 _buildCategoryChip(5, "Gravity", Icons.public_rounded),
+                _buildCategoryChip(6, "Performance", Icons.bolt_rounded),
               ],
             ),
           ),
@@ -586,6 +605,15 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                       icon: Icons.public_rounded,
                       child: _buildGravitySection(),
                     ),
+
+                  // Performance & Optimizations
+                  if (_selectedCategoryIndex == 0 ||
+                      _selectedCategoryIndex == 6)
+                    _buildNeuCard(
+                      title: "Performance & Optimizations",
+                      icon: Icons.bolt_rounded,
+                      child: _buildPerformanceSection(),
+                    ),
                 ],
               ),
             ),
@@ -654,6 +682,375 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Applies a named performance preset
+  void _applyPerformancePreset(String preset) {
+    setState(() {
+      switch (preset) {
+        case "Default":
+          _adaptiveDensity = false;
+          _enableAdaptivePerformance = false;
+          _fastLineRendering = false;
+          _frameRateIndependent = false;
+          _lineRenderer = LineRenderer.stroke;
+          _maxConnectionsPerParticle = null;
+          _maxLinesPerFrame = null;
+          break;
+        case "Adaptive":
+          _adaptiveDensity = true;
+          _enableAdaptivePerformance = true;
+          _fastLineRendering = false;
+          _frameRateIndependent = true;
+          _lineRenderer = LineRenderer.stroke;
+          _maxConnectionsPerParticle = null;
+          _maxLinesPerFrame = null;
+          break;
+        case "High FPS":
+          _adaptiveDensity = true;
+          _enableAdaptivePerformance = true;
+          _fastLineRendering = true;
+          _frameRateIndependent = true;
+          _lineRenderer = LineRenderer.vertices;
+          _maxConnectionsPerParticle = 4;
+          _maxLinesPerFrame = 15000;
+          break;
+      }
+    });
+  }
+
+  /// Builds the dedicated Performance configuration section
+  Widget _buildPerformanceSection() {
+    final isHighFpsPreset = _adaptiveDensity &&
+        _enableAdaptivePerformance &&
+        _fastLineRendering &&
+        _frameRateIndependent &&
+        _lineRenderer == LineRenderer.vertices &&
+        _maxConnectionsPerParticle == 4 &&
+        _maxLinesPerFrame == 15000;
+
+    final isAdaptivePreset = _adaptiveDensity &&
+        _enableAdaptivePerformance &&
+        !_fastLineRendering &&
+        _frameRateIndependent &&
+        _lineRenderer == LineRenderer.stroke &&
+        _maxConnectionsPerParticle == null &&
+        _maxLinesPerFrame == null;
+
+    final isDefaultPreset = !_adaptiveDensity &&
+        !_enableAdaptivePerformance &&
+        !_fastLineRendering &&
+        !_frameRateIndependent &&
+        _lineRenderer == LineRenderer.stroke &&
+        _maxConnectionsPerParticle == null &&
+        _maxLinesPerFrame == null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Presets row
+        Row(
+          children: [
+            Expanded(
+              child: _buildPresetButton(
+                "Default",
+                isDefaultPreset,
+                () => _applyPerformancePreset("Default"),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: _buildPresetButton(
+                "Adaptive",
+                isAdaptivePreset,
+                () => _applyPerformancePreset("Adaptive"),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: _buildPresetButton(
+                "High FPS",
+                isHighFpsPreset,
+                () => _applyPerformancePreset("High FPS"),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Line Renderer Selector (Stroke vs Vertices)
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                "Line Renderer",
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white.withValues(alpha: 0.75),
+                ),
+              ),
+            ),
+            _buildPillToggle(
+              label: "Stroke",
+              isSelected: _lineRenderer == LineRenderer.stroke,
+              onTap: () => setState(() => _lineRenderer = LineRenderer.stroke),
+            ),
+            const SizedBox(width: 6),
+            _buildPillToggle(
+              label: "Vertices",
+              isSelected: _lineRenderer == LineRenderer.vertices,
+              onTap: () =>
+                  setState(() => _lineRenderer = LineRenderer.vertices),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+
+        // Optimization Toggles
+        Center(
+          child: Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            alignment: WrapAlignment.center,
+            children: [
+              _buildNeuToggleChip(
+                label: "Adaptive Density",
+                icon: Icons.grain_rounded,
+                value: _adaptiveDensity,
+                onChanged: (v) => setState(() => _adaptiveDensity = v),
+              ),
+              _buildNeuToggleChip(
+                label: "Fast Line Draw",
+                icon: Icons.flash_on_rounded,
+                value: _fastLineRendering,
+                onChanged: (v) => setState(() => _fastLineRendering = v),
+              ),
+              _buildNeuToggleChip(
+                label: "Auto Quality",
+                icon: Icons.auto_graph_rounded,
+                value: _enableAdaptivePerformance,
+                onChanged: (v) =>
+                    setState(() => _enableAdaptivePerformance = v),
+              ),
+              _buildNeuToggleChip(
+                label: "Delta-Time FPS",
+                icon: Icons.av_timer_rounded,
+                value: _frameRateIndependent,
+                onChanged: (v) => setState(() => _frameRateIndependent = v),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Sliders for limits: Max Connections per Particle and Max Lines per Frame
+        _buildBudgetSlider(
+          label: "Max Conn / Particle",
+          value: (_maxConnectionsPerParticle ?? 0).toDouble(),
+          min: 0,
+          max: 12,
+          displayValue: _maxConnectionsPerParticle == null
+              ? "Off"
+              : "$_maxConnectionsPerParticle",
+          onChanged: (v) {
+            setState(() {
+              final val = v.round();
+              _maxConnectionsPerParticle = val == 0 ? null : val;
+            });
+          },
+        ),
+        _buildBudgetSlider(
+          label: "Max Lines / Frame",
+          value: (_maxLinesPerFrame ?? 0).toDouble(),
+          min: 0,
+          max: 30000,
+          displayValue: _maxLinesPerFrame == null
+              ? "Off"
+              : "${(_maxLinesPerFrame! / 1000).toStringAsFixed(1)}k",
+          onChanged: (v) {
+            setState(() {
+              final val = (v / 500).round() * 500;
+              _maxLinesPerFrame = val <= 0 ? null : val;
+            });
+          },
+        ),
+      ],
+    );
+  }
+
+  /// Builds a Neumorphic preset selection button
+  Widget _buildPresetButton(String label, bool isSelected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? _controllerColor.withValues(alpha: 0.15)
+              : const Color(0xFF22262C),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected
+                ? _controllerColor
+                : Colors.white.withValues(alpha: 0.04),
+            width: 1,
+          ),
+          boxShadow: isSelected
+              ? const [
+                  BoxShadow(
+                    color: Colors.black54,
+                    offset: Offset(1.5, 1.5),
+                    blurRadius: 3,
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    offset: const Offset(3, 3),
+                    blurRadius: 5,
+                  ),
+                  BoxShadow(
+                    color: Colors.white.withValues(alpha: 0.06),
+                    offset: const Offset(-2, -2),
+                    blurRadius: 4,
+                  ),
+                ],
+        ),
+        child: Center(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected
+                    ? _controllerColor
+                    : Colors.white.withValues(alpha: 0.7),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Builds a compact pill toggle for renderer selection
+  Widget _buildPillToggle({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? _controllerColor.withValues(alpha: 0.15)
+              : const Color(0xFF1E2126),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected
+                ? _controllerColor
+                : Colors.white.withValues(alpha: 0.05),
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            color: isSelected
+                ? _controllerColor
+                : Colors.white.withValues(alpha: 0.6),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Builds a responsive slider for budget/limit numbers with custom string display
+  Widget _buildBudgetSlider({
+    required String label,
+    required double value,
+    required double min,
+    required double max,
+    required String displayValue,
+    required ValueChanged<double> onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white.withValues(alpha: 0.75),
+                ),
+              ),
+              Container(
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF17191D),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.04),
+                    width: 1,
+                  ),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black54,
+                      offset: Offset(1, 1),
+                      blurRadius: 2,
+                    ),
+                  ],
+                ),
+                child: Text(
+                  displayValue,
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontFamily: 'monospace',
+                    fontWeight: FontWeight.bold,
+                    color: _controllerColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SliderTheme(
+            data: SliderThemeData(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              trackHeight: 4,
+              activeTrackColor: _controllerColor,
+              inactiveTrackColor: const Color(0xFF16181C),
+              thumbColor: _controllerColor,
+              overlayColor: _controllerColor.withValues(alpha: 0.15),
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+              trackShape: const RoundedRectSliderTrackShape(),
+            ),
+            child: Slider(
+              value: value.clamp(min, max),
+              min: min,
+              max: max,
+              onChanged: onChanged,
+            ),
+          ),
+        ],
       ),
     );
   }
