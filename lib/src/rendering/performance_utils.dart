@@ -137,9 +137,22 @@ class AdaptivePerformanceController {
   /// Maximum quality scale allowed.
   final double maxScale;
 
+  /// Weight factor (alpha) for exponential moving average updates (default: 0.1).
+  final double emaWeight;
+
   double _currentScale = 1.0;
   int _consecutiveDrops = 0;
   int _consecutiveSmooth = 0;
+  double? _emaFrameTimeMs;
+
+  /// Exponential moving average of recorded frame times in milliseconds.
+  double get emaFrameTimeMs => _emaFrameTimeMs ?? targetFrameTimeMs;
+
+  /// Upper threshold factor for detecting dropped frames (hysteresis upper bound).
+  double get dropThresholdMs => targetFrameTimeMs * 1.25;
+
+  /// Lower threshold factor for detecting smooth frames (hysteresis lower bound).
+  double get smoothThresholdMs => targetFrameTimeMs * 0.85;
 
   /// Creates an [AdaptivePerformanceController].
   AdaptivePerformanceController({
@@ -147,6 +160,7 @@ class AdaptivePerformanceController {
     this.targetFrameTimeMs = 16.67,
     this.minScale = 0.4,
     this.maxScale = 1.0,
+    this.emaWeight = 0.1,
   }) : monitor = monitor ?? PerformanceMonitor();
 
   /// Current quality scale factor between [minScale] and [maxScale].
@@ -156,8 +170,11 @@ class AdaptivePerformanceController {
   void recordFrameTime(Duration duration) {
     monitor.recordFrameTime(duration);
     final double ms = duration.inMicroseconds / 1000.0;
+    _emaFrameTimeMs = _emaFrameTimeMs == null
+        ? ms
+        : (emaWeight * ms + (1.0 - emaWeight) * _emaFrameTimeMs!);
 
-    if (ms > targetFrameTimeMs * 1.25) {
+    if (ms > dropThresholdMs) {
       _consecutiveDrops++;
       _consecutiveSmooth = 0;
       if (_consecutiveDrops >= 3) {
@@ -165,7 +182,7 @@ class AdaptivePerformanceController {
         _currentScale = (_currentScale - 0.1).clamp(minScale, maxScale);
         _consecutiveDrops = 0;
       }
-    } else if (ms < targetFrameTimeMs * 0.85) {
+    } else if (ms < smoothThresholdMs) {
       _consecutiveSmooth++;
       _consecutiveDrops = 0;
       if (_consecutiveSmooth >= 15) {
@@ -174,6 +191,7 @@ class AdaptivePerformanceController {
         _consecutiveSmooth = 0;
       }
     } else {
+      // Within hysteresis deadband: stabilize counters
       _consecutiveDrops = 0;
       _consecutiveSmooth = 0;
     }
@@ -196,6 +214,7 @@ class AdaptivePerformanceController {
     _currentScale = 1.0;
     _consecutiveDrops = 0;
     _consecutiveSmooth = 0;
+    _emaFrameTimeMs = null;
     monitor.clear();
   }
 }
