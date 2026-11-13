@@ -9,6 +9,105 @@ void main() {
       grid = SpatialGrid(cellSize: 50.0);
     });
 
+    group('updateCellSize', () {
+      test('updates cellSize and recomputes invCellSize for positive size', () {
+        grid.updateCellSize(100.0);
+        expect(grid.cellSize, equals(100.0));
+        expect(grid.invCellSize, closeTo(0.01, 1e-9));
+
+        grid.updateCellSize(25.0);
+        expect(grid.cellSize, equals(25.0));
+        expect(grid.invCellSize, closeTo(0.04, 1e-9));
+      });
+
+      test('sets invCellSize to 0.0 when size is zero or negative', () {
+        grid.updateCellSize(0.0);
+        expect(grid.cellSize, equals(0.0));
+        expect(grid.invCellSize, equals(0.0));
+
+        grid.updateCellSize(-10.0);
+        expect(grid.cellSize, equals(-10.0));
+        expect(grid.invCellSize, equals(0.0));
+      });
+    });
+
+    group('Fast O(N) Reset on Subsequent Builds (Same Dimensions)', () {
+      test(
+          'clears previously active cells without full reallocation and correctly places new particles',
+          () {
+        // Frame 1: particles at (10, 10) and (60, 60) in a 200x200 area
+        final p1 = createMockParticle(position: const Offset(10.0, 10.0));
+        final p2 = createMockParticle(position: const Offset(60.0, 60.0));
+        final particlesFrame1 = [p1, p2];
+        final visibleFrame1 = [0, 1];
+
+        grid.build(particlesFrame1, visibleFrame1, 200.0, 200.0);
+
+        final initialCols = grid.cols;
+        final initialRows = grid.rows;
+        final initialHeadsBuffer = grid.cellHeads;
+        expect(grid.activeCellsCount, equals(2));
+
+        // In 200x200 with cellSize 50:
+        // cols = (200 / 50).ceil() + 1 = 5
+        // (10, 10): cx = 0, cy = 0 -> cell 0
+        // (60, 60): cx = 1, cy = 1 -> cell 1 * 5 + 1 = 6
+        expect(grid.cellHeads[0], equals(0));
+        expect(grid.cellHeads[6], equals(1));
+
+        // Frame 2: particles moved to (180, 180) and (190, 190) with identical dimensions (200x200)
+        final p3 = createMockParticle(position: const Offset(180.0, 180.0));
+        final p4 = createMockParticle(position: const Offset(190.0, 190.0));
+        final particlesFrame2 = [p3, p4];
+        final visibleFrame2 = [0, 1];
+
+        // This executes the else branch (fast O(N) reset)
+        grid.build(particlesFrame2, visibleFrame2, 200.0, 200.0);
+
+        // Dimensions and buffer preserved
+        expect(grid.cols, equals(initialCols));
+        expect(grid.rows, equals(initialRows));
+        expect(identical(grid.cellHeads, initialHeadsBuffer), isTrue);
+
+        // Old cells (0 and 6) are reset to -1
+        // New particles are at (180, 180) and (190, 190): cx = 3, cy = 3 -> cell 3 * 5 + 3 = 18
+        expect(grid.cellHeads[0], equals(-1));
+        expect(grid.cellHeads[6], equals(-1));
+        expect(grid.cellHeads[18], equals(1)); // particle 1 is head, linked to 0
+        expect(grid.particleNext[1], equals(0));
+
+        // Queries at old position (10, 10) return empty
+        final output = <int>[];
+        grid.findNearbyParticlesToOutput(10.0, 10.0, 10.0, output);
+        expect(output, isEmpty);
+
+        // Queries at new position (180, 180) find both particles
+        grid.findNearbyParticlesToOutput(180.0, 180.0, 10.0, output);
+        expect(output, containsAll([0, 1]));
+      });
+
+      test('resets active cells to -1 when subsequent frame has empty visible list',
+          () {
+        final particles = [
+          createMockParticle(position: const Offset(25.0, 25.0)),
+        ];
+        grid.build(particles, [0], 100.0, 100.0);
+        expect(grid.activeCellsCount, equals(1));
+        final activeCell = grid.activeCells[0];
+        expect(grid.cellHeads[activeCell], equals(0));
+
+        // Next frame with empty visibleIndices (same dimensions)
+        grid.build(particles, [], 100.0, 100.0);
+
+        expect(grid.activeCellsCount, equals(0));
+        expect(grid.cellHeads[activeCell], equals(-1));
+
+        final output = <int>[];
+        grid.findNearbyParticlesToOutput(25.0, 25.0, 50.0, output);
+        expect(output, isEmpty);
+      });
+    });
+
     group('Boundary Clamping', () {
       test('clamps cx to cols - 1 when particle x produces cx >= cols', () {
         // width = 100, cellSize = 50 -> cols = (100 / 50).ceil() + 1 = 3 (indices 0, 1, 2)
