@@ -23,7 +23,7 @@ void main() {
     });
 
     test('highPerformance preset has optimized values', () {
-      const perf = NetworkPerformance.highPerformance();
+      final perf = NetworkPerformance.highPerformance();
 
       expect(perf.maxConnectionsPerParticle, equals(4));
       expect(perf.adaptiveDensity, isTrue);
@@ -38,7 +38,7 @@ void main() {
     });
 
     test('adaptive preset has dynamic scaling enabled', () {
-      const perf = NetworkPerformance.adaptive();
+      final perf = NetworkPerformance.adaptive();
 
       expect(perf.maxConnectionsPerParticle, isNull);
       expect(perf.adaptiveDensity, isTrue);
@@ -280,6 +280,26 @@ void main() {
         LegacyDeprecationLogger.hasWarned('ParticleNetwork(isComplex)'),
         isTrue,
       );
+    });
+
+    test('LegacyDeprecationLogger logs once and ignores duplicate warnings',
+        () {
+      LegacyDeprecationLogger.resetWarned();
+      const api = 'TestDeprecatedApi';
+      expect(LegacyDeprecationLogger.hasWarned(api), isFalse);
+
+      LegacyDeprecationLogger.warn(
+        deprecatedApi: api,
+        replacement: 'TestReplacement',
+      );
+      expect(LegacyDeprecationLogger.hasWarned(api), isTrue);
+
+      // Second call triggers duplicate check early return (L34)
+      LegacyDeprecationLogger.warn(
+        deprecatedApi: api,
+        replacement: 'TestReplacement',
+      );
+      expect(LegacyDeprecationLogger.hasWarned(api), isTrue);
     });
 
     testWidgets(
