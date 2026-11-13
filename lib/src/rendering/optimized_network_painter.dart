@@ -15,13 +15,12 @@ import 'package:particles_network/src/core/rectangle.dart';
 import 'package:particles_network/src/interaction/touch_interaction_handler.dart';
 import 'package:particles_network/src/rendering/line_vertex_batch.dart';
 import 'package:particles_network/src/rendering/network_performance.dart';
-import 'package:particles_network/src/rendering/object_pool.dart';
+// import 'package:particles_network/src/rendering/object_pool.dart';
 import 'package:particles_network/src/rendering/particle_filter.dart';
 import 'package:particles_network/src/rendering/performance_utils.dart';
 import 'package:particles_network/src/spatial/compressed_quad_tree.dart';
 import 'package:particles_network/src/spatial/compressed_quad_tree_node.dart';
 import 'package:particles_network/src/spatial/sorted_spatial_grid.dart';
-import 'package:particles_network/src/spatial/spatial_grid.dart';
 
 /// The main painter class for rendering an optimized particle network.
 class OptimizedNetworkPainter extends CustomPainter {
@@ -168,7 +167,6 @@ class OptimizedNetworkPainter extends CustomPainter {
   // Optimized sub-components
   late final TouchInteractionHandler _touchHandler;
   late final CompressedQuadTree _quadTree;
-  late final SpatialGrid _spatialGrid;
   final SortedSpatialGrid _sortedGrid = SortedSpatialGrid();
 
   // Reusable painting objects (initialized once for performance)
@@ -178,8 +176,8 @@ class OptimizedNetworkPainter extends CustomPainter {
   // Performance optimization components
   late final AccelerationTracker _accelerationTracker;
   late final AdaptiveQuadTreeManager _quadTreeManager;
-  late final PoolManager _poolManager;
-  late final IntListPool _intListPool;
+  // late final PoolManager _poolManager;
+  // late final IntListPool _intListPool;
 
   // Reusable internal buffers to avoid per-frame GC allocations
   final List<int> _visibleParticles = [];
@@ -265,10 +263,6 @@ class OptimizedNetworkPainter extends CustomPainter {
       const Rectangle(-5, -5, 1000, 1000),
     );
 
-    _spatialGrid = SpatialGrid(
-      cellSize: lineDistance > 0 ? lineDistance : 100.0,
-    );
-
     _particleRawBuckets =
         List.generate(_maxParticleSizeBuckets, (_) => Float32List(256));
 
@@ -311,8 +305,8 @@ class OptimizedNetworkPainter extends CustomPainter {
     _quadTreeManager = AdaptiveQuadTreeManager(
       rebuildInterval: this.isComplex ? 6 : 3,
     );
-    _poolManager = PoolManager.getInstance();
-    _intListPool = _poolManager.intListPool;
+    // _poolManager = PoolManager.getInstance();
+    // _intListPool = _poolManager.intListPool;
 
     _touchHandler = TouchInteractionHandler(
       particles: particles,
@@ -428,27 +422,14 @@ class OptimizedNetworkPainter extends CustomPainter {
       final double alphaDistSq = alphaDistance * alphaDistance;
       _invMaxDistSq = alphaDistSq > 0 ? 1.0 / alphaDistSq : 0.0;
 
-      // Batched and unified paths scan a cell-sorted SoA grid;
-      // small-network paths (< 30) query the linked-list grid.
-      if (fastLineRendering || visibleParticles.length >= 30) {
-        _sortedGrid.build(
-          particles,
-          visibleParticles,
-          size.width,
-          size.height,
-          distance > 0 ? distance : 100.0,
-        );
-      } else {
-        _spatialGrid.updateCellSize(
-          distance > 0 ? distance : 100.0,
-        );
-        _spatialGrid.build(
-          particles,
-          visibleParticles,
-          size.width,
-          size.height,
-        );
-      }
+      // Build the unified cell-sorted SoA spatial grid for all connection paths.
+      _sortedGrid.build(
+        particles,
+        visibleParticles,
+        size.width,
+        size.height,
+        distance > 0 ? distance : 100.0,
+      );
 
       if (showQuadTree && _quadTreeManager.shouldRebuild()) {
         _quadTree.clear();
@@ -654,100 +635,137 @@ class OptimizedNetworkPainter extends CustomPainter {
     final int? maxConn = maxConnectionsPerParticle;
     final bool capped = maxConn != null;
     final int cap = maxConn ?? 0;
-    final Int32List? counts =
-        capped ? _getClearedConnectionCounts(particles.length) : null;
 
-    final List<int> nearbyIndices = _intListPool.acquire();
+    final SortedSpatialGrid grid = _sortedGrid;
+    final int cols = grid.cols;
+    final int rows = grid.rows;
+    if (cols <= 0 || rows <= 0) {
+      _lastFrameLineCount = 0;
+      return;
+    }
+
+    final Int32List start = grid.cellStart;
+    final Float64List xs = grid.xs;
+    final Float64List ys = grid.ys;
+
+    final Int32List counts;
+    if (capped) {
+      counts = _getClearedConnectionCounts(grid.count);
+    } else {
+      counts = _connectionCounts;
+    }
+
     int lineCount = 0;
     final Color previousColor = linePaint.color;
 
     try {
-      final int count = visibleParticles.length;
-      for (int i = 0; i < count; i++) {
-        final int index = visibleParticles[i];
-        if (capped && counts![index] >= cap) continue;
+      for (int cy = 0; cy < rows; cy++) {
+        final bool hasSouth = cy < rows - 1;
+        final int rowBase = cy * cols;
+        for (int cx = 0; cx < cols; cx++) {
+          final int c = rowBase + cx;
+          final int cellEnd = start[c + 1];
+          int i = start[c];
+          if (i == cellEnd) continue;
 
-        final Particle particle = particles[index];
-        final double px = particle.x;
-        final double py = particle.y;
-
-        nearbyIndices.clear();
-        _spatialGrid.findNearbyParticlesToOutput(
-          px,
-          py,
-          dist,
-          nearbyIndices,
-        );
-
-        int candidateCount = 0;
-        final int nearbyCount = nearbyIndices.length;
-        for (int n = 0; n < nearbyCount; n++) {
-          final int neighborIndex = nearbyIndices[n];
-          if (neighborIndex <= index) continue;
-          if (capped && counts![neighborIndex] >= cap) continue;
-
-          final Particle neighbor = particles[neighborIndex];
-          final double dx = px - neighbor.x;
-          final double dy = py - neighbor.y;
-          final double distSq = dx * dx + dy * dy;
-
-          if (distSq <= maxDistSq) {
-            if (candidateCount >= _candidateIndices.length) {
-              _growCandidateBuffers();
-            }
-            _candidateIndices[candidateCount] = neighborIndex;
-            _candidateDistSq[candidateCount] = distSq;
-            candidateCount++;
-          }
-        }
-
-        if (candidateCount > 0) {
-          int drawCount = candidateCount;
-          bool isThrottled = false;
-
-          if (capped) {
-            final int allowed = cap - counts![index];
-            if (candidateCount > allowed) {
-              _selectTopKClosest(candidateCount, allowed);
-              drawCount = allowed;
-              isThrottled = true;
-            }
-          } else {
-            isThrottled = candidateCount > denseThreshold;
-            if (isThrottled) {
-              _selectTopKClosest(candidateCount, defaultMaxLines);
-              drawCount = defaultMaxLines < candidateCount
-                  ? defaultMaxLines
-                  : candidateCount;
-            }
+          final bool hasEast = cx < cols - 1;
+          final int nearEnd = hasEast ? start[c + 2] : cellEnd;
+          int southStart = 0;
+          int southEnd = 0;
+          if (hasSouth) {
+            final int south = c + cols;
+            southStart = start[cx > 0 ? south - 1 : south];
+            southEnd = start[(hasEast ? south + 1 : south) + 1];
           }
 
-          final Offset pos = Offset(px, py);
-          for (int c = 0; c < drawCount; c++) {
-            final int neighborIdx = _candidateIndices[c];
-            final Particle neighbor = particles[neighborIdx];
-            final double distance = math.sqrt(_candidateDistSq[c]);
-            int alpha =
-                (255 - (distance * invLineDistance)).toInt().clamp(0, 255);
-            if (isThrottled && drawCount > 1) {
-              final double rankFade =
-                  ((drawCount - c) / drawCount).clamp(0.0, 1.0);
-              alpha = (alpha * rankFade).toInt().clamp(0, 255);
-            }
-            linePaint.color = _lineColorLut[alpha];
-            canvas.drawLine(pos, Offset(neighbor.x, neighbor.y), linePaint);
+          for (; i < cellEnd; i++) {
+            if (capped && counts[i] >= cap) continue;
+            final double px = xs[i];
+            final double py = ys[i];
 
-            if (capped) {
-              counts![index]++;
-              counts[neighborIdx]++;
+            int candidateCount = 0;
+            for (int j = i + 1; j < nearEnd; j++) {
+              if (capped && counts[j] >= cap) continue;
+              final double dx = px - xs[j];
+              final double dy = py - ys[j];
+              final double distSq = dx * dx + dy * dy;
+              if (distSq <= maxDistSq) {
+                if (candidateCount >= _candidateIndices.length) {
+                  _growCandidateBuffers();
+                }
+                _candidateIndices[candidateCount] = j;
+                _candidateDistSq[candidateCount] = distSq;
+                candidateCount++;
+              }
+            }
+            for (int j = southStart; j < southEnd; j++) {
+              if (capped && counts[j] >= cap) continue;
+              final double dx = px - xs[j];
+              final double dy = py - ys[j];
+              final double distSq = dx * dx + dy * dy;
+              if (distSq <= maxDistSq) {
+                if (candidateCount >= _candidateIndices.length) {
+                  _growCandidateBuffers();
+                }
+                _candidateIndices[candidateCount] = j;
+                _candidateDistSq[candidateCount] = distSq;
+                candidateCount++;
+              }
+            }
+
+            if (candidateCount > 0) {
+              int drawCount = candidateCount;
+              bool isThrottled = false;
+
+              int maxAllowed = candidateCount;
+              if (capped) {
+                final int allowed = cap - counts[i];
+                if (allowed < maxAllowed) maxAllowed = allowed;
+              }
+              if (isComplex) {
+                if (candidateCount > denseThreshold &&
+                    defaultMaxLines < maxAllowed) {
+                  maxAllowed = defaultMaxLines;
+                  isThrottled = true;
+                } else if (capped && candidateCount > maxAllowed) {
+                  isThrottled = true;
+                }
+              }
+
+              if (maxAllowed <= 0) continue;
+
+              if (candidateCount > maxAllowed) {
+                _selectTopKClosest(candidateCount, maxAllowed);
+                drawCount = maxAllowed;
+                isThrottled = true;
+              }
+
+              final Offset pos = Offset(px, py);
+              for (int c = 0; c < drawCount; c++) {
+                final int j = _candidateIndices[c];
+                final double distance = math.sqrt(_candidateDistSq[c]);
+                int alpha =
+                    (255 - (distance * invLineDistance)).toInt().clamp(0, 255);
+                if (isThrottled && drawCount > 1) {
+                  final double rankFade =
+                      ((drawCount - c) / drawCount).clamp(0.0, 1.0);
+                  alpha = (alpha * rankFade).toInt().clamp(0, 255);
+                }
+                linePaint.color = _lineColorLut[alpha];
+                canvas.drawLine(pos, Offset(xs[j], ys[j]), linePaint);
+
+                if (capped) {
+                  counts[i]++;
+                  counts[j]++;
+                }
+              }
+              lineCount += drawCount;
             }
           }
-          lineCount += drawCount;
         }
       }
     } finally {
       linePaint.color = previousColor;
-      _intListPool.release(nearbyIndices);
       _lastFrameLineCount = lineCount;
     }
   }
@@ -891,138 +909,99 @@ class OptimizedNetworkPainter extends CustomPainter {
           final double x1 = xs[i];
           final double y1 = ys[i];
 
-          if (!complex) {
-            pairs:
-            {
-              for (int j = i + 1; j < nearEnd; j++) {
-                if (capped && counts[j] >= cap) continue;
-                final double dx = x1 - xs[j];
-                final double dy = y1 - ys[j];
-                final double distSq = dx * dx + dy * dy;
-                if (distSq <= maxDistSq) {
-                  _emitConnection(unified, x1, y1, xs[j], ys[j], distSq);
-                  if (capped) {
-                    counts[j]++;
-                    if (++counts[i] >= cap) break pairs;
-                  }
-                }
-              }
-              for (int j = southStart; j < southEnd; j++) {
-                if (capped && counts[j] >= cap) continue;
-                final double dx = x1 - xs[j];
-                final double dy = y1 - ys[j];
-                final double distSq = dx * dx + dy * dy;
-                if (distSq <= maxDistSq) {
-                  _emitConnection(unified, x1, y1, xs[j], ys[j], distSq);
-                  if (capped) {
-                    counts[j]++;
-                    if (++counts[i] >= cap) break pairs;
-                  }
-                }
-              }
-            }
-          } else {
-            int candidateCount = 0;
+          if (!complex && !capped) {
             for (int j = i + 1; j < nearEnd; j++) {
-              if (capped && counts[j] >= cap) continue;
               final double dx = x1 - xs[j];
               final double dy = y1 - ys[j];
               final double distSq = dx * dx + dy * dy;
               if (distSq <= maxDistSq) {
-                if (candidateCount >= _candidateIndices.length) {
-                  _growCandidateBuffers();
-                }
-                _candidateIndices[candidateCount] = j;
-                _candidateDistSq[candidateCount] = distSq;
-                candidateCount++;
+                _emitConnection(unified, x1, y1, xs[j], ys[j], distSq);
               }
             }
             for (int j = southStart; j < southEnd; j++) {
-              if (capped && counts[j] >= cap) continue;
               final double dx = x1 - xs[j];
               final double dy = y1 - ys[j];
               final double distSq = dx * dx + dy * dy;
               if (distSq <= maxDistSq) {
-                if (candidateCount >= _candidateIndices.length) {
-                  _growCandidateBuffers();
-                }
-                _candidateIndices[candidateCount] = j;
-                _candidateDistSq[candidateCount] = distSq;
-                candidateCount++;
+                _emitConnection(unified, x1, y1, xs[j], ys[j], distSq);
               }
             }
+            continue;
+          }
 
-            if (candidateCount > 0) {
-              int maxAllowed = candidateCount;
-              bool isThrottled = false;
-
-              if (capped) {
-                final int allowed = cap - counts[i];
-                if (allowed < maxAllowed) maxAllowed = allowed;
+          int candidateCount = 0;
+          for (int j = i + 1; j < nearEnd; j++) {
+            if (capped && counts[j] >= cap) continue;
+            final double dx = x1 - xs[j];
+            final double dy = y1 - ys[j];
+            final double distSq = dx * dx + dy * dy;
+            if (distSq <= maxDistSq) {
+              if (candidateCount >= _candidateIndices.length) {
+                _growCandidateBuffers();
               }
-              if (candidateCount > denseThreshold &&
-                  maxComplexLines < maxAllowed) {
-                maxAllowed = maxComplexLines;
-                isThrottled = true;
-              } else if (capped && candidateCount > maxAllowed) {
-                isThrottled = true;
+              _candidateIndices[candidateCount] = j;
+              _candidateDistSq[candidateCount] = distSq;
+              candidateCount++;
+            }
+          }
+          for (int j = southStart; j < southEnd; j++) {
+            if (capped && counts[j] >= cap) continue;
+            final double dx = x1 - xs[j];
+            final double dy = y1 - ys[j];
+            final double distSq = dx * dx + dy * dy;
+            if (distSq <= maxDistSq) {
+              if (candidateCount >= _candidateIndices.length) {
+                _growCandidateBuffers();
               }
+              _candidateIndices[candidateCount] = j;
+              _candidateDistSq[candidateCount] = distSq;
+              candidateCount++;
+            }
+          }
 
-              int drawCount = candidateCount;
-              if (candidateCount > maxAllowed) {
-                if (maxAllowed <= 0) continue;
-                _selectTopKClosest(candidateCount, maxAllowed);
-                drawCount = maxAllowed;
-              }
+          if (candidateCount == 0) continue;
 
-              for (int k = 0; k < drawCount; k++) {
-                final int j = _candidateIndices[k];
-                final double distSq = _candidateDistSq[k];
-                final double x2 = xs[j];
-                final double y2 = ys[j];
+          int maxAllowed = candidateCount;
+          bool isThrottled = false;
 
-                if (unified) {
-                  final int off = _unifiedLineCount;
-                  if (off + 4 > _unifiedLineBuffer.length) {
-                    _growUnifiedLineBuffer(off + 4);
-                  }
-                  final Float32List buf = _unifiedLineBuffer;
-                  buf[off] = x1;
-                  buf[off + 1] = y1;
-                  buf[off + 2] = x2;
-                  buf[off + 3] = y2;
-                  _unifiedLineCount = off + 4;
-                } else {
-                  int tableIdx = ((distSq * _invMaxDistSq) * 1024).toInt();
-                  if (tableIdx > 1024) tableIdx = 1024;
-                  int bucket = _distBucketTable[tableIdx];
+          if (capped) {
+            final int allowed = cap - counts[i];
+            if (allowed < maxAllowed) maxAllowed = allowed;
+          }
+          if (complex) {
+            if (candidateCount > denseThreshold &&
+                maxComplexLines < maxAllowed) {
+              maxAllowed = maxComplexLines;
+              isThrottled = true;
+            } else if (capped && candidateCount > maxAllowed) {
+              isThrottled = true;
+            }
+          }
 
-                  if (isThrottled && drawCount > 1) {
-                    final double rankFade =
-                        ((drawCount - k) / drawCount).clamp(0.0, 1.0);
-                    bucket = (bucket * rankFade).round().clamp(
-                          0,
-                          _numLineBuckets - 1,
-                        );
-                  }
+          if (maxAllowed <= 0) continue;
 
-                  final int off = _rawOffsets[bucket];
-                  Float32List raw = _rawBuckets[bucket];
-                  if (off + 4 > raw.length) {
-                    raw = _growBucket(bucket, off + 4);
-                  }
-                  raw[off] = x1;
-                  raw[off + 1] = y1;
-                  raw[off + 2] = x2;
-                  raw[off + 3] = y2;
-                  _rawOffsets[bucket] = off + 4;
-                }
+          int drawCount = candidateCount;
+          if (candidateCount > maxAllowed) {
+            _selectTopKClosest(candidateCount, maxAllowed);
+            drawCount = maxAllowed;
+          }
 
-                if (capped) {
-                  counts[i]++;
-                  counts[j]++;
-                }
-              }
+          for (int k = 0; k < drawCount; k++) {
+            final int j = _candidateIndices[k];
+            final double distSq = _candidateDistSq[k];
+            final double x2 = xs[j];
+            final double y2 = ys[j];
+
+            double rankFade = 1.0;
+            if (complex && isThrottled && drawCount > 1) {
+              rankFade = ((drawCount - k) / drawCount).clamp(0.0, 1.0);
+            }
+
+            _emitConnection(unified, x1, y1, x2, y2, distSq, rankFade);
+
+            if (capped) {
+              counts[i]++;
+              counts[j]++;
             }
           }
         }
@@ -1037,8 +1016,9 @@ class OptimizedNetworkPainter extends CustomPainter {
     double y1,
     double x2,
     double y2,
-    double distSq,
-  ) {
+    double distSq, [
+    double rankFade = 1.0,
+  ]) {
     if (unified) {
       final int off = _unifiedLineCount;
       if (off + 4 > _unifiedLineBuffer.length) {
@@ -1055,7 +1035,13 @@ class OptimizedNetworkPainter extends CustomPainter {
 
     int tableIdx = ((distSq * _invMaxDistSq) * 1024).toInt();
     if (tableIdx > 1024) tableIdx = 1024;
-    final int bucket = _distBucketTable[tableIdx];
+    int bucket = _distBucketTable[tableIdx];
+    if (rankFade < 1.0) {
+      bucket = (bucket * rankFade).round().clamp(
+            0,
+            _numLineBuckets - 1,
+          );
+    }
     final int off = _rawOffsets[bucket];
     Float32List raw = _rawBuckets[bucket];
     if (off + 4 > raw.length) {
@@ -1167,7 +1153,6 @@ class OptimizedNetworkPainter extends CustomPainter {
     if (distance == lineDistance) return;
     lineDistance = distance;
     _touchHandler.lineDistance = distance;
-    _spatialGrid.updateCellSize(distance > 0 ? distance : 100.0);
     final double maxDistSq = distance * distance;
     _invMaxDistSq = maxDistSq > 0 ? 1.0 / maxDistSq : 0.0;
     for (int i = 0; i <= 1024; i++) {
