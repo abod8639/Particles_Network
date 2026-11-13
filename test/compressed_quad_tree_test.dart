@@ -23,6 +23,50 @@ void main() {
     });
   });
 
+  group('updateBoundary', () {
+    test('updates boundary and resets root node when width or height changes',
+        () {
+      quadTree.insert(const QuadTreeParticle(1, 50, 50));
+      expect(quadTree.getAllParticleIndices(), contains(1));
+      final oldRoot = quadTree.root;
+
+      const newBoundary = Rectangle(0, 0, 200, 200);
+      quadTree.updateBoundary(newBoundary);
+
+      expect(quadTree.boundary, equals(newBoundary));
+      expect(quadTree.root, isNot(same(oldRoot)));
+      expect(quadTree.root.boundary, equals(newBoundary));
+      expect(quadTree.getAllParticleIndices(), isEmpty);
+    });
+
+    test('updates boundary and resets root node when x or y position changes',
+        () {
+      quadTree.insert(const QuadTreeParticle(1, 50, 50));
+      final oldRoot = quadTree.root;
+
+      const newBoundary = Rectangle(10, 20, 100, 100);
+      quadTree.updateBoundary(newBoundary);
+
+      expect(quadTree.boundary, equals(newBoundary));
+      expect(quadTree.root, isNot(same(oldRoot)));
+      expect(quadTree.getAllParticleIndices(), isEmpty);
+    });
+
+    test(
+        'does not reset root node when boundary dimensions and position are identical',
+        () {
+      quadTree.insert(const QuadTreeParticle(1, 50, 50));
+      final oldRoot = quadTree.root;
+
+      const identicalBoundary = Rectangle(0, 0, 100, 100);
+      quadTree.updateBoundary(identicalBoundary);
+
+      expect(quadTree.boundary, equals(boundary));
+      expect(quadTree.root, same(oldRoot));
+      expect(quadTree.getAllParticleIndices(), contains(1));
+    });
+  });
+
   group('Particle Insertion', () {
     test('should insert particle successfully', () {
       const particle = QuadTreeParticle(1, 50, 50);
