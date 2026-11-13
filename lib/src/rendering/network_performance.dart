@@ -59,7 +59,7 @@ class NetworkPerformance {
     this.enableAdaptivePerformance = false,
     this.maxLinesPerFrame,
     this.frameRateIndependent = false,
-    this.lineRenderer = LineRenderer.vertices,
+    this.lineRenderer = LineRenderer.stroke,
     this.isComplex = false,
   });
 
