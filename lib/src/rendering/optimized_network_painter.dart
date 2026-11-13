@@ -11,15 +11,11 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:particles_network/src/core/particle.dart';
-import 'package:particles_network/src/core/rectangle.dart';
 import 'package:particles_network/src/interaction/touch_interaction_handler.dart';
 import 'package:particles_network/src/rendering/line_vertex_batch.dart';
 import 'package:particles_network/src/rendering/network_performance.dart';
-// import 'package:particles_network/src/rendering/object_pool.dart';
 import 'package:particles_network/src/rendering/particle_filter.dart';
 import 'package:particles_network/src/rendering/performance_utils.dart';
-import 'package:particles_network/src/spatial/compressed_quad_tree.dart';
-import 'package:particles_network/src/spatial/compressed_quad_tree_node.dart';
 import 'package:particles_network/src/spatial/sorted_spatial_grid.dart';
 
 /// The main painter class for rendering an optimized particle network.
@@ -62,7 +58,6 @@ class OptimizedNetworkPainter extends CustomPainter {
   set isComplex(bool value) {
     if (value != performance.isComplex) {
       performance = performance.copyWith(isComplex: value);
-      _quadTreeManager.rebuildInterval = value ? 6 : 3;
     }
   }
 
@@ -161,7 +156,6 @@ class OptimizedNetworkPainter extends CustomPainter {
 
   // Optimized sub-components
   late final TouchInteractionHandler _touchHandler;
-  late final CompressedQuadTree _quadTree;
   final SortedSpatialGrid _sortedGrid = SortedSpatialGrid();
 
   // Reusable painting objects (initialized once for performance)
@@ -170,12 +164,11 @@ class OptimizedNetworkPainter extends CustomPainter {
 
   // Performance optimization components
   late final AccelerationTracker _accelerationTracker;
-  late final AdaptiveQuadTreeManager _quadTreeManager;
-  // late final PoolManager _poolManager;
-  // late final IntListPool _intListPool;
+  static const double _minSafetyLineDistance = 20.0;
 
   // Reusable internal buffers to avoid per-frame GC allocations
   final List<int> _visibleParticles = [];
+  bool _visibleParticlesFilteredThisStep = false;
   Int32List _candidateIndices = Int32List(128);
   Float64List _candidateDistSq = Float64List(128);
   static const int _maxParticleSizeBuckets = 64;
@@ -256,10 +249,6 @@ class OptimizedNetworkPainter extends CustomPainter {
       growable: false,
     );
 
-    _quadTree = CompressedQuadTree(
-      const Rectangle(-5, -5, 1000, 1000),
-    );
-
     _particleRawBuckets =
         List.generate(_maxParticleSizeBuckets, (_) => Float32List(256));
 
@@ -299,11 +288,6 @@ class OptimizedNetworkPainter extends CustomPainter {
       ..color = lineColor;
 
     _accelerationTracker = AccelerationTracker();
-    _quadTreeManager = AdaptiveQuadTreeManager(
-      rebuildInterval: this.isComplex ? 6 : 3,
-    );
-    // _poolManager = PoolManager.getInstance();
-    // _intListPool = _poolManager.intListPool;
 
     _touchHandler = TouchInteractionHandler(
       particles: particles,
@@ -335,6 +319,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     if (!_isTouchActive) return;
     // Refresh: the particle list may have shrunk since the last paint.
     ParticleFilter.getVisibleParticlesTo(particles, _visibleParticles);
+    _visibleParticlesFilteredThisStep = true;
     _touchHandler.applyTouchPhysicsScaled(
       _visibleParticles,
       _accelerationTracker,
@@ -378,18 +363,17 @@ class OptimizedNetworkPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     _accelerationTracker.resetFrame();
 
-    if (size.width > 0 && size.height > 0) {
-      if (showQuadTree) {
-        _quadTree.updateBoundary(
-          Rectangle(-5, -5, size.width + 10, size.height + 10),
-        );
-      }
+    if (!_visibleParticlesFilteredThisStep) {
+      ParticleFilter.getVisibleParticlesTo(particles, _visibleParticles);
     }
-
-    ParticleFilter.getVisibleParticlesTo(particles, _visibleParticles);
+    _visibleParticlesFilteredThisStep = false;
     final List<int> visibleParticles = _visibleParticles;
 
     if (drawNetwork) {
+      final double safetyFloor = lineDistance > 0
+          ? math.min(lineDistance, _minSafetyLineDistance)
+          : 0.0;
+
       double? effectiveDistance;
       if (adaptiveDensity &&
           size.width > 0 &&
@@ -400,7 +384,7 @@ class OptimizedNetworkPainter extends CustomPainter {
         // 5333 px^2 corresponds to ~60 particles on a 400x800 screen.
         final double factor =
             math.sqrt(areaPerParticle / 5333.0).clamp(0.25, 1.0);
-        effectiveDistance = lineDistance * factor;
+        effectiveDistance = math.max(safetyFloor, lineDistance * factor);
       }
 
       final double baseDistance = effectiveDistance ?? lineDistance;
@@ -410,22 +394,23 @@ class OptimizedNetworkPainter extends CustomPainter {
         visibleParticles.length,
       );
       if (distance != baseDistance) effectiveDistance = distance;
-      _lastFrameLineDistance = distance;
 
       // When capped, constrain pairing distance to cappedDistanceFactor to eliminate
       // jarring long lines and visual connection thrashing/flickering.
-      final double activeDist = (maxConnectionsPerParticle != null &&
+      double activeDist = (maxConnectionsPerParticle != null &&
               performance.cappedDistanceFactor < 1.0 &&
               performance.cappedDistanceFactor > 0.0)
           ? distance * performance.cappedDistanceFactor
           : distance;
 
-      // Fade lines relative to the active radius; otherwise relative to
-      // lineDistance as before.
-      final double alphaDistance =
-          maxLinesPerFrame != null || maxConnectionsPerParticle != null
-              ? activeDist
-              : lineDistance;
+      if (adaptiveDensity || maxLinesPerFrame == null) {
+        activeDist = math.max(safetyFloor, activeDist);
+      }
+      _lastFrameLineDistance = activeDist;
+
+      // Fade lines relative to the active radius so connections smoothly
+      // fade to transparent without hard popping when density adaptation or capping is enabled.
+      final double alphaDistance = activeDist;
       final double alphaDistSq = alphaDistance * alphaDistance;
       _invMaxDistSq = alphaDistSq > 0 ? 1.0 / alphaDistSq : 0.0;
 
@@ -435,24 +420,10 @@ class OptimizedNetworkPainter extends CustomPainter {
         visibleParticles,
         size.width,
         size.height,
-        distance > 0 ? distance : 100.0,
+        activeDist > 0 ? activeDist : 100.0,
       );
 
-      if (showQuadTree && _quadTreeManager.shouldRebuild()) {
-        _quadTree.clear();
-        for (int i = 0; i < visibleParticles.length; i++) {
-          final Particle particle = particles[visibleParticles[i]];
-          _quadTree.insert(
-            QuadTreeParticle(
-              visibleParticles[i],
-              particle.x,
-              particle.y,
-            ),
-          );
-        }
-      }
-
-      _drawConnections(canvas, visibleParticles, effectiveDistance);
+      _drawConnections(canvas, visibleParticles, activeDist);
       _updateBudgetCorrection(distance, baseDistance);
     } else {
       _lastFrameLineCount = 0;
@@ -466,7 +437,6 @@ class OptimizedNetworkPainter extends CustomPainter {
           _accelerationTracker,
         );
       }
-      _quadTreeManager.forceRebuild();
     }
 
     _drawParticles(canvas, visibleParticles);
@@ -621,7 +591,8 @@ class OptimizedNetworkPainter extends CustomPainter {
     final double dist = effectiveDistance ?? lineDistance;
     final double activeDist = (maxConnectionsPerParticle != null &&
             performance.cappedDistanceFactor < 1.0 &&
-            performance.cappedDistanceFactor > 0.0)
+            performance.cappedDistanceFactor > 0.0 &&
+            effectiveDistance == null)
         ? dist * performance.cappedDistanceFactor
         : dist;
 
@@ -843,6 +814,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     final double halfWidth = width * 0.5;
     final LineVertexBatch batch = _lineVertexBatch;
 
+    batch.clear();
     int lineCount = 0;
     for (int b = 0; b < _numLineBuckets; b++) {
       final int rawCount = _rawOffsets[b];
@@ -851,11 +823,11 @@ class OptimizedNetworkPainter extends CustomPainter {
       final int argb = _scaledArgb(_lineBucketPaints[b].color, alphaScale);
       // Fully transparent buckets add GPU work without visible output.
       if ((argb >>> 24) == 0) continue;
-      _vertexPaint.color = Color(argb);
-      batch
-        ..clear()
-        ..addSegments(_rawBuckets[b], rawCount, halfWidth)
-        ..draw(canvas, _vertexPaint);
+      batch.addSegments(_rawBuckets[b], rawCount, halfWidth, null, argb);
+    }
+    if (batch.lineCount > 0) {
+      _vertexPaint.color = const Color(0xFFFFFFFF);
+      batch.draw(canvas, _vertexPaint);
     }
     _lastFrameLineCount = lineCount;
   }
