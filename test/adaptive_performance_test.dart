@@ -104,5 +104,32 @@ void main() {
       }
       expect(controller.scaleFactor, closeTo(0.9, 0.001));
     });
+
+    test('EMA tracks exponential moving average of frame times', () {
+      final custom = AdaptivePerformanceController(
+        targetFrameTimeMs: 16.67,
+        emaWeight: 0.2,
+      );
+
+      // Initially equals targetFrameTimeMs
+      expect(custom.emaFrameTimeMs, closeTo(16.67, 0.01));
+
+      // First sample initializes EMA directly
+      custom.recordFrameTime(const Duration(milliseconds: 20));
+      expect(custom.emaFrameTimeMs, closeTo(20.0, 0.001));
+
+      // Second sample applies EMA smoothing: 0.2 * 30 + 0.8 * 20 = 6 + 16 = 22
+      custom.recordFrameTime(const Duration(milliseconds: 30));
+      expect(custom.emaFrameTimeMs, closeTo(22.0, 0.001));
+
+      // Reset clears EMA back to default targetFrameTimeMs
+      custom.reset();
+      expect(custom.emaFrameTimeMs, closeTo(16.67, 0.01));
+    });
+
+    test('exposes hysteresis thresholds for dropped and smooth frames', () {
+      expect(controller.dropThresholdMs, closeTo(16.67 * 1.25, 0.01));
+      expect(controller.smoothThresholdMs, closeTo(16.67 * 0.85, 0.01));
+    });
   });
 }
