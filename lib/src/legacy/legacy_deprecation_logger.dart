@@ -14,10 +14,15 @@ class LegacyDeprecationLogger {
 
   static final Set<String> _warnedApis = <String>{};
 
+  /// Allows overriding debug mode check for testing.
+  @visibleForTesting
+  static bool isDebugMode = kDebugMode;
+
   /// Resets the internal cache of warned APIs (useful for unit tests).
   @visibleForTesting
   static void resetWarned() {
     _warnedApis.clear();
+    isDebugMode = kDebugMode;
   }
 
   /// Returns whether a given [deprecatedApi] has already logged a warning.
@@ -30,7 +35,7 @@ class LegacyDeprecationLogger {
     required String deprecatedApi,
     required String replacement,
   }) {
-    if (!kDebugMode) return;
+    if (!isDebugMode) return;
     if (_warnedApis.contains(deprecatedApi)) return;
     _warnedApis.add(deprecatedApi);
 
