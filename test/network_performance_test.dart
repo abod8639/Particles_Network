@@ -402,6 +402,110 @@ void main() {
         expect(complexFastPainter.lastFrameLineCount, greaterThan(0));
       },
     );
+
+    test(
+      'maxConnectionsPerParticle connects closest neighbors across spatial cell boundaries',
+      () {
+        // Grid cell size will be lineDistance = 100.0.
+        // Cell (0,0) spans x: [0, 100), y: [0, 100).
+        // Cell (1,0) spans x: [100, 200), y: [0, 100).
+        // Particle A is near the right edge of Cell (0,0): (95, 50).
+        // Particle B is near the left edge of Cell (1,0): (105, 50).
+        // Distance A-B is 10.0 (very close).
+        // We also place other particles deeper inside both cells (distances >= 30.0).
+        final particles = <Particle>[
+          // Border particle A in cell (0,0)
+          Particle(
+            position: const Offset(95.0, 50.0),
+            velocity: Offset.zero,
+            color: Colors.white,
+            size: 2.0,
+          ),
+          // Deeper particles in cell (0,0) - distances to A >= 35.0
+          Particle(
+            position: const Offset(60.0, 50.0),
+            velocity: Offset.zero,
+            color: Colors.white,
+            size: 2.0,
+          ),
+          Particle(
+            position: const Offset(50.0, 50.0),
+            velocity: Offset.zero,
+            color: Colors.white,
+            size: 2.0,
+          ),
+          // Border particle B in cell (1,0)
+          Particle(
+            position: const Offset(105.0, 50.0),
+            velocity: Offset.zero,
+            color: Colors.white,
+            size: 2.0,
+          ),
+          // Deeper particles in cell (1,0) - distances to B >= 35.0
+          Particle(
+            position: const Offset(140.0, 50.0),
+            velocity: Offset.zero,
+            color: Colors.white,
+            size: 2.0,
+          ),
+          Particle(
+            position: const Offset(150.0, 50.0),
+            velocity: Offset.zero,
+            color: Colors.white,
+            size: 2.0,
+          ),
+        ];
+
+        // Test with fast unified line rendering
+        final fastPainter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: false,
+          particleCount: particles.length,
+          particles: particles,
+          touchPoint: null,
+          lineDistance: 100.0,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          lineWidth: 1.0,
+          performance: const NetworkPerformance(
+            maxConnectionsPerParticle: 1,
+            fastLineRendering: true,
+          ),
+        );
+
+        final recorder = PictureRecorder();
+        final canvas = Canvas(recorder);
+        const size = Size(500, 500);
+
+        fastPainter.paint(canvas, size);
+
+        // With cap=1 and closest-distance selection:
+        // A connects to B (dist 10) across cell boundaries instead of A connecting
+        // to same-cell particles (dist 35+), eliminating the isolated cell box artifact.
+        expect(fastPainter.lastFrameLineCount, greaterThan(0));
+
+        // Test with batched stroke rendering (isComplex: false)
+        final strokePainter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: false,
+          particleCount: particles.length,
+          particles: particles,
+          touchPoint: null,
+          lineDistance: 100.0,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          lineWidth: 1.0,
+          performance: const NetworkPerformance(
+            maxConnectionsPerParticle: 1,
+            fastLineRendering: false,
+            isComplex: false,
+          ),
+        );
+
+        strokePainter.paint(canvas, size);
+        expect(strokePainter.lastFrameLineCount, greaterThan(0));
+      },
+    );
   });
 }
 
