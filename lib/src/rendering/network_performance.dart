@@ -47,8 +47,8 @@ class NetworkPerformance {
   /// Whether to use complex (high-density optimized) painting logic (default: false).
   ///
   /// Optimized mode for high particle counts (300+ / 500+ particles) that
-  /// disables anti-aliasing on line and particle paints, tunes the spatial grid
-  /// rebuild interval, and optimizes batched connections.
+  /// throttles dense clusters, tunes the spatial grid rebuild interval, and
+  /// optimizes batched connections without degrading anti-aliasing.
   final bool isComplex;
 
   /// Distance ratio threshold for capped connections (default: 0.75).
@@ -57,6 +57,13 @@ class NetworkPerformance {
   /// to `lineDistance * cappedDistanceFactor` to eliminate jarring long lines
   /// to distant particles and prevent connection thrashing/flickering.
   final double cappedDistanceFactor;
+
+  /// Whether to enable anti-aliasing on particle and line paints (default: true).
+  ///
+  /// Keeping anti-aliasing enabled produces smooth, circular particles and clean,
+  /// non-shimmering lines. Disabling anti-aliasing can be used for retro pixel art
+  /// aesthetics or extreme low-end hardware.
+  final bool antiAlias;
 
   /// Creates a [NetworkPerformance] configuration.
   const NetworkPerformance({
@@ -69,6 +76,7 @@ class NetworkPerformance {
     this.lineRenderer = LineRenderer.stroke,
     this.isComplex = false,
     this.cappedDistanceFactor = 0.75,
+    this.antiAlias = true,
   });
 
   /// High-performance preset tuned for high particle counts and smooth frame rates.
@@ -82,6 +90,7 @@ class NetworkPerformance {
     this.lineRenderer = LineRenderer.vertices,
     this.isComplex = true,
     this.cappedDistanceFactor = 0.75,
+    this.antiAlias = true,
   });
 
   /// Adaptive preset focusing on dynamic frame rate scaling and independent motion.
@@ -95,6 +104,7 @@ class NetworkPerformance {
     this.lineRenderer = LineRenderer.stroke,
     this.isComplex = false,
     this.cappedDistanceFactor = 0.75,
+    this.antiAlias = true,
   });
 
   /// Creates a copy of this [NetworkPerformance] with updated parameters.
@@ -110,6 +120,7 @@ class NetworkPerformance {
     LineRenderer? lineRenderer,
     bool? isComplex,
     double? cappedDistanceFactor,
+    bool? antiAlias,
   }) {
     return NetworkPerformance(
       maxConnectionsPerParticle: clearMaxConnectionsPerParticle
@@ -126,6 +137,7 @@ class NetworkPerformance {
       lineRenderer: lineRenderer ?? this.lineRenderer,
       isComplex: isComplex ?? this.isComplex,
       cappedDistanceFactor: cappedDistanceFactor ?? this.cappedDistanceFactor,
+      antiAlias: antiAlias ?? this.antiAlias,
     );
   }
 
@@ -142,7 +154,8 @@ class NetworkPerformance {
           frameRateIndependent == other.frameRateIndependent &&
           lineRenderer == other.lineRenderer &&
           isComplex == other.isComplex &&
-          cappedDistanceFactor == other.cappedDistanceFactor;
+          cappedDistanceFactor == other.cappedDistanceFactor &&
+          antiAlias == other.antiAlias;
 
   @override
   int get hashCode => Object.hash(
@@ -155,6 +168,7 @@ class NetworkPerformance {
         lineRenderer,
         isComplex,
         cappedDistanceFactor,
+        antiAlias,
       );
 
   @override
@@ -168,7 +182,8 @@ class NetworkPerformance {
         'frameRateIndependent: $frameRateIndependent, '
         'lineRenderer: $lineRenderer, '
         'isComplex: $isComplex, '
-        'cappedDistanceFactor: $cappedDistanceFactor)';
+        'cappedDistanceFactor: $cappedDistanceFactor, '
+        'antiAlias: $antiAlias)';
   }
 }
 

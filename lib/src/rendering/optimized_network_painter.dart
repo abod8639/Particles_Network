@@ -62,11 +62,6 @@ class OptimizedNetworkPainter extends CustomPainter {
   set isComplex(bool value) {
     if (value != performance.isComplex) {
       performance = performance.copyWith(isComplex: value);
-      particlePaint.isAntiAlias = !value;
-      linePaint.isAntiAlias = !value;
-      for (int b = 0; b < _numLineBuckets; b++) {
-        _lineBucketPaints[b].isAntiAlias = !value;
-      }
       _quadTreeManager.rebuildInterval = value ? 6 : 3;
     }
   }
@@ -241,6 +236,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     this.simulateTouchInPaint = true,
     LineRenderer? lineRenderer,
     this.devicePixelRatio = 1.0,
+    bool? antiAlias,
     super.repaint,
   })  : touchColor = touchColor ?? touchFeatures.color,
         touchActivation = touchActivation ?? touchFeatures.enabled,
@@ -251,6 +247,7 @@ class OptimizedNetworkPainter extends CustomPainter {
           fastLineRendering: fastLineRendering,
           maxLinesPerFrame: maxLinesPerFrame,
           lineRenderer: lineRenderer,
+          antiAlias: antiAlias,
         ) {
     final int baseAlpha = (lineColor.a * 255.0).round().clamp(0, 255);
     _lineColorLut = List<Color>.generate(
@@ -277,7 +274,7 @@ class OptimizedNetworkPainter extends CustomPainter {
         ..strokeWidth = lineWidth
         ..strokeCap = StrokeCap.round
         ..style = PaintingStyle.stroke
-        ..isAntiAlias = !this.isComplex;
+        ..isAntiAlias = this.performance.antiAlias;
     });
 
     final double maxDistSq = lineDistance * lineDistance;
@@ -292,13 +289,13 @@ class OptimizedNetworkPainter extends CustomPainter {
 
     particlePaint = Paint()
       ..style = fill ? PaintingStyle.fill : PaintingStyle.stroke
-      ..isAntiAlias = !this.isComplex
+      ..isAntiAlias = this.performance.antiAlias
       ..color = particleColor;
 
     linePaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = lineWidth
-      ..isAntiAlias = !this.isComplex
+      ..isAntiAlias = this.performance.antiAlias
       ..color = lineColor;
 
     _accelerationTracker = AccelerationTracker();
@@ -526,7 +523,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     _batchedPointPaint
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
-      ..isAntiAlias = !isComplex
+      ..isAntiAlias = performance.antiAlias
       ..color = particleColor;
 
     for (int b = 1; b < _maxParticleSizeBuckets; b++) {
@@ -1122,6 +1119,15 @@ class OptimizedNetworkPainter extends CustomPainter {
     }
   }
 
+  void _updateAntiAlias(bool value) {
+    particlePaint.isAntiAlias = value;
+    linePaint.isAntiAlias = value;
+    _batchedPointPaint.isAntiAlias = value;
+    for (int b = 0; b < _numLineBuckets; b++) {
+      _lineBucketPaints[b].isAntiAlias = value;
+    }
+  }
+
   /// Updates all performance settings at once using [NetworkPerformance].
   void updatePerformance(NetworkPerformance newPerformance) {
     if (newPerformance == performance) return;
@@ -1130,6 +1136,9 @@ class OptimizedNetworkPainter extends CustomPainter {
     }
     if (newPerformance.isComplex != performance.isComplex) {
       isComplex = newPerformance.isComplex;
+    }
+    if (newPerformance.antiAlias != performance.antiAlias) {
+      _updateAntiAlias(newPerformance.antiAlias);
     }
     performance = newPerformance;
   }
@@ -1144,9 +1153,14 @@ class OptimizedNetworkPainter extends CustomPainter {
     bool clearMaxLinesPerFrame = false,
     LineRenderer? lineRenderer,
     bool? isComplex,
+    bool? antiAlias,
   }) {
     if (lineRenderer != null) this.lineRenderer = lineRenderer;
     if (isComplex != null) this.isComplex = isComplex;
+    if (antiAlias != null && antiAlias != performance.antiAlias) {
+      performance = performance.copyWith(antiAlias: antiAlias);
+      _updateAntiAlias(antiAlias);
+    }
     if (clearMaxLinesPerFrame) {
       this.maxLinesPerFrame = null;
       _budgetCorrection = 1.0;
@@ -1196,6 +1210,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     bool? fill,
     bool? isComplex,
     bool? touchActivation,
+    bool? antiAlias,
   }) {
     if (drawNetwork != null) this.drawNetwork = drawNetwork;
     if (touchActivation != null) this.touchActivation = touchActivation;
@@ -1205,6 +1220,10 @@ class OptimizedNetworkPainter extends CustomPainter {
     }
     if (isComplex != null && isComplex != this.isComplex) {
       this.isComplex = isComplex;
+    }
+    if (antiAlias != null && antiAlias != performance.antiAlias) {
+      performance = performance.copyWith(antiAlias: antiAlias);
+      _updateAntiAlias(antiAlias);
     }
   }
 

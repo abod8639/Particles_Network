@@ -620,9 +620,15 @@ void main() {
       expect(defaultPainter.fill, isFalse);
       expect(defaultPainter.particlePaint.style, equals(PaintingStyle.stroke));
       expect(defaultPainter.isComplex, isTrue);
+      // isComplex preserves anti-aliasing to avoid visual distortion
+      expect(defaultPainter.particlePaint.isAntiAlias, isTrue);
+      expect(defaultPainter.linePaint.isAntiAlias, isTrue);
+      expect(defaultPainter.touchActivation, isFalse);
+
+      // Explicitly disabling antiAlias flag sets it to false
+      defaultPainter.updateRenderFlags(antiAlias: false);
       expect(defaultPainter.particlePaint.isAntiAlias, isFalse);
       expect(defaultPainter.linePaint.isAntiAlias, isFalse);
-      expect(defaultPainter.touchActivation, isFalse);
     });
 
     testWidgets('updateTouchFeatures propagates to touchFeatures', (

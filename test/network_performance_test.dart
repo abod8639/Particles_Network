@@ -19,6 +19,7 @@ void main() {
       expect(perf.lineRenderer, equals(LineRenderer.stroke));
       expect(perf.isComplex, isFalse);
       expect(perf.cappedDistanceFactor, equals(0.75));
+      expect(perf.antiAlias, isTrue);
     });
 
     test('highPerformance preset has optimized values', () {
@@ -33,6 +34,7 @@ void main() {
       expect(perf.lineRenderer, equals(LineRenderer.vertices));
       expect(perf.isComplex, isTrue);
       expect(perf.cappedDistanceFactor, equals(0.75));
+      expect(perf.antiAlias, isTrue);
     });
 
     test('adaptive preset has dynamic scaling enabled', () {
@@ -47,6 +49,7 @@ void main() {
       expect(perf.lineRenderer, equals(LineRenderer.stroke));
       expect(perf.isComplex, isFalse);
       expect(perf.cappedDistanceFactor, equals(0.75));
+      expect(perf.antiAlias, isTrue);
     });
 
     test('copyWith updates specified fields and preserves others', () {
@@ -139,6 +142,7 @@ void main() {
       expect(str, contains('lineRenderer: LineRenderer.stroke'));
       expect(str, contains('isComplex: true'));
       expect(str, contains('cappedDistanceFactor: 0.75'));
+      expect(str, contains('antiAlias: true'));
     });
   });
 
