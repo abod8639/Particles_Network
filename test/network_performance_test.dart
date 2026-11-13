@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:particles_network/particles_network.dart';
@@ -271,6 +273,135 @@ void main() {
         isTrue,
       );
     });
+
+    testWidgets(
+      'isComplex reduces lines at dense cluster while keeping sparse connections',
+      (WidgetTester tester) async {
+        final denseParticles = List.generate(
+          30,
+          (i) => Particle(
+            position: Offset(100.0 + (i % 5) * 2.0, 100.0 + (i ~/ 5) * 2.0),
+            velocity: Offset.zero,
+            color: Colors.white,
+            size: 2.0,
+          ),
+        );
+        final sparseParticles = [
+          Particle(
+            position: const Offset(250.0, 250.0),
+            velocity: Offset.zero,
+            color: Colors.white,
+            size: 2.0,
+          ),
+          Particle(
+            position: const Offset(260.0, 250.0),
+            velocity: Offset.zero,
+            color: Colors.white,
+            size: 2.0,
+          ),
+        ];
+        final allParticles = <Particle>[...denseParticles, ...sparseParticles];
+
+        final normalPainter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: false,
+          particleCount: allParticles.length,
+          particles: allParticles,
+          touchPoint: null,
+          lineDistance: 50.0,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          lineWidth: 1.0,
+          performance: const NetworkPerformance(isComplex: false),
+        );
+
+        final complexPainter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: false,
+          particleCount: allParticles.length,
+          particles: allParticles,
+          touchPoint: null,
+          lineDistance: 50.0,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          lineWidth: 1.0,
+          performance: const NetworkPerformance(isComplex: true),
+        );
+
+        final recorder = PictureRecorder();
+        final canvas = Canvas(recorder);
+        const size = Size(500, 500);
+
+        normalPainter.paint(canvas, size);
+        complexPainter.paint(canvas, size);
+
+        expect(
+          complexPainter.lastFrameLineCount,
+          lessThan(normalPainter.lastFrameLineCount),
+        );
+        expect(complexPainter.lastFrameLineCount, greaterThan(0));
+      },
+    );
+
+    testWidgets(
+      'isComplex throttles dense clusters when fastLineRendering is true',
+      (WidgetTester tester) async {
+        final denseParticles = List.generate(
+          35,
+          (i) => Particle(
+            position: Offset(100.0 + (i % 6) * 2.0, 100.0 + (i ~/ 6) * 2.0),
+            velocity: Offset.zero,
+            color: Colors.white,
+            size: 2.0,
+          ),
+        );
+
+        final normalFastPainter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: false,
+          particleCount: denseParticles.length,
+          particles: denseParticles,
+          touchPoint: null,
+          lineDistance: 50.0,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          lineWidth: 1.0,
+          performance: const NetworkPerformance(
+            fastLineRendering: true,
+            isComplex: false,
+          ),
+        );
+
+        final complexFastPainter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: false,
+          particleCount: denseParticles.length,
+          particles: denseParticles,
+          touchPoint: null,
+          lineDistance: 50.0,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          lineWidth: 1.0,
+          performance: const NetworkPerformance(
+            fastLineRendering: true,
+            isComplex: true,
+          ),
+        );
+
+        final recorder = PictureRecorder();
+        final canvas = Canvas(recorder);
+        const size = Size(500, 500);
+
+        normalFastPainter.paint(canvas, size);
+        complexFastPainter.paint(canvas, size);
+
+        expect(
+          complexFastPainter.lastFrameLineCount,
+          lessThan(normalFastPainter.lastFrameLineCount),
+        );
+        expect(complexFastPainter.lastFrameLineCount, greaterThan(0));
+      },
+    );
   });
 }
 
