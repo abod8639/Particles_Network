@@ -127,28 +127,42 @@ void main() {
     });
 
     test('Named constructors create proper instances', () {
-      const none = ParticleGravity.none();
+      final none = ParticleGravity.none();
       expect(none.type, GravityType.none);
       expect(none.strength, 0.0);
+      expect(none.direction, const Offset(0, 1));
+      expect(none.center, isNull);
 
-      const global = ParticleGravity.global(
+      final globalDefault = ParticleGravity.global();
+      expect(globalDefault.type, GravityType.global);
+      expect(globalDefault.strength, 0.1);
+      expect(globalDefault.direction, const Offset(0, 1));
+      expect(globalDefault.center, isNull);
+
+      final global = ParticleGravity.global(
         strength: 0.5,
-        direction: Offset(0, -1),
+        direction: const Offset(0, -1),
       );
       expect(global.type, GravityType.global);
       expect(global.strength, 0.5);
       expect(global.direction, const Offset(0, -1));
 
-      const point = ParticleGravity.point(
+      final pointDefault = ParticleGravity.point();
+      expect(pointDefault.type, GravityType.point);
+      expect(pointDefault.strength, 0.1);
+      expect(pointDefault.direction, const Offset(0, 1));
+      expect(pointDefault.center, isNull);
+
+      final point = ParticleGravity.point(
         strength: 0.7,
-        center: Offset(50, 50),
+        center: const Offset(50, 50),
       );
       expect(point.type, GravityType.point);
       expect(point.strength, 0.7);
       expect(point.center, const Offset(50, 50));
     });
 
-    test('copyWith creates modified copy', () {
+    test('copyWith creates modified copy and preserves existing center', () {
       const initial = ParticleGravity(type: GravityType.none, strength: 0.2);
       final updated = initial.copyWith(
         type: GravityType.global,
@@ -159,6 +173,51 @@ void main() {
       expect(updated.strength, 0.9);
       expect(updated.direction, const Offset(0, 1));
       expect(updated.center, const Offset(10, 10));
+
+      // Preserves existing center when center is not provided (L100-L101)
+      final preservedCenter = updated.copyWith(direction: const Offset(1, 0));
+      expect(preservedCenter.strength, 0.9);
+      expect(preservedCenter.center, const Offset(10, 10));
+      expect(preservedCenter.direction, const Offset(1, 0));
+    });
+
+    test('Equality differentiates by strength, direction, and center (L110-L112)', () {
+      const base = ParticleGravity(
+        type: GravityType.point,
+        strength: 0.5,
+        direction: Offset(0, 1),
+        center: Offset(10, 10),
+      );
+      const same = ParticleGravity(
+        type: GravityType.point,
+        strength: 0.5,
+        direction: Offset(0, 1),
+        center: Offset(10, 10),
+      );
+      const diffStrength = ParticleGravity(
+        type: GravityType.point,
+        strength: 0.8,
+        direction: Offset(0, 1),
+        center: Offset(10, 10),
+      );
+      const diffDirection = ParticleGravity(
+        type: GravityType.point,
+        strength: 0.5,
+        direction: Offset(1, 0),
+        center: Offset(10, 10),
+      );
+      const diffCenter = ParticleGravity(
+        type: GravityType.point,
+        strength: 0.5,
+        direction: Offset(0, 1),
+        center: Offset(20, 20),
+      );
+
+      expect(base, equals(same));
+      expect(base.hashCode, equals(same.hashCode));
+      expect(base == diffStrength, isFalse);
+      expect(base == diffDirection, isFalse);
+      expect(base == diffCenter, isFalse);
     });
 
     test('Equality, hashCode, and toString work as expected', () {
