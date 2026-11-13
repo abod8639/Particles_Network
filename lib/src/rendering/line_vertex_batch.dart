@@ -56,15 +56,25 @@ class LineVertexBatch {
   }();
 
   Float32List _positions = Float32List(_floatsPerLine * 512);
+  Int32List _colors = Int32List(4 * 512);
+  bool _hasColors = false;
   int _lineCount = 0;
 
   /// Number of quads currently in the batch.
   int get lineCount => _lineCount;
 
+  /// Whether any segments with colors have been added to this batch.
+  bool get hasColors => _hasColors;
+
   /// Raw vertex positions (x, y pairs), 4 vertices per quad:
   /// `p1 + n, p1 - n, p2 + n, p2 - n` where `n` is the half-width normal.
   Float32List get positions =>
       Float32List.sublistView(_positions, 0, _lineCount * _floatsPerLine);
+
+  /// Raw vertex colors (32-bit ARGB ints), 4 vertices per quad.
+  Int32List get colors => _hasColors
+      ? Int32List.sublistView(_colors, 0, _lineCount * 4)
+      : Int32List(0);
 
   /// Triangle indices for the first [quads] quads of a chunk.
   static Uint16List indicesFor(int quads) =>
@@ -73,27 +83,61 @@ class LineVertexBatch {
   /// Removes all quads, keeping the allocated buffers.
   void clear() {
     _lineCount = 0;
+    _hasColors = false;
   }
 
   void _ensureCapacity(int lines) {
-    if (lines * _floatsPerLine <= _positions.length) return;
-    final int newLines =
-        math.max(lines, (_positions.length ~/ _floatsPerLine) * 2);
-    final Float32List positions = Float32List(newLines * _floatsPerLine);
-    positions.setRange(0, _lineCount * _floatsPerLine, _positions);
-    _positions = positions;
+    if (lines * _floatsPerLine > _positions.length) {
+      final int newLines =
+          math.max(lines, (_positions.length ~/ _floatsPerLine) * 2);
+      final Float32List positions = Float32List(newLines * _floatsPerLine);
+      positions.setRange(0, _lineCount * _floatsPerLine, _positions);
+      _positions = positions;
+    }
+    if (lines * 4 > _colors.length) {
+      final int newLines = math.max(lines, (_colors.length ~/ 4) * 2);
+      final Int32List colors = Int32List(newLines * 4);
+      colors.setRange(0, _lineCount * 4, _colors);
+      _colors = colors;
+    }
   }
 
   /// Appends the segments stored in [segments] as `x1, y1, x2, y2` groups
   /// (the first [floatCount] values) with a total thickness of
   /// `2 * halfWidth`. Zero-length segments are skipped.
-  void addSegments(Float32List segments, int floatCount, double halfWidth) {
+  ///
+  /// Optional [colors] supplies either per-segment colors (1 int per segment)
+  /// or per-vertex colors (4 ints per segment quad).
+  /// Optional [color] supplies a single packed ARGB color for all segments in this call.
+  void addSegments(
+    Float32List segments,
+    int floatCount,
+    double halfWidth, [
+    Int32List? colors,
+    int? color,
+  ]) {
     final int segmentCount = floatCount ~/ 4;
     if (segmentCount == 0) return;
     _ensureCapacity(_lineCount + segmentCount);
 
     final Float32List pos = _positions;
+    final Int32List col = _colors;
+    final bool withColors = colors != null || color != null;
+    if (withColors) {
+      if (!_hasColors && _lineCount > 0) {
+        _colors.fillRange(0, _lineCount * 4, 0xFFFFFFFF.toSigned(32));
+      }
+      _hasColors = true;
+    }
+
+    final bool perVertex = colors != null && colors.length >= segmentCount * 4;
+    final bool perSegment = colors != null && !perVertex;
+    final int singleColor =
+        color ?? (colors != null && colors.isNotEmpty ? colors[0] : 0);
+    final int defaultWhite = 0xFFFFFFFF.toSigned(32);
+
     int p = _lineCount * _floatsPerLine;
+    int cp = _lineCount * 4;
     int added = 0;
 
     for (int i = 0; i < floatCount; i += 4) {
@@ -120,14 +164,48 @@ class LineVertexBatch {
       pos[p + 6] = x2 - nx;
       pos[p + 7] = y2 - ny;
       p += _floatsPerLine;
+
+      if (_hasColors) {
+        if (withColors) {
+          if (perVertex) {
+            final int srcIdx = (i ~/ 4) * 4;
+            col[cp] = colors[srcIdx];
+            col[cp + 1] = colors[srcIdx + 1];
+            col[cp + 2] = colors[srcIdx + 2];
+            col[cp + 3] = colors[srcIdx + 3];
+          } else if (perSegment) {
+            final int segIdx = i ~/ 4;
+            final int segColor =
+                segIdx < colors.length ? colors[segIdx] : singleColor;
+            col[cp] = segColor;
+            col[cp + 1] = segColor;
+            col[cp + 2] = segColor;
+            col[cp + 3] = segColor;
+          } else {
+            col[cp] = singleColor;
+            col[cp + 1] = singleColor;
+            col[cp + 2] = singleColor;
+            col[cp + 3] = singleColor;
+          }
+        } else {
+          col[cp] = defaultWhite;
+          col[cp + 1] = defaultWhite;
+          col[cp + 2] = defaultWhite;
+          col[cp + 3] = defaultWhite;
+        }
+        cp += 4;
+      }
+
       added++;
     }
     _lineCount += added;
   }
 
-  /// Draws all accumulated quads filled with [paint]'s colour, using as few
-  /// `drawVertices` calls as the 16-bit index limit allows.
-  void draw(Canvas canvas, Paint paint) {
+  /// Draws all accumulated quads filled with [paint]'s colour (or per-vertex
+  /// colors when available), using as few `drawVertices` calls as the 16-bit
+  /// index limit allows.
+  void draw(Canvas canvas, Paint paint, [Int32List? colors]) {
+    final Int32List? effectiveColors = colors ?? (_hasColors ? _colors : null);
     int first = 0;
     while (first < _lineCount) {
       final int remaining = _lineCount - first;
@@ -140,9 +218,20 @@ class LineVertexBatch {
           first * _floatsPerLine,
           (first + quads) * _floatsPerLine,
         ),
+        colors: effectiveColors != null
+            ? Int32List.sublistView(
+                effectiveColors,
+                first * 4,
+                (first + quads) * 4,
+              )
+            : null,
         indices: indicesFor(quads),
       );
-      canvas.drawVertices(vertices, BlendMode.srcOver, paint);
+      canvas.drawVertices(
+        vertices,
+        effectiveColors != null ? BlendMode.dst : BlendMode.srcOver,
+        paint,
+      );
       vertices.dispose();
       first += quads;
     }
