@@ -100,6 +100,42 @@ class ParticleNetwork extends StatefulWidget {
   /// Whether to draw connecting lines between particles (default: true).
   final bool drawNetwork;
 
+  /// Explicitly provided legacy drawnetwork flag, if any.
+  final bool? _drawnetwork;
+
+  /// Effective flag used for drawing connection lines.
+  bool get effectiveDrawNetwork => _drawnetwork ?? drawNetwork;
+
+  /// Checks whether the deprecated [drawnetwork] parameter was explicitly configured.
+  bool get usedLegacyDrawnetwork => _drawnetwork != null;
+
+  /// Explicitly provided legacy linewidth parameter, if any.
+  final double? _linewidth;
+
+  /// Effective connection line width.
+  double get effectiveLineWidth => _linewidth ?? lineWidth;
+
+  /// Checks whether the deprecated [linewidth] parameter was explicitly configured.
+  bool get usedLegacyLinewidth => _linewidth != null;
+
+  /// Custom particle factory (legacy support).
+  ///
+  /// Deprecated: Inject custom factories into [ParticleSimulation] directly.
+  /// Scheduled for removal in particles_network 2.0.0.
+  @Deprecated(
+    'Use ParticleSimulation for custom particle creation. This parameter will be removed in particles_network 2.0.0.',
+  )
+  final IParticleFactory? particleFactory;
+
+  /// Custom particle behavior controller (legacy support).
+  ///
+  /// Deprecated: Inject custom controllers into [ParticleSimulation] directly.
+  /// Scheduled for removal in particles_network 2.0.0.
+  @Deprecated(
+    'Use ParticleSimulation for custom particle behavior. This parameter will be removed in particles_network 2.0.0.',
+  )
+  final IParticleController? particleController;
+
   /// Gravity configuration for the particle network.
   ///
   /// Controls global or point gravity effects.
@@ -166,6 +202,10 @@ class ParticleNetwork extends StatefulWidget {
     this.maxSpeed = 0.5,
     this.maxSize = 1.5,
     this.lineWidth = 0.5,
+    @Deprecated(
+      'Use lineWidth instead. This parameter will be removed in particles_network 2.0.0.',
+    )
+    double? linewidth,
     this.lineDistance = 100,
     this.particleColor = Colors.white,
     this.lineColor = const Color.fromARGB(255, 100, 255, 180),
@@ -183,6 +223,18 @@ class ParticleNetwork extends StatefulWidget {
     bool? isComplex,
     this.fill = true,
     this.drawNetwork = true,
+    @Deprecated(
+      'Use drawNetwork instead. This parameter will be removed in particles_network 2.0.0.',
+    )
+    bool? drawnetwork,
+    @Deprecated(
+      'Use ParticleSimulation for custom particle creation. This parameter will be removed in particles_network 2.0.0.',
+    )
+    this.particleFactory,
+    @Deprecated(
+      'Use ParticleSimulation for custom particle controllers. This parameter will be removed in particles_network 2.0.0.',
+    )
+    this.particleController,
     this.gravity,
     @Deprecated(
       'Use gravity (ParticleGravity) instead. This parameter will be removed in particles_network 2.0.0.',
@@ -205,7 +257,9 @@ class ParticleNetwork extends StatefulWidget {
     this.performance = const NetworkPerformance(),
   })  : _touchColor = touchColor,
         _touchActivation = touchActivation,
-        _isComplex = isComplex;
+        _isComplex = isComplex,
+        _linewidth = linewidth,
+        _drawnetwork = drawnetwork;
 
   @override
   State<ParticleNetwork> createState() => ParticleNetworkState();
