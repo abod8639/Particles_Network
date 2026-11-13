@@ -18,6 +18,7 @@ void main() {
       expect(perf.frameRateIndependent, isFalse);
       expect(perf.lineRenderer, equals(LineRenderer.stroke));
       expect(perf.isComplex, isFalse);
+      expect(perf.cappedDistanceFactor, equals(0.75));
     });
 
     test('highPerformance preset has optimized values', () {
@@ -31,6 +32,7 @@ void main() {
       expect(perf.frameRateIndependent, isTrue);
       expect(perf.lineRenderer, equals(LineRenderer.vertices));
       expect(perf.isComplex, isTrue);
+      expect(perf.cappedDistanceFactor, equals(0.75));
     });
 
     test('adaptive preset has dynamic scaling enabled', () {
@@ -44,6 +46,7 @@ void main() {
       expect(perf.frameRateIndependent, isTrue);
       expect(perf.lineRenderer, equals(LineRenderer.stroke));
       expect(perf.isComplex, isFalse);
+      expect(perf.cappedDistanceFactor, equals(0.75));
     });
 
     test('copyWith updates specified fields and preserves others', () {
@@ -135,6 +138,7 @@ void main() {
       expect(str, contains('fastLineRendering: true'));
       expect(str, contains('lineRenderer: LineRenderer.stroke'));
       expect(str, contains('isComplex: true'));
+      expect(str, contains('cappedDistanceFactor: 0.75'));
     });
   });
 
@@ -504,6 +508,74 @@ void main() {
 
         strokePainter.paint(canvas, size);
         expect(strokePainter.lastFrameLineCount, greaterThan(0));
+      },
+    );
+
+    test(
+      'capped connections reject distant stray particles beyond cappedDistanceFactor',
+      () {
+        // Two particles placed at distance 85.0 from each other.
+        // lineDistance is 100.0.
+        // When uncapped, they connect because 85.0 <= 100.0.
+        // When capped with cappedDistanceFactor = 0.75, max capped distance is 75.0.
+        // Since 85.0 > 75.0, capped connection rejects this long line, eliminating flickering.
+        final distantParticles = <Particle>[
+          Particle(
+            position: const Offset(10.0, 50.0),
+            velocity: Offset.zero,
+            color: Colors.white,
+            size: 2.0,
+          ),
+          Particle(
+            position: const Offset(95.0, 50.0), // distance = 85.0
+            velocity: Offset.zero,
+            color: Colors.white,
+            size: 2.0,
+          ),
+        ];
+
+        // 1. Uncapped painter: connects across 85.0
+        final uncappedPainter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: false,
+          particleCount: distantParticles.length,
+          particles: distantParticles,
+          touchPoint: null,
+          lineDistance: 100.0,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          lineWidth: 1.0,
+          performance: const NetworkPerformance(
+            maxConnectionsPerParticle: null,
+          ),
+        );
+
+        // 2. Capped painter with default cappedDistanceFactor = 0.75: rejects 85.0
+        final cappedPainter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: false,
+          particleCount: distantParticles.length,
+          particles: distantParticles,
+          touchPoint: null,
+          lineDistance: 100.0,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          lineWidth: 1.0,
+          performance: const NetworkPerformance(
+            maxConnectionsPerParticle: 2,
+            cappedDistanceFactor: 0.75,
+          ),
+        );
+
+        final recorder = PictureRecorder();
+        final canvas = Canvas(recorder);
+        const size = Size(500, 500);
+
+        uncappedPainter.paint(canvas, size);
+        expect(uncappedPainter.lastFrameLineCount, equals(1));
+
+        cappedPainter.paint(canvas, size);
+        expect(cappedPainter.lastFrameLineCount, equals(0));
       },
     );
   });

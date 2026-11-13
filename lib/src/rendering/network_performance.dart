@@ -51,6 +51,13 @@ class NetworkPerformance {
   /// rebuild interval, and optimizes batched connections.
   final bool isComplex;
 
+  /// Distance ratio threshold for capped connections (default: 0.75).
+  ///
+  /// When [maxConnectionsPerParticle] is active, restricts candidate search
+  /// to `lineDistance * cappedDistanceFactor` to eliminate jarring long lines
+  /// to distant particles and prevent connection thrashing/flickering.
+  final double cappedDistanceFactor;
+
   /// Creates a [NetworkPerformance] configuration.
   const NetworkPerformance({
     this.maxConnectionsPerParticle,
@@ -61,6 +68,7 @@ class NetworkPerformance {
     this.frameRateIndependent = false,
     this.lineRenderer = LineRenderer.stroke,
     this.isComplex = false,
+    this.cappedDistanceFactor = 0.75,
   });
 
   /// High-performance preset tuned for high particle counts and smooth frame rates.
@@ -73,6 +81,7 @@ class NetworkPerformance {
     this.frameRateIndependent = true,
     this.lineRenderer = LineRenderer.vertices,
     this.isComplex = true,
+    this.cappedDistanceFactor = 0.75,
   });
 
   /// Adaptive preset focusing on dynamic frame rate scaling and independent motion.
@@ -85,6 +94,7 @@ class NetworkPerformance {
     this.frameRateIndependent = true,
     this.lineRenderer = LineRenderer.stroke,
     this.isComplex = false,
+    this.cappedDistanceFactor = 0.75,
   });
 
   /// Creates a copy of this [NetworkPerformance] with updated parameters.
@@ -99,6 +109,7 @@ class NetworkPerformance {
     bool? frameRateIndependent,
     LineRenderer? lineRenderer,
     bool? isComplex,
+    double? cappedDistanceFactor,
   }) {
     return NetworkPerformance(
       maxConnectionsPerParticle: clearMaxConnectionsPerParticle
@@ -114,6 +125,7 @@ class NetworkPerformance {
       frameRateIndependent: frameRateIndependent ?? this.frameRateIndependent,
       lineRenderer: lineRenderer ?? this.lineRenderer,
       isComplex: isComplex ?? this.isComplex,
+      cappedDistanceFactor: cappedDistanceFactor ?? this.cappedDistanceFactor,
     );
   }
 
@@ -129,7 +141,8 @@ class NetworkPerformance {
           maxLinesPerFrame == other.maxLinesPerFrame &&
           frameRateIndependent == other.frameRateIndependent &&
           lineRenderer == other.lineRenderer &&
-          isComplex == other.isComplex;
+          isComplex == other.isComplex &&
+          cappedDistanceFactor == other.cappedDistanceFactor;
 
   @override
   int get hashCode => Object.hash(
@@ -141,6 +154,7 @@ class NetworkPerformance {
         frameRateIndependent,
         lineRenderer,
         isComplex,
+        cappedDistanceFactor,
       );
 
   @override
@@ -153,7 +167,8 @@ class NetworkPerformance {
         'maxLinesPerFrame: $maxLinesPerFrame, '
         'frameRateIndependent: $frameRateIndependent, '
         'lineRenderer: $lineRenderer, '
-        'isComplex: $isComplex)';
+        'isComplex: $isComplex, '
+        'cappedDistanceFactor: $cappedDistanceFactor)';
   }
 }
 

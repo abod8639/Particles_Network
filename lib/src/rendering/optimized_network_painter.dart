@@ -415,10 +415,20 @@ class OptimizedNetworkPainter extends CustomPainter {
       if (distance != baseDistance) effectiveDistance = distance;
       _lastFrameLineDistance = distance;
 
-      // Fade lines relative to the budgeted radius; otherwise relative to
+      // When capped, constrain pairing distance to cappedDistanceFactor to eliminate
+      // jarring long lines and visual connection thrashing/flickering.
+      final double activeDist = (maxConnectionsPerParticle != null &&
+              performance.cappedDistanceFactor < 1.0 &&
+              performance.cappedDistanceFactor > 0.0)
+          ? distance * performance.cappedDistanceFactor
+          : distance;
+
+      // Fade lines relative to the active radius; otherwise relative to
       // lineDistance as before.
       final double alphaDistance =
-          maxLinesPerFrame != null ? distance : lineDistance;
+          maxLinesPerFrame != null || maxConnectionsPerParticle != null
+              ? activeDist
+              : lineDistance;
       final double alphaDistSq = alphaDistance * alphaDistance;
       _invMaxDistSq = alphaDistSq > 0 ? 1.0 / alphaDistSq : 0.0;
 
@@ -612,12 +622,18 @@ class OptimizedNetworkPainter extends CustomPainter {
     double? effectiveDistance,
   ]) {
     final double dist = effectiveDistance ?? lineDistance;
+    final double activeDist = (maxConnectionsPerParticle != null &&
+            performance.cappedDistanceFactor < 1.0 &&
+            performance.cappedDistanceFactor > 0.0)
+        ? dist * performance.cappedDistanceFactor
+        : dist;
+
     if (fastLineRendering) {
-      _drawFastUnifiedConnections(canvas, dist);
+      _drawFastUnifiedConnections(canvas, activeDist);
     } else if (visibleParticles.length < 30) {
-      _drawIndividualConnections(canvas, visibleParticles, effectiveDistance);
+      _drawIndividualConnections(canvas, visibleParticles, activeDist);
     } else {
-      _drawBatchedConnections(canvas, visibleParticles, effectiveDistance);
+      _drawBatchedConnections(canvas, visibleParticles, activeDist);
     }
   }
 
@@ -687,8 +703,10 @@ class OptimizedNetworkPainter extends CustomPainter {
             for (int j = i + 1; j < nearEnd; j++) {
               if (capped && counts[j] >= cap) continue;
               final double dx = px - xs[j];
+              final double dxSq = dx * dx;
+              if (dxSq > maxDistSq) continue;
               final double dy = py - ys[j];
-              final double distSq = dx * dx + dy * dy;
+              final double distSq = dxSq + dy * dy;
               if (distSq <= maxDistSq) {
                 if (candidateCount >= _candidateIndices.length) {
                   _growCandidateBuffers();
@@ -701,8 +719,10 @@ class OptimizedNetworkPainter extends CustomPainter {
             for (int j = southStart; j < southEnd; j++) {
               if (capped && counts[j] >= cap) continue;
               final double dx = px - xs[j];
+              final double dxSq = dx * dx;
+              if (dxSq > maxDistSq) continue;
               final double dy = py - ys[j];
-              final double distSq = dx * dx + dy * dy;
+              final double distSq = dxSq + dy * dy;
               if (distSq <= maxDistSq) {
                 if (candidateCount >= _candidateIndices.length) {
                   _growCandidateBuffers();
@@ -912,16 +932,20 @@ class OptimizedNetworkPainter extends CustomPainter {
           if (!complex && !capped) {
             for (int j = i + 1; j < nearEnd; j++) {
               final double dx = x1 - xs[j];
+              final double dxSq = dx * dx;
+              if (dxSq > maxDistSq) continue;
               final double dy = y1 - ys[j];
-              final double distSq = dx * dx + dy * dy;
+              final double distSq = dxSq + dy * dy;
               if (distSq <= maxDistSq) {
                 _emitConnection(unified, x1, y1, xs[j], ys[j], distSq);
               }
             }
             for (int j = southStart; j < southEnd; j++) {
               final double dx = x1 - xs[j];
+              final double dxSq = dx * dx;
+              if (dxSq > maxDistSq) continue;
               final double dy = y1 - ys[j];
-              final double distSq = dx * dx + dy * dy;
+              final double distSq = dxSq + dy * dy;
               if (distSq <= maxDistSq) {
                 _emitConnection(unified, x1, y1, xs[j], ys[j], distSq);
               }
@@ -933,8 +957,10 @@ class OptimizedNetworkPainter extends CustomPainter {
           for (int j = i + 1; j < nearEnd; j++) {
             if (capped && counts[j] >= cap) continue;
             final double dx = x1 - xs[j];
+            final double dxSq = dx * dx;
+            if (dxSq > maxDistSq) continue;
             final double dy = y1 - ys[j];
-            final double distSq = dx * dx + dy * dy;
+            final double distSq = dxSq + dy * dy;
             if (distSq <= maxDistSq) {
               if (candidateCount >= _candidateIndices.length) {
                 _growCandidateBuffers();
@@ -947,8 +973,10 @@ class OptimizedNetworkPainter extends CustomPainter {
           for (int j = southStart; j < southEnd; j++) {
             if (capped && counts[j] >= cap) continue;
             final double dx = x1 - xs[j];
+            final double dxSq = dx * dx;
+            if (dxSq > maxDistSq) continue;
             final double dy = y1 - ys[j];
-            final double distSq = dx * dx + dy * dy;
+            final double distSq = dxSq + dy * dy;
             if (distSq <= maxDistSq) {
               if (candidateCount >= _candidateIndices.length) {
                 _growCandidateBuffers();
