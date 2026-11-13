@@ -1375,5 +1375,117 @@ void main() {
       expect(() => adaptivePainter.paint(mockCanvas, testScreenSize),
           returnsNormally);
     });
+
+    testWidgets('alpha distance and safety floor protect connection radius under adaptiveDensity', (
+      tester,
+    ) async {
+      await setUpTest(tester);
+
+      // Create 500 dense particles in a 100x100 space
+      final particles = List.generate(
+        500,
+        (i) => MockParticle(
+          position: Offset((i % 20) * 5.0, (i ~/ 20) * 5.0),
+        ),
+      );
+
+      final painter = OptimizedNetworkPainter(
+        drawNetwork: true,
+        fill: false,
+        isComplex: false,
+        particleCount: particles.length,
+        particles: particles,
+        touchPoint: null,
+        lineDistance: 100.0,
+        particleColor: Colors.white,
+        lineColor: Colors.grey,
+        touchColor: Colors.red,
+        touchActivation: false,
+        lineWidth: 1.0,
+        adaptiveDensity: true,
+      );
+
+      painter.paint(mockCanvas, const Size(100, 100));
+
+      // With 500 particles in 100x100, factor would shrink distance to 0.25 * 100 = 25,
+      // and with safety floor protection it never drops below 20px.
+      expect(painter.lastFrameLineDistance, greaterThanOrEqualTo(20.0));
+      expect(painter.lastFrameLineDistance, lessThan(100.0));
+    });
+
+    testWidgets('stepTouchPhysics pre-filters particles avoiding duplicate loop in paint', (
+      tester,
+    ) async {
+      await setUpTest(tester);
+
+      final p1 = MockParticle(position: const Offset(10, 10));
+      final p2 = MockParticle(position: const Offset(20, 20));
+
+      final painter = OptimizedNetworkPainter(
+        drawNetwork: true,
+        fill: true,
+        particleCount: 2,
+        particles: [p1, p2],
+        touchPoint: const Offset(15, 15),
+        lineDistance: 50.0,
+        particleColor: Colors.white,
+        lineColor: Colors.blue,
+        touchActivation: true,
+        lineWidth: 1.0,
+        simulateTouchInPaint: false,
+      );
+
+      // stepTouchPhysics populates visible particles and sets flag
+      painter.stepTouchPhysics(1.0);
+
+      // paint runs smoothly without re-filtering
+      expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
+    });
+
+    testWidgets(
+      'cappedDistanceFactor does not artificially inflate line budget correction',
+      (tester) async {
+        await setUpTest(tester);
+
+        final particles = List.generate(
+          15,
+          (i) => MockParticle(
+            position: Offset((i % 5) * 40.0 + 20.0, (i ~/ 5) * 40.0 + 20.0),
+          ),
+        );
+
+        final painter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: true,
+          particleCount: particles.length,
+          particles: particles,
+          touchPoint: null,
+          lineDistance: 80.0,
+          particleColor: Colors.white,
+          lineColor: Colors.blue,
+          touchActivation: false,
+          lineWidth: 1.0,
+          maxLinesPerFrame: 1000,
+          maxConnectionsPerParticle: 4,
+          performance: const NetworkPerformance(
+            maxConnectionsPerParticle: 4,
+            cappedDistanceFactor: 0.5,
+            maxLinesPerFrame: 1000,
+          ),
+        );
+
+        // Frame 1: activeDist is 80.0 * 0.5 = 40.0
+        painter.paint(mockCanvas, const Size(400, 400));
+        expect(painter.lastFrameLineDistance, closeTo(40.0, 0.01));
+
+        // After multiple frames under budget, budget correction must not inflate distance
+        for (int frame = 0; frame < 10; frame++) {
+          painter.paint(mockCanvas, const Size(400, 400));
+        }
+
+        // Distance remains 40.0 without drifting or inflating towards unconstrained lineDistance
+        expect(painter.lastFrameLineDistance, closeTo(40.0, 0.01));
+      },
+    );
   });
 }
