@@ -11,7 +11,6 @@ import 'package:particles_network/src/legacy/legacy_deprecation_logger.dart';
 import 'package:particles_network/src/physics/particle_controller.dart';
 import 'package:particles_network/src/physics/particle_gravity.dart';
 import 'package:particles_network/src/rendering/network_performance.dart';
-import 'package:particles_network/src/rendering/object_pool.dart';
 import 'package:particles_network/src/rendering/optimized_network_painter.dart';
 import 'package:particles_network/src/rendering/performance_utils.dart';
 import 'package:particles_network/src/simulation/particle_simulation.dart';
@@ -542,8 +541,22 @@ class ParticleNetworkState extends State<ParticleNetwork>
       _painter.updateLineWidth(widget.lineWidth);
     }
 
+    final effectivePerf = widget.performance.copyWith(
+      isComplex: widget._isComplex != null
+          ? widget.effectiveIsComplex
+          : widget.performance.isComplex,
+    );
+    final oldEffectivePerf = oldWidget.performance.copyWith(
+      isComplex: oldWidget._isComplex != null
+          ? oldWidget.effectiveIsComplex
+          : oldWidget.performance.isComplex,
+    );
+
     if (widget.lineDistance != oldWidget.lineDistance) {
-      _painter.updateLineDistance(widget.lineDistance);
+      final double distance = effectivePerf.enableAdaptivePerformance
+          ? _adaptiveController.getAdjustedLineDistance(widget.lineDistance)
+          : widget.lineDistance;
+      _painter.updateLineDistance(distance);
     }
 
     final currentTouchActivation = widget.effectiveTouchActivation;
@@ -566,21 +579,24 @@ class ParticleNetworkState extends State<ParticleNetwork>
       _painter.updateTouchFeatures(widget.touchFeatures);
     }
 
-    final effectivePerf = widget.performance.copyWith(
-      isComplex: widget._isComplex != null
-          ? widget.effectiveIsComplex
-          : widget.performance.isComplex,
-    );
-    final oldEffectivePerf = oldWidget.performance.copyWith(
-      isComplex: oldWidget._isComplex != null
-          ? oldWidget.effectiveIsComplex
-          : oldWidget.performance.isComplex,
-    );
     if (effectivePerf != oldEffectivePerf) {
       _painter.updatePerformance(effectivePerf);
       if (effectivePerf.enableAdaptivePerformance !=
           oldEffectivePerf.enableAdaptivePerformance) {
         _setAdaptiveTimings(effectivePerf.enableAdaptivePerformance);
+      } else if (effectivePerf.enableAdaptivePerformance) {
+        final double targetDist =
+            _adaptiveController.getAdjustedLineDistance(widget.lineDistance);
+        if (_painter.lineDistance != targetDist) {
+          _painter.updateLineDistance(targetDist);
+        }
+        if (effectivePerf.maxConnectionsPerParticle != null) {
+          final int adjustedConn = _adaptiveController.getAdjustedMaxConnections(
+              effectivePerf.maxConnectionsPerParticle!);
+          if (_painter.maxConnectionsPerParticle != adjustedConn) {
+            _painter.maxConnectionsPerParticle = adjustedConn;
+          }
+        }
       }
     }
   }
@@ -598,7 +614,6 @@ class ParticleNetworkState extends State<ParticleNetwork>
     ticker.dispose();
     frameNotifier.dispose();
     _adaptiveController.reset();
-    PoolManager.getInstance().clearAll();
     super.dispose();
   }
 
