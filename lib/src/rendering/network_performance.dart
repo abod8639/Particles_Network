@@ -44,6 +44,13 @@ class NetworkPerformance {
   /// How connection lines are rasterized (default: [LineRenderer.stroke]).
   final LineRenderer lineRenderer;
 
+  /// Whether to use complex (high-density optimized) painting logic (default: false).
+  ///
+  /// Optimized mode for high particle counts (300+ / 500+ particles) that
+  /// disables anti-aliasing on line and particle paints, tunes the spatial grid
+  /// rebuild interval, and optimizes batched connections.
+  final bool isComplex;
+
   /// Creates a [NetworkPerformance] configuration.
   const NetworkPerformance({
     this.maxConnectionsPerParticle,
@@ -52,7 +59,8 @@ class NetworkPerformance {
     this.enableAdaptivePerformance = false,
     this.maxLinesPerFrame,
     this.frameRateIndependent = false,
-    this.lineRenderer = LineRenderer.vertices,
+    this.lineRenderer = LineRenderer.stroke,
+    this.isComplex = false,
   });
 
   /// High-performance preset tuned for high particle counts and smooth frame rates.
@@ -64,6 +72,7 @@ class NetworkPerformance {
     this.maxLinesPerFrame = 15000,
     this.frameRateIndependent = true,
     this.lineRenderer = LineRenderer.vertices,
+    this.isComplex = true,
   });
 
   /// Adaptive preset focusing on dynamic frame rate scaling and independent motion.
@@ -75,6 +84,7 @@ class NetworkPerformance {
     this.maxLinesPerFrame,
     this.frameRateIndependent = true,
     this.lineRenderer = LineRenderer.stroke,
+    this.isComplex = false,
   });
 
   /// Creates a copy of this [NetworkPerformance] with updated parameters.
@@ -88,6 +98,7 @@ class NetworkPerformance {
     bool clearMaxLinesPerFrame = false,
     bool? frameRateIndependent,
     LineRenderer? lineRenderer,
+    bool? isComplex,
   }) {
     return NetworkPerformance(
       maxConnectionsPerParticle: clearMaxConnectionsPerParticle
@@ -102,6 +113,7 @@ class NetworkPerformance {
           : (maxLinesPerFrame ?? this.maxLinesPerFrame),
       frameRateIndependent: frameRateIndependent ?? this.frameRateIndependent,
       lineRenderer: lineRenderer ?? this.lineRenderer,
+      isComplex: isComplex ?? this.isComplex,
     );
   }
 
@@ -116,7 +128,8 @@ class NetworkPerformance {
           enableAdaptivePerformance == other.enableAdaptivePerformance &&
           maxLinesPerFrame == other.maxLinesPerFrame &&
           frameRateIndependent == other.frameRateIndependent &&
-          lineRenderer == other.lineRenderer;
+          lineRenderer == other.lineRenderer &&
+          isComplex == other.isComplex;
 
   @override
   int get hashCode => Object.hash(
@@ -127,6 +140,7 @@ class NetworkPerformance {
         maxLinesPerFrame,
         frameRateIndependent,
         lineRenderer,
+        isComplex,
       );
 
   @override
@@ -138,7 +152,8 @@ class NetworkPerformance {
         'enableAdaptivePerformance: $enableAdaptivePerformance, '
         'maxLinesPerFrame: $maxLinesPerFrame, '
         'frameRateIndependent: $frameRateIndependent, '
-        'lineRenderer: $lineRenderer)';
+        'lineRenderer: $lineRenderer, '
+        'isComplex: $isComplex)';
   }
 }
 
