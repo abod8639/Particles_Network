@@ -156,6 +156,98 @@ void main() {
         ..clear();
       expect(batch.lineCount, 0);
       expect(batch.positions, isEmpty);
+      expect(batch.hasColors, isFalse);
+    });
+
+    test('supports per-vertex and per-segment colors in addSegments and draw', () {
+      final batch = LineVertexBatch();
+
+      // 1. Single color parameter
+      batch.addSegments(
+        Float32List.fromList([0, 0, 10, 0]),
+        4,
+        1.0,
+        null,
+        0xFF112233,
+      );
+      expect(batch.hasColors, isTrue);
+      expect(batch.colors.length, 4);
+      final int c1 = 0xFF112233.toSigned(32);
+      expect(batch.colors, [c1, c1, c1, c1]);
+
+      // 2. Per-segment color array (1 int per segment)
+      final int c2 = 0xFF445566.toSigned(32);
+      batch.addSegments(
+        Float32List.fromList([10, 0, 20, 0]),
+        4,
+        1.0,
+        Int32List.fromList([c2]),
+      );
+      expect(batch.colors.length, 8);
+      expect(batch.colors.sublist(4, 8), [c2, c2, c2, c2]);
+
+      // 3. Per-vertex color array (4 ints per segment quad)
+      final int cv1 = 0xFFAAAAAA.toSigned(32);
+      final int cv2 = 0xFFBBBBBB.toSigned(32);
+      final int cv3 = 0xFFCCCCCC.toSigned(32);
+      final int cv4 = 0xFFDDDDDD.toSigned(32);
+      batch.addSegments(
+        Float32List.fromList([20, 0, 30, 0]),
+        4,
+        1.0,
+        Int32List.fromList([cv1, cv2, cv3, cv4]),
+      );
+      expect(batch.colors.length, 12);
+      expect(batch.colors.sublist(8, 12), [cv1, cv2, cv3, cv4]);
+
+      // 4. Verify draw works with vertex colors
+      final canvas = _CountingCanvas();
+      // Test drawing with canvas
+      batch.draw(canvas, Paint());
+      expect(canvas.vertexCalls, 1);
+
+      // 5. Clear resets hasColors
+      batch.clear();
+      expect(batch.hasColors, isFalse);
+      expect(batch.colors, isEmpty);
+    });
+
+    test('mixed uncolored and colored segment additions safely backfill default colors', () {
+      final batch = LineVertexBatch();
+
+      // 1. Add uncolored segment first
+      batch.addSegments(
+        Float32List.fromList([0, 0, 10, 0]),
+        4,
+        1.0,
+      );
+      expect(batch.hasColors, isFalse);
+      expect(batch.colors, isEmpty);
+
+      // 2. Add colored segment second
+      final int c = 0xFF556677.toSigned(32);
+      batch.addSegments(
+        Float32List.fromList([10, 0, 20, 0]),
+        4,
+        1.0,
+        null,
+        c,
+      );
+      expect(batch.hasColors, isTrue);
+      expect(batch.colors.length, 8);
+      // Segment 0 was backfilled with opaque white, not left as transparent 0
+      final int white = 0xFFFFFFFF.toSigned(32);
+      expect(batch.colors.sublist(0, 4), [white, white, white, white]);
+      expect(batch.colors.sublist(4, 8), [c, c, c, c]);
+
+      // 3. Add uncolored segment after colored segments
+      batch.addSegments(
+        Float32List.fromList([20, 0, 30, 0]),
+        4,
+        1.0,
+      );
+      expect(batch.colors.length, 12);
+      expect(batch.colors.sublist(8, 12), [white, white, white, white]);
     });
   });
 
@@ -178,9 +270,8 @@ void main() {
         final canvas = _CountingCanvas();
         painter.paint(canvas, size);
 
-        // One call for the single-colour unified path, at most one per
-        // visible opacity bucket otherwise.
-        expect(canvas.vertexCalls, fast ? 1 : inInclusiveRange(2, 31));
+        // One drawVertices call submits the entire batch with per-vertex colors.
+        expect(canvas.vertexCalls, 1);
         expect(canvas.rawLineCalls, 0);
         expect(canvas.lineCalls, 0);
         expect(painter.lastFrameLineCount, greaterThan(100));
