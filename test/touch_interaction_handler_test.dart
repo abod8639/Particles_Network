@@ -358,6 +358,34 @@ void main() {
       expect(f1 == Object(), isFalse);
     });
 
+    test('equality differentiates by color', () {
+      const f1 = TouchFeatures(color: Color(0xFFFF0000));
+      const f2 = TouchFeatures(color: Color(0xFFFF0000));
+      const f3 = TouchFeatures(color: Color(0xFF00FF00));
+
+      expect(f1, equals(f2));
+      expect(f1 == f3, isFalse);
+    });
+
+    test('toString returns formatted string representation', () {
+      const features = TouchFeatures(
+        speed: 0.05,
+        force: 0.8,
+        maxTouchSpeed: 5.0,
+        damping: 0.95,
+        lineDistance: 100.0,
+        color: Color(0xFF123456),
+      );
+      final str = features.toString();
+      expect(str, contains('TouchFeatures'));
+      expect(str, contains('speed: 0.05'));
+      expect(str, contains('force: 0.8'));
+      expect(str, contains('maxTouchSpeed: 5.0'));
+      expect(str, contains('damping: 0.95'));
+      expect(str, contains('lineDistance: 100.0'));
+      expect(str, contains('color: ${const Color(0xFF123456)}'));
+    });
+
     test('lineDistance defaults to null and can be configured', () {
       const defaultFeatures = TouchFeatures();
       expect(defaultFeatures.lineDistance, isNull);
