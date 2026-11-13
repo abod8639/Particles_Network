@@ -1200,4 +1200,75 @@ void main() {
       expect(painter.maxConnectionsPerParticle, equals(10));
     },
   );
+
+  testWidgets(
+    'didUpdateWidget preserves adaptive distance scaling when lineDistance changes',
+    (WidgetTester tester) async {
+      final customPaintFinder = find.descendant(
+        of: find.byType(ParticleNetwork),
+        matching: find.byType(CustomPaint),
+      );
+
+      final timings = List<FrameTiming>.generate(5, (int i) {
+        final int start = i * 40000;
+        return FrameTiming(
+          vsyncStart: start,
+          buildStart: start,
+          buildFinish: start + 4000,
+          rasterStart: start + 4000,
+          rasterFinish: start + 34000,
+          rasterFinishWallTime: start + 34000,
+        );
+      });
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleNetwork(
+                lineDistance: 100.0,
+                performance: NetworkPerformance(
+                  enableAdaptivePerformance: true,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Throttling drops scaleFactor (e.g. to 0.9)
+      tester.binding.platformDispatcher.onReportTimings!(timings);
+      await tester.pump(const Duration(milliseconds: 16));
+
+      var customPaint = tester.widget<CustomPaint>(customPaintFinder);
+      var painter = customPaint.painter as OptimizedNetworkPainter;
+      expect(painter.lineDistance, closeTo(90.0, 0.5));
+
+      // Rebuilding with lineDistance: 200 should immediately apply scaleFactor (0.9 * 200 = 180)
+      // without flickering back to raw 200 for one frame
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleNetwork(
+                lineDistance: 200.0,
+                performance: NetworkPerformance(
+                  enableAdaptivePerformance: true,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      customPaint = tester.widget<CustomPaint>(customPaintFinder);
+      painter = customPaint.painter as OptimizedNetworkPainter;
+      expect(painter.lineDistance, closeTo(180.0, 1.0));
+      expect(painter.lineDistance, lessThan(200.0));
+    },
+  );
 }
