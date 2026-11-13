@@ -52,6 +52,7 @@
 - [Platform Support](#platform-support)
 - [Configuration Options](#configuration-options)
   - [Touch Features Configuration](#touch-features-configuration)
+  - [Network Performance Configuration](#network-performance-configuration)
 - [Gravity Simulation Guide](#gravity-simulation-guide)
   - [Global Gravity](#1-global-gravity)
   - [Point Gravity (Attractors & Repellers)](#2-point-gravity-attractors--repellers)
@@ -79,6 +80,7 @@
   - **Trajectory Preservation**: Maintains smooth inertia vectors during deceleration and settling.
 
 - **High-Throughput Rendering & Zero Allocations**
+  - **Unified Performance Architecture (`NetworkPerformance`)**: All line budgets, GPU acceleration flags, and FPS governors grouped into a clean, declarative object with built-in presets (`highPerformance`, `adaptive`).
   - **Adaptive Performance Scaling (`enableAdaptivePerformance`)**: Auto-balances connection distance and density when frame rate drops, ensuring consistent 60/120 FPS.
   - **Batched Line Rendering (`fastLineRendering`)**: Combines line segment coordinates into flat `Float32List` buffers rendered in a single `canvas.drawRawPoints` call.
   - **Bounded $O(N)$ Connections (`maxConnectionsPerParticle`)**: Enforces per-node degree limits to prevent $O(N^2)$ exponential slowdowns in crowded views.
@@ -90,7 +92,7 @@
 - **Developer Friendly**
   - Zero external dependencies beyond Flutter SDK.
   - Fully reactive to screen resize and parent layout constraints.
-  - Direct exports of core classes (`ParticleNetwork`, `GravityType`, `TouchFeatures`).
+  - Direct exports of core classes (`ParticleNetwork`, `GravityType`, `TouchFeatures`, `NetworkPerformance`).
 
 ---
 
@@ -208,56 +210,97 @@ class MyApp extends StatelessWidget {
 
 ## Configuration Options
 
-| Property                    | Type            | Default                 | Description                                                                                                                                                      |
-| :-------------------------- | :-------------- | :---------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `particleCount`             | `int`           | `60`                    | Number of particles in the system.                                                                                                                               |
-| `maxSpeed`                  | `double`        | `0.5`                   | Maximum base wandering velocity (px/frame).                                                                                                                      |
-| `maxSize`                   | `double`        | `1.5`                   | Maximum particle radius in pixels.                                                                                                                               |
-| `lineWidth`                 | `double`        | `0.5`                   | Thickness of connection lines.                                                                                                                                   |
-| `lineDistance`              | `double`        | `100.0`                 | Maximum distance threshold for drawing connections.                                                                                                              |
-| `particleColor`             | `Color`         | `Colors.white`          | Particle fill or outline color.                                                                                                                                  |
-| `lineColor`                 | `Color`         | `Color(0xFF64FFB4)`     | Color of connection lines.                                                                                                                                       |
-| `touchColor`                | `Color`         | `Colors.amber`          | Highlight color for particles near touch position.                                                                                                               |
-| `touchActivation`           | `bool`          | `true`                  | Enables touch and gesture interactions.                                                                                                                          |
-| `touchFeatures`             | `TouchFeatures` | `const TouchFeatures()` | Fine-grained touch physics and response configuration.                                                                                                           |
-| `hoverEffect`               | `bool?`         | `false`                 | Enables cursor tracking on desktop and web.                                                                                                                      |
-| `isComplex`                 | `bool`          | `false`                 | Optimized mode for high particle counts (300+).                                                                                                                  |
-| `fill`                      | `bool`          | `true`                  | `true` for filled circles, `false` for stroked outlines.                                                                                                         |
-| `drawNetwork`               | `bool`          | `true`                  | Whether to draw connection lines between particles.                                                                                                              |
-| `maxConnectionsPerParticle` | `int?`          | `null`                  | Limits lines per particle, bounding edge complexity to $O(N)$.                                                                                                   |
-| `adaptiveDensity`           | `bool`          | `false`                 | Automatically reduces line distance in crowded areas.                                                                                                            |
-| `fastLineRendering`         | `bool`          | `false`                 | Batched single-call line drawing using `canvas.drawRawPoints`.                                                                                                   |
-| `enableAdaptivePerformance` | `bool`          | `false`                 | Throttles line distance/connections when real frame cost (engine `FrameTiming`) exceeds the display's frame budget.                                              |
-| `maxLinesPerFrame`          | `int?`          | `null`                  | Line budget: shrinks connection radius so line count (the main GPU cost) stays near this value at any particle count. ~2000 sustains 60 FPS on a Galaxy S10.     |
-| `lineRenderer`              | `LineRenderer`  | `LineRenderer.stroke`   | `LineRenderer.vertices` draws connections as triangles with one `drawVertices` call per opacity level: 4–10x faster on line-heavy scenes, with square line ends. |
-| `frameRateIndependent`      | `bool`          | `false`                 | Integrates motion over real time so speed is identical at 60/90/120 Hz and smooth through dropped frames.                                                        |
-| `gravityType`               | `GravityType`   | `GravityType.none`      | Physics type: `none`, `global`, or `point`.                                                                                                                      |
-| `gravityStrength`           | `double`        | `0.1`                   | Force intensity ($F = m \cdot a$). Negative values repel in point gravity.                                                                                       |
-| `gravityDirection`          | `Offset`        | `Offset(0, 1)`          | Direction vector for `GravityType.global`.                                                                                                                       |
-| `gravityCenter`             | `Offset?`       | `null`                  | Focus position for `GravityType.point` (defaults to viewport center).                                                                                            |
+| Property            | Type                 | Default                      | Description                                                                                                                                                 |
+| :------------------ | :------------------- | :--------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `particleCount`     | `int`                | `60`                         | Number of particles in the system.                                                                                                                          |
+| `maxSpeed`          | `double`             | `0.5`                        | Maximum base wandering velocity (px/frame).                                                                                                                 |
+| `maxSize`           | `double`             | `1.5`                        | Maximum particle radius in pixels.                                                                                                                          |
+| `lineWidth`         | `double`             | `0.5`                        | Thickness of connection lines.                                                                                                                              |
+| `lineDistance`      | `double`             | `100.0`                      | Maximum distance threshold for drawing connections.                                                                                                         |
+| `particleColor`     | `Color`              | `Colors.white`               | Particle fill or outline color.                                                                                                                             |
+| `lineColor`         | `Color`              | `Color(0xFF64FFB4)`          | Color of connection lines.                                                                                                                                  |
+| `touchFeatures`     | `TouchFeatures`      | `const TouchFeatures()`      | Fine-grained touch physics, highlight color, and gesture configuration.                                                                                     |
+| `performance`       | `NetworkPerformance` | `const NetworkPerformance()` | Comprehensive rendering optimizations, line budgets, frame scaling, and rasterization backend.                                                              |
+| `gravity`           | `ParticleGravity?`   | `null`                       | Unified gravity configuration (global directional or point attractor/repeller gravity).                                                                     |
+| `hoverEffect`       | `bool?`              | `false`                      | Enables cursor tracking on desktop and web.                                                                                                                 |
+| `isComplex`         | `bool`               | `false`                      | *(Deprecated: use `performance: NetworkPerformance(isComplex: ...)`)* Optimized mode for high particle counts (300+).                                       |
+| `fill`              | `bool`               | `true`                       | `true` for filled circles, `false` for stroked outlines.                                                                                                    |
+| `drawNetwork`       | `bool`               | `true`                       | Whether to draw connection lines between particles.                                                                                                         |
 
 ---
 
 ### Touch Features Configuration
 
-Fine-tune interaction dynamics with `TouchFeatures`:
+Fine-tune interaction dynamics and touch styling with `TouchFeatures`:
 
-| Property              | Type      | Default | Description                                                   |
-| :-------------------- | :-------- | :------ | :------------------------------------------------------------ |
-| `force` / `pullForce` | `double`  | `0.42`  | Attraction strength toward the touch point.                   |
-| `speed` / `decayRate` | `double`  | `0.42`  | Recovery rate back to cruising speed after touch release.     |
-| `damping`             | `double`  | `0.985` | Drag coefficient within the touch field.                      |
-| `maxTouchSpeed`       | `double`  | `5.5`   | Strict speed ceiling during touch attraction.                 |
-| `lineDistance`        | `double?` | `null`  | Touch interaction radius (defaults to widget `lineDistance`). |
+| Property        | Type      | Default        | Description                                                                                 |
+| :-------------- | :-------- | :------------- | :------------------------------------------------------------------------------------------ |
+| `enabled`       | `bool`    | `true`         | Enables touch and gesture interactions.                                                     |
+| `color`         | `Color`   | `Colors.amber` | Highlight color for particles near touch position.                                          |
+| `force`         | `double`  | `0.42`         | Attraction strength toward the touch point.                                                 |
+| `speed`         | `double`  | `0.42`         | Recovery rate back to cruising speed after touch release.                                   |
+| `damping`       | `double`  | `0.985`        | Drag coefficient within the touch field.                                                    |
+| `maxTouchSpeed` | `double`  | `5.5`          | Strict speed ceiling during touch attraction.                                               |
+| `lineDistance`  | `double?` | `null`         | Touch interaction radius (defaults to widget `lineDistance`).                               |
+
+> [!NOTE]
+> `pullForce` and `decayRate` are deprecated compatibility aliases for `force` and `speed` respectively, scheduled for removal in v2.0.0. Use `force` and `speed` instead.
 
 ```dart
 ParticleNetwork(
-  touchActivation: true,
   touchFeatures: const TouchFeatures(
+    enabled: true,
+    color: Colors.amber,
     force: 0.5,
     damping: 0.98,
     maxTouchSpeed: 6.0,
-    decayRate: 0.02,
+    speed: 0.02,
+  ),
+)
+```
+
+---
+
+### Network Performance Configuration
+
+Encapsulates all line budgets, GPU acceleration, and frame rate adaptation into `NetworkPerformance`:
+
+| Property                    | Type           | Default               | Description                                                                                                                                                   |
+| :-------------------------- | :------------- | :-------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `maxConnectionsPerParticle` | `int?`         | `null`                | Limits lines per particle, bounding edge complexity to $O(N)$.                                                                                                |
+| `adaptiveDensity`           | `bool`         | `false`               | Automatically reduces line distance in crowded areas.                                                                                                         |
+| `fastLineRendering`         | `bool`         | `false`               | Batched single-call line drawing using `canvas.drawRawPoints`.                                                                                                |
+| `enableAdaptivePerformance` | `bool`         | `false`               | Throttles line distance/connections when real frame cost (engine `FrameTiming`) exceeds display refresh budget.                                               |
+| `maxLinesPerFrame`          | `int?`         | `null`                | Line budget: shrinks connection radius so line count (main GPU cost) stays near this value at any particle count (~2000 for strokes, ~15000 for vertices). |
+| `frameRateIndependent`      | `bool`         | `false`               | Integrates motion over real elapsed time so speed is identical at 60/90/120 Hz and smooth through dropped frames.                                             |
+| `lineRenderer`              | `LineRenderer` | `LineRenderer.stroke` | `LineRenderer.vertices` draws connections as indexed triangles (one `drawVertices` call per opacity level): 4–10x faster on line-heavy scenes.                |
+| `isComplex`                 | `bool`         | `false`               | Optimized mode for high particle counts (300+ / 500+ particles) that tunes the spatial grid and anti-aliasing.                                                |
+
+#### Built-in Presets
+
+```dart
+// 1. High-Performance Preset: tuned for extreme particle counts (1000+)
+const ParticleNetwork(
+  particleCount: 2000,
+  performance: NetworkPerformance.highPerformance(),
+)
+
+// 2. Adaptive Preset: balances frame rate with dynamic GPU throttling
+const ParticleNetwork(
+  particleCount: 500,
+  performance: NetworkPerformance.adaptive(),
+)
+
+// 3. Custom Performance Configuration
+const ParticleNetwork(
+  particleCount: 5000,
+  performance: NetworkPerformance(
+    fastLineRendering: true,
+    maxConnectionsPerParticle: 4,
+    adaptiveDensity: true,
+    maxLinesPerFrame: 15000,
+    lineRenderer: LineRenderer.vertices,
+    frameRateIndependent: true,
   ),
 )
 ```
@@ -353,21 +396,22 @@ const ParticleNetwork(
 )
 ```
 
-### 3. High-Density Ultra-Smooth Preset (v1.9.6)
+### 3. High-Density Ultra-Smooth Preset
 
 ```dart
 const ParticleNetwork(
   particleCount: 500,
   lineDistance: 30,
-  isComplex: true,
   fill: false,
-  // 1.9.6 Performance Governors:
-  fastLineRendering: true,
-  maxConnectionsPerParticle: 4,
-  adaptiveDensity: true,
-  enableAdaptivePerformance: true,
   particleColor: Colors.cyanAccent,
   lineColor: Colors.teal,
+  performance: NetworkPerformance(
+    isComplex: true,
+    fastLineRendering: true,
+    maxConnectionsPerParticle: 4,
+    adaptiveDensity: true,
+    enableAdaptivePerformance: true,
+  ),
 )
 ```
 
@@ -389,7 +433,9 @@ class ThemedParticleView extends StatelessWidget {
       particleCount: 90,
       particleColor: isDark ? Colors.white70 : Colors.black87,
       lineColor: theme.colorScheme.primary,
-      touchColor: theme.colorScheme.secondary,
+      touchFeatures: TouchFeatures(
+        color: theme.colorScheme.secondary,
+      ),
     );
   }
 }
@@ -450,7 +496,8 @@ Opacity alpha gradients for connection lines are looked up in a precomputed 256-
 
 ### 8. Hardware Stewardship & Battery Conservation
 
-To ensure animations run smoothl <!-- <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang4.gif" width="220" alt="Complex"></td>y without punishing consumer hardware:
+To ensure animations run smoothl
+ <!-- <!-- <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang4.gif" width="220" alt="Complex"></td>y without punishing consumer hardware: -->
 
 - **Zero GC Pressure**: The hot rendering loop avoids transient object allocations, preventing Dart Garbage Collector pauses that cause micro-stutters.
 - **Passive Power Saving**: Proximity and gesture calculations completely shut down when the screen is idle, letting CPU cores rest.
@@ -532,8 +579,8 @@ Alternate the versions (1.9.6, current, 1.9.6, current) and keep the machine oth
 | :----------------------------------------- | :---------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Particles not visible**                  | Low contrast with background  | Set contrasting `particleColor` (e.g. `Colors.white` on dark backgrounds).                                                                                                                                 |
 | **Touch does not respond**                 | `touchActivation` disabled    | Ensure `touchActivation: true` and that parent widgets do not block gestures.                                                                                                                              |
-| **Frame drops on low-end hardware**        | Too many connections          | Use `lineRenderer: LineRenderer.vertices`, set a line budget (`maxLinesPerFrame: 2000` with strokes, `15000` with vertices), set `maxConnectionsPerParticle: 3`, or use `enableAdaptivePerformance: true`. |
-| **Particles move faster on 120 Hz phones** | Speed is per frame by default | Set `frameRateIndependent: true`.                                                                                                                                                                          |
+| **Frame drops on low-end hardware**        | Too many connections          | Use `performance: NetworkPerformance.highPerformance()`, set a line budget (`maxLinesPerFrame: 2000` with strokes, `15000` with vertices), or set `maxConnectionsPerParticle: 3`. |
+| **Particles move faster on 120 Hz phones** | Speed is per frame by default | Enable `frameRateIndependent: true` in `NetworkPerformance`.                                                                                                                         |
 | **Web stutter**                            | HTML/Canvas renderer          | Build web apps with CanvasKit / Wasm: `flutter build web --wasm`.                                                                                                                                          |
 
 ---
@@ -565,6 +612,9 @@ The animation loop uses Flutter's `TickerProvider`, which automatically pauses w
 
 The new options are all opt-in, and the defaults draw and move exactly as in 1.9.6. Things to check:
 
+- Performance configurations are now unified under `performance: NetworkPerformance(...)` with presets (`highPerformance`, `adaptive`).
+- `touchColor` in `TouchFeatures` has been replaced by `color`.
+- `pullForce` and `decayRate` in `TouchFeatures` are deprecated in favor of `force` and `speed`.
 - The minimum is now Flutter 3.27 / Dart 3.6. The `Color` component APIs the painter uses do not exist in older SDKs.
 - Widget tests that triggered `enableAdaptivePerformance` by pumping long tick intervals must now feed `FrameTiming`s through `tester.binding.platformDispatcher.onReportTimings`.
 
@@ -573,10 +623,11 @@ To use the new performance features:
 ```dart
 ParticleNetwork(
   particleCount: 5000,
-  // New optional options in 1.9.7:
-  lineRenderer: LineRenderer.vertices, // triangle lines, 4–10x faster on line-heavy scenes
-  maxLinesPerFrame: 15000,             // keep line count (GPU cost) flat as particleCount grows
-  frameRateIndependent: true,          // same speed at 60/90/120 Hz
+  performance: NetworkPerformance(
+    lineRenderer: LineRenderer.vertices, // triangle lines, 4–10x faster on line-heavy scenes
+    maxLinesPerFrame: 15000,             // keep line count (GPU cost) flat as particleCount grows
+    frameRateIndependent: true,          // same speed at 60/90/120 Hz
+  ),
 )
 ```
 
@@ -584,16 +635,17 @@ ParticleNetwork(
 
 Version 1.9.6 is fully backwards-compatible with all `1.x` APIs.
 
-To take advantage of 1.9.6 performance features, simply add the optional flags:
+To take advantage of performance features, use `NetworkPerformance`:
 
 ```dart
 ParticleNetwork(
   particleCount: 200,
-  // New optional optimizations in 1.9.6:
-  enableAdaptivePerformance: true,
-  fastLineRendering: true,
-  maxConnectionsPerParticle: 4,
-  adaptiveDensity: true,
+  performance: NetworkPerformance(
+    enableAdaptivePerformance: true,
+    fastLineRendering: true,
+    maxConnectionsPerParticle: 4,
+    adaptiveDensity: true,
+  ),
   touchFeatures: const TouchFeatures(
     force: 0.5,
     damping: 0.985,

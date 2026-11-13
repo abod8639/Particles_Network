@@ -124,7 +124,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       _enableAdaptivePerformance = false;
       _fastLineRendering = false;
       _frameRateIndependent = false;
-      _lineRenderer = LineRenderer.stroke;
+      _lineRenderer = LineRenderer.vertices;
       _maxConnectionsPerParticle = null;
       _maxLinesPerFrame = null;
       _particleColor = Colors.deepPurple;
@@ -206,7 +206,6 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
               key: _particleKey,
               drawNetwork: _drawNetwork,
               fill: _isFill,
-              isComplex: _isComplex,
               lineWidth: _lineWidth,
               particleCount: _particleCount,
               maxSpeed: _maxSpeed,
@@ -216,6 +215,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
               lineColor: _lineColor,
               hoverEffect: _hoverEffect,
               performance: NetworkPerformance(
+                isComplex: _isComplex,
                 adaptiveDensity: _adaptiveDensity,
                 enableAdaptivePerformance: _enableAdaptivePerformance,
                 fastLineRendering: _fastLineRendering,
