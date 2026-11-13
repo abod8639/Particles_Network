@@ -4,6 +4,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:particles_network/particles_network.dart';
+import 'package:particles_network/src/legacy/legacy_deprecation_logger.dart';
 
 void main() {
   testWidgets('ParticleNetwork builds correctly with default parameters', (
@@ -1269,6 +1270,145 @@ void main() {
       painter = customPaint.painter as OptimizedNetworkPainter;
       expect(painter.lineDistance, closeTo(180.0, 1.0));
       expect(painter.lineDistance, lessThan(200.0));
+    },
+  );
+
+  test(
+    'effectiveDrawNetwork and usedLegacyDrawnetwork reflect legacy and modern parameter (L105-L110)',
+    () {
+      // Modern parameter
+      const modern = ParticleNetwork(drawNetwork: false);
+      expect(modern.drawNetwork, isFalse);
+      expect(modern.effectiveDrawNetwork, isFalse);
+      expect(modern.usedLegacyDrawnetwork, isFalse);
+
+      // Legacy parameter (drawnetwork)
+      const legacy = ParticleNetwork(drawnetwork: false);
+      expect(legacy.effectiveDrawNetwork, isFalse);
+      expect(legacy.usedLegacyDrawnetwork, isTrue);
+    },
+  );
+
+  test(
+    'effectiveLineWidth and usedLegacyLinewidth reflect legacy and modern parameter (L114-L119)',
+    () {
+      // Modern parameter
+      const modern = ParticleNetwork(lineWidth: 2.5);
+      expect(modern.lineWidth, equals(2.5));
+      expect(modern.effectiveLineWidth, equals(2.5));
+      expect(modern.usedLegacyLinewidth, isFalse);
+
+      // Legacy parameter (linewidth)
+      const legacy = ParticleNetwork(linewidth: 3.0);
+      expect(legacy.effectiveLineWidth, equals(3.0));
+      expect(legacy.usedLegacyLinewidth, isTrue);
+    },
+  );
+
+  testWidgets(
+    'usedLegacyGravity logs deprecation warning in initState (L408-L412)',
+    (WidgetTester tester) async {
+      LegacyDeprecationLogger.resetWarned();
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleNetwork(
+                gravityStrength: 0.5,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        LegacyDeprecationLogger.hasWarned(
+          'ParticleNetwork(gravityType, gravityStrength, gravityDirection, gravityCenter)',
+        ),
+        isTrue,
+      );
+    },
+  );
+
+  testWidgets(
+    'didUpdateWidget updates lineDistance and maxConnections when adaptive performance remains enabled (L588-L598)',
+    (WidgetTester tester) async {
+      final timings = List<FrameTiming>.generate(5, (int i) {
+        final int start = i * 40000;
+        return FrameTiming(
+          vsyncStart: start,
+          buildStart: start,
+          buildFinish: start + 4000,
+          rasterStart: start + 4000,
+          rasterFinish: start + 34000,
+          rasterFinishWallTime: start + 34000,
+        );
+      });
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleNetwork(
+                lineDistance: 100.0,
+                performance: NetworkPerformance(
+                  enableAdaptivePerformance: true,
+                  maxConnectionsPerParticle: 10,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Trigger throttling so scaleFactor drops below 1.0 (e.g. to 0.9)
+      tester.binding.platformDispatcher.onReportTimings!(timings);
+      await tester.pump(const Duration(milliseconds: 16));
+
+      // Manually set painter lineDistance so _painter.lineDistance != targetDist in didUpdateWidget (L590-L592)
+      final initialPaint = tester.widget<CustomPaint>(
+        find.descendant(
+          of: find.byType(ParticleNetwork),
+          matching: find.byType(CustomPaint),
+        ),
+      );
+      final initialPainter = initialPaint.painter as OptimizedNetworkPainter;
+      initialPainter.updateLineDistance(50.0);
+      expect(initialPainter.lineDistance, equals(50.0));
+
+      // Re-pump with updated performance parameters while keeping enableAdaptivePerformance: true
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleNetwork(
+                lineDistance: 100.0,
+                performance: NetworkPerformance(
+                  enableAdaptivePerformance: true,
+                  maxConnectionsPerParticle: 10,
+                  isComplex: true,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final customPaint = tester.widget<CustomPaint>(
+        find.descendant(
+          of: find.byType(ParticleNetwork),
+          matching: find.byType(CustomPaint),
+        ),
+      );
+      final painter = customPaint.painter as OptimizedNetworkPainter;
+      expect(painter.lineDistance, closeTo(90.0, 1.0));
+      expect(painter.maxConnectionsPerParticle, equals(9));
     },
   );
 }
