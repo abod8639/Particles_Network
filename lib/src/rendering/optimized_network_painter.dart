@@ -53,7 +53,24 @@ class OptimizedNetworkPainter extends CustomPainter {
   double lineWidth;
 
   /// Whether to use complex (high-quality) or optimized painting logic.
-  bool isComplex;
+  ///
+  /// Deprecated: Configure complex rendering mode via [performance]
+  /// using [NetworkPerformance.isComplex] instead. This parameter will be removed in particles_network 2.0.0.
+  @Deprecated(
+    'Use performance (NetworkPerformance(isComplex: ...)) instead. This parameter will be removed in particles_network 2.0.0.',
+  )
+  bool get isComplex => performance.isComplex;
+  set isComplex(bool value) {
+    if (value != performance.isComplex) {
+      performance = performance.copyWith(isComplex: value);
+      particlePaint.isAntiAlias = !value;
+      linePaint.isAntiAlias = !value;
+      for (int b = 0; b < _numLineBuckets; b++) {
+        _lineBucketPaints[b].isAntiAlias = !value;
+      }
+      _quadTreeManager.rebuildInterval = value ? 6 : 3;
+    }
+  }
 
   /// Whether to fill particles (true) or draw them as outlines (false).
   bool fill;
@@ -210,7 +227,10 @@ class OptimizedNetworkPainter extends CustomPainter {
     Color? touchColor,
     bool? touchActivation,
     required this.lineWidth,
-    required this.isComplex,
+    @Deprecated(
+      'Use performance (NetworkPerformance(isComplex: ...)) instead. This parameter will be removed in particles_network 2.0.0.',
+    )
+    bool? isComplex,
     required this.fill,
     required this.drawNetwork,
     this.touchFeatures = const TouchFeatures(),
@@ -227,6 +247,7 @@ class OptimizedNetworkPainter extends CustomPainter {
   })  : touchColor = touchColor ?? touchFeatures.color,
         touchActivation = touchActivation ?? touchFeatures.enabled,
         performance = performance.copyWith(
+          isComplex: isComplex,
           maxConnectionsPerParticle: maxConnectionsPerParticle,
           adaptiveDensity: adaptiveDensity,
           fastLineRendering: fastLineRendering,
@@ -262,7 +283,7 @@ class OptimizedNetworkPainter extends CustomPainter {
         ..strokeWidth = lineWidth
         ..strokeCap = StrokeCap.round
         ..style = PaintingStyle.stroke
-        ..isAntiAlias = !isComplex;
+        ..isAntiAlias = !this.isComplex;
     });
 
     final double maxDistSq = lineDistance * lineDistance;
@@ -277,18 +298,18 @@ class OptimizedNetworkPainter extends CustomPainter {
 
     particlePaint = Paint()
       ..style = fill ? PaintingStyle.fill : PaintingStyle.stroke
-      ..isAntiAlias = !isComplex
+      ..isAntiAlias = !this.isComplex
       ..color = particleColor;
 
     linePaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = lineWidth
-      ..isAntiAlias = !isComplex
+      ..isAntiAlias = !this.isComplex
       ..color = lineColor;
 
     _accelerationTracker = AccelerationTracker();
     _quadTreeManager = AdaptiveQuadTreeManager(
-      rebuildInterval: isComplex ? 6 : 3,
+      rebuildInterval: this.isComplex ? 6 : 3,
     );
     _poolManager = PoolManager.getInstance();
     _intListPool = _poolManager.intListPool;
@@ -1083,6 +1104,9 @@ class OptimizedNetworkPainter extends CustomPainter {
     if (newPerformance.maxLinesPerFrame != performance.maxLinesPerFrame) {
       _budgetCorrection = 1.0;
     }
+    if (newPerformance.isComplex != performance.isComplex) {
+      isComplex = newPerformance.isComplex;
+    }
     performance = newPerformance;
   }
 
@@ -1095,8 +1119,10 @@ class OptimizedNetworkPainter extends CustomPainter {
     int? maxLinesPerFrame,
     bool clearMaxLinesPerFrame = false,
     LineRenderer? lineRenderer,
+    bool? isComplex,
   }) {
     if (lineRenderer != null) this.lineRenderer = lineRenderer;
+    if (isComplex != null) this.isComplex = isComplex;
     if (clearMaxLinesPerFrame) {
       this.maxLinesPerFrame = null;
       _budgetCorrection = 1.0;
@@ -1156,12 +1182,6 @@ class OptimizedNetworkPainter extends CustomPainter {
     }
     if (isComplex != null && isComplex != this.isComplex) {
       this.isComplex = isComplex;
-      particlePaint.isAntiAlias = !isComplex;
-      linePaint.isAntiAlias = !isComplex;
-      for (int b = 0; b < _numLineBuckets; b++) {
-        _lineBucketPaints[b].isAntiAlias = !isComplex;
-      }
-      _quadTreeManager.rebuildInterval = isComplex ? 6 : 3;
     }
   }
 
