@@ -1230,4 +1230,40 @@ class OptimizedNetworkPainter extends CustomPainter {
   void setUnifiedLineBufferCapacityForTesting(int capacity) {
     _unifiedLineBuffer = Float32List(capacity);
   }
+
+  @visibleForTesting
+  void drawConnectionsForTesting(
+    Canvas canvas,
+    List<int> visibleParticles, [
+    double? effectiveDistance,
+  ]) {
+    _drawConnections(canvas, visibleParticles, effectiveDistance);
+  }
+
+  @visibleForTesting
+  void drawIndividualConnectionsForTesting(
+    Canvas canvas,
+    List<int> visibleParticles, [
+    double? effectiveDistance,
+  ]) {
+    _drawIndividualConnections(canvas, visibleParticles, effectiveDistance);
+  }
+
+  @visibleForTesting
+  void drawBatchedConnectionsForTesting(
+    Canvas canvas,
+    List<int> visibleParticles, [
+    double? effectiveDistance,
+  ]) {
+    _drawBatchedConnections(canvas, visibleParticles, effectiveDistance);
+  }
+
+  @visibleForTesting
+  void collectSortedConnectionsForTesting(
+    double maxDistSq,
+    bool unified, [
+    double? dist,
+  ]) {
+    _collectSortedConnections(maxDistSq, unified, dist);
+  }
 }
