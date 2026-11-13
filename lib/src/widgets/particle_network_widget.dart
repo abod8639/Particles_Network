@@ -76,8 +76,23 @@ class ParticleNetwork extends StatefulWidget {
   /// Checks whether the deprecated [touchActivation] parameter was explicitly configured.
   bool get usedLegacyTouchActivation => _touchActivation != null;
 
+  /// Explicitly provided legacy isComplex flag, if any.
+  final bool? _isComplex;
+
   /// Whether the painting logic is complex (default: false).
-  final bool isComplex;
+  ///
+  /// Deprecated: Configure complex rendering mode via [performance]
+  /// using [NetworkPerformance.isComplex] instead. This parameter will be removed in particles_network 2.0.0.
+  @Deprecated(
+    'Use performance (NetworkPerformance(isComplex: ...)) instead. This parameter will be removed in particles_network 2.0.0.',
+  )
+  bool get isComplex => _isComplex ?? performance.isComplex;
+
+  /// Effective flag used for complex rendering mode.
+  bool get effectiveIsComplex => _isComplex ?? performance.isComplex;
+
+  /// Checks whether the deprecated [isComplex] parameter was explicitly configured.
+  bool get usedLegacyIsComplex => _isComplex != null;
 
   /// Whether to fill particles (true) or stroke them (false) (default: true).
   final bool fill;
@@ -162,7 +177,10 @@ class ParticleNetwork extends StatefulWidget {
       'Use touchFeatures (TouchFeatures(enabled: ...)) instead. This parameter will be removed in particles_network 2.0.0.',
     )
     bool? touchActivation,
-    this.isComplex = false,
+    @Deprecated(
+      'Use performance (NetworkPerformance(isComplex: ...)) instead. This parameter will be removed in particles_network 2.0.0.',
+    )
+    bool? isComplex,
     this.fill = true,
     this.drawNetwork = true,
     this.gravity,
@@ -186,7 +204,8 @@ class ParticleNetwork extends StatefulWidget {
     this.touchFeatures = const TouchFeatures(),
     this.performance = const NetworkPerformance(),
   })  : _touchColor = touchColor,
-        _touchActivation = touchActivation;
+        _touchActivation = touchActivation,
+        _isComplex = isComplex;
 
   @override
   State<ParticleNetwork> createState() => ParticleNetworkState();
@@ -243,7 +262,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
     _painter = OptimizedNetworkPainter(
       drawNetwork: widget.drawNetwork,
       fill: widget.fill,
-      isComplex: widget.isComplex,
+      isComplex: widget.effectiveIsComplex,
       lineWidth: widget.lineWidth,
       particleCount: widget.particleCount,
       touchActivation: widget.effectiveTouchActivation,
@@ -263,7 +282,11 @@ class ParticleNetworkState extends State<ParticleNetwork>
             ? widget.effectiveTouchActivation
             : null,
       ),
-      performance: widget.performance,
+      performance: widget.performance.copyWith(
+        isComplex: widget._isComplex != null
+            ? widget.effectiveIsComplex
+            : widget.performance.isComplex,
+      ),
       simulateTouchInPaint: false,
       repaint: frameNotifier,
     );
@@ -349,6 +372,13 @@ class ParticleNetworkState extends State<ParticleNetwork>
               'ParticleNetwork(touchFeatures: TouchFeatures(enabled: ...))',
         );
       }
+      if (widget.usedLegacyIsComplex) {
+        LegacyDeprecationLogger.warn(
+          deprecatedApi: 'ParticleNetwork(isComplex)',
+          replacement:
+              'ParticleNetwork(performance: NetworkPerformance(isComplex: ...))',
+        );
+      }
     }
 
     _adaptiveController = AdaptivePerformanceController(
@@ -408,6 +438,13 @@ class ParticleNetworkState extends State<ParticleNetwork>
               'ParticleNetwork(touchFeatures: TouchFeatures(enabled: ...))',
         );
       }
+      if (widget.usedLegacyIsComplex) {
+        LegacyDeprecationLogger.warn(
+          deprecatedApi: 'ParticleNetwork(isComplex)',
+          replacement:
+              'ParticleNetwork(performance: NetworkPerformance(isComplex: ...))',
+        );
+      }
     }
 
     bool factoryChanged = false;
@@ -457,14 +494,16 @@ class ParticleNetworkState extends State<ParticleNetwork>
 
     final currentTouchActivation = widget.effectiveTouchActivation;
     final oldTouchActivation = oldWidget.effectiveTouchActivation;
+    final currentIsComplex = widget.effectiveIsComplex;
+    final oldIsComplex = oldWidget.effectiveIsComplex;
     if (widget.drawNetwork != oldWidget.drawNetwork ||
         widget.fill != oldWidget.fill ||
-        widget.isComplex != oldWidget.isComplex ||
+        currentIsComplex != oldIsComplex ||
         currentTouchActivation != oldTouchActivation) {
       _painter.updateRenderFlags(
         drawNetwork: widget.drawNetwork,
         fill: widget.fill,
-        isComplex: widget.isComplex,
+        isComplex: currentIsComplex,
         touchActivation: currentTouchActivation,
       );
     }
@@ -473,11 +512,21 @@ class ParticleNetworkState extends State<ParticleNetwork>
       _painter.updateTouchFeatures(widget.touchFeatures);
     }
 
-    if (widget.performance != oldWidget.performance) {
-      _painter.updatePerformance(widget.performance);
-      if (widget.performance.enableAdaptivePerformance !=
-          oldWidget.performance.enableAdaptivePerformance) {
-        _setAdaptiveTimings(widget.performance.enableAdaptivePerformance);
+    final effectivePerf = widget.performance.copyWith(
+      isComplex: widget._isComplex != null
+          ? widget.effectiveIsComplex
+          : widget.performance.isComplex,
+    );
+    final oldEffectivePerf = oldWidget.performance.copyWith(
+      isComplex: oldWidget._isComplex != null
+          ? oldWidget.effectiveIsComplex
+          : oldWidget.performance.isComplex,
+    );
+    if (effectivePerf != oldEffectivePerf) {
+      _painter.updatePerformance(effectivePerf);
+      if (effectivePerf.enableAdaptivePerformance !=
+          oldEffectivePerf.enableAdaptivePerformance) {
+        _setAdaptiveTimings(effectivePerf.enableAdaptivePerformance);
       }
     }
   }
