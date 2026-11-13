@@ -91,8 +91,12 @@ void main() {
       expect(defaultFactory.color, equals(const Color(0xFFFF0000)));
     });
 
-    test('updateGravity updates gravityConfig', () {
+    test(
+        'updateGravity updates gravityConfig and is exposed via gravity getter',
+        () {
       final sim = ParticleSimulation(particleCount: 5);
+      expect(sim.gravity, equals(const ParticleGravity()));
+
       const newGravity = GravityConfig(
         type: GravityType.point,
         strength: 2.5,
@@ -101,6 +105,7 @@ void main() {
 
       sim.updateGravity(newGravity);
       expect(sim.gravityConfig, equals(newGravity));
+      expect(sim.gravity, equals(newGravity));
     });
 
     test('step does nothing when particles empty or size is zero', () {
