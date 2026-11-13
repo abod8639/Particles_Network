@@ -1487,5 +1487,254 @@ void main() {
         expect(painter.lastFrameLineDistance, closeTo(40.0, 0.01));
       },
     );
+
+    testWidgets(
+      'lineRenderer setter updates performance lineRenderer (L126-L128)',
+      (tester) async {
+        await setUpTest(tester);
+        expect(defaultPainter.lineRenderer, equals(LineRenderer.stroke));
+        defaultPainter.lineRenderer = LineRenderer.vertices;
+        expect(defaultPainter.lineRenderer, equals(LineRenderer.vertices));
+        expect(
+          defaultPainter.performance.lineRenderer,
+          equals(LineRenderer.vertices),
+        );
+      },
+    );
+
+    testWidgets(
+      'updatePerformance updates isComplex and antiAlias (L1110, L1113)',
+      (tester) async {
+        await setUpTest(tester);
+        expect(defaultPainter.isComplex, isFalse);
+        expect(defaultPainter.performance.antiAlias, isTrue);
+
+        defaultPainter.updatePerformance(
+          defaultPainter.performance.copyWith(
+            isComplex: true,
+            antiAlias: false,
+          ),
+        );
+
+        expect(defaultPainter.isComplex, isTrue);
+        expect(defaultPainter.performance.antiAlias, isFalse);
+      },
+    );
+
+    testWidgets(
+      'updatePerformanceOptions updates lineRenderer, isComplex, and antiAlias (L1130-L1135)',
+      (tester) async {
+        await setUpTest(tester);
+
+        defaultPainter.updatePerformanceOptions(
+          lineRenderer: LineRenderer.vertices,
+          isComplex: true,
+          antiAlias: false,
+        );
+
+        expect(defaultPainter.lineRenderer, equals(LineRenderer.vertices));
+        expect(defaultPainter.isComplex, isTrue);
+        expect(defaultPainter.performance.antiAlias, isFalse);
+      },
+    );
+
+    testWidgets(
+      'drawConnectionsForTesting covers effectiveDistance == null and cappedDistanceFactor (L591-L592, L596-L597)',
+      (tester) async {
+        await setUpTest(tester);
+
+        final particles = [
+          MockParticle(position: const Offset(50, 50)),
+          MockParticle(position: const Offset(60, 50)),
+        ];
+
+        final painter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: true,
+          particleCount: particles.length,
+          particles: particles,
+          touchPoint: null,
+          lineDistance: 100.0,
+          particleColor: Colors.white,
+          lineColor: Colors.blue,
+          touchActivation: false,
+          lineWidth: 1.0,
+          maxConnectionsPerParticle: 2,
+          performance: const NetworkPerformance(
+            maxConnectionsPerParticle: 2,
+            cappedDistanceFactor: 0.5,
+          ),
+        );
+
+        // Pre-build grid so it has cols/rows
+        painter.paint(mockCanvas, const Size(200, 200));
+
+        // Calling drawConnectionsForTesting without effectiveDistance:
+        // triggers L591 (?? lineDistance) and L596 (? dist * performance.cappedDistanceFactor)
+        expect(
+          () => painter.drawConnectionsForTesting(mockCanvas, [0, 1]),
+          returnsNormally,
+        );
+      },
+    );
+
+    testWidgets(
+      'drawIndividualConnectionsForTesting covers effectiveDistance == null and early return on uninitialized grid (L613-L614, L627-L628)',
+      (tester) async {
+        await setUpTest(tester);
+
+        final particles = [
+          MockParticle(position: const Offset(50, 50)),
+          MockParticle(position: const Offset(60, 50)),
+        ];
+
+        final painter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: true,
+          particleCount: particles.length,
+          particles: particles,
+          touchPoint: null,
+          lineDistance: 100.0,
+          particleColor: Colors.white,
+          lineColor: Colors.blue,
+          touchActivation: false,
+          lineWidth: 1.0,
+        );
+
+        // 1) Grid has not been built -> cols == 0, rows == 0 -> triggers L627-L628
+        painter.drawIndividualConnectionsForTesting(mockCanvas, [0, 1]);
+
+        // 2) Pre-build grid, then call without effectiveDistance -> triggers L613-L614
+        painter.paint(mockCanvas, const Size(200, 200));
+        expect(
+          () => painter.drawIndividualConnectionsForTesting(mockCanvas, [0, 1]),
+          returnsNormally,
+        );
+      },
+    );
+
+    testWidgets(
+      '_drawIndividualConnections south neighbor skipping and buffer growth (L688-L689, L696-L697)',
+      (tester) async {
+        await setUpTest(tester);
+
+        // In 200x200 with cellSize = 50:
+        // Particle 0 and 1 are in Cell (cx=1, cy=1): [50..100, 50..100]
+        // Particle 2, 3, 4 are in South Cell (cx=1, cy=2): [50..100, 100..150]
+        final particles = [
+          MockParticle(position: const Offset(70, 70)), // 0 in (1, 1)
+          MockParticle(position: const Offset(75, 75)), // 1 in (1, 1)
+          MockParticle(position: const Offset(70, 110)), // 2 in south (1, 2)
+          MockParticle(position: const Offset(75, 115)), // 3 in south (1, 2)
+          MockParticle(position: const Offset(80, 120)), // 4 in south (1, 2)
+        ];
+
+        final painter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: false,
+          particleCount: particles.length,
+          particles: particles,
+          touchPoint: null,
+          lineDistance: 60.0,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          touchColor: Colors.red,
+          touchActivation: false,
+          lineWidth: 1.0,
+          fastLineRendering: false,
+          maxConnectionsPerParticle: 1, // cap = 1
+        );
+
+        // Force candidate buffer to 1 to trigger south candidate buffer growth (L696-L697)
+        painter.setCandidateBufferCapacityForTesting(1);
+
+        // Particle 0 connects to particle 2 in south, filling particle 2's cap (count=1).
+        // Then particle 1 checks particle 2 in south; count >= cap -> triggers L688-L689.
+        expect(
+          () => painter.paint(mockCanvas, const Size(200, 200)),
+          returnsNormally,
+        );
+      },
+    );
+
+    testWidgets(
+      'drawBatchedConnectionsForTesting covers effectiveDistance == null (L766-L767)',
+      (tester) async {
+        await setUpTest(tester);
+
+        final particles = List.generate(
+          35,
+          (i) => MockParticle(
+            position: Offset(50.0 + (i % 6) * 10, 50.0 + (i ~/ 6) * 10),
+          ),
+        );
+
+        final painter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: false,
+          particleCount: particles.length,
+          particles: particles,
+          touchPoint: null,
+          lineDistance: 100.0,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          touchColor: Colors.red,
+          touchActivation: false,
+          lineWidth: 1.0,
+          fastLineRendering: false,
+        );
+
+        painter.paint(mockCanvas, const Size(300, 300));
+
+        // Call without effectiveDistance -> triggers L766-L767
+        expect(
+          () => painter.drawBatchedConnectionsForTesting(
+            mockCanvas,
+            List.generate(35, (i) => i),
+          ),
+          returnsNormally,
+        );
+      },
+    );
+
+    testWidgets(
+      'collectSortedConnectionsForTesting covers dist == null fallback and candidate buffer growth in complex mode (L873-L874, L951-L952)',
+      (tester) async {
+        await setUpTest(tester);
+
+        final particles = [
+          MockParticle(position: const Offset(70, 70)),
+          MockParticle(position: const Offset(75, 75)),
+          MockParticle(position: const Offset(70, 110)),
+          MockParticle(position: const Offset(75, 115)),
+        ];
+
+        final painter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: false,
+          isComplex: true,
+          particleCount: particles.length,
+          particles: particles,
+          touchPoint: null,
+          lineDistance: 80.0,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          touchColor: Colors.red,
+          touchActivation: false,
+          lineWidth: 1.0,
+          fastLineRendering: true,
+        );
+
+        // Pre-build grid in complex mode with small candidate buffer to trigger L951-L952
+        painter.setCandidateBufferCapacityForTesting(1);
+        painter.paint(mockCanvas, const Size(200, 200));
+
+        // Calling collectSortedConnectionsForTesting with dist == null triggers L873-L874
+        expect(
+          () => painter.collectSortedConnectionsForTesting(80.0 * 80.0, false),
+          returnsNormally,
+        );
+      },
+    );
   });
 }
