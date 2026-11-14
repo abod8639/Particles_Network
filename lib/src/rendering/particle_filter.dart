@@ -1,5 +1,7 @@
-// Importing the Particle model which contains the Particle class definition
+import 'dart:ui';
+
 import 'package:particles_network/src/core/particle.dart';
+import 'package:particles_network/src/spatial/sorted_spatial_grid.dart';
 
 // A utility class for filtering and managing visible particles in the network.
 class ParticleFilter {
@@ -28,5 +30,25 @@ class ParticleFilter {
         output.add(i);
       }
     }
+  }
+
+  /// Populates [output] with indices of particles within [viewport] using [grid]
+  /// with O(K_viewport) complexity instead of scanning all particles linearly.
+  static void getVisibleParticlesUsingGrid(
+    SortedSpatialGrid grid,
+    Rect viewport,
+    List<int> output,
+  ) {
+    output.clear();
+    if (!grid.isInitialized) return;
+    grid.queryRect(
+      viewport.left,
+      viewport.top,
+      viewport.right,
+      viewport.bottom,
+      (idx, px, py) {
+        output.add(idx);
+      },
+    );
   }
 }
