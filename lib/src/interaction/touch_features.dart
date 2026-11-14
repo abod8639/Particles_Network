@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:particles_network/src/rendering/line_vertex_batch.dart';
 
 /// Configuration class for touch interaction behavior and physics.
 class TouchFeatures {
@@ -31,6 +32,14 @@ class TouchFeatures {
   /// Highlight color for touch interactions (default: Colors.amber).
   final Color color;
 
+  /// Whether to use ultra-fast single draw-call line rendering for touch interactions.
+  /// If null (default), inherits from [NetworkPerformance.fastLineRendering] or painter heuristics.
+  final bool? fastLineRendering;
+
+  /// Optional line rasterization override for touch interaction lines ([LineRenderer.stroke] or [LineRenderer.vertices]).
+  /// If null (default), inherits from [NetworkPerformance.lineRenderer].
+  final LineRenderer? lineRenderer;
+
   /// Creates a [TouchFeatures] configuration.
   const TouchFeatures({
     bool? enabled,
@@ -49,6 +58,8 @@ class TouchFeatures {
     this.damping = 0.985,
     this.lineDistance,
     this.color = Colors.amber,
+    this.fastLineRendering,
+    this.lineRenderer,
   })  : enabled = touchActivation ?? enabled ?? true,
         speed = speed ?? decayRate ?? 0.42,
         force = force ?? pullForce ?? 0.42;
@@ -78,6 +89,8 @@ class TouchFeatures {
     double? damping,
     double? lineDistance,
     Color? color,
+    bool? fastLineRendering,
+    LineRenderer? lineRenderer,
     @Deprecated(
       'Use speed instead. This parameter will be removed in particles_network 2.0.0.',
     )
@@ -95,6 +108,8 @@ class TouchFeatures {
       damping: damping ?? this.damping,
       lineDistance: lineDistance ?? this.lineDistance,
       color: color ?? this.color,
+      fastLineRendering: fastLineRendering ?? this.fastLineRendering,
+      lineRenderer: lineRenderer ?? this.lineRenderer,
     );
   }
 
@@ -109,7 +124,9 @@ class TouchFeatures {
           maxTouchSpeed == other.maxTouchSpeed &&
           damping == other.damping &&
           lineDistance == other.lineDistance &&
-          color == other.color;
+          color == other.color &&
+          fastLineRendering == other.fastLineRendering &&
+          lineRenderer == other.lineRenderer;
 
   @override
   int get hashCode => Object.hash(
@@ -120,11 +137,14 @@ class TouchFeatures {
         damping,
         lineDistance,
         color,
+        fastLineRendering,
+        lineRenderer,
       );
 
   @override
   String toString() =>
       'TouchFeatures(enabled: $enabled, speed: $speed, force: $force, '
       'maxTouchSpeed: $maxTouchSpeed, damping: $damping, '
-      'lineDistance: $lineDistance, color: $color)';
+      'lineDistance: $lineDistance, color: $color, '
+      'fastLineRendering: $fastLineRendering, lineRenderer: $lineRenderer)';
 }
