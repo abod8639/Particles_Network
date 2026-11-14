@@ -394,7 +394,9 @@ void main() {
       expect(customFeatures.lineDistance, equals(150.0));
     });
 
-    test('fastLineRendering and lineRenderer configured correctly and equality works', () {
+    test(
+        'fastLineRendering and lineRenderer configured correctly and equality works',
+        () {
       const f1 = TouchFeatures(
         fastLineRendering: true,
         lineRenderer: LineRenderer.vertices,
@@ -414,7 +416,8 @@ void main() {
       expect(f1.fastLineRendering, isTrue);
       expect(f1.lineRenderer, equals(LineRenderer.vertices));
 
-      final copied = f1.copyWith(fastLineRendering: false, lineRenderer: LineRenderer.stroke);
+      final copied = f1.copyWith(
+          fastLineRendering: false, lineRenderer: LineRenderer.stroke);
       expect(copied.fastLineRendering, isFalse);
       expect(copied.lineRenderer, equals(LineRenderer.stroke));
       expect(f1.toString(), contains('fastLineRendering: true'));
@@ -429,7 +432,9 @@ void main() {
       mockCanvas = MockCanvas();
     });
 
-    test('drawTouchLines uses single drawRawPoints call when fastLineRendering is true and LineRenderer.stroke', () {
+    test(
+        'drawTouchLines uses single drawRawPoints call when fastLineRendering is true and LineRenderer.stroke',
+        () {
       final p1 = Particle(
         position: const Offset(100, 100),
         velocity: Offset.zero,
@@ -473,7 +478,9 @@ void main() {
       expect(handler.lastLineCount, equals(2));
     });
 
-    test('drawTouchLines uses single drawVertices call when lineRenderer is LineRenderer.vertices', () {
+    test(
+        'drawTouchLines uses single drawVertices call when lineRenderer is LineRenderer.vertices',
+        () {
       final p1 = Particle(
         position: const Offset(100, 100),
         velocity: Offset.zero,
@@ -488,8 +495,7 @@ void main() {
       );
 
       final particles = [p1, p2];
-      final grid = SortedSpatialGrid()
-        ..build(particles, [0, 1], 500, 500, 100);
+      final grid = SortedSpatialGrid()..build(particles, [0, 1], 500, 500, 100);
 
       final handler = TouchInteractionHandler(
         particles: particles,
@@ -511,7 +517,9 @@ void main() {
       expect(handler.lastLineCount, equals(2));
     });
 
-    test('drawTouchLines uses individual drawLine when fastLineRendering is false', () {
+    test(
+        'drawTouchLines uses individual drawLine when fastLineRendering is false',
+        () {
       final p1 = Particle(
         position: const Offset(100, 100),
         velocity: Offset.zero,
@@ -543,7 +551,9 @@ void main() {
       expect(handler.lastLineCount, equals(2));
     });
 
-    test('applyTouchPhysics with SortedSpatialGrid produces identical physics to direct loop', () {
+    test(
+        'applyTouchPhysics with SortedSpatialGrid produces identical physics to direct loop',
+        () {
       final pDirect = Particle(
         position: const Offset(100, 100),
         velocity: Offset.zero,
@@ -560,8 +570,7 @@ void main() {
       final trackerDirect = AccelerationTracker();
       final trackerGrid = AccelerationTracker();
 
-      final grid = SortedSpatialGrid()
-        ..build([pGrid], [0], 500, 500, 100);
+      final grid = SortedSpatialGrid()..build([pGrid], [0], 500, 500, 100);
 
       final handlerDirect = TouchInteractionHandler(
         particles: [pDirect],
@@ -586,10 +595,12 @@ void main() {
       expect(pGrid.vx, closeTo(pDirect.vx, 1e-6));
       expect(pGrid.vy, closeTo(pDirect.vy, 1e-6));
       expect(pGrid.wasAccelerated, isTrue);
-      expect(trackerGrid.acceleratedParticleCount, equals(trackerDirect.acceleratedParticleCount));
+      expect(trackerGrid.acceleratedParticleCount,
+          equals(trackerDirect.acceleratedParticleCount));
     });
 
-    test('drawTouchLines safely falls back when grid is null or uninitialized', () {
+    test('drawTouchLines safely falls back when grid is null or uninitialized',
+        () {
       final p = Particle(
         position: const Offset(100, 100),
         velocity: Offset.zero,
@@ -624,8 +635,7 @@ void main() {
         size: 2,
       );
 
-      final grid = SortedSpatialGrid()
-        ..build([p], [0], 500, 500, 100);
+      final grid = SortedSpatialGrid()..build([p], [0], 500, 500, 100);
 
       final handler = TouchInteractionHandler(
         particles: [p],
@@ -645,7 +655,8 @@ void main() {
       expect(p.wasAccelerated, isFalse);
     });
 
-    test('buffer expands smoothly when line count exceeds initial capacity', () {
+    test('buffer expands smoothly when line count exceeds initial capacity',
+        () {
       // 80 particles in range to exceed initial 64 capacity
       final particles = List.generate(
         80,
@@ -671,12 +682,15 @@ void main() {
         fastLineRendering: true,
       );
 
-      expect(() => handler.drawTouchLines(mockCanvas, visible), returnsNormally);
+      expect(
+          () => handler.drawTouchLines(mockCanvas, visible), returnsNormally);
       verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(1);
       expect(handler.lastLineCount, equals(80));
     });
 
-    test('OptimizedNetworkPainter propagates performance and touch settings to handler', () {
+    test(
+        'OptimizedNetworkPainter propagates performance and touch settings to handler',
+        () {
       final p = Particle(
         position: const Offset(100, 100),
         velocity: Offset.zero,
@@ -725,7 +739,9 @@ void main() {
       verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(1);
     });
 
-    test('handles non-finite touch coordinates (NaN / Infinity) without crashing', () {
+    test(
+        'handles non-finite touch coordinates (NaN / Infinity) without crashing',
+        () {
       final p = Particle(
         position: const Offset(100, 100),
         velocity: Offset.zero,
@@ -846,15 +862,19 @@ void main() {
       );
 
       // index 99 is out of bounds for a list of 1 particle
-      expect(() => handler.drawTouchLines(mockCanvas, [0, 99]), returnsNormally);
+      expect(
+          () => handler.drawTouchLines(mockCanvas, [0, 99]), returnsNormally);
       expect(handler.lastLineCount, equals(1));
 
       final tracker = AccelerationTracker();
-      expect(() => handler.applyTouchPhysics([0, 99], tracker), returnsNormally);
+      expect(
+          () => handler.applyTouchPhysics([0, 99], tracker), returnsNormally);
       expect(p.wasAccelerated, isTrue);
     });
 
-    test('OptimizedNetworkPainter respects TouchFeatures lineRenderer in constructor', () {
+    test(
+        'OptimizedNetworkPainter respects TouchFeatures lineRenderer in constructor',
+        () {
       final p = Particle(
         position: const Offset(100, 100),
         velocity: Offset.zero,
