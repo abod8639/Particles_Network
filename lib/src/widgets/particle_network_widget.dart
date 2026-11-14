@@ -14,6 +14,7 @@ import 'package:particles_network/src/rendering/network_performance.dart';
 import 'package:particles_network/src/rendering/optimized_network_painter.dart';
 import 'package:particles_network/src/rendering/performance_utils.dart';
 import 'package:particles_network/src/simulation/particle_simulation.dart';
+import 'package:particles_network/src/spatial/sorted_spatial_grid.dart';
 
 /// A Flutter widget that renders an interactive particle network visualization.
 class ParticleNetwork extends StatefulWidget {
@@ -194,6 +195,10 @@ class ParticleNetwork extends StatefulWidget {
   /// Advanced performance settings and rendering optimizations.
   final NetworkPerformance performance;
 
+  /// Optional custom spatial grid for particle queries.
+  /// If null, a default [SortedSpatialGrid] is used.
+  final SortedSpatialGrid? spatialGrid;
+
   /// Creates a [ParticleNetwork] widget with customizable visualization parameters.
   const ParticleNetwork({
     super.key,
@@ -254,6 +259,7 @@ class ParticleNetwork extends StatefulWidget {
     this.hoverEffect = false,
     this.touchFeatures = const TouchFeatures(),
     this.performance = const NetworkPerformance(),
+    this.spatialGrid,
   })  : _touchColor = touchColor,
         _touchActivation = touchActivation,
         _isComplex = isComplex,
@@ -272,6 +278,9 @@ class ParticleNetworkState extends State<ParticleNetwork>
 
   /// Exposes particles list for compatibility.
   List<Particle> get particles => simulation.particles;
+
+  /// Exposes the underlying [SortedSpatialGrid] used by simulation and painter.
+  SortedSpatialGrid get spatialGrid => simulation.spatialGrid;
 
   late final Ticker ticker;
   Offset touchPoint = Offset.infinite;
@@ -320,6 +329,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
       particleCount: widget.particleCount,
       touchActivation: widget.effectiveTouchActivation,
       particles: simulation.particles,
+      spatialGrid: simulation.spatialGrid,
       touchPoint: touchPoint,
       lineDistance: widget.lineDistance,
       particleColor: widget.particleColor,
@@ -444,6 +454,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
       maxSize: widget.maxSize,
       particleColor: widget.particleColor,
       gravityConfig: _buildGravityConfig(Size.zero),
+      spatialGrid: widget.spatialGrid,
     );
 
     _initPainter();
@@ -591,8 +602,9 @@ class ParticleNetworkState extends State<ParticleNetwork>
           _painter.updateLineDistance(targetDist);
         }
         if (effectivePerf.maxConnectionsPerParticle != null) {
-          final int adjustedConn = _adaptiveController.getAdjustedMaxConnections(
-              effectivePerf.maxConnectionsPerParticle!);
+          final int adjustedConn =
+              _adaptiveController.getAdjustedMaxConnections(
+                  effectivePerf.maxConnectionsPerParticle!);
           if (_painter.maxConnectionsPerParticle != adjustedConn) {
             _painter.maxConnectionsPerParticle = adjustedConn;
           }
