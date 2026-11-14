@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'dart:math' as math;
 import 'dart:ui';
 
@@ -1376,7 +1377,9 @@ void main() {
           returnsNormally);
     });
 
-    testWidgets('alpha distance and safety floor protect connection radius under adaptiveDensity', (
+    testWidgets(
+        'alpha distance and safety floor protect connection radius under adaptiveDensity',
+        (
       tester,
     ) async {
       await setUpTest(tester);
@@ -1413,7 +1416,9 @@ void main() {
       expect(painter.lastFrameLineDistance, lessThan(100.0));
     });
 
-    testWidgets('stepTouchPhysics pre-filters particles avoiding duplicate loop in paint', (
+    testWidgets(
+        'stepTouchPhysics pre-filters particles avoiding duplicate loop in paint',
+        (
       tester,
     ) async {
       await setUpTest(tester);
