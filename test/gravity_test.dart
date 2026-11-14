@@ -181,7 +181,9 @@ void main() {
       expect(preservedCenter.direction, const Offset(1, 0));
     });
 
-    test('Equality differentiates by strength, direction, and center (L110-L112)', () {
+    test(
+        'Equality differentiates by strength, direction, and center (L110-L112)',
+        () {
       const base = ParticleGravity(
         type: GravityType.point,
         strength: 0.5,
