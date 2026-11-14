@@ -10,11 +10,15 @@ import 'package:particles_network/src/factory/particle_factory.dart';
 import 'package:particles_network/src/physics/particle_controller.dart';
 import 'package:particles_network/src/physics/particle_gravity.dart';
 import 'package:particles_network/src/physics/particle_updater.dart';
+import 'package:particles_network/src/spatial/sorted_spatial_grid.dart';
 
 /// Independent simulation controller managing the particles lifecycle and physics updates.
 class ParticleSimulation {
   /// The active particles in the simulation.
   final List<Particle> particles = [];
+
+  /// Spatial partitioning grid providing O(K) fixed-radius queries for the simulation.
+  final SortedSpatialGrid spatialGrid;
 
   /// The particle factory used to generate new particles.
   IParticleFactory factory;
@@ -43,7 +47,9 @@ class ParticleSimulation {
     double maxSpeed = 0.5,
     double maxSize = 1.5,
     Color particleColor = const Color(0xFFFFFFFF),
-  })  : factory = factory ??
+    SortedSpatialGrid? spatialGrid,
+  })  : spatialGrid = spatialGrid ?? SortedSpatialGrid(),
+        factory = factory ??
             DefaultParticleFactory(
               random: Random(),
               maxSpeed: maxSpeed,
@@ -129,9 +135,75 @@ class ParticleSimulation {
     );
   }
 
+  /// Builds or updates [spatialGrid] for the current simulation state.
+  ///
+  /// [radius] specifies the query neighborhood radius (defaults to 100.0).
+  /// If [visibleIndices] is provided, only those particle indices are indexed;
+  /// otherwise all particles from 0 to `particles.length - 1` are indexed.
+  /// An optional [cellMultiplier] can be used to scale the grid cell size.
+  void buildSpatialGrid([
+    double radius = 100.0,
+    List<int>? visibleIndices,
+    double? cellMultiplier,
+  ]) {
+    if (particles.isEmpty ||
+        currentSize.width <= 0 ||
+        currentSize.height <= 0) {
+      spatialGrid.clear();
+      return;
+    }
+    spatialGrid.build(
+      particles,
+      visibleIndices,
+      currentSize.width,
+      currentSize.height,
+      radius,
+      cellMultiplier,
+    );
+  }
+
+  /// Finds all particles within Euclidean distance [radius] of point ([x], [y]) using [spatialGrid].
+  void queryRadius(
+    double x,
+    double y,
+    double radius,
+    void Function(int particleIndex, double px, double py, double distSq)
+        visitor,
+  ) {
+    spatialGrid.queryRadius(x, y, radius, visitor);
+  }
+
+  /// Finds all particles within rectangular boundary `[minX, maxX] x [minY, maxY]` using [spatialGrid].
+  void queryRect(
+    double minX,
+    double minY,
+    double maxX,
+    double maxY,
+    void Function(int particleIndex, double px, double py) visitor,
+  ) {
+    spatialGrid.queryRect(minX, minY, maxX, maxY, visitor);
+  }
+
+  /// Iterates all unique particle pairs within Euclidean distance [maxDistance]
+  /// across [spatialGrid] in O(N) time with zero allocations.
+  void forEachPair(
+    double maxDistance,
+    void Function(int i1, int i2, double distSq) visitor,
+  ) {
+    spatialGrid.forEachPair(maxDistance, visitor);
+  }
+
+  /// Iterates all particles stored in [spatialGrid] in contiguous memory order.
+  void forEachParticle(
+    void Function(int particleIndex, double px, double py) visitor,
+  ) {
+    spatialGrid.forEachParticle(visitor);
+  }
+
   /// Clears all particles and resets the simulation.
   void clear() {
     particles.clear();
     currentSize = Size.zero;
+    spatialGrid.clear();
   }
 }
