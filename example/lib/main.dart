@@ -75,6 +75,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   LineRenderer _lineRenderer = LineRenderer.stroke;
   int? _maxConnectionsPerParticle;
   int? _maxLinesPerFrame;
+  double _spatialCellMultiplier = 1.0;
 
   // --- Styling Variables ---
   Color _particleColor = Colors.deepPurple;
@@ -127,6 +128,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       _lineRenderer = LineRenderer.vertices;
       _maxConnectionsPerParticle = null;
       _maxLinesPerFrame = null;
+      _spatialCellMultiplier = 1.0;
       _particleColor = Colors.deepPurple;
       _lineColor = Colors.lightBlue;
       _touchColor = Colors.amber;
@@ -223,6 +225,9 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                 lineRenderer: _lineRenderer,
                 maxConnectionsPerParticle: _maxConnectionsPerParticle,
                 maxLinesPerFrame: _maxLinesPerFrame,
+                spatialCellMultiplier: _spatialCellMultiplier != 1.0
+                    ? _spatialCellMultiplier
+                    : null,
               ),
               touchFeatures: TouchFeatures(
                 enabled: _touchActivation,
@@ -703,6 +708,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           _lineRenderer = LineRenderer.stroke;
           _maxConnectionsPerParticle = null;
           _maxLinesPerFrame = null;
+          _spatialCellMultiplier = 1.0;
           break;
         case "Adaptive":
           _adaptiveDensity = true;
@@ -712,6 +718,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           _lineRenderer = LineRenderer.stroke;
           _maxConnectionsPerParticle = null;
           _maxLinesPerFrame = null;
+          _spatialCellMultiplier = 1.0;
           break;
         case "High FPS":
           _adaptiveDensity = true;
@@ -721,6 +728,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           _lineRenderer = LineRenderer.vertices;
           _maxConnectionsPerParticle = 4;
           _maxLinesPerFrame = 15000;
+          _spatialCellMultiplier = 1.0;
           break;
       }
     });
@@ -782,6 +790,43 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 10),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0xFF10B981).withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: const Color(0xFF10B981).withValues(alpha: 0.35),
+            ),
+          ),
+          child: const Row(
+            children: [
+              Icon(Icons.grid_4x4, size: 14, color: Color(0xFF10B981)),
+              SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  "Spatial Engine: SortedSpatialGrid (Zero Heap Allocations)",
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF10B981),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        _buildSlider(
+          "Spatial Cell Multiplier",
+          _spatialCellMultiplier,
+          0.5,
+          2.5,
+          (v) => setState(() => _spatialCellMultiplier = v),
+          fractionDigits: 2,
         ),
         const SizedBox(height: 12),
 
@@ -856,7 +901,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           label: "Max Conn / Particle",
           value: (_maxConnectionsPerParticle ?? 0).toDouble(),
           min: 0,
-          max: 12,
+          max: 20,
           displayValue: _maxConnectionsPerParticle == null
               ? "Off"
               : "$_maxConnectionsPerParticle",
@@ -1214,8 +1259,8 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
         (_maxTouchSpeed - 5.5).abs() < 0.1;
     final isMagnetic = (_touchForce - 1.20).abs() < 0.01;
     final isGentle = (_touchForce - 0.15).abs() < 0.01;
-    final isVortex =
-        (_touchForce - 0.70).abs() < 0.01 && (_maxTouchSpeed - 10.0).abs() < 0.1;
+    final isVortex = (_touchForce - 0.70).abs() < 0.01 &&
+        (_maxTouchSpeed - 10.0).abs() < 0.1;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
