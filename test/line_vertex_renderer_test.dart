@@ -159,7 +159,8 @@ void main() {
       expect(batch.hasColors, isFalse);
     });
 
-    test('supports per-vertex and per-segment colors in addSegments and draw', () {
+    test('supports per-vertex and per-segment colors in addSegments and draw',
+        () {
       final batch = LineVertexBatch();
 
       // 1. Single color parameter
@@ -212,7 +213,9 @@ void main() {
       expect(batch.colors, isEmpty);
     });
 
-    test('mixed uncolored and colored segment additions safely backfill default colors', () {
+    test(
+        'mixed uncolored and colored segment additions safely backfill default colors',
+        () {
       final batch = LineVertexBatch();
 
       // 1. Add uncolored segment first
