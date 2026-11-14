@@ -65,6 +65,12 @@ class NetworkPerformance {
   /// aesthetics or extreme low-end hardware.
   final bool antiAlias;
 
+  /// Optional cell size multiplier for [SortedSpatialGrid] spatial partitioning (default: null).
+  ///
+  /// When null, [SortedSpatialGrid] automatically calculates the optimal cell size as
+  /// `max(radius, sqrt(area / particleCount))`.
+  final double? spatialCellMultiplier;
+
   /// Creates a [NetworkPerformance] configuration.
   const NetworkPerformance({
     this.maxConnectionsPerParticle,
@@ -77,6 +83,7 @@ class NetworkPerformance {
     this.isComplex = false,
     this.cappedDistanceFactor = 0.75,
     this.antiAlias = true,
+    this.spatialCellMultiplier,
   });
 
   /// High-performance preset tuned for high particle counts and smooth frame rates.
@@ -91,6 +98,7 @@ class NetworkPerformance {
     this.isComplex = true,
     this.cappedDistanceFactor = 0.75,
     this.antiAlias = true,
+    this.spatialCellMultiplier,
   });
 
   /// Adaptive preset focusing on dynamic frame rate scaling and independent motion.
@@ -105,6 +113,7 @@ class NetworkPerformance {
     this.isComplex = false,
     this.cappedDistanceFactor = 0.75,
     this.antiAlias = true,
+    this.spatialCellMultiplier,
   });
 
   /// Creates a copy of this [NetworkPerformance] with updated parameters.
@@ -121,6 +130,8 @@ class NetworkPerformance {
     bool? isComplex,
     double? cappedDistanceFactor,
     bool? antiAlias,
+    double? spatialCellMultiplier,
+    bool clearSpatialCellMultiplier = false,
   }) {
     return NetworkPerformance(
       maxConnectionsPerParticle: clearMaxConnectionsPerParticle
@@ -138,6 +149,9 @@ class NetworkPerformance {
       isComplex: isComplex ?? this.isComplex,
       cappedDistanceFactor: cappedDistanceFactor ?? this.cappedDistanceFactor,
       antiAlias: antiAlias ?? this.antiAlias,
+      spatialCellMultiplier: clearSpatialCellMultiplier
+          ? null
+          : (spatialCellMultiplier ?? this.spatialCellMultiplier),
     );
   }
 
@@ -155,7 +169,8 @@ class NetworkPerformance {
           lineRenderer == other.lineRenderer &&
           isComplex == other.isComplex &&
           cappedDistanceFactor == other.cappedDistanceFactor &&
-          antiAlias == other.antiAlias;
+          antiAlias == other.antiAlias &&
+          spatialCellMultiplier == other.spatialCellMultiplier;
 
   @override
   int get hashCode => Object.hash(
@@ -169,6 +184,7 @@ class NetworkPerformance {
         isComplex,
         cappedDistanceFactor,
         antiAlias,
+        spatialCellMultiplier,
       );
 
   @override
@@ -183,7 +199,7 @@ class NetworkPerformance {
         'lineRenderer: $lineRenderer, '
         'isComplex: $isComplex, '
         'cappedDistanceFactor: $cappedDistanceFactor, '
-        'antiAlias: $antiAlias)';
+        'antiAlias: $antiAlias, '
+        'spatialCellMultiplier: $spatialCellMultiplier)';
   }
 }
-
