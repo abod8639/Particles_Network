@@ -40,7 +40,8 @@ void main() {
       }
     });
 
-    test('returns immediately and does not log when not in debug mode (L33)', () {
+    test('returns immediately and does not log when not in debug mode (L33)',
+        () {
       final List<String> printedMessages = [];
       final originalDebugPrint = debugPrint;
       debugPrint = (String? message, {int? wrapWidth}) {
@@ -109,4 +110,3 @@ void main() {
     });
   });
 }
-
