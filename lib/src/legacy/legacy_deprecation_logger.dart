@@ -55,4 +55,3 @@ class LegacyDeprecationLogger {
     debugPrint(buffer.toString());
   }
 }
-
