@@ -10,6 +10,9 @@ import 'dart:math' as math; // For mathematical operations
 import 'package:particles_network/src/core/rectangle.dart';
 
 /// Represents a particle with index and 2D coordinates.
+@Deprecated(
+  'Use SortedSpatialGrid instead. This class will be removed in particles_network 2.0.0.',
+)
 class QuadTreeParticle {
   /// Unique identifier or index of the particle.
   final int index;
@@ -25,6 +28,10 @@ class QuadTreeParticle {
 }
 
 /// Enum representing the four quadrants in 2D space.
+@Deprecated(
+  'QuadTree quadrants are deprecated. Use SortedSpatialGrid instead. '
+  'This enum will be removed in particles_network 2.0.0.',
+)
 enum Quadrant {
   /// The top-left quadrant.
   northWest,
@@ -40,6 +47,10 @@ enum Quadrant {
 }
 
 /// Represents a compressed path in the quadtree for optimization
+@Deprecated(
+  'CompressedPath is deprecated. Use SortedSpatialGrid instead. '
+  'This class will be removed in particles_network 2.0.0.',
+)
 class CompressedPath {
   /// The sequence of quadrants traversed to reach this path.
   final List<Quadrant> path;
@@ -61,6 +72,9 @@ class CompressedPath {
 }
 
 /// A node in the compressed quadtree data structure
+@Deprecated(
+  'Use SortedSpatialGrid instead. This class will be removed in particles_network 2.0.0.',
+)
 class CompressedQuadTreeNode {
   // Configuration constants
   static const int maxParticles =
