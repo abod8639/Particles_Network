@@ -213,9 +213,8 @@ void main() {
         matching: find.byType(CustomPaint),
       );
 
-      var painter =
-          tester.widget<CustomPaint>(customPaintFinder).painter
-              as OptimizedNetworkPainter;
+      var painter = tester.widget<CustomPaint>(customPaintFinder).painter
+          as OptimizedNetworkPainter;
       expect(painter.maxConnectionsPerParticle, equals(2));
       expect(painter.fastLineRendering, isFalse);
       expect(painter.isComplex, isFalse);
@@ -239,16 +238,17 @@ void main() {
         ),
       );
 
-      painter =
-          tester.widget<CustomPaint>(customPaintFinder).painter
-              as OptimizedNetworkPainter;
+      painter = tester.widget<CustomPaint>(customPaintFinder).painter
+          as OptimizedNetworkPainter;
       expect(painter.maxConnectionsPerParticle, equals(8));
       expect(painter.fastLineRendering, isTrue);
       expect(painter.lineRenderer, equals(LineRenderer.vertices));
       expect(painter.isComplex, isTrue);
     });
 
-    testWidgets('legacy isComplex parameter falls back to painter and logs deprecation', (
+    testWidgets(
+        'legacy isComplex parameter falls back to painter and logs deprecation',
+        (
       WidgetTester tester,
     ) async {
       LegacyDeprecationLogger.resetWarned();
@@ -272,9 +272,8 @@ void main() {
         matching: find.byType(CustomPaint),
       );
 
-      final painter =
-          tester.widget<CustomPaint>(customPaintFinder).painter
-              as OptimizedNetworkPainter;
+      final painter = tester.widget<CustomPaint>(customPaintFinder).painter
+          as OptimizedNetworkPainter;
       expect(painter.isComplex, isTrue);
       expect(
         LegacyDeprecationLogger.hasWarned('ParticleNetwork(isComplex)'),
@@ -604,4 +603,3 @@ void main() {
     );
   });
 }
-
