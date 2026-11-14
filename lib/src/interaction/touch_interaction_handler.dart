@@ -1,9 +1,12 @@
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:particles_network/src/core/particle.dart';
 import 'package:particles_network/src/interaction/touch_features.dart';
+import 'package:particles_network/src/rendering/line_vertex_batch.dart';
 import 'package:particles_network/src/rendering/performance_utils.dart';
+import 'package:particles_network/src/spatial/sorted_spatial_grid.dart';
 
 export 'package:particles_network/src/interaction/touch_features.dart';
 
@@ -23,7 +26,13 @@ class TouchInteractionHandler {
       touchFeatures.lineDistance ?? lineDistance;
 
   // Color to use for touch interactions
-  Color touchColor;
+  Color get touchColor => _touchColor;
+  Color _touchColor;
+  set touchColor(Color newColor) {
+    if (_touchColor != newColor) {
+      rebuildTouchColorLut(newColor);
+    }
+  }
 
   // Paint object for drawing touch interaction lines
   final Paint linePaint;
@@ -31,15 +40,39 @@ class TouchInteractionHandler {
   // Configuration for touch features and physics
   TouchFeatures touchFeatures;
 
+  /// Spatial grid used for O(K) neighborhood lookups
+  SortedSpatialGrid? spatialGrid;
+
+  /// Line rendering backend (stroke or vertices)
+  LineRenderer lineRenderer;
+
+  /// Whether to batch touch lines into a single draw call
+  bool fastLineRendering;
+
+  /// Number of touch lines drawn in the last call to [drawTouchLines]
+  int get lastLineCount => _lastLineCount;
+  int _lastLineCount = 0;
+
+  // Reusable flat buffers for single draw-call line rendering (zero per-frame allocations)
+  Float32List _lineCoordinates = Float32List(256);
+  Int32List _lineColors = Int32List(64);
+  final LineVertexBatch _touchVertexBatch = LineVertexBatch();
+  final Paint _touchVertexPaint = Paint()..color = const Color(0xFFFFFFFF);
+
   // Constructor for the touch interaction handler
   TouchInteractionHandler({
     required this.particles,
     required this.touchPoint,
     required this.lineDistance,
-    required this.touchColor,
+    required Color touchColor,
     required this.linePaint,
     this.touchFeatures = const TouchFeatures(),
-  });
+    this.spatialGrid,
+    LineRenderer? lineRenderer,
+    bool? fastLineRendering,
+  })  : _touchColor = touchColor,
+        lineRenderer = lineRenderer ?? touchFeatures.lineRenderer ?? LineRenderer.stroke,
+        fastLineRendering = fastLineRendering ?? touchFeatures.fastLineRendering ?? true;
 
   // Test variable (kept for API compatibility)
   final int test = 0;
@@ -47,14 +80,14 @@ class TouchInteractionHandler {
   // Precomputed color look-up table for touch lines (zero allocation)
   late List<Color> _touchColorLut = List<Color>.generate(
     256,
-    (int a) => touchColor.withAlpha(a),
+    (int a) => _touchColor.withAlpha(a),
     growable: false,
   );
 
   /// Rebuilds the touch color LUT with a new color — called by the painter
   /// to avoid full reconstruction when only the touch color changes.
   void rebuildTouchColorLut(Color newColor) {
-    touchColor = newColor;
+    _touchColor = newColor;
     _touchColorLut = List<Color>.generate(
       256,
       (int a) => newColor.withAlpha(a),
@@ -62,14 +95,32 @@ class TouchInteractionHandler {
     );
   }
 
+  void _ensureLineBufferCapacity(int lineCount) {
+    final int requiredFloats = lineCount * 4;
+    if (requiredFloats > _lineCoordinates.length) {
+      final int newCap = math.max(requiredFloats, _lineCoordinates.length * 2);
+      final Float32List newBuf = Float32List(newCap);
+      newBuf.setRange(0, _lineCoordinates.length, _lineCoordinates);
+      _lineCoordinates = newBuf;
+    }
+    if (lineCount > _lineColors.length) {
+      final int newCap = math.max(lineCount, _lineColors.length * 2);
+      final Int32List newBuf = Int32List(newCap);
+      newBuf.setRange(0, _lineColors.length, _lineColors);
+      _lineColors = newBuf;
+    }
+  }
+
   // Applies touch physics to visible particles
   // [visibleParticles] - List of indices of currently visible particles
   // [tracker] - Acceleration tracker to record accelerated particles
+  // [grid] - Optional spatial grid override for O(K) neighborhood queries
   void applyTouchPhysics(
     List<int> visibleParticles,
-    AccelerationTracker tracker,
-  ) {
-    applyTouchPhysicsScaled(visibleParticles, tracker, 1.0);
+    AccelerationTracker tracker, [
+    SortedSpatialGrid? grid,
+  ]) {
+    applyTouchPhysicsScaled(visibleParticles, tracker, 1.0, grid);
   }
 
   /// Same as [applyTouchPhysics], but integrates over [timeScale] 60 Hz
@@ -77,14 +128,18 @@ class TouchInteractionHandler {
   void applyTouchPhysicsScaled(
     List<int> visibleParticles,
     AccelerationTracker tracker,
-    double timeScale,
-  ) {
+    double timeScale, [
+    SortedSpatialGrid? grid,
+  ]) {
     final Offset? touch = touchPoint;
-    if (touch == null) return; // Exit if no current touch
+    if (touch == null || !touch.isFinite) return; // Exit if no current or non-finite touch
+    if (visibleParticles.isEmpty) return;
+
+    final double maxDist = effectiveLineDistance;
+    if (!maxDist.isFinite || maxDist <= 0) return;
 
     final double tx = touch.dx;
     final double ty = touch.dy;
-    final double maxDist = effectiveLineDistance;
     final double maxDistSq = maxDist * maxDist;
     final double pullForce = touchFeatures.force;
     final double t = timeScale;
@@ -96,50 +151,120 @@ class TouchInteractionHandler {
     final double maxTouchSpeedSq = maxTouchSpeed * maxTouchSpeed;
     final double touchSpeed = touchFeatures.speed;
 
-    final int count = visibleParticles.length;
-    for (int idx = 0; idx < count; idx++) {
-      final Particle p = particles[visibleParticles[idx]];
-      final double dx = tx - p.x;
-      if (dx > maxDist || dx < -maxDist) continue;
-      final double dy = ty - p.y;
-      if (dy > maxDist || dy < -maxDist) continue;
-      final double distSq = dx * dx + dy * dy;
+    final SortedSpatialGrid? activeGrid = grid ?? spatialGrid;
+    final bool useGrid = activeGrid != null &&
+        activeGrid.cols > 0 &&
+        activeGrid.rows > 0 &&
+        activeGrid.count > 0 &&
+        activeGrid.count == visibleParticles.length &&
+        activeGrid.cellSize > 0;
 
-      // Only affect particles within the interaction distance (avoid sqrt if out of range)
-      if (distSq < maxDistSq) {
-        p.vx += dx * frameForce;
-        p.vy += dy * frameForce;
+    if (useGrid) {
+      final double inv = 1.0 / activeGrid.cellSize;
+      int minCx = ((tx - maxDist) * inv).floor();
+      int maxCx = ((tx + maxDist) * inv).floor();
+      int minCy = ((ty - maxDist) * inv).floor();
+      int maxCy = ((ty + maxDist) * inv).floor();
 
-        final double dist = math.sqrt(distSq);
-        // Linear falloff: responsive attraction that smoothly reaches 0 at maxDist
-        final double falloff = 1.0 - (dist / maxDist);
+      if (maxCx < 0 || minCx >= activeGrid.cols || maxCy < 0 || minCy >= activeGrid.rows) {
+        return;
+      }
 
-        // Normalized direction vector towards touch point
-        final double invDist = dist > 0.001 ? 1.0 / dist : 0.0;
-        final double nx = dx * invDist;
-        final double ny = dy * invDist;
+      if (minCx < 0) minCx = 0;
+      if (maxCx >= activeGrid.cols) maxCx = activeGrid.cols - 1;
+      if (minCy < 0) minCy = 0;
+      if (maxCy >= activeGrid.rows) maxCy = activeGrid.rows - 1;
 
-        // Stronger, responsive pull force for fluid drag response
-        final double pull = pullForce * falloff * t;
-        double vx = (p.vx + nx * pull) * touchDamping;
-        double vy = (p.vy + ny * pull) * touchDamping;
+      final Int32List cellStart = activeGrid.cellStart;
+      final Int32List indices = activeGrid.indices;
+      final int cols = activeGrid.cols;
 
-        // Terminal speed limit from touchFeatures
-        final double speedSq = vx * vx + vy * vy;
-        if (speedSq > maxTouchSpeedSq) {
-          final double scale = maxTouchSpeed / math.sqrt(speedSq);
-          vx *= scale;
-          vy *= scale;
+      for (int cy = minCy; cy <= maxCy; cy++) {
+        final int rowBase = cy * cols;
+        for (int cx = minCx; cx <= maxCx; cx++) {
+          final int c = rowBase + cx;
+          final int start = cellStart[c];
+          final int end = cellStart[c + 1];
+          for (int i = start; i < end; i++) {
+            final int idx = indices[i];
+            if (idx < 0 || idx >= particles.length) continue;
+            final Particle p = particles[idx];
+            final double dx = tx - p.x;
+            if (dx > maxDist || dx < -maxDist) continue;
+            final double dy = ty - p.y;
+            if (dy > maxDist || dy < -maxDist) continue;
+            final double distSq = dx * dx + dy * dy;
+
+            if (distSq < maxDistSq) {
+              p.vx += dx * frameForce;
+              p.vy += dy * frameForce;
+
+              final double dist = math.sqrt(distSq);
+              final double falloff = 1.0 - (dist / maxDist);
+              final double invDist = dist > 0.001 ? 1.0 / dist : 0.0;
+              final double nx = dx * invDist;
+              final double ny = dy * invDist;
+
+              final double pull = pullForce * falloff * t;
+              double vx = (p.vx + nx * pull) * touchDamping;
+              double vy = (p.vy + ny * pull) * touchDamping;
+
+              final double speedSq = vx * vx + vy * vy;
+              if (speedSq > maxTouchSpeedSq) {
+                final double scale = maxTouchSpeed / math.sqrt(speedSq);
+                vx *= scale;
+                vy *= scale;
+              }
+
+              p.vx = vx;
+              p.vy = vy;
+              p.decayRate = touchSpeed;
+              p.wasAccelerated = true;
+              tracker.recordAcceleration();
+            }
+          }
         }
+      }
+    } else {
+      // Safe fallback: direct O(N) loop over visibleParticles
+      final int count = visibleParticles.length;
+      for (int idx = 0; idx < count; idx++) {
+        final int pIdx = visibleParticles[idx];
+        if (pIdx < 0 || pIdx >= particles.length) continue;
+        final Particle p = particles[pIdx];
+        final double dx = tx - p.x;
+        if (dx > maxDist || dx < -maxDist) continue;
+        final double dy = ty - p.y;
+        if (dy > maxDist || dy < -maxDist) continue;
+        final double distSq = dx * dx + dy * dy;
 
-        p.vx = vx;
-        p.vy = vy;
+        if (distSq < maxDistSq) {
+          p.vx += dx * frameForce;
+          p.vy += dy * frameForce;
 
-        // Mark particle as accelerated and apply configured recovery speed
-        p.decayRate = touchSpeed;
-        p.wasAccelerated = true;
-        // Record acceleration for efficient shouldRepaint
-        tracker.recordAcceleration();
+          final double dist = math.sqrt(distSq);
+          final double falloff = 1.0 - (dist / maxDist);
+          final double invDist = dist > 0.001 ? 1.0 / dist : 0.0;
+          final double nx = dx * invDist;
+          final double ny = dy * invDist;
+
+          final double pull = pullForce * falloff * t;
+          double vx = (p.vx + nx * pull) * touchDamping;
+          double vy = (p.vy + ny * pull) * touchDamping;
+
+          final double speedSq = vx * vx + vy * vy;
+          if (speedSq > maxTouchSpeedSq) {
+            final double scale = maxTouchSpeed / math.sqrt(speedSq);
+            vx *= scale;
+            vy *= scale;
+          }
+
+          p.vx = vx;
+          p.vy = vy;
+          p.decayRate = touchSpeed;
+          p.wasAccelerated = true;
+          tracker.recordAcceleration();
+        }
       }
     }
   }
@@ -147,39 +272,194 @@ class TouchInteractionHandler {
   // Draws lines between touch point and nearby particles
   // [canvas] - The canvas to draw on
   // [visibleParticles] - List of indices of currently visible particles
-  void drawTouchLines(Canvas canvas, List<int> visibleParticles) {
+  // [grid] - Optional spatial grid for O(K) neighborhood queries
+  // [fastLineRendering] - Optional override for single draw call batching
+  // [lineRenderer] - Optional override for line rasterization backend
+  void drawTouchLines(
+    Canvas canvas,
+    List<int> visibleParticles, {
+    SortedSpatialGrid? grid,
+    bool? fastLineRendering,
+    LineRenderer? lineRenderer,
+  }) {
     final Offset? touch = touchPoint;
-    if (touch == null) return; // Exit if no current touch
+    if (touch == null || !touch.isFinite) {
+      _lastLineCount = 0;
+      return;
+    }
+    if (visibleParticles.isEmpty) {
+      _lastLineCount = 0;
+      return;
+    }
+
+    final double maxDist = effectiveLineDistance;
+    if (!maxDist.isFinite || maxDist <= 0) {
+      _lastLineCount = 0;
+      return;
+    }
 
     final double tx = touch.dx;
     final double ty = touch.dy;
-    final double maxDist = effectiveLineDistance;
     final double maxDistSq = maxDist * maxDist;
-    final double invMaxDist = maxDist > 0 ? 1.0 / maxDist : 0.0;
+    final double invMaxDist = 1.0 / maxDist;
 
-    final Color previousColor = linePaint.color;
-    try {
+    int lineCount = 0;
+    int totalAlpha = 0;
+
+    final SortedSpatialGrid? activeGrid = grid ?? spatialGrid;
+    final bool useGrid = activeGrid != null &&
+        activeGrid.cols > 0 &&
+        activeGrid.rows > 0 &&
+        activeGrid.count > 0 &&
+        activeGrid.count == visibleParticles.length &&
+        activeGrid.cellSize > 0;
+
+    if (useGrid) {
+      final double inv = 1.0 / activeGrid.cellSize;
+      int minCx = ((tx - maxDist) * inv).floor();
+      int maxCx = ((tx + maxDist) * inv).floor();
+      int minCy = ((ty - maxDist) * inv).floor();
+      int maxCy = ((ty + maxDist) * inv).floor();
+
+      if (maxCx >= 0 && minCx < activeGrid.cols && maxCy >= 0 && minCy < activeGrid.rows) {
+        if (minCx < 0) minCx = 0;
+        if (maxCx >= activeGrid.cols) maxCx = activeGrid.cols - 1;
+        if (minCy < 0) minCy = 0;
+        if (maxCy >= activeGrid.rows) maxCy = activeGrid.rows - 1;
+
+        final Int32List cellStart = activeGrid.cellStart;
+        final Float64List xs = activeGrid.xs;
+        final Float64List ys = activeGrid.ys;
+        final Int32List indices = activeGrid.indices;
+        final int cols = activeGrid.cols;
+
+        for (int cy = minCy; cy <= maxCy; cy++) {
+          final int rowBase = cy * cols;
+          for (int cx = minCx; cx <= maxCx; cx++) {
+            final int c = rowBase + cx;
+            final int start = cellStart[c];
+            final int end = cellStart[c + 1];
+            for (int i = start; i < end; i++) {
+              final int idx = indices[i];
+              if (idx < 0 || idx >= particles.length) continue;
+              final double px = xs[i];
+              final double dx = tx - px;
+              if (dx > maxDist || dx < -maxDist) continue;
+              final double py = ys[i];
+              final double dy = ty - py;
+              if (dy > maxDist || dy < -maxDist) continue;
+              final double distSq = dx * dx + dy * dy;
+
+              if (distSq < maxDistSq) {
+                final double distance = math.sqrt(distSq);
+                final double opacity = 1.0 - (distance * invMaxDist);
+                final int alpha = (255 * opacity).toInt().clamp(0, 255);
+
+                final int offset = lineCount * 4;
+                if (offset + 4 > _lineCoordinates.length || lineCount >= _lineColors.length) {
+                  _ensureLineBufferCapacity(lineCount + 32);
+                }
+                _lineCoordinates[offset] = px;
+                _lineCoordinates[offset + 1] = py;
+                _lineCoordinates[offset + 2] = tx;
+                _lineCoordinates[offset + 3] = ty;
+                _lineColors[lineCount] = _touchColorLut[alpha].toARGB32();
+                lineCount++;
+                totalAlpha += alpha;
+              }
+            }
+          }
+        }
+      }
+    } else {
+      // Safe fallback: direct O(N) loop over visibleParticles
       final int count = visibleParticles.length;
       for (int idx = 0; idx < count; idx++) {
-        final Particle p = particles[visibleParticles[idx]];
+        final int pIdx = visibleParticles[idx];
+        if (pIdx < 0 || pIdx >= particles.length) continue;
+        final Particle p = particles[pIdx];
         final double dx = tx - p.x;
         if (dx > maxDist || dx < -maxDist) continue;
         final double dy = ty - p.y;
         if (dy > maxDist || dy < -maxDist) continue;
         final double distSq = dx * dx + dy * dy;
 
-        // Only draw lines for particles within the connection distance
         if (distSq < maxDistSq) {
           final double distance = math.sqrt(distSq);
-          // Smooth linear falloff: 1.0 at touch, 0.0 at maxDist
           final double opacity = 1.0 - (distance * invMaxDist);
           final int alpha = (255 * opacity).toInt().clamp(0, 255);
-          linePaint.color = _touchColorLut[alpha];
-          canvas.drawLine(Offset(p.x, p.y), touch, linePaint);
+
+          final int offset = lineCount * 4;
+          if (offset + 4 > _lineCoordinates.length || lineCount >= _lineColors.length) {
+            _ensureLineBufferCapacity(lineCount + 32);
+          }
+          _lineCoordinates[offset] = p.x;
+          _lineCoordinates[offset + 1] = p.y;
+          _lineCoordinates[offset + 2] = tx;
+          _lineCoordinates[offset + 3] = ty;
+          _lineColors[lineCount] = _touchColorLut[alpha].toARGB32();
+          lineCount++;
+          totalAlpha += alpha;
         }
       }
-    } finally {
-      linePaint.color = previousColor;
+    }
+
+    _lastLineCount = lineCount;
+    if (lineCount == 0) return;
+
+    final bool effectiveFast = fastLineRendering ??
+        touchFeatures.fastLineRendering ??
+        this.fastLineRendering;
+
+    if (!effectiveFast) {
+      // Legacy individual line drawing mode (retains canvas.drawLine for compatibility with small counts)
+      final Color previousColor = linePaint.color;
+      try {
+        for (int l = 0; l < lineCount; l++) {
+          final int off = l * 4;
+          linePaint.color = Color(_lineColors[l]);
+          canvas.drawLine(
+            Offset(_lineCoordinates[off], _lineCoordinates[off + 1]),
+            touch,
+            linePaint,
+          );
+        }
+      } finally {
+        linePaint.color = previousColor;
+      }
+      return;
+    }
+
+    // Single unified draw call
+    final LineRenderer effectiveRenderer = lineRenderer ??
+        touchFeatures.lineRenderer ??
+        this.lineRenderer;
+
+    if (effectiveRenderer == LineRenderer.vertices) {
+      final double halfWidth = math.max(0.5, linePaint.strokeWidth * 0.5);
+      _touchVertexBatch.clear();
+      _touchVertexBatch.addSegments(
+        _lineCoordinates,
+        lineCount * 4,
+        halfWidth,
+        _lineColors,
+      );
+      _touchVertexPaint.isAntiAlias = linePaint.isAntiAlias;
+      _touchVertexPaint.color = const Color(0xFFFFFFFF);
+      _touchVertexBatch.draw(canvas, _touchVertexPaint);
+    } else {
+      final Color previousColor = linePaint.color;
+      try {
+        final int avgAlpha = (totalAlpha ~/ lineCount).clamp(0, 255);
+        linePaint.color = _touchColorLut[avgAlpha];
+        canvas.drawRawPoints(
+          PointMode.lines,
+          Float32List.sublistView(_lineCoordinates, 0, lineCount * 4),
+          linePaint,
+        );
+      } finally {
+        linePaint.color = previousColor;
+      }
     }
   }
 }
