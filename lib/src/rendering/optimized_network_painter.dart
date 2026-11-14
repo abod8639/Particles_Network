@@ -12,6 +12,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:particles_network/src/core/particle.dart';
 import 'package:particles_network/src/interaction/touch_interaction_handler.dart';
+import 'package:particles_network/src/legacy/legacy_deprecation_logger.dart';
 import 'package:particles_network/src/rendering/line_vertex_batch.dart';
 import 'package:particles_network/src/rendering/network_performance.dart';
 import 'package:particles_network/src/rendering/particle_filter.dart';
@@ -67,7 +68,14 @@ class OptimizedNetworkPainter extends CustomPainter {
   /// Whether to draw the web of connection lines between particles.
   bool drawNetwork;
 
-  /// Whether to visualize the underlying QuadTree structure for debugging.
+  /// Legacy debug flag previously used to visualize QuadTree partitioning.
+  ///
+  /// Deprecated: QuadTree spatial partitioning has been superseded by [SortedSpatialGrid].
+  /// This parameter has no effect and will be removed in particles_network 2.0.0.
+  @Deprecated(
+    'QuadTree spatial partitioning has been superseded by SortedSpatialGrid. '
+    'This parameter has no effect and will be removed in particles_network 2.0.0.',
+  )
   final bool showQuadTree;
 
   /// Advanced touch interaction features and physics configuration.
@@ -156,7 +164,10 @@ class OptimizedNetworkPainter extends CustomPainter {
 
   // Optimized sub-components
   late final TouchInteractionHandler _touchHandler;
-  final SortedSpatialGrid _sortedGrid = SortedSpatialGrid();
+  final SortedSpatialGrid _sortedGrid;
+
+  /// Exposes the underlying [SortedSpatialGrid] used for neighbor lookups.
+  SortedSpatialGrid get spatialGrid => _sortedGrid;
 
   // Reusable painting objects (initialized once for performance)
   late final Paint particlePaint;
@@ -165,6 +176,7 @@ class OptimizedNetworkPainter extends CustomPainter {
   // Performance optimization components
   late final AccelerationTracker _accelerationTracker;
   static const double _minSafetyLineDistance = 20.0;
+  Size? _lastSize;
 
   // Reusable internal buffers to avoid per-frame GC allocations
   final List<int> _visibleParticles = [];
@@ -230,8 +242,10 @@ class OptimizedNetworkPainter extends CustomPainter {
     LineRenderer? lineRenderer,
     this.devicePixelRatio = 1.0,
     bool? antiAlias,
+    SortedSpatialGrid? spatialGrid,
     super.repaint,
-  })  : touchColor = touchColor ?? touchFeatures.color,
+  })  : _sortedGrid = spatialGrid ?? SortedSpatialGrid(),
+        touchColor = touchColor ?? touchFeatures.color,
         touchActivation = touchActivation ?? touchFeatures.enabled,
         performance = performance.copyWith(
           isComplex: isComplex,
@@ -242,6 +256,12 @@ class OptimizedNetworkPainter extends CustomPainter {
           lineRenderer: lineRenderer,
           antiAlias: antiAlias,
         ) {
+    if (showQuadTree) {
+      LegacyDeprecationLogger.warn(
+        deprecatedApi: 'OptimizedNetworkPainter(showQuadTree: true)',
+        replacement: 'SortedSpatialGrid (automatic zero-allocation grid)',
+      );
+    }
     final int baseAlpha = (lineColor.a * 255.0).round().clamp(0, 255);
     _lineColorLut = List<Color>.generate(
       256,
@@ -298,7 +318,8 @@ class OptimizedNetworkPainter extends CustomPainter {
       touchFeatures: touchFeatures,
       spatialGrid: _sortedGrid,
       lineRenderer: touchFeatures.lineRenderer ?? this.performance.lineRenderer,
-      fastLineRendering: touchFeatures.fastLineRendering ?? this.performance.fastLineRendering,
+      fastLineRendering:
+          touchFeatures.fastLineRendering ?? this.performance.fastLineRendering,
     );
   }
 
@@ -323,6 +344,21 @@ class OptimizedNetworkPainter extends CustomPainter {
     // Refresh: the particle list may have shrunk since the last paint.
     ParticleFilter.getVisibleParticlesTo(particles, _visibleParticles);
     _visibleParticlesFilteredThisStep = true;
+    final Size? lastSize = _lastSize;
+    if (lastSize != null &&
+        lastSize.width > 0 &&
+        lastSize.height > 0 &&
+        _visibleParticles.isNotEmpty) {
+      final double touchDist = _touchHandler.effectiveLineDistance;
+      _sortedGrid.build(
+        particles,
+        _visibleParticles,
+        lastSize.width,
+        lastSize.height,
+        touchDist > 0 ? touchDist : 100.0,
+        performance.spatialCellMultiplier,
+      );
+    }
     _touchHandler.applyTouchPhysicsScaled(
       _visibleParticles,
       _accelerationTracker,
@@ -365,6 +401,7 @@ class OptimizedNetworkPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    _lastSize = size;
     _accelerationTracker.resetFrame();
 
     if (!_visibleParticlesFilteredThisStep) {
@@ -425,6 +462,7 @@ class OptimizedNetworkPainter extends CustomPainter {
         size.width,
         size.height,
         activeDist > 0 ? activeDist : 100.0,
+        performance.spatialCellMultiplier,
       );
 
       _drawConnections(canvas, visibleParticles, activeDist);
@@ -439,6 +477,7 @@ class OptimizedNetworkPainter extends CustomPainter {
           size.width,
           size.height,
           touchDist > 0 ? touchDist : 100.0,
+          performance.spatialCellMultiplier,
         );
       }
     }
@@ -592,8 +631,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     _lastFrameLineCount = _unifiedLineCount ~/ 4;
     if (_unifiedLineCount > 0 && lineRenderer == LineRenderer.vertices) {
       final double width = _vertexLineWidth();
-      _vertexPaint.color =
-          Color(_scaledArgb(lineColor, lineWidth / width));
+      _vertexPaint.color = Color(_scaledArgb(lineColor, lineWidth / width));
       _lineVertexBatch
         ..clear()
         ..addSegments(_unifiedLineBuffer, _unifiedLineCount, width * 0.5)
@@ -1158,8 +1196,7 @@ class OptimizedNetworkPainter extends CustomPainter {
   }) {
     if (lineRenderer != null) {
       this.lineRenderer = lineRenderer;
-      _touchHandler.lineRenderer =
-          touchFeatures.lineRenderer ?? lineRenderer;
+      _touchHandler.lineRenderer = touchFeatures.lineRenderer ?? lineRenderer;
     }
     if (isComplex != null) this.isComplex = isComplex;
     if (antiAlias != null && antiAlias != performance.antiAlias) {
