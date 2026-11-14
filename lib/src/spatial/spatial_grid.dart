@@ -8,6 +8,7 @@ library;
 import 'dart:typed_data';
 
 import 'package:particles_network/src/core/particle.dart';
+import 'package:particles_network/src/legacy/legacy_deprecation_logger.dart';
 
 /// A 2D uniform spatial grid for efficient neighbor queries.
 ///
@@ -20,6 +21,10 @@ import 'package:particles_network/src/core/particle.dart';
 /// - Grid build time: $O(N)$ with zero allocations per frame.
 /// - Neighbor queries: $O(1)$ cell lookups (checking at most 9 cells).
 /// - Memory footprint: Flat contiguous [Int32List] memory.
+@Deprecated(
+  'Use SortedSpatialGrid instead for zero-allocation contiguous memory spatial partitioning. '
+  'This class will be removed in particles_network 2.0.0.',
+)
 class SpatialGrid {
   /// The size of each grid cell (typically set to `lineDistance`).
   double cellSize;
@@ -47,7 +52,12 @@ class SpatialGrid {
 
   /// Creates a [SpatialGrid] with the specified [cellSize].
   SpatialGrid({required this.cellSize})
-      : invCellSize = cellSize > 0 ? 1.0 / cellSize : 0.0;
+      : invCellSize = cellSize > 0 ? 1.0 / cellSize : 0.0 {
+    LegacyDeprecationLogger.warn(
+      deprecatedApi: 'SpatialGrid',
+      replacement: 'SortedSpatialGrid',
+    );
+  }
 
   /// Updates the cell size and recomputes the inverse cell size.
   void updateCellSize(double size) {
