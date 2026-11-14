@@ -1,8 +1,10 @@
 // Adaptive performance management for the particle network
 //
 // Provides mechanisms to track particle acceleration state and manage
-// QuadTree updates efficiently based on frame performance.
+// spatial grid updates efficiently based on frame performance.
 library;
+
+import 'package:particles_network/src/legacy/legacy_deprecation_logger.dart';
 
 // Tracks the acceleration state of particles
 class AccelerationTracker {
@@ -27,10 +29,15 @@ class AccelerationTracker {
   bool get hadAcceleratedParticles => _lastFrameAcceleratedCount > 0;
 }
 
-// Manages adaptive QuadTree updates
+// Manages adaptive QuadTree updates (legacy)
 //
-// Instead of rebuilding QuadTree every frame, this class monitors
-// particle movement and rebuilds only when necessary.
+// Deprecated: SortedSpatialGrid rebuilds in sub-0.1ms with zero allocations every frame,
+// making periodic skipping obsolete.
+@Deprecated(
+  'AdaptiveQuadTreeManager is deprecated. SortedSpatialGrid performs full '
+  'zero-allocation rebuilds in sub-0.1ms every frame without needing periodic skipping. '
+  'Scheduled for removal in particles_network 2.0.0.',
+)
 class AdaptiveQuadTreeManager {
   // How many frames to skip between mandatory rebuilds
   int rebuildInterval;
@@ -39,7 +46,12 @@ class AdaptiveQuadTreeManager {
   bool _forceNextRebuild = false;
 
   AdaptiveQuadTreeManager({this.rebuildInterval = 3})
-      : _frameSinceLastRebuild = rebuildInterval;
+      : _frameSinceLastRebuild = rebuildInterval {
+    LegacyDeprecationLogger.warn(
+      deprecatedApi: 'AdaptiveQuadTreeManager',
+      replacement: 'SortedSpatialGrid',
+    );
+  }
 
   // Check if QuadTree should be rebuilt this frame
   bool shouldRebuild() {
