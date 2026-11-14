@@ -47,31 +47,49 @@ class SortedSpatialGrid {
   Int32List indices = Int32List(0);
 
   Int32List _cellOf = Int32List(0);
+  Int32List _validIndices = Int32List(0);
 
   /// Sorts the [visible] subset of [particles] into cells for pair queries
   /// up to [radius] within a [width] × [height] area.
+  ///
+  /// If [visible] is null, all [particles] are indexed without extra list allocation.
   ///
   /// The cell size is `max(radius, sqrt(area / count))`: never smaller than
   /// the radius (so neighbours are always in adjacent cells), and coarse
   /// enough that the number of cells stays around the particle count even
   /// when the radius is tiny.
+  /// An optional [cellMultiplier] scales the base cell size when fine-tuning,
+  /// clamped so `cellSize` never falls below [radius].
   void build(
     List<Particle> particles,
-    List<int> visible,
+    List<int>? visible,
     double width,
     double height,
-    double radius,
-  ) {
-    final int n = visible.length;
-    count = n;
-    if (width <= 0 || height <= 0 || radius <= 0 || n == 0) {
+    double radius, [
+    double? cellMultiplier,
+  ]) {
+    final int rawCount = visible != null ? visible.length : particles.length;
+    if (width <= 0 ||
+        height <= 0 ||
+        radius <= 0 ||
+        rawCount == 0 ||
+        particles.isEmpty) {
       cols = 0;
       rows = 0;
+      count = 0;
+      cellSize = 0;
       return;
     }
 
-    final double minCell = math.sqrt(width * height / n);
-    cellSize = radius > minCell ? radius : minCell;
+    final double minCell = math.sqrt(width * height / rawCount);
+    final double baseCell = radius > minCell ? radius : minCell;
+    final double mult = (cellMultiplier != null &&
+            cellMultiplier.isFinite &&
+            cellMultiplier > 0)
+        ? cellMultiplier
+        : 1.0;
+    final double scaledCell = baseCell * mult;
+    cellSize = scaledCell < radius ? radius : scaledCell;
     final double inv = 1.0 / cellSize;
     cols = (width * inv).ceil() + 1;
     rows = (height * inv).ceil() + 1;
@@ -80,23 +98,28 @@ class SortedSpatialGrid {
     if (cellStart.length < cells + 1) {
       cellStart = Int32List(((cells + 1) * 1.25).ceil());
     }
-    if (xs.length < n) {
-      final int cap = (n * 1.25).ceil();
+    if (xs.length < rawCount) {
+      final int cap = (rawCount * 1.25).ceil();
       xs = Float64List(cap);
       ys = Float64List(cap);
       indices = Int32List(cap);
       _cellOf = Int32List(cap);
+      _validIndices = Int32List(cap);
     }
 
     final Int32List start = cellStart;
     final Int32List cellOf = _cellOf;
+    final Int32List validIndices = _validIndices;
     start.fillRange(0, cells + 1, 0);
 
-    // Pass 1: cell of each particle and per-cell counts (stored at c + 1).
+    // Pass 1: validate indices, compute cell of each particle and per-cell counts (stored at c + 1).
     final int maxCx = cols - 1;
     final int maxCy = rows - 1;
-    for (int i = 0; i < n; i++) {
-      final Particle p = particles[visible[i]];
+    int validCount = 0;
+    for (int i = 0; i < rawCount; i++) {
+      final int idx = visible != null ? visible[i] : i;
+      if (idx < 0 || idx >= particles.length) continue;
+      final Particle p = particles[idx];
       int cx = (p.x * inv).toInt();
       int cy = (p.y * inv).toInt();
       if (cx < 0) {
@@ -110,8 +133,18 @@ class SortedSpatialGrid {
         cy = maxCy;
       }
       final int c = cy * cols + cx;
-      cellOf[i] = c;
+      cellOf[validCount] = c;
+      validIndices[validCount] = idx;
       start[c + 1]++;
+      validCount++;
+    }
+    count = validCount;
+
+    if (validCount == 0) {
+      cols = 0;
+      rows = 0;
+      cellSize = 0;
+      return;
     }
 
     // Pass 2: exclusive prefix sum -> start offsets.
@@ -120,10 +153,10 @@ class SortedSpatialGrid {
     }
 
     // Pass 3: scatter. Uses start[c] as a write cursor, then shifts back.
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < validCount; i++) {
       final int c = cellOf[i];
       final int dst = start[c]++;
-      final int idx = visible[i];
+      final int idx = validIndices[i];
       final Particle p = particles[idx];
       xs[dst] = p.x;
       ys[dst] = p.y;
@@ -133,5 +166,300 @@ class SortedSpatialGrid {
       start[c] = start[c - 1];
     }
     start[0] = 0;
+  }
+
+  /// Whether the grid has been successfully initialized and populated with at least one particle.
+  bool get isInitialized => cols > 0 && rows > 0 && count > 0 && cellSize > 0;
+
+  /// Returns the number of particles contained in grid cell ([cx], [cy]).
+  ///
+  /// Returns 0 if coordinates are out of bounds or the grid is uninitialized.
+  int particleCountInCell(int cx, int cy) {
+    if (cx < 0 || cx >= cols || cy < 0 || cy >= rows) return 0;
+    final int c = cy * cols + cx;
+    return cellStart[c + 1] - cellStart[c];
+  }
+
+  /// Returns the number of particles contained in the cell corresponding to world coordinates ([x], [y]).
+  ///
+  /// Returns 0 if coordinates are non-finite or out of bounds.
+  int particleCountAt(double x, double y) {
+    if (!isInitialized || !x.isFinite || !y.isFinite) return 0;
+    final int cx = (x / cellSize).floor();
+    final int cy = (y / cellSize).floor();
+    return particleCountInCell(cx, cy);
+  }
+
+  /// Finds all particles within Euclidean distance [radius] of point ([x], [y])
+  /// and invokes [visitor] for each matching candidate.
+  ///
+  /// [visitor] receives:
+  /// - `particleIndex`: The original index in the source particle list.
+  /// - `px`: The x-coordinate of the particle.
+  /// - `py`: The y-coordinate of the particle.
+  /// - `distSq`: The squared Euclidean distance between ([x], [y]) and ([px], [py]).
+  void queryRadius(
+    double x,
+    double y,
+    double radius,
+    void Function(int particleIndex, double px, double py, double distSq)
+        visitor,
+  ) {
+    if (!isInitialized ||
+        !x.isFinite ||
+        !y.isFinite ||
+        !radius.isFinite ||
+        radius <= 0) {
+      return;
+    }
+
+    final double inv = 1.0 / cellSize;
+    int minCx = ((x - radius) * inv).floor();
+    int maxCx = ((x + radius) * inv).floor();
+    int minCy = ((y - radius) * inv).floor();
+    int maxCy = ((y + radius) * inv).floor();
+
+    if (maxCx < 0 || minCx >= cols || maxCy < 0 || minCy >= rows) {
+      return;
+    }
+
+    if (minCx < 0) minCx = 0;
+    if (maxCx >= cols) maxCx = cols - 1;
+    if (minCy < 0) minCy = 0;
+    if (maxCy >= rows) maxCy = rows - 1;
+
+    final double radiusSq = radius * radius;
+    final Int32List start = cellStart;
+    final Float64List pXs = xs;
+    final Float64List pYs = ys;
+    final Int32List pIndices = indices;
+    final int cCols = cols;
+
+    for (int cy = minCy; cy <= maxCy; cy++) {
+      final int rowStart = cy * cCols;
+      for (int cx = minCx; cx <= maxCx; cx++) {
+        final int c = rowStart + cx;
+        final int cellEnd = start[c + 1];
+        for (int k = start[c]; k < cellEnd; k++) {
+          final double px = pXs[k];
+          final double dx = x - px;
+          if (dx > radius || dx < -radius) continue;
+
+          final double py = pYs[k];
+          final double dy = y - py;
+          if (dy > radius || dy < -radius) continue;
+
+          final double distSq = dx * dx + dy * dy;
+          if (distSq <= radiusSq) {
+            visitor(pIndices[k], px, py, distSq);
+          }
+        }
+      }
+    }
+  }
+
+  /// Finds all particles whose positions lie inside the axis-aligned bounding box
+  /// `[minX, maxX] x [minY, maxY]`, invoking [visitor] for each matching particle.
+  void queryRect(
+    double minX,
+    double minY,
+    double maxX,
+    double maxY,
+    void Function(int particleIndex, double px, double py) visitor,
+  ) {
+    if (!isInitialized ||
+        !minX.isFinite ||
+        !minY.isFinite ||
+        !maxX.isFinite ||
+        !maxY.isFinite ||
+        minX > maxX ||
+        minY > maxY) {
+      return;
+    }
+
+    final double inv = 1.0 / cellSize;
+    int minCx = (minX * inv).floor();
+    int maxCx = (maxX * inv).floor();
+    int minCy = (minY * inv).floor();
+    int maxCy = (maxY * inv).floor();
+
+    if (maxCx < 0 || minCx >= cols || maxCy < 0 || minCy >= rows) {
+      return;
+    }
+
+    if (minCx < 0) minCx = 0;
+    if (maxCx >= cols) maxCx = cols - 1;
+    if (minCy < 0) minCy = 0;
+    if (maxCy >= rows) maxCy = rows - 1;
+
+    final Int32List start = cellStart;
+    final Float64List pXs = xs;
+    final Float64List pYs = ys;
+    final Int32List pIndices = indices;
+    final int cCols = cols;
+
+    for (int cy = minCy; cy <= maxCy; cy++) {
+      final int rowStart = cy * cCols;
+      for (int cx = minCx; cx <= maxCx; cx++) {
+        final int c = rowStart + cx;
+        final int cellEnd = start[c + 1];
+        for (int k = start[c]; k < cellEnd; k++) {
+          final double px = pXs[k];
+          if (px < minX || px > maxX) continue;
+
+          final double py = pYs[k];
+          if (py < minY || py > maxY) continue;
+
+          visitor(pIndices[k], px, py);
+        }
+      }
+    }
+  }
+
+  /// Iterates all unique particle pairs within Euclidean distance [maxDistance]
+  /// across the grid in O(N) time with zero allocations.
+  ///
+  /// Prunes duplicate pairs by searching strictly within the cell and its
+  /// 4 forward neighbors: East, South-East, South, and South-West.
+  void forEachPair(
+    double maxDistance,
+    void Function(int i1, int i2, double distSq) visitor,
+  ) {
+    if (!isInitialized || !maxDistance.isFinite || maxDistance <= 0) return;
+
+    final double maxDistSq = maxDistance * maxDistance;
+    final Int32List start = cellStart;
+    final Float64List pXs = xs;
+    final Float64List pYs = ys;
+    final Int32List pIndices = indices;
+    final int cCols = cols;
+    final int cRows = rows;
+
+    for (int cy = 0; cy < cRows; cy++) {
+      final int rowOffset = cy * cCols;
+      final bool hasSouth = cy + 1 < cRows;
+      final int southRowOffset = (cy + 1) * cCols;
+
+      for (int cx = 0; cx < cCols; cx++) {
+        final int c = rowOffset + cx;
+        final int cellEnd = start[c + 1];
+        final int cellBegin = start[c];
+        if (cellBegin >= cellEnd) continue;
+
+        // Intra-cell pairs (k1 < k2)
+        for (int k1 = cellBegin; k1 < cellEnd; k1++) {
+          final double x1 = pXs[k1];
+          final double y1 = pYs[k1];
+          final int idx1 = pIndices[k1];
+
+          for (int k2 = k1 + 1; k2 < cellEnd; k2++) {
+            final double dx = x1 - pXs[k2];
+            if (dx > maxDistance || dx < -maxDistance) continue;
+            final double dy = y1 - pYs[k2];
+            if (dy > maxDistance || dy < -maxDistance) continue;
+
+            final double distSq = dx * dx + dy * dy;
+            if (distSq <= maxDistSq) {
+              visitor(idx1, pIndices[k2], distSq);
+            }
+          }
+        }
+
+        // Neighbor cell 1: East (cx + 1, cy)
+        if (cx + 1 < cCols) {
+          _pairWithCell(cellBegin, cellEnd, rowOffset + cx + 1, maxDistance,
+              maxDistSq, visitor);
+        }
+
+        if (hasSouth) {
+          // Neighbor cell 2: South-West (cx - 1, cy + 1)
+          if (cx > 0) {
+            _pairWithCell(cellBegin, cellEnd, southRowOffset + cx - 1,
+                maxDistance, maxDistSq, visitor);
+          }
+          // Neighbor cell 3: South (cx, cy + 1)
+          _pairWithCell(cellBegin, cellEnd, southRowOffset + cx, maxDistance,
+              maxDistSq, visitor);
+          // Neighbor cell 4: South-East (cx + 1, cy + 1)
+          if (cx + 1 < cCols) {
+            _pairWithCell(cellBegin, cellEnd, southRowOffset + cx + 1,
+                maxDistance, maxDistSq, visitor);
+          }
+        }
+      }
+    }
+  }
+
+  void _pairWithCell(
+    int cellBegin,
+    int cellEnd,
+    int neighborCell,
+    double maxDist,
+    double maxDistSq,
+    void Function(int i1, int i2, double distSq) visitor,
+  ) {
+    final int nEnd = cellStart[neighborCell + 1];
+    final int nBegin = cellStart[neighborCell];
+    if (nBegin >= nEnd) return;
+
+    final Float64List pXs = xs;
+    final Float64List pYs = ys;
+    final Int32List pIndices = indices;
+
+    for (int k1 = cellBegin; k1 < cellEnd; k1++) {
+      final double x1 = pXs[k1];
+      final double y1 = pYs[k1];
+      final int idx1 = pIndices[k1];
+
+      for (int k2 = nBegin; k2 < nEnd; k2++) {
+        final double dx = x1 - pXs[k2];
+        if (dx > maxDist || dx < -maxDist) continue;
+        final double dy = y1 - pYs[k2];
+        if (dy > maxDist || dy < -maxDist) continue;
+
+        final double distSq = dx * dx + dy * dy;
+        if (distSq <= maxDistSq) {
+          visitor(idx1, pIndices[k2], distSq);
+        }
+      }
+    }
+  }
+
+  /// Iterates all particles currently stored in the grid in contiguous SoA memory order.
+  void forEachParticle(
+      void Function(int particleIndex, double px, double py) visitor) {
+    if (!isInitialized) return;
+    final int n = count;
+    final Float64List pXs = xs;
+    final Float64List pYs = ys;
+    final Int32List pIndices = indices;
+    for (int i = 0; i < n; i++) {
+      visitor(pIndices[i], pXs[i], pYs[i]);
+    }
+  }
+
+  /// Finds nearby particle indices within [radius] of point ([x], [y])
+  /// and writes them to [output]. Drop-in replacement for legacy spatial APIs.
+  void findNearbyParticlesToOutput(
+    double x,
+    double y,
+    double radius,
+    List<int> output,
+  ) {
+    output.clear();
+    queryRadius(x, y, radius, (particleIndex, px, py, distSq) {
+      output.add(particleIndex);
+    });
+  }
+
+  /// Clears the grid state.
+  void clear() {
+    cols = 0;
+    rows = 0;
+    count = 0;
+    cellSize = 0;
+    if (cellStart.isNotEmpty) {
+      cellStart[0] = 0;
+    }
   }
 }
