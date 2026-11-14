@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'dart:ui' as ui;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:particles_network/particles_network.dart';

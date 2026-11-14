@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'package:flutter_test/flutter_test.dart';
 import 'package:particles_network/particles_network.dart';
 
@@ -73,7 +74,8 @@ void main() {
         // New particles are at (180, 180) and (190, 190): cx = 3, cy = 3 -> cell 3 * 5 + 3 = 18
         expect(grid.cellHeads[0], equals(-1));
         expect(grid.cellHeads[6], equals(-1));
-        expect(grid.cellHeads[18], equals(1)); // particle 1 is head, linked to 0
+        expect(
+            grid.cellHeads[18], equals(1)); // particle 1 is head, linked to 0
         expect(grid.particleNext[1], equals(0));
 
         // Queries at old position (10, 10) return empty
@@ -86,7 +88,8 @@ void main() {
         expect(output, containsAll([0, 1]));
       });
 
-      test('resets active cells to -1 when subsequent frame has empty visible list',
+      test(
+          'resets active cells to -1 when subsequent frame has empty visible list',
           () {
         final particles = [
           createMockParticle(position: const Offset(25.0, 25.0)),
