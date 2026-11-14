@@ -5,6 +5,7 @@
 library;
 
 import 'package:particles_network/src/core/rectangle.dart';
+import 'package:particles_network/src/legacy/legacy_deprecation_logger.dart';
 import 'package:particles_network/src/spatial/compressed_quad_tree_node.dart';
 
 /// A space-partitioning data structure for efficient 2D spatial queries
@@ -18,6 +19,10 @@ import 'package:particles_network/src/spatial/compressed_quad_tree_node.dart';
 /// - Insertion: O(log n) average case
 /// - Query: O(log n + k) where k is number of results
 /// - Memory: O(n) with compression
+@Deprecated(
+  'Use SortedSpatialGrid instead for faster O(1) cell builds and zero GC allocations. '
+  'This class will be removed in particles_network 2.0.0.',
+)
 class CompressedQuadTree {
   late CompressedQuadTreeNode _root;
 
@@ -27,6 +32,10 @@ class CompressedQuadTree {
 
   /// Constructor initializes tree with given [boundary].
   CompressedQuadTree(Rectangle boundary) : _boundary = boundary {
+    LegacyDeprecationLogger.warn(
+      deprecatedApi: 'CompressedQuadTree',
+      replacement: 'SortedSpatialGrid',
+    );
     _root = CompressedQuadTreeNode(_boundary);
   }
 
