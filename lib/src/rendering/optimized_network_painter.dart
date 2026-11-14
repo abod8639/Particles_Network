@@ -296,6 +296,9 @@ class OptimizedNetworkPainter extends CustomPainter {
       touchColor: this.touchColor,
       linePaint: linePaint,
       touchFeatures: touchFeatures,
+      spatialGrid: _sortedGrid,
+      lineRenderer: touchFeatures.lineRenderer ?? this.performance.lineRenderer,
+      fastLineRendering: touchFeatures.fastLineRendering ?? this.performance.fastLineRendering,
     );
   }
 
@@ -324,6 +327,7 @@ class OptimizedNetworkPainter extends CustomPainter {
       _visibleParticles,
       _accelerationTracker,
       timeScale,
+      _sortedGrid,
     );
   }
 
@@ -427,14 +431,35 @@ class OptimizedNetworkPainter extends CustomPainter {
       _updateBudgetCorrection(distance, baseDistance);
     } else {
       _lastFrameLineCount = 0;
+      if (_isTouchActive && visibleParticles.isNotEmpty) {
+        final double touchDist = _touchHandler.effectiveLineDistance;
+        _sortedGrid.build(
+          particles,
+          visibleParticles,
+          size.width,
+          size.height,
+          touchDist > 0 ? touchDist : 100.0,
+        );
+      }
     }
 
     if (_isTouchActive) {
-      _touchHandler.drawTouchLines(canvas, visibleParticles);
+      final bool useFast = touchFeatures.fastLineRendering ??
+          (fastLineRendering ||
+              lineRenderer == LineRenderer.vertices ||
+              visibleParticles.length >= 30);
+      _touchHandler.drawTouchLines(
+        canvas,
+        visibleParticles,
+        grid: _sortedGrid,
+        fastLineRendering: useFast,
+        lineRenderer: touchFeatures.lineRenderer ?? lineRenderer,
+      );
       if (simulateTouchInPaint) {
         _touchHandler.applyTouchPhysics(
           visibleParticles,
           _accelerationTracker,
+          _sortedGrid,
         );
       }
     }
@@ -1112,6 +1137,10 @@ class OptimizedNetworkPainter extends CustomPainter {
     if (newPerformance.antiAlias != performance.antiAlias) {
       _updateAntiAlias(newPerformance.antiAlias);
     }
+    _touchHandler.lineRenderer =
+        touchFeatures.lineRenderer ?? newPerformance.lineRenderer;
+    _touchHandler.fastLineRendering =
+        touchFeatures.fastLineRendering ?? newPerformance.fastLineRendering;
     performance = newPerformance;
   }
 
@@ -1127,7 +1156,11 @@ class OptimizedNetworkPainter extends CustomPainter {
     bool? isComplex,
     bool? antiAlias,
   }) {
-    if (lineRenderer != null) this.lineRenderer = lineRenderer;
+    if (lineRenderer != null) {
+      this.lineRenderer = lineRenderer;
+      _touchHandler.lineRenderer =
+          touchFeatures.lineRenderer ?? lineRenderer;
+    }
     if (isComplex != null) this.isComplex = isComplex;
     if (antiAlias != null && antiAlias != performance.antiAlias) {
       performance = performance.copyWith(antiAlias: antiAlias);
@@ -1151,6 +1184,8 @@ class OptimizedNetworkPainter extends CustomPainter {
     }
     if (fastLineRendering != null) {
       this.fastLineRendering = fastLineRendering;
+      _touchHandler.fastLineRendering =
+          touchFeatures.fastLineRendering ?? fastLineRendering;
     }
   }
 
@@ -1203,6 +1238,10 @@ class OptimizedNetworkPainter extends CustomPainter {
     touchFeatures = features;
     _touchHandler.touchFeatures = features;
     touchActivation = features.enabled;
+    _touchHandler.lineRenderer =
+        features.lineRenderer ?? performance.lineRenderer;
+    _touchHandler.fastLineRendering =
+        features.fastLineRendering ?? performance.fastLineRendering;
     if (features.color != touchColor) {
       touchColor = features.color;
       _touchHandler.rebuildTouchColorLut(features.color);
