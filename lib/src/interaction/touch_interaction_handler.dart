@@ -71,8 +71,10 @@ class TouchInteractionHandler {
     LineRenderer? lineRenderer,
     bool? fastLineRendering,
   })  : _touchColor = touchColor,
-        lineRenderer = lineRenderer ?? touchFeatures.lineRenderer ?? LineRenderer.stroke,
-        fastLineRendering = fastLineRendering ?? touchFeatures.fastLineRendering ?? true;
+        lineRenderer =
+            lineRenderer ?? touchFeatures.lineRenderer ?? LineRenderer.stroke,
+        fastLineRendering =
+            fastLineRendering ?? touchFeatures.fastLineRendering ?? true;
 
   // Test variable (kept for API compatibility)
   final int test = 0;
@@ -132,7 +134,9 @@ class TouchInteractionHandler {
     SortedSpatialGrid? grid,
   ]) {
     final Offset? touch = touchPoint;
-    if (touch == null || !touch.isFinite) return; // Exit if no current or non-finite touch
+    if (touch == null || !touch.isFinite) {
+      return; // Exit if no current or non-finite touch
+    }
     if (visibleParticles.isEmpty) return;
 
     final double maxDist = effectiveLineDistance;
@@ -153,78 +157,44 @@ class TouchInteractionHandler {
 
     final SortedSpatialGrid? activeGrid = grid ?? spatialGrid;
     final bool useGrid = activeGrid != null &&
-        activeGrid.cols > 0 &&
-        activeGrid.rows > 0 &&
-        activeGrid.count > 0 &&
-        activeGrid.count == visibleParticles.length &&
-        activeGrid.cellSize > 0;
+        activeGrid.isInitialized &&
+        activeGrid.count == visibleParticles.length;
 
     if (useGrid) {
-      final double inv = 1.0 / activeGrid.cellSize;
-      int minCx = ((tx - maxDist) * inv).floor();
-      int maxCx = ((tx + maxDist) * inv).floor();
-      int minCy = ((ty - maxDist) * inv).floor();
-      int maxCy = ((ty + maxDist) * inv).floor();
+      activeGrid.queryRadius(tx, ty, maxDist, (idx, px, py, distSq) {
+        if (idx < 0 || idx >= particles.length) return;
+        final Particle p = particles[idx];
+        final double dx = tx - p.x;
+        final double dy = ty - p.y;
+        final double actualDistSq = dx * dx + dy * dy;
+        if (actualDistSq >= maxDistSq) return;
 
-      if (maxCx < 0 || minCx >= activeGrid.cols || maxCy < 0 || minCy >= activeGrid.rows) {
-        return;
-      }
+        p.vx += dx * frameForce;
+        p.vy += dy * frameForce;
 
-      if (minCx < 0) minCx = 0;
-      if (maxCx >= activeGrid.cols) maxCx = activeGrid.cols - 1;
-      if (minCy < 0) minCy = 0;
-      if (maxCy >= activeGrid.rows) maxCy = activeGrid.rows - 1;
+        final double dist = math.sqrt(actualDistSq);
+        final double falloff = 1.0 - (dist / maxDist);
+        final double invDist = dist > 0.001 ? 1.0 / dist : 0.0;
+        final double nx = dx * invDist;
+        final double ny = dy * invDist;
 
-      final Int32List cellStart = activeGrid.cellStart;
-      final Int32List indices = activeGrid.indices;
-      final int cols = activeGrid.cols;
+        final double pull = pullForce * falloff * t;
+        double vx = (p.vx + nx * pull) * touchDamping;
+        double vy = (p.vy + ny * pull) * touchDamping;
 
-      for (int cy = minCy; cy <= maxCy; cy++) {
-        final int rowBase = cy * cols;
-        for (int cx = minCx; cx <= maxCx; cx++) {
-          final int c = rowBase + cx;
-          final int start = cellStart[c];
-          final int end = cellStart[c + 1];
-          for (int i = start; i < end; i++) {
-            final int idx = indices[i];
-            if (idx < 0 || idx >= particles.length) continue;
-            final Particle p = particles[idx];
-            final double dx = tx - p.x;
-            if (dx > maxDist || dx < -maxDist) continue;
-            final double dy = ty - p.y;
-            if (dy > maxDist || dy < -maxDist) continue;
-            final double distSq = dx * dx + dy * dy;
-
-            if (distSq < maxDistSq) {
-              p.vx += dx * frameForce;
-              p.vy += dy * frameForce;
-
-              final double dist = math.sqrt(distSq);
-              final double falloff = 1.0 - (dist / maxDist);
-              final double invDist = dist > 0.001 ? 1.0 / dist : 0.0;
-              final double nx = dx * invDist;
-              final double ny = dy * invDist;
-
-              final double pull = pullForce * falloff * t;
-              double vx = (p.vx + nx * pull) * touchDamping;
-              double vy = (p.vy + ny * pull) * touchDamping;
-
-              final double speedSq = vx * vx + vy * vy;
-              if (speedSq > maxTouchSpeedSq) {
-                final double scale = maxTouchSpeed / math.sqrt(speedSq);
-                vx *= scale;
-                vy *= scale;
-              }
-
-              p.vx = vx;
-              p.vy = vy;
-              p.decayRate = touchSpeed;
-              p.wasAccelerated = true;
-              tracker.recordAcceleration();
-            }
-          }
+        final double speedSq = vx * vx + vy * vy;
+        if (speedSq > maxTouchSpeedSq) {
+          final double scale = maxTouchSpeed / math.sqrt(speedSq);
+          vx *= scale;
+          vy *= scale;
         }
-      }
+
+        p.vx = vx;
+        p.vy = vy;
+        p.decayRate = touchSpeed;
+        p.wasAccelerated = true;
+        tracker.recordAcceleration();
+      });
     } else {
       // Safe fallback: direct O(N) loop over visibleParticles
       final int count = visibleParticles.length;
@@ -308,69 +278,35 @@ class TouchInteractionHandler {
 
     final SortedSpatialGrid? activeGrid = grid ?? spatialGrid;
     final bool useGrid = activeGrid != null &&
-        activeGrid.cols > 0 &&
-        activeGrid.rows > 0 &&
-        activeGrid.count > 0 &&
-        activeGrid.count == visibleParticles.length &&
-        activeGrid.cellSize > 0;
+        activeGrid.isInitialized &&
+        activeGrid.count == visibleParticles.length;
 
     if (useGrid) {
-      final double inv = 1.0 / activeGrid.cellSize;
-      int minCx = ((tx - maxDist) * inv).floor();
-      int maxCx = ((tx + maxDist) * inv).floor();
-      int minCy = ((ty - maxDist) * inv).floor();
-      int maxCy = ((ty + maxDist) * inv).floor();
+      activeGrid.queryRadius(tx, ty, maxDist, (idx, px, py, distSq) {
+        if (idx < 0 || idx >= particles.length) return;
+        final Particle p = particles[idx];
+        final double dx = tx - p.x;
+        final double dy = ty - p.y;
+        final double actualDistSq = dx * dx + dy * dy;
+        if (actualDistSq >= maxDistSq) return;
 
-      if (maxCx >= 0 && minCx < activeGrid.cols && maxCy >= 0 && minCy < activeGrid.rows) {
-        if (minCx < 0) minCx = 0;
-        if (maxCx >= activeGrid.cols) maxCx = activeGrid.cols - 1;
-        if (minCy < 0) minCy = 0;
-        if (maxCy >= activeGrid.rows) maxCy = activeGrid.rows - 1;
+        final double distance = math.sqrt(actualDistSq);
+        final double opacity = 1.0 - (distance * invMaxDist);
+        final int alpha = (255 * opacity).toInt().clamp(0, 255);
 
-        final Int32List cellStart = activeGrid.cellStart;
-        final Float64List xs = activeGrid.xs;
-        final Float64List ys = activeGrid.ys;
-        final Int32List indices = activeGrid.indices;
-        final int cols = activeGrid.cols;
-
-        for (int cy = minCy; cy <= maxCy; cy++) {
-          final int rowBase = cy * cols;
-          for (int cx = minCx; cx <= maxCx; cx++) {
-            final int c = rowBase + cx;
-            final int start = cellStart[c];
-            final int end = cellStart[c + 1];
-            for (int i = start; i < end; i++) {
-              final int idx = indices[i];
-              if (idx < 0 || idx >= particles.length) continue;
-              final double px = xs[i];
-              final double dx = tx - px;
-              if (dx > maxDist || dx < -maxDist) continue;
-              final double py = ys[i];
-              final double dy = ty - py;
-              if (dy > maxDist || dy < -maxDist) continue;
-              final double distSq = dx * dx + dy * dy;
-
-              if (distSq < maxDistSq) {
-                final double distance = math.sqrt(distSq);
-                final double opacity = 1.0 - (distance * invMaxDist);
-                final int alpha = (255 * opacity).toInt().clamp(0, 255);
-
-                final int offset = lineCount * 4;
-                if (offset + 4 > _lineCoordinates.length || lineCount >= _lineColors.length) {
-                  _ensureLineBufferCapacity(lineCount + 32);
-                }
-                _lineCoordinates[offset] = px;
-                _lineCoordinates[offset + 1] = py;
-                _lineCoordinates[offset + 2] = tx;
-                _lineCoordinates[offset + 3] = ty;
-                _lineColors[lineCount] = _touchColorLut[alpha].toARGB32();
-                lineCount++;
-                totalAlpha += alpha;
-              }
-            }
-          }
+        final int offset = lineCount * 4;
+        if (offset + 4 > _lineCoordinates.length ||
+            lineCount >= _lineColors.length) {
+          _ensureLineBufferCapacity(lineCount + 32);
         }
-      }
+        _lineCoordinates[offset] = p.x;
+        _lineCoordinates[offset + 1] = p.y;
+        _lineCoordinates[offset + 2] = tx;
+        _lineCoordinates[offset + 3] = ty;
+        _lineColors[lineCount] = _touchColorLut[alpha].toARGB32();
+        lineCount++;
+        totalAlpha += alpha;
+      });
     } else {
       // Safe fallback: direct O(N) loop over visibleParticles
       final int count = visibleParticles.length;
@@ -390,7 +326,8 @@ class TouchInteractionHandler {
           final int alpha = (255 * opacity).toInt().clamp(0, 255);
 
           final int offset = lineCount * 4;
-          if (offset + 4 > _lineCoordinates.length || lineCount >= _lineColors.length) {
+          if (offset + 4 > _lineCoordinates.length ||
+              lineCount >= _lineColors.length) {
             _ensureLineBufferCapacity(lineCount + 32);
           }
           _lineCoordinates[offset] = p.x;
@@ -431,9 +368,8 @@ class TouchInteractionHandler {
     }
 
     // Single unified draw call
-    final LineRenderer effectiveRenderer = lineRenderer ??
-        touchFeatures.lineRenderer ??
-        this.lineRenderer;
+    final LineRenderer effectiveRenderer =
+        lineRenderer ?? touchFeatures.lineRenderer ?? this.lineRenderer;
 
     if (effectiveRenderer == LineRenderer.vertices) {
       final double halfWidth = math.max(0.5, linePaint.strokeWidth * 0.5);
