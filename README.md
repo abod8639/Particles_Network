@@ -53,9 +53,7 @@
 - [Configuration Options](#configuration-options)
   - [Touch Features Configuration](#touch-features-configuration)
   - [Network Performance Configuration](#network-performance-configuration)
-- [Gravity Simulation Guide](#gravity-simulation-guide)
-  - [Global Gravity](#1-global-gravity)
-  - [Point Gravity (Attractors & Repellers)](#2-point-gravity-attractors--repellers)
+  - [Particle Gravity Configuration](#particle-gravity-configuration)
 - [Examples](#examples)
 - [Architecture & Performance Engineering](#architecture--performance-engineering)
 - [Performance Benchmarks](#performance-benchmarks)
@@ -309,38 +307,55 @@ const ParticleNetwork(
 
 ---
 
-## Gravity Simulation Guide
+### Particle Gravity Configuration
 
-### 1. Global Gravity
+Configure directional forces, radial attractors, and repulsion fields with `ParticleGravity`:
 
-Simulates uniform directional gravity across the entire canvas (e.g. falling snow, floating bubbles).
-
-```dart
-ParticleNetwork(
-  gravityType: GravityType.global,
-  gravityStrength: 0.3,
-  gravityDirection: const Offset(0, 1), // Downward fall
-)
-```
-
-### 2. Point Gravity (Attractors & Repellers)
-
-Simulates forces directed relative to a point source in space.
-
-- **Attraction (Black Hole)**: Positive `gravityStrength` draws particles inward.
-- **Repulsion (Force Field)**: Negative `gravityStrength` pushes particles outward.
-- **Center**: If `gravityCenter` is omitted (`null`), it automatically centers on the widget.
-
-```dart
-// Repulsion shield focused on center
-ParticleNetwork(
-  gravityType: GravityType.point,
-  gravityStrength: -1.2, // Negative = Repulsion
-)
-```
+| Property    | Type          | Default              | Description                                                                                     |
+| :---------- | :------------ | :------------------- | :---------------------------------------------------------------------------------------------- |
+| `type`      | `GravityType` | `GravityType.none`   | Gravity behavior mode: `GravityType.none`, `GravityType.global`, or `GravityType.point`.         |
+| `strength`  | `double`      | `0.1`                | Force intensity. For point gravity: positive values attract, negative values repel.            |
+| `direction` | `Offset`      | `const Offset(0, 1)` | Direction vector for `GravityType.global` (e.g. `Offset(0, 1)` for downward fall).              |
+| `center`    | `Offset?`     | `null`               | Center point for `GravityType.point` (defaults to canvas center when `null`).                   |
 
 > [!NOTE]
-> Particle **mass** is calculated automatically from radius. Larger particles naturally have greater inertia and resist velocity changes more than smaller ones.
+> - `gravityType`, `gravityStrength`, `gravityDirection`, and `gravityCenter` are deprecated compatibility aliases scheduled for removal in v2.0.0. Use `gravity: ParticleGravity(...)` instead.
+> - Particle **mass** is calculated automatically from radius — larger particles naturally have greater inertia and resist velocity changes more than smaller ones.
+
+#### Built-in Presets
+
+```dart
+// 1. Global Directional Gravity: uniform downward fall (e.g. falling snow, rain)
+const ParticleNetwork(
+  gravity: ParticleGravity.global(
+    strength: 0.3,
+    direction: Offset(0, 1), // Downward fall
+  ),
+)
+
+// 2. Point Gravity Attractor: black hole pulling particles towards center
+const ParticleNetwork(
+  gravity: ParticleGravity.point(
+    strength: 0.5, // Positive = Attraction
+  ),
+)
+
+// 3. Point Gravity Repeller: force field pushing particles away from center
+const ParticleNetwork(
+  gravity: ParticleGravity.point(
+    strength: -1.2, // Negative = Repulsion
+  ),
+)
+
+// 4. Custom Gravity Configuration
+const ParticleNetwork(
+  gravity: ParticleGravity(
+    type: GravityType.global,
+    strength: 0.2,
+    direction: Offset(1, 0), // Horizontal wind drift
+  ),
+)
+```
 
 ---
 
