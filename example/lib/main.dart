@@ -1,19 +1,29 @@
 import 'dart:collection';
 import 'dart:math' as math;
 
-import 'package:particles_network/particles_network.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart' as flutter_scheduler;
+import 'package:flutter/services.dart';
+import 'package:particles_network/particles_network.dart';
 
 void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'Particles Network Studio',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(), // Using Dark Theme for better contrast
+      theme: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: Colors.black,
+        colorScheme: const ColorScheme.dark(
+          primary: Colors.tealAccent,
+          secondary: Colors.cyanAccent,
+          surface: Color(0xFF1E2126),
+        ),
+      ),
       home: const ParticleControllerScreen(),
     );
   }
@@ -33,8 +43,72 @@ class MyApp extends StatelessWidget {
 //*           !  !
 //*           L_ !
 
+/// Model for Showcase Presets
+class ParticlePreset {
+  final String name;
+  final String description;
+  final IconData icon;
+  final Color particleColor;
+  final Color lineColor;
+  final Color touchColor;
+  final Color backgroundColor;
+  final int particleCount;
+  final double maxSpeed;
+  final double maxSize;
+  final double lineWidth;
+  final double lineDistance;
+  final GravityType gravityType;
+  final double gravityStrength;
+  final Offset gravityDirection;
+  final Offset? gravityCenter;
+  final double touchForce;
+  final double touchSpeed;
+  final double maxTouchSpeed;
+  final double touchDamping;
+  final double touchLineDistance;
+  final bool adaptiveDensity;
+  final bool enableAdaptivePerformance;
+  final bool fastLineRendering;
+  final bool frameRateIndependent;
+  final LineRenderer lineRenderer;
+  final int? maxConnectionsPerParticle;
+  final int? maxLinesPerFrame;
+
+  const ParticlePreset({
+    required this.name,
+    required this.description,
+    required this.icon,
+    required this.particleColor,
+    required this.lineColor,
+    required this.touchColor,
+    required this.backgroundColor,
+    required this.particleCount,
+    required this.maxSpeed,
+    required this.maxSize,
+    required this.lineWidth,
+    required this.lineDistance,
+    required this.gravityType,
+    required this.gravityStrength,
+    required this.gravityDirection,
+    this.gravityCenter,
+    required this.touchForce,
+    required this.touchSpeed,
+    required this.maxTouchSpeed,
+    required this.touchDamping,
+    required this.touchLineDistance,
+    required this.adaptiveDensity,
+    required this.enableAdaptivePerformance,
+    required this.fastLineRendering,
+    required this.frameRateIndependent,
+    required this.lineRenderer,
+    this.maxConnectionsPerParticle,
+    this.maxLinesPerFrame,
+  });
+}
+
 class ParticleControllerScreen extends StatefulWidget {
   const ParticleControllerScreen({super.key});
+
   @override
   State<ParticleControllerScreen> createState() =>
       _ParticleControllerScreenState();
@@ -42,15 +116,17 @@ class ParticleControllerScreen extends StatefulWidget {
 
 class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   // --- UI Constants ---
-  static const Duration _animationDuration = Duration(milliseconds: 350);
+  static const Duration _animationDuration = Duration(milliseconds: 320);
+  static const Color _controllerColor = Colors.tealAccent;
 
   // --- Particle Network Configuration Variables ---
   bool _drawNetwork = true;
   bool _isFill = false;
   bool _isComplex = true;
+  bool _antiAlias = true;
   double _lineWidth = 1.0;
   int _particleCount = 300;
-  double _maxSpeed = 5;
+  double _maxSpeed = 5.0;
   double _maxSize = 2.0;
   double _lineDistance = 100.0;
   GravityType _gravityType = GravityType.none;
@@ -76,27 +152,337 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   int? _maxConnectionsPerParticle;
   int? _maxLinesPerFrame;
   double _spatialCellMultiplier = 1.0;
+  double _cappedDistanceFactor = 0.75;
 
   // --- Styling Variables ---
   Color _particleColor = Colors.deepPurple;
   Color _lineColor = Colors.lightBlue;
   Color _touchColor = Colors.amber;
-  final Color _controllerColor = Colors.tealAccent;
+  Color _backgroundColor = Colors.black;
 
   // --- UI State ---
   bool _showPanel = true;
   bool _showChart = false;
   int _selectedCategoryIndex = 0;
+  bool _tapToPlaceSingularity = false;
 
-  /// UniqueKey is used to force a full rebuild of the ParticleNetwork
-  /// when engine-critical parameters change (Count, Speed, Size).
+  /// Tracks collapsed state of cards when in "All" view
+  final Map<String, bool> _collapsedSections = {};
+
+  /// UniqueKey forces a full rebuild of the ParticleNetwork when user explicitly re-seeds
   Key _particleKey = UniqueKey();
 
-  /// Refreshes the particle engine by generating a new key.
-  /// This forces a complete rebuild of the particle system.
   void _refreshEngine() {
     setState(() {
       _particleKey = UniqueKey();
+    });
+  }
+
+  // --- Showcase Presets ---
+  static const List<ParticlePreset> _presets = [
+    ParticlePreset(
+      name: "Cosmic Web",
+      description: "Delicate starlight web drifting slowly in deep space",
+      icon: Icons.auto_awesome_rounded,
+      particleColor: Color(0xFF818CF8),
+      lineColor: Color(0xFF38BDF8),
+      touchColor: Color(0xFFFBBF24),
+      backgroundColor: Color(0xFF070B14),
+      particleCount: 220,
+      maxSpeed: 2.2,
+      maxSize: 2.5,
+      lineWidth: 0.8,
+      lineDistance: 130.0,
+      gravityType: GravityType.none,
+      gravityStrength: 0.1,
+      gravityDirection: Offset(0, 1),
+      touchForce: 0.35,
+      touchSpeed: 0.3,
+      maxTouchSpeed: 4.0,
+      touchDamping: 0.990,
+      touchLineDistance: 170.0,
+      adaptiveDensity: false,
+      enableAdaptivePerformance: false,
+      fastLineRendering: false,
+      frameRateIndependent: false,
+      lineRenderer: LineRenderer.stroke,
+    ),
+    ParticlePreset(
+      name: "Cyberpunk Matrix",
+      description: "Digital rain downward gravity with neon luminescence",
+      icon: Icons.memory_rounded,
+      particleColor: Color(0xFF10B981),
+      lineColor: Color(0xFF06B6D4),
+      touchColor: Color(0xFFF43F5E),
+      backgroundColor: Color(0xFF02120A),
+      particleCount: 380,
+      maxSpeed: 6.5,
+      maxSize: 2.2,
+      lineWidth: 1.2,
+      lineDistance: 95.0,
+      gravityType: GravityType.global,
+      gravityStrength: 0.40,
+      gravityDirection: Offset(0, 1),
+      touchForce: 0.80,
+      touchSpeed: 0.5,
+      maxTouchSpeed: 7.0,
+      touchDamping: 0.970,
+      touchLineDistance: 200.0,
+      adaptiveDensity: true,
+      enableAdaptivePerformance: false,
+      fastLineRendering: false,
+      frameRateIndependent: true,
+      lineRenderer: LineRenderer.stroke,
+    ),
+    ParticlePreset(
+      name: "Black Hole Singularity",
+      description: "Intense gravitational vortex pulling particles inward",
+      icon: Icons.all_inclusive_rounded,
+      particleColor: Color(0xFFF59E0B),
+      lineColor: Color(0xFFEC4899),
+      touchColor: Color(0xFF8B5CF6),
+      backgroundColor: Color(0xFF030107),
+      particleCount: 420,
+      maxSpeed: 4.8,
+      maxSize: 3.0,
+      lineWidth: 1.0,
+      lineDistance: 110.0,
+      gravityType: GravityType.point,
+      gravityStrength: 0.85,
+      gravityDirection: Offset(0, 1),
+      touchForce: 1.20,
+      touchSpeed: 0.65,
+      maxTouchSpeed: 9.0,
+      touchDamping: 0.965,
+      touchLineDistance: 240.0,
+      adaptiveDensity: true,
+      enableAdaptivePerformance: true,
+      fastLineRendering: true,
+      frameRateIndependent: true,
+      lineRenderer: LineRenderer.vertices,
+      maxConnectionsPerParticle: 6,
+    ),
+    ParticlePreset(
+      name: "Supernova Repulsion",
+      description: "Radial repulsive point gravity with explosive velocity",
+      icon: Icons.flare_rounded,
+      particleColor: Color(0xFFEF4444),
+      lineColor: Color(0xFFF97316),
+      touchColor: Color(0xFFFDE047),
+      backgroundColor: Color(0xFF0C0303),
+      particleCount: 500,
+      maxSpeed: 8.5,
+      maxSize: 3.2,
+      lineWidth: 1.4,
+      lineDistance: 85.0,
+      gravityType: GravityType.point,
+      gravityStrength: -1.2,
+      gravityDirection: Offset(0, 1),
+      touchForce: 0.90,
+      touchSpeed: 0.50,
+      maxTouchSpeed: 11.0,
+      touchDamping: 0.975,
+      touchLineDistance: 250.0,
+      adaptiveDensity: true,
+      enableAdaptivePerformance: true,
+      fastLineRendering: true,
+      frameRateIndependent: true,
+      lineRenderer: LineRenderer.vertices,
+      maxConnectionsPerParticle: 5,
+      maxLinesPerFrame: 18000,
+    ),
+    ParticlePreset(
+      name: "Neural Synapse",
+      description: "High-density interconnected cognitive network",
+      icon: Icons.hub_rounded,
+      particleColor: Color(0xFFA855F7),
+      lineColor: Color(0xFF38BDF8),
+      touchColor: Color(0xFF34D399),
+      backgroundColor: Color(0xFF080718),
+      particleCount: 320,
+      maxSpeed: 3.5,
+      maxSize: 2.4,
+      lineWidth: 1.1,
+      lineDistance: 120.0,
+      gravityType: GravityType.none,
+      gravityStrength: 0.1,
+      gravityDirection: Offset(0, 1),
+      touchForce: 0.75,
+      touchSpeed: 0.40,
+      maxTouchSpeed: 6.0,
+      touchDamping: 0.980,
+      touchLineDistance: 190.0,
+      adaptiveDensity: true,
+      enableAdaptivePerformance: false,
+      fastLineRendering: false,
+      frameRateIndependent: true,
+      lineRenderer: LineRenderer.stroke,
+    ),
+    ParticlePreset(
+      name: "Quantum Foam",
+      description: "Dense turbulent micro-particles with rapid kinetic decay",
+      icon: Icons.grain_rounded,
+      particleColor: Color(0xFF22D3EE),
+      lineColor: Color(0xFF818CF8),
+      touchColor: Color(0xFFE879F9),
+      backgroundColor: Color(0xFF050814),
+      particleCount: 450,
+      maxSpeed: 5.0,
+      maxSize: 1.8,
+      lineWidth: 0.9,
+      lineDistance: 80.0,
+      gravityType: GravityType.none,
+      gravityStrength: 0.1,
+      gravityDirection: Offset(0, 1),
+      touchForce: 0.60,
+      touchSpeed: 0.45,
+      maxTouchSpeed: 7.0,
+      touchDamping: 0.982,
+      touchLineDistance: 150.0,
+      adaptiveDensity: true,
+      enableAdaptivePerformance: false,
+      fastLineRendering: false,
+      frameRateIndependent: true,
+      lineRenderer: LineRenderer.stroke,
+    ),
+    ParticlePreset(
+      name: "Extreme 60FPS Swarm",
+      description: "1000 particles with hardware-accelerated batched vertices",
+      icon: Icons.bolt_rounded,
+      particleColor: Color(0xFF38BDF8),
+      lineColor: Color(0xFF6366F1),
+      touchColor: Color(0xFF10B981),
+      backgroundColor: Color(0xFF070B16),
+      particleCount: 1000,
+      maxSpeed: 4.5,
+      maxSize: 1.6,
+      lineWidth: 0.7,
+      lineDistance: 70.0,
+      gravityType: GravityType.none,
+      gravityStrength: 0.1,
+      gravityDirection: Offset(0, 1),
+      touchForce: 0.50,
+      touchSpeed: 0.45,
+      maxTouchSpeed: 6.0,
+      touchDamping: 0.985,
+      touchLineDistance: 140.0,
+      adaptiveDensity: true,
+      enableAdaptivePerformance: true,
+      fastLineRendering: true,
+      frameRateIndependent: true,
+      lineRenderer: LineRenderer.vertices,
+      maxConnectionsPerParticle: 4,
+      maxLinesPerFrame: 15000,
+    ),
+  ];
+
+  void _applyFullPreset(ParticlePreset preset) {
+    setState(() {
+      _particleColor = preset.particleColor;
+      _lineColor = preset.lineColor;
+      _touchColor = preset.touchColor;
+      _backgroundColor = preset.backgroundColor;
+      _particleCount = preset.particleCount;
+      _maxSpeed = preset.maxSpeed;
+      _maxSize = preset.maxSize;
+      _lineWidth = preset.lineWidth;
+      _lineDistance = preset.lineDistance;
+      _gravityType = preset.gravityType;
+      _gravityStrength = preset.gravityStrength;
+      _gravityDirection = preset.gravityDirection;
+      _gravityCenter = preset.gravityCenter;
+      _touchForce = preset.touchForce;
+      _touchSpeed = preset.touchSpeed;
+      _maxTouchSpeed = preset.maxTouchSpeed;
+      _touchDamping = preset.touchDamping;
+      _touchLineDistance = preset.touchLineDistance;
+      _adaptiveDensity = preset.adaptiveDensity;
+      _enableAdaptivePerformance = preset.enableAdaptivePerformance;
+      _fastLineRendering = preset.fastLineRendering;
+      _frameRateIndependent = preset.frameRateIndependent;
+      _lineRenderer = preset.lineRenderer;
+      _maxConnectionsPerParticle = preset.maxConnectionsPerParticle;
+      _maxLinesPerFrame = preset.maxLinesPerFrame;
+    });
+    _refreshEngine();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Applied preset: ${preset.name}"),
+        duration: const Duration(seconds: 2),
+        backgroundColor: const Color(0xFF22262C),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  // --- Individual Section Reset Methods ---
+  void _resetDisplaySection() {
+    setState(() {
+      _particleColor = Colors.deepPurple;
+      _lineColor = Colors.lightBlue;
+      _touchColor = Colors.amber;
+      _backgroundColor = Colors.black;
+      _drawNetwork = true;
+      _isFill = false;
+      _isComplex = true;
+      _antiAlias = true;
+      _showChart = false;
+    });
+  }
+
+  void _resetLinesSection() {
+    setState(() {
+      _lineWidth = 1.0;
+      _lineDistance = 100.0;
+      _fastLineRendering = false;
+      _lineRenderer = LineRenderer.stroke;
+      _cappedDistanceFactor = 0.75;
+    });
+  }
+
+  void _resetEngineSection() {
+    setState(() {
+      _particleCount = 300;
+      _maxSpeed = 5.0;
+      _maxSize = 2.0;
+    });
+    _refreshEngine();
+  }
+
+  void _resetTouchSection() {
+    setState(() {
+      _touchActivation = true;
+      _hoverEffect = false;
+      _touchSpeed = 0.42;
+      _touchForce = 0.42;
+      _maxTouchSpeed = 5.5;
+      _touchDamping = 0.985;
+      _touchLineDistance = 150.0;
+    });
+  }
+
+  void _resetGravitySection() {
+    setState(() {
+      _gravityType = GravityType.none;
+      _gravityStrength = 0.1;
+      _gravityDirection = const Offset(0, 1);
+      _gravityCenter = null;
+      _tapToPlaceSingularity = false;
+    });
+  }
+
+  void _resetPerformanceSection() {
+    setState(() {
+      _adaptiveDensity = false;
+      _enableAdaptivePerformance = false;
+      _fastLineRendering = false;
+      _frameRateIndependent = false;
+      _lineRenderer = LineRenderer.stroke;
+      _antiAlias = true;
+      _maxConnectionsPerParticle = null;
+      _maxLinesPerFrame = null;
+      _spatialCellMultiplier = 1.0;
+      _cappedDistanceFactor = 0.75;
     });
   }
 
@@ -106,6 +492,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       _drawNetwork = true;
       _isFill = false;
       _isComplex = true;
+      _antiAlias = true;
       _touchActivation = true;
       _hoverEffect = false;
       _lineWidth = 1.0;
@@ -116,6 +503,8 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       _gravityType = GravityType.none;
       _gravityStrength = 0.1;
       _gravityDirection = const Offset(0, 1);
+      _gravityCenter = null;
+      _tapToPlaceSingularity = false;
       _touchSpeed = 0.42;
       _touchForce = 0.42;
       _maxTouchSpeed = 5.5;
@@ -125,41 +514,210 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       _enableAdaptivePerformance = false;
       _fastLineRendering = false;
       _frameRateIndependent = false;
-      _lineRenderer = LineRenderer.vertices;
+      _lineRenderer = LineRenderer.stroke;
       _maxConnectionsPerParticle = null;
       _maxLinesPerFrame = null;
       _spatialCellMultiplier = 1.0;
+      _cappedDistanceFactor = 0.75;
       _particleColor = Colors.deepPurple;
       _lineColor = Colors.lightBlue;
       _touchColor = Colors.amber;
+      _backgroundColor = Colors.black;
       _showChart = false;
       _selectedCategoryIndex = 0;
     });
     _refreshEngine();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("All settings reset to defaults"),
+        duration: Duration(seconds: 2),
+        backgroundColor: Color(0xFF22262C),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _togglePanel() {
+    setState(() {
+      _showPanel = !_showPanel;
+    });
+  }
+
+  String _generateDartCode() {
+    final buffer = StringBuffer();
+    buffer.writeln('ParticleNetwork(');
+    buffer.writeln('  particleCount: $_particleCount,');
+    buffer.writeln('  maxSpeed: $_maxSpeed,');
+    buffer.writeln('  maxSize: $_maxSize,');
+    buffer.writeln('  lineWidth: $_lineWidth,');
+    buffer.writeln('  lineDistance: $_lineDistance,');
+    buffer.writeln(
+        '  particleColor: const Color(0x${_particleColor.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase()}),');
+    buffer.writeln(
+        '  lineColor: const Color(0x${_lineColor.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase()}),');
+    buffer.writeln('  drawNetwork: $_drawNetwork,');
+    buffer.writeln('  fill: $_isFill,');
+    buffer.writeln('  hoverEffect: $_hoverEffect,');
+    buffer.writeln('  gravity: const ParticleGravity(');
+    buffer.writeln('    gravityType: GravityType.${_gravityType.name},');
+    buffer.writeln('    gravityStrength: $_gravityStrength,');
+    buffer.writeln(
+        '    gravityDirection: Offset(${_gravityDirection.dx.toStringAsFixed(2)}, ${_gravityDirection.dy.toStringAsFixed(2)}),');
+    if (_gravityCenter != null) {
+      buffer.writeln(
+          '    gravityCenter: Offset(${_gravityCenter!.dx.toStringAsFixed(1)}, ${_gravityCenter!.dy.toStringAsFixed(1)}),');
+    }
+    buffer.writeln('  ),');
+    buffer.writeln('  touchFeatures: const TouchFeatures(');
+    buffer.writeln('    enabled: $_touchActivation,');
+    buffer.writeln(
+        '    color: Color(0x${_touchColor.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase()}),');
+    buffer.writeln('    force: $_touchForce,');
+    buffer.writeln('    speed: $_touchSpeed,');
+    buffer.writeln('    maxTouchSpeed: $_maxTouchSpeed,');
+    buffer.writeln('    damping: $_touchDamping,');
+    buffer.writeln('    lineDistance: $_touchLineDistance,');
+    buffer.writeln('  ),');
+    buffer.writeln('  performance: const NetworkPerformance(');
+    buffer.writeln('    isComplex: $_isComplex,');
+    buffer.writeln('    adaptiveDensity: $_adaptiveDensity,');
+    buffer.writeln('    fastLineRendering: $_fastLineRendering,');
+    buffer.writeln('    enableAdaptivePerformance: $_enableAdaptivePerformance,');
+    buffer.writeln('    frameRateIndependent: $_frameRateIndependent,');
+    buffer.writeln('    lineRenderer: LineRenderer.${_lineRenderer.name},');
+    buffer.writeln('    antiAlias: $_antiAlias,');
+    if (_maxConnectionsPerParticle != null) {
+      buffer.writeln(
+          '    maxConnectionsPerParticle: $_maxConnectionsPerParticle,');
+    }
+    if (_maxLinesPerFrame != null) {
+      buffer.writeln('    maxLinesPerFrame: $_maxLinesPerFrame,');
+    }
+    if (_spatialCellMultiplier != 1.0) {
+      buffer.writeln('    spatialCellMultiplier: $_spatialCellMultiplier,');
+    }
+    if (_cappedDistanceFactor != 0.75) {
+      buffer.writeln('    cappedDistanceFactor: $_cappedDistanceFactor,');
+    }
+    buffer.writeln('  ),');
+    buffer.writeln(')');
+    return buffer.toString();
+  }
+
+  void _showExportDialog() {
+    final code = _generateDartCode();
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E2126),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide(color: _controllerColor.withValues(alpha: 0.3)),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.code_rounded, color: _controllerColor, size: 20),
+            SizedBox(width: 8),
+            Text(
+              "Generated Dart Code",
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+        content: Container(
+          width: double.maxFinite,
+          constraints: const BoxConstraints(maxHeight: 380),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF121418),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+          ),
+          child: SingleChildScrollView(
+            child: SelectableText(
+              code,
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 11.5,
+                color: Color(0xFF38BDF8),
+                height: 1.4,
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              "Close",
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+            ),
+          ),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _controllerColor,
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            icon: const Icon(Icons.copy_rounded, size: 16),
+            label: const Text(
+              "Copy Code",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: code));
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("Flutter code copied to clipboard!"),
+                  duration: Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: _backgroundColor,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final isDesktop = constraints.maxWidth >= 800;
+            // Responsive threshold: wide screen (desktop / tablet landscape / phone landscape)
+            final isWide = constraints.maxWidth >= 750 ||
+                (constraints.maxWidth > constraints.maxHeight &&
+                    constraints.maxWidth >= 550);
 
-            if (isDesktop) {
+            if (isWide) {
+              final sidebarWidth = constraints.maxWidth >= 800
+                  ? 390.0
+                  : (constraints.maxWidth * 0.44).clamp(260.0, 360.0);
               return Row(
                 children: [
                   Expanded(
-                    child: _buildCanvasArea(isDesktop: true),
+                    child: _buildCanvasArea(
+                      isWide: true,
+                      constraints: constraints,
+                    ),
                   ),
                   AnimatedContainer(
                     duration: _animationDuration,
                     curve: Curves.easeInOut,
-                    width: _showPanel ? 390 : 0,
+                    width: _showPanel ? sidebarWidth : 0,
                     child: _showPanel
                         ? _buildAdvancedControlPanel(
-                            isDesktop: true,
+                            isWide: true,
                             maxHeight: constraints.maxHeight,
                           )
                         : const SizedBox.shrink(),
@@ -167,12 +725,19 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                 ],
               );
             } else {
+              // Mobile Portrait: Dynamic responsive height with guaranteed minimum canvas breathing room
+              final availableHeight = constraints.maxHeight;
+              final maxAllowedPanel = (availableHeight - 90.0).clamp(160.0, 520.0);
               final panelMaxHeight =
-                  (constraints.maxHeight * 0.50).clamp(280.0, 420.0);
+                  (availableHeight * 0.52).clamp(180.0, maxAllowedPanel);
+
               return Column(
                 children: [
                   Expanded(
-                    child: _buildCanvasArea(isDesktop: false),
+                    child: _buildCanvasArea(
+                      isWide: false,
+                      constraints: constraints,
+                    ),
                   ),
                   AnimatedCrossFade(
                     duration: _animationDuration,
@@ -181,11 +746,10 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                         : CrossFadeState.showSecond,
                     sizeCurve: Curves.easeInOut,
                     firstChild: _buildAdvancedControlPanel(
-                      isDesktop: false,
+                      isWide: false,
                       maxHeight: panelMaxHeight,
                     ),
-                    secondChild:
-                        const SizedBox(width: double.infinity, height: 0),
+                    secondChild: _buildMobileFloatingBar(),
                   ),
                 ],
               );
@@ -196,69 +760,387 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
     );
   }
 
-  /// Builds the canvas visualization area with live FPS overlay and floating controls
-  Widget _buildCanvasArea({required bool isDesktop}) {
+  /// Compact floating bar on mobile when panel is collapsed
+  Widget _buildMobileFloatingBar() {
+    return GestureDetector(
+      onVerticalDragEnd: (details) {
+        if (details.primaryVelocity! < -100) {
+          // Drag up -> expand
+          if (!_showPanel) setState(() => _showPanel = true);
+        }
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E2126),
+          border: Border(
+            top: BorderSide(
+              color: Colors.white.withValues(alpha: 0.08),
+              width: 1,
+            ),
+          ),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black54,
+              offset: Offset(0, -3),
+              blurRadius: 8,
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: _controllerColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: _controllerColor.withValues(alpha: 0.4),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.grain_rounded,
+                      size: 13, color: _controllerColor),
+                  const SizedBox(width: 4),
+                  Text(
+                    "$_particleCount pts",
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: _controllerColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: GestureDetector(
+                onTap: _togglePanel,
+                child: Container(
+                  height: 36,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2A2E35),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.08),
+                    ),
+                  ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.tune_rounded,
+                            size: 14,
+                            color: Colors.white.withValues(alpha: 0.85)),
+                        const SizedBox(width: 6),
+                        Text(
+                          "Open Engine Controls",
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white.withValues(alpha: 0.9),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton(
+              icon: const Icon(Icons.code_rounded, size: 18),
+              color: _controllerColor,
+              tooltip: "Export Code",
+              onPressed: _showExportDialog,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Builds the canvas visualization area with live FPS overlay, Point Gravity interactive marker, and HUD
+  Widget _buildCanvasArea({
+    required bool isWide,
+    required BoxConstraints constraints,
+  }) {
     return Stack(
       children: [
         Positioned.fill(
-          child: FPS(
-            alignment: Alignment.topRight,
-            showChart: _showChart,
-            child: ParticleNetwork(
-              key: _particleKey,
-              drawNetwork: _drawNetwork,
-              fill: _isFill,
-              lineWidth: _lineWidth,
-              particleCount: _particleCount,
-              maxSpeed: _maxSpeed,
-              maxSize: _maxSize,
-              lineDistance: _lineDistance,
-              particleColor: _particleColor,
-              lineColor: _lineColor,
-              hoverEffect: _hoverEffect,
-              performance: NetworkPerformance(
-                isComplex: _isComplex,
-                adaptiveDensity: _adaptiveDensity,
-                enableAdaptivePerformance: _enableAdaptivePerformance,
-                fastLineRendering: _fastLineRendering,
-                frameRateIndependent: _frameRateIndependent,
-                lineRenderer: _lineRenderer,
-                maxConnectionsPerParticle: _maxConnectionsPerParticle,
-                maxLinesPerFrame: _maxLinesPerFrame,
-                spatialCellMultiplier: _spatialCellMultiplier != 1.0
-                    ? _spatialCellMultiplier
-                    : null,
-              ),
-              touchFeatures: TouchFeatures(
-                enabled: _touchActivation,
-                speed: _touchSpeed,
-                force: _touchForce,
-                maxTouchSpeed: _maxTouchSpeed,
-                lineDistance: _touchLineDistance,
-                color: _touchColor,
-                damping: _touchDamping,
-              ),
-              gravity: ParticleGravity(
-                gravityType: _gravityType,
-                gravityStrength: _gravityStrength,
-                gravityDirection: _gravityDirection,
-                gravityCenter: _gravityCenter,
+          child: Container(
+            color: _backgroundColor,
+            child: FPS(
+              alignment: Alignment.topRight,
+              showChart: _showChart,
+              child: ParticleNetwork(
+                key: _particleKey,
+                drawNetwork: _drawNetwork,
+                fill: _isFill,
+                lineWidth: _lineWidth,
+                particleCount: _particleCount,
+                maxSpeed: _maxSpeed,
+                maxSize: _maxSize,
+                lineDistance: _lineDistance,
+                particleColor: _particleColor,
+                lineColor: _lineColor,
+                hoverEffect: _hoverEffect,
+                performance: NetworkPerformance(
+                  isComplex: _isComplex,
+                  adaptiveDensity: _adaptiveDensity,
+                  enableAdaptivePerformance: _enableAdaptivePerformance,
+                  fastLineRendering: _fastLineRendering,
+                  frameRateIndependent: _frameRateIndependent,
+                  lineRenderer: _lineRenderer,
+                  antiAlias: _antiAlias,
+                  maxConnectionsPerParticle: _maxConnectionsPerParticle,
+                  maxLinesPerFrame: _maxLinesPerFrame,
+                  cappedDistanceFactor: _cappedDistanceFactor,
+                  spatialCellMultiplier: _spatialCellMultiplier != 1.0
+                      ? _spatialCellMultiplier
+                      : null,
+                ),
+                touchFeatures: TouchFeatures(
+                  enabled: _touchActivation,
+                  speed: _touchSpeed,
+                  force: _touchForce,
+                  maxTouchSpeed: _maxTouchSpeed,
+                  lineDistance: _touchLineDistance,
+                  color: _touchColor,
+                  damping: _touchDamping,
+                ),
+                gravity: ParticleGravity(
+                  gravityType: _gravityType,
+                  gravityStrength: _gravityStrength,
+                  gravityDirection: _gravityDirection,
+                  gravityCenter: _gravityCenter,
+                ),
               ),
             ),
           ),
         ),
-        if (!_showPanel || isDesktop)
+
+        // Interactive tap overlay for placing Point Gravity Singularity
+        if (_gravityType == GravityType.point && _tapToPlaceSingularity)
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTapDown: (details) {
+                setState(() {
+                  _gravityCenter = details.localPosition;
+                  _tapToPlaceSingularity = false;
+                });
+              },
+              child: Container(
+                color: _controllerColor.withValues(alpha: 0.05),
+                child: Center(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black87,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: _controllerColor),
+                      boxShadow: const [
+                        BoxShadow(color: Colors.black54, blurRadius: 8),
+                      ],
+                    ),
+                    child: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.touch_app_rounded,
+                              size: 16, color: _controllerColor),
+                          SizedBox(width: 8),
+                          Text(
+                            "Tap canvas to place singularity",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+        // Visual indicator for Point Gravity Singularity
+        if (_gravityType == GravityType.point && _gravityCenter != null)
+          Positioned(
+            left: _gravityCenter!.dx - 18,
+            top: _gravityCenter!.dy - 18,
+            child: IgnorePointer(
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: _controllerColor.withValues(alpha: 0.75),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _controllerColor.withValues(alpha: 0.4),
+                      blurRadius: 8,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Container(
+                    width: 6,
+                    height: 6,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _controllerColor,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+        // Top Left Floating HUD: Responsive quick status pills & shortcuts
+        Positioned(
+          left: 10,
+          top: 10,
+          child: SafeArea(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: math.max(120.0, constraints.maxWidth - 160.0),
+              ),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildHudPill(
+                      icon: Icons.grain_rounded,
+                      label: "$_particleCount pts",
+                      color: _particleColor,
+                    ),
+                    const SizedBox(width: 6),
+                    _buildHudPill(
+                      icon: Icons.speed_rounded,
+                      label: "${_maxSpeed.toStringAsFixed(1)} px/f",
+                      color: _controllerColor,
+                    ),
+                    const SizedBox(width: 6),
+                    _buildQuickActionBtn(
+                      icon: Icons.code_rounded,
+                      tooltip: "Export Flutter Code",
+                      onTap: _showExportDialog,
+                    ),
+                    const SizedBox(width: 6),
+                    _buildQuickActionBtn(
+                      icon: Icons.auto_awesome_rounded,
+                      tooltip: "Showcase Presets",
+                      onTap: () {
+                        setState(() => _selectedCategoryIndex = 7);
+                        if (!_showPanel) setState(() => _showPanel = true);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // Floating Toggle Button when panel is hidden or in wide mode
+        if (!_showPanel || isWide)
           Positioned(
             right: 16,
             bottom: 16,
-            child: _buildToggleButton(isDesktop: isDesktop),
+            child: _buildToggleButton(isWide: isWide),
           ),
       ],
     );
   }
 
+  Widget _buildHudPill({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.75),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: color.withValues(alpha: 0.35),
+          width: 1,
+        ),
+        boxShadow: const [
+          BoxShadow(color: Colors.black54, blurRadius: 4),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'monospace',
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActionBtn({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onTap,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.75),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: _controllerColor.withValues(alpha: 0.35),
+              width: 1,
+            ),
+            boxShadow: const [
+              BoxShadow(color: Colors.black54, blurRadius: 4),
+            ],
+          ),
+          child: Icon(icon, size: 14, color: _controllerColor),
+        ),
+      ),
+    );
+  }
+
   /// Builds the floating action button to toggle the panel
-  Widget _buildToggleButton({required bool isDesktop}) {
+  Widget _buildToggleButton({required bool isWide}) {
     return GestureDetector(
       onTap: _togglePanel,
       child: Container(
@@ -268,7 +1150,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           shape: BoxShape.circle,
           color: const Color(0xFF22262C),
           border: Border.all(
-            color: _controllerColor.withValues(alpha: 0.4),
+            color: _controllerColor.withValues(alpha: 0.45),
             width: 1,
           ),
           boxShadow: [
@@ -286,7 +1168,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
         ),
         child: Icon(
           _showPanel
-              ? (isDesktop
+              ? (isWide
                   ? Icons.chevron_right_rounded
                   : Icons.keyboard_arrow_down_rounded)
               : Icons.tune_rounded,
@@ -297,21 +1179,20 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
     );
   }
 
-  /// Toggles the visibility of the control panel
-  void _togglePanel() {
-    setState(() {
-      _showPanel = !_showPanel;
-    });
-  }
-
   /// Builds a Neumorphic styled card container with soft extruded shadows
   Widget _buildNeuCard({
     required Widget child,
     String? title,
     IconData? icon,
+    VoidCallback? onReset,
+    String? sectionKey,
     EdgeInsetsGeometry padding = const EdgeInsets.all(12),
     EdgeInsetsGeometry margin = const EdgeInsets.only(bottom: 12),
   }) {
+    final isCollapsible = _selectedCategoryIndex == 0 && sectionKey != null;
+    final isCollapsed =
+        isCollapsible && (_collapsedSections[sectionKey] ?? false);
+
     return Container(
       margin: margin,
       padding: padding,
@@ -319,7 +1200,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
         color: const Color(0xFF22262C),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.04),
+          color: Colors.white.withValues(alpha: 0.05),
           width: 1,
         ),
         boxShadow: [
@@ -352,18 +1233,53 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 10.5,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1.1,
-                      color: Colors.white.withValues(alpha: 0.7),
+                      color: Colors.white.withValues(alpha: 0.85),
                     ),
                   ),
                 ),
+                if (onReset != null)
+                  Tooltip(
+                    message: "Reset this section",
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(6),
+                      onTap: onReset,
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.restart_alt_rounded,
+                          size: 15,
+                          color: Colors.white.withValues(alpha: 0.5),
+                        ),
+                      ),
+                    ),
+                  ),
+                if (isCollapsible)
+                  InkWell(
+                    borderRadius: BorderRadius.circular(6),
+                    onTap: () {
+                      setState(() {
+                        _collapsedSections[sectionKey] = !isCollapsed;
+                      });
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Icon(
+                        isCollapsed
+                            ? Icons.expand_more_rounded
+                            : Icons.expand_less_rounded,
+                        size: 16,
+                        color: _controllerColor.withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ),
               ],
             ),
-            const SizedBox(height: 10),
+            if (!isCollapsed) const SizedBox(height: 10),
           ],
-          child,
+          if (!isCollapsed) child,
         ],
       ),
     );
@@ -371,18 +1287,18 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
 
   /// Builds the main control panel containing all settings in Neumorphism style
   Widget _buildAdvancedControlPanel({
-    required bool isDesktop,
+    required bool isWide,
     required double maxHeight,
   }) {
     return Container(
-      width: isDesktop ? 390 : double.infinity,
+      width: isWide ? double.infinity : double.infinity,
       height: maxHeight,
       decoration: BoxDecoration(
         color: const Color(0xFF1E2126),
-        borderRadius: isDesktop
+        borderRadius: isWide
             ? null
             : const BorderRadius.vertical(top: Radius.circular(22)),
-        border: isDesktop
+        border: isWide
             ? Border(
                 left: BorderSide(
                   color: Colors.white.withValues(alpha: 0.08),
@@ -398,74 +1314,102 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.7),
-            offset: isDesktop ? const Offset(-5, 0) : const Offset(0, -6),
+            offset: isWide ? const Offset(-5, 0) : const Offset(0, -6),
             blurRadius: 18,
           ),
         ],
       ),
       child: Column(
         children: [
-          // Drag handle indicator on mobile
-          if (!isDesktop)
-            Center(
+          // Drag handle with gesture support on mobile
+          if (!isWide)
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _togglePanel,
+              onVerticalDragEnd: (details) {
+                if (details.primaryVelocity! > 120) {
+                  // Swiped down -> collapse
+                  if (_showPanel) setState(() => _showPanel = false);
+                }
+              },
               child: Container(
-                width: 36,
-                height: 4,
-                margin: const EdgeInsets.only(top: 8, bottom: 2),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.25),
-                  borderRadius: BorderRadius.circular(2),
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Center(
+                  child: Container(
+                    width: 38,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
                 ),
               ),
             ),
 
           // Header with Title & Action buttons
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 6, 10, 4),
+            padding: const EdgeInsets.fromLTRB(12, 4, 6, 4),
             child: Row(
               children: [
-                Icon(Icons.tune_rounded, size: 16, color: _controllerColor),
-                const SizedBox(width: 8),
-                Text(
-                  "ENGINE CONTROLS",
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
-                    color: Colors.white.withValues(alpha: 0.9),
+                const Icon(Icons.tune_rounded, size: 16, color: _controllerColor),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    "ENGINE CONTROLS",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.1,
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
                   ),
                 ),
-                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.code_rounded, size: 18),
+                  color: _controllerColor,
+                  tooltip: "Export Dart Code",
+                  visualDensity: VisualDensity.compact,
+                  onPressed: _showExportDialog,
+                  constraints:
+                      const BoxConstraints(minWidth: 28, minHeight: 28),
+                  padding: const EdgeInsets.all(4),
+                ),
                 IconButton(
                   icon: const Icon(Icons.refresh_rounded, size: 18),
                   color: Colors.white.withValues(alpha: 0.6),
-                  tooltip: "Reset to Defaults",
+                  tooltip: "Reset All to Defaults",
+                  visualDensity: VisualDensity.compact,
                   onPressed: _resetToDefaults,
                   constraints:
-                      const BoxConstraints(minWidth: 32, minHeight: 32),
-                  padding: EdgeInsets.zero,
+                      const BoxConstraints(minWidth: 28, minHeight: 28),
+                  padding: const EdgeInsets.all(4),
                 ),
                 IconButton(
                   icon: Icon(
-                    isDesktop
+                    isWide
                         ? Icons.chevron_right_rounded
                         : Icons.keyboard_arrow_down_rounded,
-                    size: 22,
+                    size: 20,
                   ),
                   color: _controllerColor,
                   tooltip: "Hide Panel",
+                  visualDensity: VisualDensity.compact,
                   onPressed: _togglePanel,
                   constraints:
-                      const BoxConstraints(minWidth: 32, minHeight: 32),
-                  padding: EdgeInsets.zero,
+                      const BoxConstraints(minWidth: 28, minHeight: 28),
+                  padding: const EdgeInsets.all(4),
                 ),
               ],
             ),
           ),
 
-          // Category Chips Bar for quick navigation
+          // Category Chips Bar for quick navigation (First Scrollable in tree)
           SizedBox(
-            height: 34,
+            height: 36,
             child: ListView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -477,6 +1421,8 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                 _buildCategoryChip(4, "Touch", Icons.touch_app_rounded),
                 _buildCategoryChip(5, "Gravity", Icons.public_rounded),
                 _buildCategoryChip(6, "Performance", Icons.bolt_rounded),
+                _buildCategoryChip(7, "Presets", Icons.auto_awesome_rounded),
+                _buildCategoryChip(8, "Export", Icons.code_rounded),
               ],
             ),
           ),
@@ -485,7 +1431,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           // Scrollable Settings Cards
           Expanded(
             child: ClipRRect(
-              borderRadius: isDesktop
+              borderRadius: isWide
                   ? BorderRadius.zero
                   : const BorderRadius.vertical(top: Radius.circular(16)),
               child: ListView(
@@ -498,28 +1444,9 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                     _buildNeuCard(
                       title: "Palette & Display Options",
                       icon: Icons.palette_outlined,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildColorSection(),
-                          const SizedBox(height: 12),
-                          Container(
-                            height: 1,
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.transparent,
-                                  Colors.white.withValues(alpha: 0.08),
-                                  Colors.transparent,
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          _buildSwitchesSection(),
-                        ],
-                      ),
+                      sectionKey: "display",
+                      onReset: _resetDisplaySection,
+                      child: _buildDisplaySection(),
                     ),
 
                   // Line Dynamics
@@ -528,30 +1455,9 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                     _buildNeuCard(
                       title: "Line Dynamics",
                       icon: Icons.linear_scale_rounded,
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: _buildSlider(
-                              "Line Width",
-                              _lineWidth,
-                              0.1,
-                              20.0,
-                              (v) => setState(() => _lineWidth = v),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildSlider(
-                              "Line Dist",
-                              _lineDistance,
-                              0,
-                              200,
-                              (v) => setState(() => _lineDistance = v),
-                              fractionDigits: 0,
-                            ),
-                          ),
-                        ],
-                      ),
+                      sectionKey: "lines",
+                      onReset: _resetLinesSection,
+                      child: _buildLinesSection(),
                     ),
 
                   // Engine Critical Parameters
@@ -560,41 +1466,9 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                     _buildNeuCard(
                       title: "Engine Parameters (*Rebuilds)",
                       icon: Icons.speed_rounded,
-                      child: Column(
-                        children: [
-                          _buildSlider(
-                            "Count *",
-                            _particleCount.toDouble(),
-                            10,
-                            1000,
-                            (v) {
-                              setState(() => _particleCount = v.toInt());
-                              _refreshEngine();
-                            },
-                            fractionDigits: 0,
-                          ),
-                          _buildSlider(
-                            "Speed *",
-                            _maxSpeed,
-                            0.1,
-                            20.0,
-                            (v) {
-                              setState(() => _maxSpeed = v);
-                              _refreshEngine();
-                            },
-                          ),
-                          _buildSlider(
-                            "Max Size *",
-                            _maxSize,
-                            0.5,
-                            20.0,
-                            (v) {
-                              setState(() => _maxSize = v);
-                              _refreshEngine();
-                            },
-                          ),
-                        ],
-                      ),
+                      sectionKey: "engine",
+                      onReset: _resetEngineSection,
+                      child: _buildEngineSection(),
                     ),
 
                   // Touch Interaction
@@ -603,6 +1477,8 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                     _buildNeuCard(
                       title: "Touch Interaction",
                       icon: Icons.touch_app_rounded,
+                      sectionKey: "touch",
+                      onReset: _resetTouchSection,
                       child: _buildTouchFeaturesSection(),
                     ),
 
@@ -612,6 +1488,8 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                     _buildNeuCard(
                       title: "Gravity Settings",
                       icon: Icons.public_rounded,
+                      sectionKey: "gravity",
+                      onReset: _resetGravitySection,
                       child: _buildGravitySection(),
                     ),
 
@@ -621,7 +1499,28 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                     _buildNeuCard(
                       title: "Performance & Optimizations",
                       icon: Icons.bolt_rounded,
+                      sectionKey: "performance",
+                      onReset: _resetPerformanceSection,
                       child: _buildPerformanceSection(),
+                    ),
+
+                  // Showcase Presets Gallery
+                  if (_selectedCategoryIndex == 0 ||
+                      _selectedCategoryIndex == 7)
+                    _buildNeuCard(
+                      title: "Showcase Presets",
+                      icon: Icons.auto_awesome_rounded,
+                      sectionKey: "presets",
+                      child: _buildPresetsGallery(),
+                    ),
+
+                  // Code Export Section
+                  if (_selectedCategoryIndex == 8)
+                    _buildNeuCard(
+                      title: "Export Dart Code",
+                      icon: Icons.code_rounded,
+                      sectionKey: "export",
+                      child: _buildExportInlineSection(),
                     ),
                 ],
               ),
@@ -691,6 +1590,711 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // --- Display & Palette Section ---
+  Widget _buildDisplaySection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildColorSection(),
+        const SizedBox(height: 10),
+
+        // Quick Color Themes
+        Wrap(
+          spacing: 4,
+          runSpacing: 4,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text(
+              "Themes: ",
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.8,
+                color: Colors.white.withValues(alpha: 0.6),
+              ),
+            ),
+            _buildThemeChip("Cyber", const Color(0xFF10B981),
+                const Color(0xFF06B6D4), const Color(0xFFF43F5E)),
+            _buildThemeChip("Cosmic", const Color(0xFF818CF8),
+                const Color(0xFF38BDF8), const Color(0xFFFBBF24)),
+            _buildThemeChip("Sunset", const Color(0xFFF97316),
+                const Color(0xFFEC4899), const Color(0xFFFDE047)),
+            _buildThemeChip("Mono", Colors.white, Colors.white60, Colors.amber),
+            _buildThemeChip("Emerald", const Color(0xFF10B981),
+                const Color(0xFF34D399), const Color(0xFF6EE7B7)),
+          ],
+        ),
+        const SizedBox(height: 10),
+
+        Container(
+          height: 1,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.transparent,
+                Colors.white.withValues(alpha: 0.08),
+                Colors.transparent,
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        _buildSwitchesSection(),
+      ],
+    );
+  }
+
+  Widget _buildThemeChip(String label, Color p, Color l, Color t) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _particleColor = p;
+          _lineColor = l;
+          _touchColor = t;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+        decoration: BoxDecoration(
+          color: const Color(0xFF181A1E),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: p),
+            ),
+            const SizedBox(width: 2),
+            Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: l),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 9.5,
+                fontWeight: FontWeight.w500,
+                color: Colors.white.withValues(alpha: 0.7),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- Line Dynamics Section ---
+  Widget _buildLinesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Visual Line Preview
+        Container(
+          height: 36,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            color: const Color(0xFF17191D),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _particleColor,
+                ),
+              ),
+              Expanded(
+                child: Container(
+                  height: _lineWidth.clamp(0.5, 8.0),
+                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                  decoration: BoxDecoration(
+                    color: _lineColor,
+                    borderRadius: BorderRadius.circular(2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _lineColor.withValues(alpha: 0.5),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _particleColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+
+        // Sliders
+        Row(
+          children: [
+            Expanded(
+              child: _buildSlider(
+                "Line Width",
+                _lineWidth,
+                0.1,
+                20.0,
+                (v) => setState(() => _lineWidth = v),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildSlider(
+                "Line Dist",
+                _lineDistance,
+                0,
+                300,
+                (v) => setState(() => _lineDistance = v),
+                fractionDigits: 0,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+
+        // Quick Width chips
+        Wrap(
+          spacing: 4,
+          runSpacing: 4,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text(
+              "Width:",
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.white.withValues(alpha: 0.6),
+              ),
+            ),
+            _buildMiniPill("Hairline", _lineWidth == 0.5,
+                () => setState(() => _lineWidth = 0.5)),
+            _buildMiniPill("Normal", _lineWidth == 1.0,
+                () => setState(() => _lineWidth = 1.0)),
+            _buildMiniPill("Bold", _lineWidth == 2.5,
+                () => setState(() => _lineWidth = 2.5)),
+            _buildMiniPill("Heavy", _lineWidth == 5.0,
+                () => setState(() => _lineWidth = 5.0)),
+          ],
+        ),
+        const SizedBox(height: 10),
+
+        // Renderer Backend toggle
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                "Raster Backend",
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white.withValues(alpha: 0.75),
+                ),
+              ),
+            ),
+            _buildPillToggle(
+              label: "Stroke",
+              isSelected: _lineRenderer == LineRenderer.stroke,
+              onTap: () => setState(() => _lineRenderer = LineRenderer.stroke),
+            ),
+            const SizedBox(width: 6),
+            _buildPillToggle(
+              label: "Vertices",
+              isSelected: _lineRenderer == LineRenderer.vertices,
+              onTap: () =>
+                  setState(() => _lineRenderer = LineRenderer.vertices),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+
+        // Capped Distance Factor Slider
+        _buildSlider(
+          "Capped Distance Factor",
+          _cappedDistanceFactor,
+          0.25,
+          1.0,
+          (v) => setState(() => _cappedDistanceFactor = v),
+          fractionDigits: 2,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMiniPill(String label, bool isSelected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? _controllerColor.withValues(alpha: 0.18)
+              : const Color(0xFF17191D),
+          borderRadius: BorderRadius.circular(5),
+          border: Border.all(
+            color: isSelected
+                ? _controllerColor
+                : Colors.white.withValues(alpha: 0.05),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 9.5,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            color: isSelected
+                ? _controllerColor
+                : Colors.white.withValues(alpha: 0.6),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // --- Engine Parameters Section ---
+  Widget _buildEngineSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Re-seed Simulation Control Banner
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: _controllerColor.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: _controllerColor.withValues(alpha: 0.25)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.tune_rounded, size: 13, color: _controllerColor),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  "Real-time dynamic particle simulation",
+                  style: TextStyle(
+                    fontSize: 9.5,
+                    color: _controllerColor.withValues(alpha: 0.9),
+                  ),
+                ),
+              ),
+              InkWell(
+                onTap: _refreshEngine,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: _controllerColor.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.refresh_rounded,
+                          size: 11, color: _controllerColor),
+                      SizedBox(width: 3),
+                      Text(
+                        "Re-seed",
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: _controllerColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        // Count Slider - Smooth live update via didUpdateWidget
+        _buildSlider(
+          "Count",
+          _particleCount.toDouble(),
+          10,
+          1000,
+          (v) => setState(() => _particleCount = v.toInt()),
+          fractionDigits: 0,
+        ),
+        Wrap(
+          spacing: 4,
+          runSpacing: 4,
+          children: [
+            _buildCountChip(50),
+            _buildCountChip(150),
+            _buildCountChip(300),
+            _buildCountChip(600),
+            _buildCountChip(1000),
+          ],
+        ),
+        const SizedBox(height: 8),
+
+        // Speed Slider - Smooth live update
+        _buildSlider(
+          "Speed",
+          _maxSpeed,
+          0.1,
+          20.0,
+          (v) => setState(() => _maxSpeed = v),
+        ),
+
+        // Size Slider - Smooth live update
+        _buildSlider(
+          "Max Size",
+          _maxSize,
+          0.5,
+          20.0,
+          (v) => setState(() => _maxSize = v),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCountChip(int count) {
+    final isSelected = _particleCount == count;
+    return GestureDetector(
+      onTap: () => setState(() => _particleCount = count),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? _controllerColor.withValues(alpha: 0.2)
+              : const Color(0xFF17191D),
+          borderRadius: BorderRadius.circular(5),
+          border: Border.all(
+            color: isSelected
+                ? _controllerColor
+                : Colors.white.withValues(alpha: 0.05),
+          ),
+        ),
+        child: Text(
+          "$count",
+          style: TextStyle(
+            fontSize: 9.5,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            color: isSelected
+                ? _controllerColor
+                : Colors.white.withValues(alpha: 0.6),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // --- Gravity Section ---
+  Widget _buildGravitySection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Gravity Type selector
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildGravityTypeButton("None", GravityType.none),
+            _buildGravityTypeButton("Global", GravityType.global),
+            _buildGravityTypeButton("Point", GravityType.point),
+          ],
+        ),
+        const SizedBox(height: 10),
+
+        // Quick Presets
+        Wrap(
+          spacing: 4,
+          runSpacing: 4,
+          children: [
+            _buildMiniPill("Zero-G", _gravityType == GravityType.none, () {
+              setState(() => _gravityType = GravityType.none);
+            }),
+            _buildMiniPill(
+                "Earth ⬇️",
+                _gravityType == GravityType.global &&
+                    _gravityDirection.dy > 0.5, () {
+              setState(() {
+                _gravityType = GravityType.global;
+                _gravityStrength = 0.25;
+                _gravityDirection = const Offset(0, 1);
+              });
+            }),
+            _buildMiniPill(
+                "Lift ⬆️",
+                _gravityType == GravityType.global &&
+                    _gravityDirection.dy < -0.5, () {
+              setState(() {
+                _gravityType = GravityType.global;
+                _gravityStrength = 0.25;
+                _gravityDirection = const Offset(0, -1);
+              });
+            }),
+            _buildMiniPill(
+                "Attract 🌀",
+                _gravityType == GravityType.point && _gravityStrength > 0, () {
+              setState(() {
+                _gravityType = GravityType.point;
+                _gravityStrength = 0.8;
+                _gravityCenter = null;
+              });
+            }),
+            _buildMiniPill(
+                "Repel 💥",
+                _gravityType == GravityType.point && _gravityStrength < 0, () {
+              setState(() {
+                _gravityType = GravityType.point;
+                _gravityStrength = -0.9;
+                _gravityCenter = null;
+              });
+            }),
+          ],
+        ),
+        const SizedBox(height: 8),
+
+        _buildSlider(
+          "Strength",
+          _gravityStrength,
+          -2.0,
+          2.0,
+          (v) => setState(() => _gravityStrength = v),
+          fractionDigits: 2,
+        ),
+
+        // Global Direction Controls
+        if (_gravityType == GravityType.global) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Direction Angle",
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white.withValues(alpha: 0.75),
+                      ),
+                    ),
+                    Container(
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF17191D),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.04),
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        "${_gravityDirection.dx.toStringAsFixed(1)}, ${_gravityDirection.dy.toStringAsFixed(1)}",
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontFamily: 'monospace',
+                          fontWeight: FontWeight.bold,
+                          color: _controllerColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SliderTheme(
+                  data: SliderThemeData(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    trackHeight: 4,
+                    activeTrackColor: _controllerColor,
+                    inactiveTrackColor: const Color(0xFF16181C),
+                    thumbColor: _controllerColor,
+                    overlayColor: _controllerColor.withValues(alpha: 0.15),
+                    thumbShape:
+                        const RoundSliderThumbShape(enabledThumbRadius: 6),
+                    trackShape: const RoundedRectSliderTrackShape(),
+                  ),
+                  child: Slider(
+                    value: math.atan2(
+                      _gravityDirection.dy,
+                      _gravityDirection.dx,
+                    ),
+                    min: -math.pi,
+                    max: math.pi,
+                    onChanged: (v) {
+                      setState(() {
+                        _gravityDirection = Offset(math.cos(v), math.sin(v));
+                      });
+                    },
+                  ),
+                ),
+                // 8-Direction Quick Compass
+                Center(
+                  child: Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      _buildDirBtn("⬅️", const Offset(-1, 0)),
+                      _buildDirBtn("↖️", const Offset(-0.707, -0.707)),
+                      _buildDirBtn("⬆️", const Offset(0, -1)),
+                      _buildDirBtn("↗️", const Offset(0.707, -0.707)),
+                      _buildDirBtn("➡️", const Offset(1, 0)),
+                      _buildDirBtn("↘️", const Offset(0.707, 0.707)),
+                      _buildDirBtn("⬇️", const Offset(0, 1)),
+                      _buildDirBtn("↙️", const Offset(-0.707, 0.707)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+
+        // Point Singularity Controls
+        if (_gravityType == GravityType.point) ...[
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF17191D),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.center_focus_strong_rounded,
+                        size: 14, color: _controllerColor),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        _gravityCenter == null
+                            ? "Singularity: Canvas Center"
+                            : "Singularity: (${_gravityCenter!.dx.toStringAsFixed(0)}, ${_gravityCenter!.dy.toStringAsFixed(0)})",
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.white.withValues(alpha: 0.85),
+                        ),
+                      ),
+                    ),
+                    if (_gravityCenter != null)
+                      InkWell(
+                        onTap: () => setState(() => _gravityCenter = null),
+                        child: const Text(
+                          "Reset Center",
+                          style: TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.bold,
+                            color: _controllerColor,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _tapToPlaceSingularity = !_tapToPlaceSingularity;
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: _tapToPlaceSingularity
+                                ? _controllerColor.withValues(alpha: 0.25)
+                                : const Color(0xFF22262C),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: _tapToPlaceSingularity
+                                  ? _controllerColor
+                                  : Colors.white.withValues(alpha: 0.08),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.touch_app_rounded,
+                                  size: 12,
+                                  color: _tapToPlaceSingularity
+                                      ? _controllerColor
+                                      : Colors.white70),
+                              const SizedBox(width: 4),
+                              Text(
+                                _tapToPlaceSingularity
+                                    ? "Tap Canvas..."
+                                    : "Place on Canvas",
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: _tapToPlaceSingularity
+                                      ? _controllerColor
+                                      : Colors.white70,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildDirBtn(String arrow, Offset dir) {
+    final isSelected = (_gravityDirection.dx - dir.dx).abs() < 0.25 &&
+        (_gravityDirection.dy - dir.dy).abs() < 0.25;
+    return GestureDetector(
+      onTap: () => setState(() => _gravityDirection = dir),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? _controllerColor.withValues(alpha: 0.2)
+              : const Color(0xFF17191D),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: isSelected
+                ? _controllerColor
+                : Colors.white.withValues(alpha: 0.05),
+          ),
+        ),
+        child: Text(
+          arrow,
+          style: const TextStyle(fontSize: 11),
         ),
       ),
     );
@@ -891,12 +2495,18 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                 value: _frameRateIndependent,
                 onChanged: (v) => setState(() => _frameRateIndependent = v),
               ),
+              _buildNeuToggleChip(
+                label: "Anti-Alias",
+                icon: Icons.blur_on_rounded,
+                value: _antiAlias,
+                onChanged: (v) => setState(() => _antiAlias = v),
+              ),
             ],
           ),
         ),
         const SizedBox(height: 12),
 
-        // Sliders for limits: Max Connections per Particle and Max Lines per Frame
+        // Hardware Budget Sliders
         _buildBudgetSlider(
           label: "Max Conn / Particle",
           value: (_maxConnectionsPerParticle ?? 0).toDouble(),
@@ -926,6 +2536,172 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
               _maxLinesPerFrame = val <= 0 ? null : val;
             });
           },
+        ),
+      ],
+    );
+  }
+
+  /// Builds the Showcase Presets gallery
+  Widget _buildPresetsGallery() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Instant one-tap visual configurations:",
+          style: TextStyle(
+            fontSize: 11,
+            color: Colors.white.withValues(alpha: 0.7),
+          ),
+        ),
+        const SizedBox(height: 10),
+        for (final preset in _presets) ...[
+          GestureDetector(
+            onTap: () => _applyFullPreset(preset),
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A1C21),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: preset.particleColor.withValues(alpha: 0.3),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: preset.particleColor.withValues(alpha: 0.15),
+                      border: Border.all(
+                        color: preset.particleColor.withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: Icon(preset.icon,
+                        size: 18, color: preset.particleColor),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          preset.name,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          preset.description,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 9.5,
+                            color: Colors.white.withValues(alpha: 0.6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _controllerColor.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      "Load",
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: _controllerColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// Builds the inline code exporter
+  Widget _buildExportInlineSection() {
+    final code = _generateDartCode();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "Flutter Code Snippet",
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: Colors.white.withValues(alpha: 0.8),
+              ),
+            ),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _controllerColor,
+                foregroundColor: Colors.black,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                minimumSize: const Size(0, 28),
+              ),
+              icon: const Icon(Icons.copy_rounded, size: 13),
+              label: const Text(
+                "Copy",
+                style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold),
+              ),
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: code));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Flutter code copied to clipboard!"),
+                    duration: Duration(seconds: 2),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          constraints: const BoxConstraints(maxHeight: 280),
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: const Color(0xFF131518),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+          ),
+          child: SingleChildScrollView(
+            child: SelectableText(
+              code,
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 10.5,
+                color: Color(0xFF38BDF8),
+                height: 1.35,
+              ),
+            ),
+          ),
         ),
       ],
     );
@@ -1076,7 +2852,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                 ),
                 child: Text(
                   displayValue,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 10.5,
                     fontFamily: 'monospace',
                     fontWeight: FontWeight.bold,
@@ -1106,109 +2882,6 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  /// Builds the gravity configuration section with Neumorphic controls
-  Widget _buildGravitySection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildGravityTypeButton("None", GravityType.none),
-            _buildGravityTypeButton("Global", GravityType.global),
-            _buildGravityTypeButton("Point", GravityType.point),
-          ],
-        ),
-        const SizedBox(height: 10),
-        _buildSlider(
-          "Strength",
-          _gravityStrength,
-          -2.0,
-          2.0,
-          (v) => setState(() => _gravityStrength = v),
-          fractionDigits: 2,
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "Direction Angle",
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white.withValues(alpha: 0.75),
-                    ),
-                  ),
-                  Container(
-                    alignment: Alignment.center,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF17191D),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.04),
-                        width: 1,
-                      ),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black54,
-                          offset: Offset(1, 1),
-                          blurRadius: 2,
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      "${_gravityDirection.dx.toStringAsFixed(1)}, ${_gravityDirection.dy.toStringAsFixed(1)}",
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontFamily: 'monospace',
-                        fontWeight: FontWeight.bold,
-                        color: _controllerColor,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SliderTheme(
-                data: SliderThemeData(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                  trackHeight: 4,
-                  activeTrackColor: _controllerColor,
-                  inactiveTrackColor: const Color(0xFF16181C),
-                  thumbColor: _controllerColor,
-                  overlayColor: _controllerColor.withValues(alpha: 0.15),
-                  thumbShape:
-                      const RoundSliderThumbShape(enabledThumbRadius: 6),
-                  trackShape: const RoundedRectSliderTrackShape(),
-                ),
-                child: Slider(
-                  value: math.atan2(
-                    _gravityDirection.dy,
-                    _gravityDirection.dx,
-                  ),
-                  min: -math.pi,
-                  max: math.pi,
-                  onChanged: (v) {
-                    setState(() {
-                      _gravityDirection = Offset(math.cos(v), math.sin(v));
-                    });
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 
@@ -1507,7 +3180,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
     );
   }
 
-  /// Builds the color picker section for particles, lines, and touch with Neumorphic tiles
+  /// Builds the color picker section for particles, lines, touch, and background
   Widget _buildColorSection() {
     return Row(
       children: [
@@ -1519,7 +3192,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
             onSelect: (c) => setState(() => _particleColor = c),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
         Expanded(
           child: _buildColorTile(
             label: "Line",
@@ -1528,13 +3201,22 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
             onSelect: (c) => setState(() => _lineColor = c),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
         Expanded(
           child: _buildColorTile(
             label: "Touch",
             currentColor: _touchColor,
             icon: Icons.ads_click_rounded,
             onSelect: (c) => setState(() => _touchColor = c),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: _buildColorTile(
+            label: "Backdrop",
+            currentColor: _backgroundColor,
+            icon: Icons.wallpaper_rounded,
+            onSelect: (c) => setState(() => _backgroundColor = c),
           ),
         ),
       ],
@@ -1551,7 +3233,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
     return GestureDetector(
       onTap: () => _showColorPicker(label, onSelect),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 6),
+        padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 4),
         decoration: BoxDecoration(
           color: const Color(0xFF22262C),
           borderRadius: BorderRadius.circular(12),
@@ -1576,9 +3258,9 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 24,
-              height: 24,
-              padding: const EdgeInsets.all(2.5),
+              width: 22,
+              height: 22,
+              padding: const EdgeInsets.all(2),
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 color: Color(0xFF181A1E),
@@ -1597,35 +3279,23 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                   boxShadow: [
                     BoxShadow(
                       color: currentColor.withValues(alpha: 0.5),
-                      blurRadius: 6,
+                      blurRadius: 5,
                       spreadRadius: 1,
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 5),
             FittedBox(
               fit: BoxFit.scaleDown,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    icon,
-                    size: 13,
-                    color: Colors.white.withValues(alpha: 0.65),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white.withValues(alpha: 0.85),
-                    ),
-                  ),
-                ],
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white.withValues(alpha: 0.85),
+                ),
               ),
             ),
           ],
@@ -1638,16 +3308,23 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   void _showColorPicker(String label, ValueChanged<Color> onSelect) {
     const List<Color> palette = [
       Colors.white,
+      Colors.black,
+      Color(0xFF0F172A), // Dark slate
+      Color(0xFF1E1B4B), // Dark indigo
       Colors.redAccent,
-      Colors.greenAccent,
-      Colors.blueAccent,
-      Colors.amberAccent,
-      Colors.purpleAccent,
-      Colors.cyanAccent,
-      Colors.pinkAccent,
-      Colors.tealAccent,
       Colors.deepOrangeAccent,
-      Colors.yellowAccent
+      Colors.orangeAccent,
+      Colors.amberAccent,
+      Colors.yellowAccent,
+      Colors.greenAccent,
+      Color(0xFF10B981), // Emerald
+      Colors.tealAccent,
+      Colors.cyanAccent,
+      Colors.lightBlueAccent,
+      Colors.blueAccent,
+      Color(0xFF6366F1), // Indigo
+      Colors.purpleAccent,
+      Colors.pinkAccent,
     ];
 
     showDialog<void>(
@@ -1663,7 +3340,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
         ),
         title: Row(
           children: [
-            Icon(Icons.palette_rounded, size: 18, color: _controllerColor),
+            const Icon(Icons.palette_rounded, size: 18, color: _controllerColor),
             const SizedBox(width: 8),
             Text(
               "Select $label Color",
@@ -1687,12 +3364,15 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                     Navigator.pop(context);
                   },
                   child: Container(
-                    width: 50,
-                    height: 50,
-                    padding: const EdgeInsets.all(4),
+                    width: 44,
+                    height: 44,
+                    padding: const EdgeInsets.all(3),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: const Color(0xFF1E2126),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.5),
@@ -1753,6 +3433,12 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
             icon: Icons.auto_awesome_rounded,
             value: _isComplex,
             onChanged: (v) => setState(() => _isComplex = v),
+          ),
+          _buildNeuToggleChip(
+            label: "Anti-Alias",
+            icon: Icons.blur_on_rounded,
+            value: _antiAlias,
+            onChanged: (v) => setState(() => _antiAlias = v),
           ),
           _buildNeuToggleChip(
             label: "Touch",
@@ -1910,7 +3596,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                 ),
                 child: Text(
                   value.toStringAsFixed(fractionDigits),
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 10.5,
                     fontFamily: 'monospace',
                     fontWeight: FontWeight.bold,
@@ -2002,7 +3688,7 @@ class _FPSState extends State<FPS> with SingleTickerProviderStateMixin {
         if (widget.showChart) {
           _fpsHistory.addLast(currentFps);
           if (_fpsHistory.length > _maxTimingsLength) {
-            _fpsHistory.removeFirst(); // O(1) vs O(n) removeAt(0) on List
+            _fpsHistory.removeFirst();
           }
         }
       }
@@ -2052,7 +3738,7 @@ class _FPSState extends State<FPS> with SingleTickerProviderStateMixin {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           decoration: BoxDecoration(
             color: Colors.black87,
             borderRadius: BorderRadius.circular(8),
@@ -2069,12 +3755,12 @@ class _FPSState extends State<FPS> with SingleTickerProviderStateMixin {
                 height: 8,
                 decoration: BoxDecoration(color: color, shape: BoxShape.circle),
               ),
-              const SizedBox(width: 9),
+              const SizedBox(width: 8),
               Text(
                 "${fps.toStringAsFixed(1)} FPS",
                 style: TextStyle(
                   color: color,
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.bold,
                   fontFamily: 'monospace',
                 ),
@@ -2084,9 +3770,9 @@ class _FPSState extends State<FPS> with SingleTickerProviderStateMixin {
         ),
         if (widget.showChart && _fpsHistory.isNotEmpty)
           Container(
-            margin: const EdgeInsets.only(top: 1),
-            width: 150,
-            height: 40,
+            margin: const EdgeInsets.only(top: 2),
+            width: 140,
+            height: 38,
             decoration: BoxDecoration(
               color: Colors.black87,
               borderRadius: BorderRadius.circular(8),
