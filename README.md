@@ -59,9 +59,11 @@
 - [Examples](#examples)
 - [Architecture & Performance Engineering](#architecture--performance-engineering)
 - [Performance Benchmarks](#performance-benchmarks)
+  - [Version Comparison: 1.9.6 (Old) vs 1.9.7 (New)](#version-comparison-196-old-vs-197-new)
+  - [Key Performance & Architectural Improvements](#key-performance--architectural-improvements)
   - [Real-Device Frame Timings](#real-device-frame-timings-galaxy-s10-impeller-profile-mode-full-screen)
   - [Test Suites: 1.9.6 vs 1.9.7](#test-suites-196-vs-197)
-  - [Comparing Against Published 1.9.6 Release](#comparing-against-the-published-196-release)
+  - [Benchmarking & Reproducing the Comparison](#benchmarking--reproducing-the-comparison)
   - [CPU-Side Microbenchmarks](#cpu-side-microbenchmarks)
 - [Troubleshooting](#troubleshooting)
 - [FAQ](#faq)
@@ -86,7 +88,7 @@
   - **Bounded $O(N)$ Connections (`maxConnectionsPerParticle`)**: Enforces per-node degree limits to prevent $O(N^2)$ exponential slowdowns in crowded views.
   - **Adaptive Density (`adaptiveDensity`)**: Automatically scales down connection radii in dense clusters.
   - **Zero-Allocation Color LUT**: Precomputed 256-level opacity table eliminates per-frame `Color` allocations and Garbage Collection (GC) pauses.
-  - **Spatial Partitioning**: Hierarchical `CompressedQuadTree` structure delivers $O(\log N)$ neighbor lookups.
+  - **Spatial Partitioning**: High-performance `SortedSpatialGrid` delivers $O(K)$ fixed-radius lookups with 0 steady-state heap allocations and sub-0.1ms builds.
   - **Touch Inactivity Bypass**: Bypasses proximity checks and force routines when no pointer is active.
 
 - **Developer Friendly**
@@ -465,30 +467,22 @@ The number of connections grows as $\frac{N^2 \pi r^2}{2A}$, so it grows quadrat
 
 Unbounded proximity checks in dense meshes produce up to $\frac{N(N-1)}{2}$ edges ($O(N^2)$). Capping connections per particle (e.g. `maxConnectionsPerParticle: 4`) provides a predictable $O(N)$ complexity ceiling, maintaining high frame rates even with 1,000+ particles.
 
-### 6. Spatial Partitioning via `CompressedQuadTree`
+### 6. Spatial Partitioning Architecture (`SortedSpatialGrid`)
 
-The engine leverages hierarchical space-partitioning to accelerate proximity queries from $O(N^2)$ brute-force distance checks down to $O(\log N)$:
+The engine leverages `SortedSpatialGrid` for spatial acceleration, counting-sorting particles into sequential Structure-of-Arrays (SoA) memory buffers with zero steady-state heap allocations:
 
 ```dart
-// Spatial partitioning architecture
-final quadTree = CompressedQuadTree(Rectangle(0, 0, width, height));
+// Direct SortedSpatialGrid usage (automatically managed by ParticleNetwork)
+final grid = SortedSpatialGrid();
+grid.build(particles, visibleIndices, width, height, radius);
 
-for (int i = 0; i < particles.length; i++) {
-  quadTree.insert(QuadTreeParticle(i, particles[i].x, particles[i].y));
-}
-
-// O(log N) proximity query
-final nearbyParticleIndices = quadTree.queryCircle(touchX, touchY, radius);
+// Zero-allocation neighbor query
+grid.queryRadius(touchX, touchY, radius, (idx, px, py, distSq) {
+  // Process candidate particle index
+});
 ```
 
-![QuadTree Visualization](https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/250530_22h33m09s_screenshot.png)
-
-**Key Benefits:**
-
-- **O(log n)** insertion and query complexity
-- Path compression to reduce memory for clustered particles
-- Smart node consolidation and rebalancing
-- Memory-efficient structure with typed arrays and sparse representation
+> **Note on Legacy QuadTree:** Legacy spatial classes (`CompressedQuadTree`, `StandardQuadTree`, and `SpatialGrid`) are deprecated and scheduled for removal in v2.0.0. `SortedSpatialGrid` outperforms them with sub-0.1ms build times and sustained 60+ FPS at 5,000 particles.
 
 ### 7. Zero-Allocation Color LUT (`_lineColorLut`)
 
@@ -496,8 +490,7 @@ Opacity alpha gradients for connection lines are looked up in a precomputed 256-
 
 ### 8. Hardware Stewardship & Battery Conservation
 
-To ensure animations run smoothl
- <!-- <!-- <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang4.gif" width="220" alt="Complex"></td>y without punishing consumer hardware: -->
+To ensure animations run smoothly without punishing consumer hardware:
 
 - **Zero GC Pressure**: The hot rendering loop avoids transient object allocations, preventing Dart Garbage Collector pauses that cause micro-stutters.
 - **Passive Power Saving**: Proximity and gesture calculations completely shut down when the screen is idle, letting CPU cores rest.
@@ -506,6 +499,54 @@ To ensure animations run smoothl
 ---
 
 ## Performance Benchmarks
+
+### Version Comparison: 1.9.6 (Old) vs 1.9.7 (New)
+
+The table below contrasts the real-world performance differences between **Version 1.9.6 (Old)** and **Version 1.9.7 (New)**, measured under identical workloads on physical hardware (**Samsung Galaxy S10**, SM-G973U, Qualcomm Snapdragon 855 / Adreno 640 GPU, Flutter Impeller backend, Profile AOT mode, Full-Screen):
+
+| Scenario / Workload | Old Version (1.9.6) | New Version (1.9.7) | Performance Gain / Impact |
+| :------------------ | :------------------ | :------------------ | :------------------------ |
+| **500 Particles**<br>*(Default `lineDistance: 100`)* | **15.0 – 15.4 FPS**<br>• Raster p50: 61.0 – 68.1 ms<br>• Jank Ratio: 1.0 (100% dropped frames)<br>• Pipeline: Stroke lines, QuadTree | **63.8 FPS**<br>• Raster p50: **4.88 ms** (p90: 6.0 ms)<br>• Jank Ratio: **0.0 (Zero jank)**<br>• Pipeline: `LineRenderer.vertices` + `SortedSpatialGrid` | **+314% FPS** (4.1x boost)<br>**12.5x faster rasterization**<br>Jank eliminated |
+| **1,000 Particles**<br>*(Default connections enabled)* | **4.2 FPS**<br>• Raster p50: 248.1 – 253.1 ms<br>• Jank Ratio: 1.0 (Unusable slideshow)<br>• Pipeline: Unbudgeted strokes | **41.8 FPS**<br>• Raster p50: **12.38 ms** (p90: 15.9 ms)<br>• Jank Ratio: 0.47<br>• Pipeline: Indexed triangle quads | **10x FPS increase**<br>**20x faster rasterization** (248 ms → 12.4 ms) |
+| **2,000 Particles**<br>*(Constrained degree: `maxConnections: 5`)* | **23.8 – 26.0 FPS**<br>• Raster p50: 39.6 – 43.3 ms<br>• Jank Ratio: 1.0<br>• Pipeline: Stroked edges | **62.4 FPS**<br>• Raster p50: **5.60 ms** (p90: 6.5 ms)<br>• Jank Ratio: **0.0 (Rock solid)**<br>• Pipeline: Triangle quads | **+140% FPS** (2.4x boost)<br>**7x faster rasterization**<br>Sustains locked 60+ FPS |
+| **2,000 Particles**<br>*(Unbudgeted connections)* | **0.6 FPS**<br>• Raster p50: 2,096.7 ms (2.1s per frame!)<br>• Load: ~229,000 lines generated | **62.0 FPS** *(with line budget)*<br>• Raster p50: **8.07 ms** (p90: 9.6 ms)<br>• Jank Ratio: 0.02 | **100x+ FPS recovery**<br>Prevents device freeze and GPU OOM |
+| **5,000 Particles**<br>*(Budgeted: 15,000 lines)* | **9.6 FPS**<br>• Raster p50: 109.3 ms<br>• Jank Ratio: 1.0<br>• Pipeline: Stroke lines | **64.0 FPS**<br>• Raster p50: **8.42 ms** (p90: 9.4 ms)<br>• Jank Ratio: **0.0**<br>• Pipeline: Triangle vertices | **+567% FPS** (6.7x boost)<br>**13x faster rasterization**<br>Zero jank at 5k particles |
+| **10,000 Particles**<br>*(Budgeted: 15,000 lines)* | **9.0 – 9.6 FPS**<br>• Raster p50: 109.8 ms<br>• High CPU build time | **60.2 FPS**<br>• Raster p50: **7.99 ms**<br>• Pipeline: SoA Grid + Vertices | **6.7x FPS increase**<br>Smooth 60 FPS on 10,000 nodes |
+| **20,000 Particles**<br>*(Budgeted: 15,000 lines)* | **Unviable**<br>*(Crash / severe GPU exhaustion)* | **61.8 – 64.5 FPS**<br>• Raster p50: **8.0 ms**<br>• UI build: 5.1–5.4 ms | **Brand-new capability**<br>Sustains 60+ FPS on 20k nodes |
+| **500 Particles (Adaptive Mode)**<br>*(`enableAdaptivePerformance`)* | **50.0 – 58.4 FPS**<br>• Raster p90: 18.9 – 22.8 ms<br>• Mechanism: Timer tick heuristic (60Hz fixed) | **63.6 FPS**<br>• Raster p50: **14.0 ms**, p90: **15.7 ms**<br>• Mechanism: Engine `FrameTiming` telemetry | **Accurate hardware feedback**<br>Adapts to native 60/90/120 Hz displays |
+| **Spatial Grid Build & Query**<br>*(CPU Time per Frame)* | **High GC Pressure & Pointer Chasing**<br>• Legacy QuadTree node allocations<br>• Cache misses on linked lists | **Sub-0.1 ms build time**<br>• **0 steady-state heap allocations**<br>• 32%–45% lower CPU paint times | **Zero GC pressure**<br>Cache-friendly contiguous memory |
+| **Physics on High-Refresh Screens**<br>*(90 Hz / 120 Hz Displays)* | **Frame-rate dependent**<br>• Ran 1.5x–2x too fast on 90/120 Hz<br>• Motion lagged during frame drops | **Frame-rate independent**<br>• Delta-time integration (`frameRateIndependent`)<br>• Consistent speed across 60/90/120 Hz | **Uniform physics trajectory**<br>No velocity warp on high refresh rates |
+
+### Key Performance & Architectural Improvements
+
+The performance leap between 1.9.6 and 1.9.7 is driven by six targeted architectural innovations:
+
+1. **Indexed Triangle Quads (`LineRenderer.vertices`) vs. Engine Strokes**
+   - **Old Version (1.9.6)**: Rendered lines as individual canvas stroke segments (`LineRenderer.stroke`). Each line incurred GPU stroke tessellation overhead (~7 µs per line on mobile GPUs), quickly saturating the rasterizer when lines exceeded a few hundred.
+   - **New Version (1.9.7)**: Replaces stroke primitives with indexed quads via `LineRenderer.vertices` and `LineVertexBatch`. Each segment is expanded into 4 vertices with 6 shared `Uint16` indices (no per-vertex color overhead), cutting vertex payload from 96 to 44 bytes per line. A single batched `canvas.drawVertices` call is issued per opacity level, delivering **10x–12x GPU raster acceleration**.
+
+2. **Structure-of-Arrays Spatial Grid (`SortedSpatialGrid`) vs. Recursive QuadTree**
+   - **Old Version (1.9.6)**: Relied on tree-based spatial structures (`CompressedQuadTree`, `StandardQuadTree`, and `SpatialGrid`). Every frame required recursive tree subdivision, heap-allocated wrapper objects (`QuadTreeParticle`), and chasing pointers across memory, creating cache misses and garbage collection pauses.
+   - **New Version (1.9.7)**: Replaces trees with `SortedSpatialGrid`, which counting-sorts particles into contiguous `Float64List` memory arrays. Candidate neighbor queries scan sequential memory ranges instead of following linked lists:
+     - 20,000 particles (15k lines): CPU paint time dropped from **9.33 ms → 5.1–5.4 ms** (vertices, 45% reduction) and **6.36 ms → 4.3–4.4 ms** (strokes, 32% reduction).
+     - 10,000 particles: CPU paint time dropped from **4.56 ms → 3.4–3.7 ms**.
+     - Steady-state heap allocations: **0 bytes (100% GC pressure eliminated)**.
+
+3. **Dynamic Line Budgeting (`maxLinesPerFrame`) vs. $O(N^2)$ Edge Explosion**
+   - **Old Version (1.9.6)**: Proximity connections scaled quadratically ($O(N^2)$). Without manual caps, high particle counts generated hundreds of thousands of lines (e.g., 2,000 particles produced ~229,000 lines), causing catastrophic GPU stalls (0.6 FPS / 2,096 ms raster latency).
+   - **New Version (1.9.7)**: Introduces `maxLinesPerFrame`. The engine dynamically modulates the effective connection radius $r = \sqrt{\frac{2AB}{\pi N^2}}$ with continuous closed-loop feedback for clustered particles. Frame cost remains flat regardless of particle count—allowing 5,000, 10,000, or 20,000 particles to run at a consistent 60 FPS.
+
+4. **Engine FrameTiming Adaptivity vs. UI Tick Heuristics**
+   - **Old Version (1.9.6)**: `enableAdaptivePerformance` evaluated elapsed tick intervals on the UI thread against a hardcoded 16.67 ms (60 Hz) window. It was blind to GPU raster thread lag and unable to adapt to high-refresh-rate displays.
+   - **New Version (1.9.7)**: Taps into Flutter engine telemetry via `FrameTiming` callbacks (`platformDispatcher.onReportTimings`), observing both UI build and GPU raster bottlenecks. It targets the device's true display refresh rate (60, 90, or 120 Hz) and dynamically throttles density to keep frame times within the native display budget.
+
+5. **Frame-Rate Independent Physics (`frameRateIndependent`)**
+   - **Old Version (1.9.6)**: Particles updated position by adding velocity per frame ($x += v_x$). As a result, particles moved twice as fast on 120 Hz displays compared to 60 Hz devices, and slowed to a crawl during dropped frames.
+   - **New Version (1.9.7)**: Physics are integrated over actual elapsed delta time normalized to a 60 Hz reference. Motion velocity remains identical on 60 Hz, 90 Hz, and 120 Hz displays and stays buttery-smooth through dropped frames.
+
+6. **Unified API Ergonomics (`NetworkPerformance`)**
+   - **Old Version (1.9.6)**: Performance options were scattered as standalone constructor arguments (`fastLineRendering`, `maxConnectionsPerParticle`, `adaptiveDensity`, `enableAdaptivePerformance`, `isComplex`).
+   - **New Version (1.9.7)**: Consolidated into a declarative, strongly-typed `NetworkPerformance` configuration with pre-tuned factory constructors (`NetworkPerformance.highPerformance()`, `NetworkPerformance.adaptive()`).
 
 ### Real-device frame timings (Galaxy S10, Impeller, profile mode, full screen)
 
@@ -540,7 +581,7 @@ flutter drive --profile --driver=test_driver/perf_driver.dart --target=integrati
 
 The extra tests in the current source cover the line budget, frame-rate independent motion, the vertices renderer (including a pixel comparison against strokes) and the cell-sorted search (checked against brute force).
 
-### Comparing against the published 1.9.6 release
+### Benchmarking & Reproducing the Comparison
 
 `example/integration_test/perf_compat_test.dart` uses only constructor options that already existed in 1.9.6, so the same file measures both versions. To compare, run it once as-is (current source), then once with the example's dependency switched to the release:
 
