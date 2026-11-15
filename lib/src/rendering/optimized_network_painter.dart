@@ -242,6 +242,9 @@ class OptimizedNetworkPainter extends CustomPainter {
     LineRenderer? lineRenderer,
     this.devicePixelRatio = 1.0,
     bool? antiAlias,
+    double? connectionReductionRatio,
+    int? maxComplexLines,
+    double? denseThresholdFactor,
     SortedSpatialGrid? spatialGrid,
     super.repaint,
   })  : _sortedGrid = spatialGrid ?? SortedSpatialGrid(),
@@ -249,6 +252,9 @@ class OptimizedNetworkPainter extends CustomPainter {
         touchActivation = touchActivation ?? touchFeatures.enabled,
         performance = performance.copyWith(
           isComplex: isComplex,
+          connectionReductionRatio: connectionReductionRatio,
+          maxComplexLines: maxComplexLines,
+          denseThresholdFactor: denseThresholdFactor,
           maxConnectionsPerParticle: maxConnectionsPerParticle,
           adaptiveDensity: adaptiveDensity,
           fastLineRendering: fastLineRendering,
@@ -676,8 +682,12 @@ class OptimizedNetworkPainter extends CustomPainter {
     final double dist = effectiveDistance ?? lineDistance;
     final double maxDistSq = dist * dist;
     final double invLineDistance = dist > 0 ? 255.0 / dist : 0.0;
-    final int defaultMaxLines = isComplex ? 3 : 5;
-    final int denseThreshold = isComplex ? (dist ~/ 4) : (dist ~/ 1.5);
+    final int defaultMaxLines =
+        performance.maxComplexLines ?? (isComplex ? 3 : 5);
+    final double? customFactor = performance.denseThresholdFactor;
+    final int denseThreshold = customFactor != null
+        ? (dist * customFactor).toInt()
+        : (isComplex ? (dist ~/ 4) : (dist ~/ 1.5));
 
     final int? maxConn = maxConnectionsPerParticle;
     final bool capped = maxConn != null;
@@ -773,11 +783,25 @@ class OptimizedNetworkPainter extends CustomPainter {
                 final int allowed = cap - counts[i];
                 if (allowed < maxAllowed) maxAllowed = allowed;
               }
-              if (isComplex) {
-                if (candidateCount > denseThreshold &&
-                    defaultMaxLines < maxAllowed) {
-                  maxAllowed = defaultMaxLines;
-                  isThrottled = true;
+              final bool shouldThrottle = isComplex ||
+                  performance.connectionReductionRatio != null ||
+                  performance.maxComplexLines != null;
+              if (shouldThrottle) {
+                if (candidateCount > denseThreshold) {
+                  int targetLines = defaultMaxLines;
+                  if (performance.connectionReductionRatio != null) {
+                    final double ratio =
+                        performance.connectionReductionRatio!.clamp(0.0, 1.0);
+                    final int reduced =
+                        (candidateCount * (1.0 - ratio)).round();
+                    targetLines = performance.maxComplexLines != null
+                        ? math.min(reduced, performance.maxComplexLines!)
+                        : math.max(1, reduced);
+                  }
+                  if (targetLines < maxAllowed) {
+                    maxAllowed = targetLines;
+                    isThrottled = true;
+                  }
                 } else if (capped && candidateCount > maxAllowed) {
                   isThrottled = true;
                 }
@@ -931,11 +955,16 @@ class OptimizedNetworkPainter extends CustomPainter {
       counts = _connectionCounts;
     }
 
-    final bool complex = isComplex;
+    final bool complex = isComplex ||
+        performance.connectionReductionRatio != null ||
+        performance.maxComplexLines != null;
     final double effectiveDist =
         dist ?? (maxDistSq > 0 ? math.sqrt(maxDistSq) : lineDistance);
-    final int denseThreshold = effectiveDist > 0 ? (effectiveDist ~/ 4) : 0;
-    const int maxComplexLines = 5;
+    final double? customFactor = performance.denseThresholdFactor;
+    final int denseThreshold = customFactor != null
+        ? (effectiveDist > 0 ? (effectiveDist * customFactor).toInt() : 0)
+        : (effectiveDist > 0 ? (effectiveDist ~/ 4) : 0);
+    final int maxComplexLines = performance.maxComplexLines ?? 5;
 
     for (int cy = 0; cy < rows; cy++) {
       final bool hasSouth = cy < rows - 1;
@@ -1029,10 +1058,20 @@ class OptimizedNetworkPainter extends CustomPainter {
             if (allowed < maxAllowed) maxAllowed = allowed;
           }
           if (complex) {
-            if (candidateCount > denseThreshold &&
-                maxComplexLines < maxAllowed) {
-              maxAllowed = maxComplexLines;
-              isThrottled = true;
+            if (candidateCount > denseThreshold) {
+              int targetLines = maxComplexLines;
+              if (performance.connectionReductionRatio != null) {
+                final double ratio =
+                    performance.connectionReductionRatio!.clamp(0.0, 1.0);
+                final int reduced = (candidateCount * (1.0 - ratio)).round();
+                targetLines = performance.maxComplexLines != null
+                    ? math.min(reduced, performance.maxComplexLines!)
+                    : math.max(1, reduced);
+              }
+              if (targetLines < maxAllowed) {
+                maxAllowed = targetLines;
+                isThrottled = true;
+              }
             } else if (capped && candidateCount > maxAllowed) {
               isThrottled = true;
             }
@@ -1192,6 +1231,12 @@ class OptimizedNetworkPainter extends CustomPainter {
     bool clearMaxLinesPerFrame = false,
     LineRenderer? lineRenderer,
     bool? isComplex,
+    double? connectionReductionRatio,
+    bool clearConnectionReductionRatio = false,
+    int? maxComplexLines,
+    bool clearMaxComplexLines = false,
+    double? denseThresholdFactor,
+    bool clearDenseThresholdFactor = false,
     bool? antiAlias,
   }) {
     if (lineRenderer != null) {
@@ -1199,6 +1244,21 @@ class OptimizedNetworkPainter extends CustomPainter {
       _touchHandler.lineRenderer = touchFeatures.lineRenderer ?? lineRenderer;
     }
     if (isComplex != null) this.isComplex = isComplex;
+    if (clearConnectionReductionRatio ||
+        connectionReductionRatio != null ||
+        clearMaxComplexLines ||
+        maxComplexLines != null ||
+        clearDenseThresholdFactor ||
+        denseThresholdFactor != null) {
+      performance = performance.copyWith(
+        connectionReductionRatio: connectionReductionRatio,
+        clearConnectionReductionRatio: clearConnectionReductionRatio,
+        maxComplexLines: maxComplexLines,
+        clearMaxComplexLines: clearMaxComplexLines,
+        denseThresholdFactor: denseThresholdFactor,
+        clearDenseThresholdFactor: clearDenseThresholdFactor,
+      );
+    }
     if (antiAlias != null && antiAlias != performance.antiAlias) {
       performance = performance.copyWith(antiAlias: antiAlias);
       _updateAntiAlias(antiAlias);
