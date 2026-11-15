@@ -128,6 +128,9 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   int _particleCount = 300;
   double _maxSpeed = 5.0;
   double _maxSize = 2.0;
+  /// Connection distance between particles. Automatically adapts to screen size
+  /// (Phone: 60, Tablet: 80, Desktop: 100) unless customized by user via slider.
+  bool _isLineDistanceCustom = false;
   double _lineDistance = 100.0;
   GravityType _gravityType = GravityType.none;
   double _gravityStrength = 0.1;
@@ -176,6 +179,31 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
     setState(() {
       _particleKey = UniqueKey();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isLineDistanceCustom) {
+      _lineDistance = _getResponsiveLineDistance(context);
+    }
+  }
+
+  /// Calculates responsive connection line distance based on screen width:
+  /// - Phone (< 600px): 60.0 (shorter to avoid visual clutter on compact screens)
+  /// - Tablet (600px - 1024px): 80.0 (longer, balanced for mid-sized viewports)
+  /// - Computer / Desktop (>= 1024px): 100.0 (full open web connection distance)
+  double _getResponsiveLineDistance([BuildContext? ctx]) {
+    final effectiveContext = ctx ?? (mounted ? context : null);
+    if (effectiveContext == null) return 100.0;
+    final width = MediaQuery.sizeOf(effectiveContext).width;
+    if (width < 600) {
+      return 60.0; // Phone
+    } else if (width < 1024) {
+      return 80.0; // Tablet
+    } else {
+      return 100.0; // Computer / Desktop
+    }
   }
 
   // --- Showcase Presets ---
@@ -387,6 +415,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       _maxSize = preset.maxSize;
       _lineWidth = preset.lineWidth;
       _lineDistance = preset.lineDistance;
+      _isLineDistanceCustom = true;
       _gravityType = preset.gravityType;
       _gravityStrength = preset.gravityStrength;
       _gravityDirection = preset.gravityDirection;
@@ -433,7 +462,8 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   void _resetLinesSection() {
     setState(() {
       _lineWidth = 1.0;
-      _lineDistance = 100.0;
+      _isLineDistanceCustom = false;
+      _lineDistance = _getResponsiveLineDistance(context);
       _fastLineRendering = false;
       _lineRenderer = LineRenderer.stroke;
       _cappedDistanceFactor = 0.75;
@@ -499,7 +529,8 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       _particleCount = 300;
       _maxSpeed = 5.0;
       _maxSize = 2.0;
-      _lineDistance = 100.0;
+      _isLineDistanceCustom = false;
+      _lineDistance = _getResponsiveLineDistance(context);
       _gravityType = GravityType.none;
       _gravityStrength = 0.1;
       _gravityDirection = const Offset(0, 1);
@@ -1767,7 +1798,10 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                 _lineDistance,
                 0,
                 300,
-                (v) => setState(() => _lineDistance = v),
+                (v) => setState(() {
+                  _lineDistance = v;
+                  _isLineDistanceCustom = true;
+                }),
                 fractionDigits: 0,
               ),
             ),
@@ -1796,6 +1830,50 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                 () => setState(() => _lineWidth = 2.5)),
             _buildMiniPill("Heavy", _lineWidth == 5.0,
                 () => setState(() => _lineWidth = 5.0)),
+          ],
+        ),
+        const SizedBox(height: 6),
+
+        // Quick Distance chips
+        Wrap(
+          spacing: 4,
+          runSpacing: 4,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text(
+              "Distance:",
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.white.withValues(alpha: 0.6),
+              ),
+            ),
+            _buildMiniPill("Auto (Screen)", !_isLineDistanceCustom, () {
+              setState(() {
+                _isLineDistanceCustom = false;
+                _lineDistance = _getResponsiveLineDistance(context);
+              });
+            }),
+            _buildMiniPill("Phone (60)",
+                _lineDistance == 60.0 && _isLineDistanceCustom, () {
+              setState(() {
+                _isLineDistanceCustom = true;
+                _lineDistance = 60.0;
+              });
+            }),
+            _buildMiniPill("Tablet (80)",
+                _lineDistance == 80.0 && _isLineDistanceCustom, () {
+              setState(() {
+                _isLineDistanceCustom = true;
+                _lineDistance = 80.0;
+              });
+            }),
+            _buildMiniPill("Desktop (100)",
+                _lineDistance == 100.0 && _isLineDistanceCustom, () {
+              setState(() {
+                _isLineDistanceCustom = true;
+                _lineDistance = 100.0;
+              });
+            }),
           ],
         ),
         const SizedBox(height: 10),
@@ -1935,7 +2013,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           "Count",
           _particleCount.toDouble(),
           10,
-          1000,
+          20000,
           (v) => setState(() => _particleCount = v.toInt()),
           fractionDigits: 0,
         ),
