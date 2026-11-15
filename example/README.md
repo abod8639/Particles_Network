@@ -92,11 +92,10 @@ Transform your Flutter app's UI with a high-performance particle network animati
     * **$O(N)$ Connection Limiting (`maxConnectionsPerParticle`)**: Bounded connection capacity per node, eliminating $O(N^2)$ slowdowns in dense scenes.
     * **Adaptive Density (`adaptiveDensity`)**: Automatically scales connection radius in dense particle regions to prevent visual clutter and CPU bottlenecks.
     * **Zero-Allocation Color LUT (`_lineColorLut`)**: Precomputed 256-level alpha lookup table with inverse distance precomputation ($255.0 / \text{lineDistance}$), completely eliminating `Color` allocations and GC overhead during connection rendering.
-    * **Touch Inactivity Bypass (`isTouchActive`)**: Skips all touch physics calculations, distance queries, and forced QuadTree rebuilds when the screen is idle.
+    * **Touch Inactivity Bypass (`isTouchActive`)**: Skips all touch physics calculations, distance queries, and grid rebuilds when the screen is idle.
     * **Precalculated Trajectory Buffer (`TrajectoryBuffer`)**: Deterministic trajectory precomputation during idle states for smooth 120 FPS playback with zero per-frame physics computation.
     * **GPU-accelerated rendering via Fragment Shaders** for smooth performance
-    * Advanced QuadTree spatial partitioning for O(log n) neighbor searches
-    * Compressed QuadTree structure for optimal memory usage
+    * **SortedSpatialGrid Spatial Partitioning**: Cell-sorted Structure-of-Arrays (SoA) layout with 0 heap allocations in steady-state and sub-0.1ms build times.
 
 * **Rich Customization**
 
@@ -453,36 +452,20 @@ The particle network uses **Fragment Shaders** for rendering, which offloads the
 > [!TIP]
 > For web deployments, compile with WebAssembly (`--wasm`) for hardware-accelerated CanvasKit / Skwasm shader performance.
 
-### Spatial Partitioning
+### Spatial Partitioning (`SortedSpatialGrid`)
 
-The package uses an advanced **Compressed QuadTree** spatial data structure for efficient particle management.
+The package uses **SortedSpatialGrid** as its primary high-throughput spatial data structure:
 
 ```dart
-final quadTree = CompressedQuadTreeNode(
-  Rectangle(0, 0, screenWidth, screenHeight),
-);
+final grid = SortedSpatialGrid();
+grid.build(particles, visibleIndices, screenWidth, screenHeight, searchRadius);
 
-particles.forEach((particle) => 
-  quadTree.insert(QuadTreeParticle(
-    particle.id, 
-    particle.x, 
-    particle.y
-  ))
-);
-
-final nearbyParticles = quadTree.queryCircle(
-  touchX, 
-  touchY, 
-  searchRadius
-);
+grid.queryRadius(touchX, touchY, searchRadius, (idx, px, py, distSq) {
+  // Candidate particles within search radius
+});
 ```
 
-![QuadTree Visualization](https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/250530_22h33m09s_screenshot.png)
-
-**Key Benefits:**
-* **O(log n)** insertion and query complexity
-* Path compression to reduce memory for clustered particles
-* Smart node consolidation and rebalancing
+*Note: Legacy QuadTree and SpatialGrid structures are deprecated and scheduled for removal in v2.0.0.*
 * Memory-efficient structure with typed arrays and sparse representation
 
 ### Zero-Allocation Color LUT (`_lineColorLut`)
