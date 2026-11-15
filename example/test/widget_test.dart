@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:particles_network/particles_network.dart';
 import 'package:example/main.dart';
 
 void main() {
@@ -324,5 +325,81 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Singularity: Canvas Center'), findsOneWidget);
+  });
+
+  testWidgets(
+      'Responsive lineDistance adapts to phone (60), tablet (80), and desktop (100)',
+      (WidgetTester tester) async {
+    // 1. Phone viewport (< 600)
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const MyApp());
+    await tester.pump(const Duration(milliseconds: 300));
+
+    ParticleNetwork network =
+        tester.widget<ParticleNetwork>(find.byType(ParticleNetwork));
+    expect(network.lineDistance, equals(60.0));
+
+    // 2. Tablet viewport (600 - 1024)
+    tester.view.physicalSize = const Size(768, 1024);
+    await tester.pumpWidget(const MyApp());
+    await tester.pump(const Duration(milliseconds: 300));
+
+    network = tester.widget<ParticleNetwork>(find.byType(ParticleNetwork));
+    expect(network.lineDistance, equals(80.0));
+
+    // 3. Desktop viewport (>= 1024)
+    tester.view.physicalSize = const Size(1280, 800);
+    await tester.pumpWidget(const MyApp());
+    await tester.pump(const Duration(milliseconds: 300));
+
+    network = tester.widget<ParticleNetwork>(find.byType(ParticleNetwork));
+    expect(network.lineDistance, equals(100.0));
+  });
+
+  testWidgets('Quick distance chips allow manual override and auto reset',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const MyApp());
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final linesFinder = find.byKey(const ValueKey('category_chip_Lines'));
+    await tester.scrollUntilVisible(
+      linesFinder,
+      50.0,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(linesFinder);
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Auto (Screen)'), findsOneWidget);
+    expect(find.text('Phone (60)'), findsOneWidget);
+    expect(find.text('Tablet (80)'), findsOneWidget);
+    expect(find.text('Desktop (100)'), findsOneWidget);
+
+    // Tap Phone (60)
+    await tester.tap(find.text('Phone (60)'));
+    await tester.pump(const Duration(milliseconds: 300));
+    var network = tester.widget<ParticleNetwork>(find.byType(ParticleNetwork));
+    expect(network.lineDistance, equals(60.0));
+
+    // Tap Tablet (80)
+    await tester.tap(find.text('Tablet (80)'));
+    await tester.pump(const Duration(milliseconds: 300));
+    network = tester.widget<ParticleNetwork>(find.byType(ParticleNetwork));
+    expect(network.lineDistance, equals(80.0));
+
+    // Tap Auto (Screen) on desktop (width 1280) -> resets to 100.0
+    await tester.tap(find.text('Auto (Screen)'));
+    await tester.pump(const Duration(milliseconds: 300));
+    network = tester.widget<ParticleNetwork>(find.byType(ParticleNetwork));
+    expect(network.lineDistance, equals(100.0));
   });
 }
