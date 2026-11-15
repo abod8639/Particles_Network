@@ -129,20 +129,93 @@ void main() {
       expect(perf1, isNot(equals(perf3)));
     });
 
-    test('toString contains all configuration fields', () {
+    test('complex preset has optimized values for dense cluster throttling',
+        () {
+      final perf = const NetworkPerformance.complex();
+
+      expect(perf.isComplex, isTrue);
+      expect(perf.connectionReductionRatio, equals(0.5));
+      expect(perf.maxComplexLines, equals(3));
+      expect(perf.denseThresholdFactor, equals(0.25));
+    });
+
+    test('complex preset allows overriding throttling parameters', () {
+      const perf = NetworkPerformance.complex(
+        connectionReductionRatio: 0.8,
+        maxComplexLines: 4,
+        denseThresholdFactor: 0.4,
+      );
+
+      expect(perf.isComplex, isTrue);
+      expect(perf.connectionReductionRatio, equals(0.8));
+      expect(perf.maxComplexLines, equals(4));
+      expect(perf.denseThresholdFactor, equals(0.4));
+    });
+
+    test(
+        'validates assertion for connectionReductionRatio, maxComplexLines, and denseThresholdFactor',
+        () {
+      expect(
+        () => NetworkPerformance(connectionReductionRatio: -0.1),
+        throwsAssertionError,
+      );
+      expect(
+        () => NetworkPerformance(connectionReductionRatio: 1.1),
+        throwsAssertionError,
+      );
+      expect(
+        () => NetworkPerformance(maxComplexLines: 0),
+        throwsAssertionError,
+      );
+      expect(
+        () => NetworkPerformance(denseThresholdFactor: 0.0),
+        throwsAssertionError,
+      );
+    });
+
+    test(
+        'copyWith updates and clears connectionReductionRatio, maxComplexLines, and denseThresholdFactor',
+        () {
+      const initial = NetworkPerformance(
+        connectionReductionRatio: 0.5,
+        maxComplexLines: 4,
+        denseThresholdFactor: 0.3,
+      );
+
+      final updated = initial.copyWith(
+        connectionReductionRatio: 0.75,
+        maxComplexLines: 2,
+        denseThresholdFactor: 0.5,
+      );
+
+      expect(updated.connectionReductionRatio, equals(0.75));
+      expect(updated.maxComplexLines, equals(2));
+      expect(updated.denseThresholdFactor, equals(0.5));
+
+      final cleared = updated.copyWith(
+        clearConnectionReductionRatio: true,
+        clearMaxComplexLines: true,
+        clearDenseThresholdFactor: true,
+      );
+
+      expect(cleared.connectionReductionRatio, isNull);
+      expect(cleared.maxComplexLines, isNull);
+      expect(cleared.denseThresholdFactor, isNull);
+    });
+
+    test(
+        'toString contains connectionReductionRatio, maxComplexLines, and denseThresholdFactor',
+        () {
       const perf = NetworkPerformance(
-        maxConnectionsPerParticle: 6,
-        fastLineRendering: true,
-        isComplex: true,
+        connectionReductionRatio: 0.6,
+        maxComplexLines: 3,
+        denseThresholdFactor: 0.2,
       );
 
       final str = perf.toString();
-      expect(str, contains('maxConnectionsPerParticle: 6'));
-      expect(str, contains('fastLineRendering: true'));
-      expect(str, contains('lineRenderer: LineRenderer.stroke'));
-      expect(str, contains('isComplex: true'));
-      expect(str, contains('cappedDistanceFactor: 0.75'));
-      expect(str, contains('antiAlias: true'));
+      expect(str, contains('connectionReductionRatio: 0.6'));
+      expect(str, contains('maxComplexLines: 3'));
+      expect(str, contains('denseThresholdFactor: 0.2'));
     });
   });
 
@@ -599,6 +672,86 @@ void main() {
 
         cappedPainter.paint(canvas, size);
         expect(cappedPainter.lastFrameLineCount, equals(0));
+      },
+    );
+
+    testWidgets(
+      'connectionReductionRatio reduces lines proportionally in dense clusters',
+      (WidgetTester tester) async {
+        final denseParticles = List.generate(
+          20,
+          (i) => Particle(
+            position: Offset(100.0 + (i % 5) * 4.0, 100.0 + (i ~/ 5) * 4.0),
+            velocity: Offset.zero,
+            color: Colors.white,
+            size: 2.0,
+          ),
+        );
+
+        final unreducedPainter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: false,
+          particleCount: denseParticles.length,
+          particles: denseParticles,
+          touchPoint: null,
+          lineDistance: 50.0,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          lineWidth: 1.0,
+          performance: const NetworkPerformance(
+            isComplex: false,
+          ),
+        );
+
+        final moderateReductionPainter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: false,
+          particleCount: denseParticles.length,
+          particles: denseParticles,
+          touchPoint: null,
+          lineDistance: 50.0,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          lineWidth: 1.0,
+          performance: const NetworkPerformance(
+            isComplex: true,
+            connectionReductionRatio: 0.4,
+          ),
+        );
+
+        final heavyReductionPainter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: false,
+          particleCount: denseParticles.length,
+          particles: denseParticles,
+          touchPoint: null,
+          lineDistance: 50.0,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          lineWidth: 1.0,
+          performance: const NetworkPerformance(
+            isComplex: true,
+            connectionReductionRatio: 0.8,
+          ),
+        );
+
+        final recorder = PictureRecorder();
+        final canvas = Canvas(recorder);
+        const size = Size(500, 500);
+
+        unreducedPainter.paint(canvas, size);
+        moderateReductionPainter.paint(canvas, size);
+        heavyReductionPainter.paint(canvas, size);
+
+        expect(
+          moderateReductionPainter.lastFrameLineCount,
+          lessThan(unreducedPainter.lastFrameLineCount),
+        );
+        expect(
+          heavyReductionPainter.lastFrameLineCount,
+          lessThan(moderateReductionPainter.lastFrameLineCount),
+        );
+        expect(heavyReductionPainter.lastFrameLineCount, greaterThan(0));
       },
     );
   });
