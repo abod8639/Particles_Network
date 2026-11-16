@@ -108,7 +108,7 @@ void main() {
       expect(perf.isComplex, isTrue);
       expect(perf.complexReductionRatio, equals(0.5));
       expect(perf.maxComplexLines, equals(2));
-      expect(perf.denseThresholdFactor, equals(0.25));
+      expect(perf.complexDensityFactor, equals(0.25));
       expect(perf.autoBoost, isFalse);
     });
 
@@ -196,24 +196,24 @@ void main() {
       expect(perf.isComplex, isTrue);
       expect(perf.complexReductionRatio, equals(0.5));
       expect(perf.maxComplexLines, equals(3));
-      expect(perf.denseThresholdFactor, equals(0.25));
+      expect(perf.complexDensityFactor, equals(0.25));
     });
 
     test('complex preset allows overriding throttling parameters', () {
       const perf = NetworkPerformance.complex(
         complexReductionRatio: 0.8,
         maxComplexLines: 4,
-        denseThresholdFactor: 0.4,
+        complexDensityFactor: 0.4,
       );
 
       expect(perf.isComplex, isTrue);
       expect(perf.complexReductionRatio, equals(0.8));
       expect(perf.maxComplexLines, equals(4));
-      expect(perf.denseThresholdFactor, equals(0.4));
+      expect(perf.complexDensityFactor, equals(0.4));
     });
 
     test(
-        'validates assertion for complexReductionRatio, maxComplexLines, and denseThresholdFactor',
+        'validates assertion for complexReductionRatio, maxComplexLines, and complexDensityFactor',
         () {
       expect(
         () => NetworkPerformance(complexReductionRatio: -0.1),
@@ -228,54 +228,54 @@ void main() {
         throwsAssertionError,
       );
       expect(
-        () => NetworkPerformance(denseThresholdFactor: 0.0),
+        () => NetworkPerformance(complexDensityFactor: 0.0),
         throwsAssertionError,
       );
     });
 
     test(
-        'copyWith updates and clears complexReductionRatio, maxComplexLines, and denseThresholdFactor',
+        'copyWith updates and clears complexReductionRatio, maxComplexLines, and complexDensityFactor',
         () {
       const initial = NetworkPerformance(
         complexReductionRatio: 0.5,
         maxComplexLines: 4,
-        denseThresholdFactor: 0.3,
+        complexDensityFactor: 0.3,
       );
 
       final updated = initial.copyWith(
         complexReductionRatio: 0.75,
         maxComplexLines: 2,
-        denseThresholdFactor: 0.5,
+        complexDensityFactor: 0.5,
       );
 
       expect(updated.complexReductionRatio, equals(0.75));
       expect(updated.maxComplexLines, equals(2));
-      expect(updated.denseThresholdFactor, equals(0.5));
+      expect(updated.complexDensityFactor, equals(0.5));
 
       final cleared = updated.copyWith(
         clearcomplexReductionRatio: true,
         clearMaxComplexLines: true,
-        clearDenseThresholdFactor: true,
+        clearcomplexDensityFactor: true,
       );
 
       expect(cleared.complexReductionRatio, isNull);
       expect(cleared.maxComplexLines, isNull);
-      expect(cleared.denseThresholdFactor, isNull);
+      expect(cleared.complexDensityFactor, isNull);
     });
 
     test(
-        'toString contains complexReductionRatio, maxComplexLines, and denseThresholdFactor',
+        'toString contains complexReductionRatio, maxComplexLines, and complexDensityFactor',
         () {
       const perf = NetworkPerformance(
         complexReductionRatio: 0.6,
         maxComplexLines: 3,
-        denseThresholdFactor: 0.2,
+        complexDensityFactor: 0.2,
       );
 
       final str = perf.toString();
       expect(str, contains('complexReductionRatio: 0.6'));
       expect(str, contains('maxComplexLines: 3'));
-      expect(str, contains('denseThresholdFactor: 0.2'));
+      expect(str, contains('complexDensityFactor: 0.2'));
     });
   });
 
