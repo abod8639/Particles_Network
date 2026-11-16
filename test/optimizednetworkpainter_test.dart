@@ -73,6 +73,7 @@ void main() {
       touchColor: Colors.red,
       touchActivation: true,
       lineWidth: 1.0,
+      lineRenderer: LineRenderer.stroke,
     );
   }
 
@@ -125,6 +126,7 @@ void main() {
         touchColor: Colors.red,
         touchActivation: true,
         lineWidth: 1.0,
+        lineRenderer: LineRenderer.stroke,
       );
 
       expect(strokePainter.fill, isFalse);
@@ -164,6 +166,7 @@ void main() {
         touchColor: Colors.red,
         touchActivation: true,
         lineWidth: 1.0,
+        lineRenderer: LineRenderer.stroke,
       );
 
       painter.paint(mockCanvas, testScreenSize);
@@ -191,6 +194,7 @@ void main() {
         touchColor: Colors.red,
         touchActivation: true,
         lineWidth: 1.0,
+        lineRenderer: LineRenderer.stroke,
       );
 
       painter.paint(mockCanvas, testScreenSize);
@@ -305,6 +309,7 @@ void main() {
         touchColor: Colors.red,
         touchActivation: true,
         lineWidth: 1.0,
+        lineRenderer: LineRenderer.stroke,
       );
 
       painter.paint(mockCanvas, testScreenSize);
@@ -333,6 +338,7 @@ void main() {
         touchColor: Colors.red,
         touchActivation: true,
         lineWidth: 1.0,
+        lineRenderer: LineRenderer.stroke,
       );
 
       // Note: Testing pool size directly is hard because it's a singleton and other tests use it.
@@ -358,6 +364,7 @@ void main() {
         touchColor: Colors.red,
         touchActivation: true,
         lineWidth: 1.0,
+        lineRenderer: LineRenderer.stroke,
       );
 
       touchPainter.paint(mockCanvas, testScreenSize);
@@ -410,6 +417,7 @@ void main() {
         touchColor: Colors.red,
         touchActivation: true,
         lineWidth: 1.0,
+        lineRenderer: LineRenderer.stroke,
       );
 
       expect(newPainter.shouldRepaint(defaultPainter), isTrue);
@@ -432,6 +440,7 @@ void main() {
         touchColor: Colors.red,
         touchActivation: true,
         lineWidth: 1.0,
+        lineRenderer: LineRenderer.stroke,
       );
 
       expect(newPainter.shouldRepaint(defaultPainter), isTrue);
@@ -455,6 +464,7 @@ void main() {
         touchColor: Colors.red,
         touchActivation: true,
         lineWidth: 1.0,
+        lineRenderer: LineRenderer.stroke,
       );
 
       // Paint to set internal state
@@ -476,6 +486,7 @@ void main() {
         touchColor: Colors.red,
         touchActivation: true,
         lineWidth: 1.0,
+        lineRenderer: LineRenderer.stroke,
       );
 
       // Even with same params, should repaint for continuous animation
@@ -790,6 +801,7 @@ void main() {
         touchColor: Colors.red,
         touchActivation: false,
         lineWidth: 1.0,
+        lineRenderer: LineRenderer.stroke,
       );
 
       complexPainter.paint(mockCanvas, testScreenSize);
@@ -892,6 +904,7 @@ void main() {
         touchColor: Colors.red,
         touchActivation: false,
         lineWidth: 1.0,
+        lineRenderer: LineRenderer.stroke,
       );
 
       expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
@@ -930,6 +943,7 @@ void main() {
           touchActivation: false,
           lineWidth: 1.0,
           maxConnectionsPerParticle: 2,
+          lineRenderer: LineRenderer.stroke,
         );
 
         painter.paint(mockCanvas, testScreenSize);
@@ -970,6 +984,7 @@ void main() {
           touchActivation: false,
           lineWidth: 1.0,
           maxConnectionsPerParticle: 2,
+          lineRenderer: LineRenderer.stroke,
         );
 
         painter.paint(mockCanvas, testScreenSize);
@@ -1010,6 +1025,7 @@ void main() {
         touchColor: Colors.red,
         touchActivation: false,
         lineWidth: 1.0,
+        lineRenderer: LineRenderer.stroke,
       );
 
       expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
@@ -1053,6 +1069,7 @@ void main() {
         touchColor: Colors.red,
         touchActivation: false,
         lineWidth: 1.0,
+        lineRenderer: LineRenderer.stroke,
       );
 
       expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
@@ -1090,6 +1107,7 @@ void main() {
         touchColor: Colors.red,
         touchActivation: false,
         lineWidth: 1.0,
+        lineRenderer: LineRenderer.stroke,
       );
 
       expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
@@ -1178,6 +1196,7 @@ void main() {
         touchActivation: false,
         lineWidth: 1.0,
         maxConnectionsPerParticle: 1,
+        lineRenderer: LineRenderer.stroke,
       );
 
       expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
@@ -1269,6 +1288,7 @@ void main() {
         touchColor: Colors.red,
         touchActivation: false,
         lineWidth: 1.0,
+        lineRenderer: LineRenderer.stroke,
       );
 
       expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
@@ -1291,6 +1311,7 @@ void main() {
         touchActivation: false,
         lineWidth: 1.0,
         maxLinesPerFrame: 50,
+        lineRenderer: LineRenderer.stroke,
       );
 
       expect(() => budgetedPainter.paint(mockCanvas, testScreenSize),
@@ -1326,6 +1347,7 @@ void main() {
         touchActivation: false,
         lineWidth: 1.0,
         maxLinesPerFrame: 50,
+        lineRenderer: LineRenderer.stroke,
       );
 
       painter.paint(mockCanvas, const Size(100, 100));
