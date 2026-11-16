@@ -242,7 +242,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     LineRenderer? lineRenderer,
     this.devicePixelRatio = 1.0,
     bool? antiAlias,
-    double? connectionReductionRatio,
+    double? complexReductionRatio,
     int? maxComplexLines,
     double? denseThresholdFactor,
     SortedSpatialGrid? spatialGrid,
@@ -252,7 +252,7 @@ class OptimizedNetworkPainter extends CustomPainter {
         touchActivation = touchActivation ?? touchFeatures.enabled,
         performance = performance.copyWith(
           isComplex: isComplex,
-          connectionReductionRatio: connectionReductionRatio,
+          complexReductionRatio: complexReductionRatio,
           maxComplexLines: maxComplexLines,
           denseThresholdFactor: denseThresholdFactor,
           maxConnectionsPerParticle: maxConnectionsPerParticle,
@@ -784,14 +784,14 @@ class OptimizedNetworkPainter extends CustomPainter {
                 if (allowed < maxAllowed) maxAllowed = allowed;
               }
               final bool shouldThrottle = isComplex ||
-                  performance.connectionReductionRatio != null ||
+                  performance.complexReductionRatio != null ||
                   performance.maxComplexLines != null;
               if (shouldThrottle) {
                 if (candidateCount > denseThreshold) {
                   int targetLines = defaultMaxLines;
-                  if (performance.connectionReductionRatio != null) {
+                  if (performance.complexReductionRatio != null) {
                     final double ratio =
-                        performance.connectionReductionRatio!.clamp(0.0, 1.0);
+                        performance.complexReductionRatio!.clamp(0.0, 1.0);
                     final int reduced =
                         (candidateCount * (1.0 - ratio)).round();
                     targetLines = performance.maxComplexLines != null
@@ -956,7 +956,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     }
 
     final bool complex = isComplex ||
-        performance.connectionReductionRatio != null ||
+        performance.complexReductionRatio != null ||
         performance.maxComplexLines != null;
     final double effectiveDist =
         dist ?? (maxDistSq > 0 ? math.sqrt(maxDistSq) : lineDistance);
@@ -1060,9 +1060,9 @@ class OptimizedNetworkPainter extends CustomPainter {
           if (complex) {
             if (candidateCount > denseThreshold) {
               int targetLines = maxComplexLines;
-              if (performance.connectionReductionRatio != null) {
+              if (performance.complexReductionRatio != null) {
                 final double ratio =
-                    performance.connectionReductionRatio!.clamp(0.0, 1.0);
+                    performance.complexReductionRatio!.clamp(0.0, 1.0);
                 final int reduced = (candidateCount * (1.0 - ratio)).round();
                 targetLines = performance.maxComplexLines != null
                     ? math.min(reduced, performance.maxComplexLines!)
@@ -1231,8 +1231,8 @@ class OptimizedNetworkPainter extends CustomPainter {
     bool clearMaxLinesPerFrame = false,
     LineRenderer? lineRenderer,
     bool? isComplex,
-    double? connectionReductionRatio,
-    bool clearConnectionReductionRatio = false,
+    double? complexReductionRatio,
+    bool clearcomplexReductionRatio = false,
     int? maxComplexLines,
     bool clearMaxComplexLines = false,
     double? denseThresholdFactor,
@@ -1244,15 +1244,15 @@ class OptimizedNetworkPainter extends CustomPainter {
       _touchHandler.lineRenderer = touchFeatures.lineRenderer ?? lineRenderer;
     }
     if (isComplex != null) this.isComplex = isComplex;
-    if (clearConnectionReductionRatio ||
-        connectionReductionRatio != null ||
+    if (clearcomplexReductionRatio ||
+        complexReductionRatio != null ||
         clearMaxComplexLines ||
         maxComplexLines != null ||
         clearDenseThresholdFactor ||
         denseThresholdFactor != null) {
       performance = performance.copyWith(
-        connectionReductionRatio: connectionReductionRatio,
-        clearConnectionReductionRatio: clearConnectionReductionRatio,
+        complexReductionRatio: complexReductionRatio,
+        clearcomplexReductionRatio: clearcomplexReductionRatio,
         maxComplexLines: maxComplexLines,
         clearMaxComplexLines: clearMaxComplexLines,
         denseThresholdFactor: denseThresholdFactor,
