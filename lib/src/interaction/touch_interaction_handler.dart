@@ -72,7 +72,7 @@ class TouchInteractionHandler {
     bool? fastLineRendering,
   })  : _touchColor = touchColor,
         lineRenderer =
-            lineRenderer ?? touchFeatures.lineRenderer ?? LineRenderer.stroke,
+            lineRenderer ?? touchFeatures.lineRenderer ?? LineRenderer.vertices,
         fastLineRendering =
             fastLineRendering ?? touchFeatures.fastLineRendering ?? true;
 
