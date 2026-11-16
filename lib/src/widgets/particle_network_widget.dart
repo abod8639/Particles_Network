@@ -63,10 +63,18 @@ class ParticleNetwork extends StatefulWidget {
 
   /// Whether touch interactions are enabled (default: true).
   ///
-  /// Deprecated: Configure touch activation via [touchFeatures]
-  /// using [TouchFeatures.enabled] instead. This parameter will be removed in particles_network 2.0.0.
+  /// Deprecated: Moved into [TouchFeatures] and renamed to [TouchFeatures.enabled].
+  /// Use `touchFeatures: TouchFeatures(enabled: ...)` instead:
+  /// ```dart
+  /// ParticleNetwork(
+  ///   touchFeatures: TouchFeatures(enabled: false),
+  /// )
+  /// ```
+  /// This parameter will be removed in particles_network 2.0.0.
   @Deprecated(
-    'Use touchFeatures (TouchFeatures(enabled: ...)) instead. This parameter will be removed in particles_network 2.0.0.',
+    'touchActivation was moved to TouchFeatures and renamed to enabled. '
+    'Use ParticleNetwork(touchFeatures: TouchFeatures(enabled: ...)) instead. '
+    'This parameter will be removed in particles_network 2.0.0.',
   )
   bool get touchActivation => _touchActivation ?? touchFeatures.enabled;
 
@@ -219,7 +227,9 @@ class ParticleNetwork extends StatefulWidget {
     )
     Color? touchColor,
     @Deprecated(
-      'Use touchFeatures (TouchFeatures(enabled: ...)) instead. This parameter will be removed in particles_network 2.0.0.',
+      'touchActivation was moved to TouchFeatures and renamed to enabled. '
+      'Use ParticleNetwork(touchFeatures: TouchFeatures(enabled: ...)) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
     )
     bool? touchActivation,
     @Deprecated(
@@ -478,7 +488,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
         LegacyDeprecationLogger.warn(
           deprecatedApi: 'ParticleNetwork(touchActivation)',
           replacement:
-              'ParticleNetwork(touchFeatures: TouchFeatures(enabled: ...))',
+              'ParticleNetwork(touchFeatures: TouchFeatures(enabled: ...)) (touchActivation was moved to TouchFeatures and renamed to enabled)',
         );
       }
       if (widget.usedLegacyIsComplex) {
@@ -553,7 +563,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
         LegacyDeprecationLogger.warn(
           deprecatedApi: 'ParticleNetwork(touchActivation)',
           replacement:
-              'ParticleNetwork(touchFeatures: TouchFeatures(enabled: ...))',
+              'ParticleNetwork(touchFeatures: TouchFeatures(enabled: ...)) (touchActivation was moved to TouchFeatures and renamed to enabled)',
         );
       }
       if (widget.usedLegacyIsComplex) {
