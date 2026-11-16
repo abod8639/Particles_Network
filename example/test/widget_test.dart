@@ -492,7 +492,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     network = tester.widget<ParticleNetwork>(find.byType(ParticleNetwork));
     expect(network.performance.isComplex, isTrue);
-    expect(network.performance.connectionReductionRatio, equals(0.5));
+    expect(network.performance.complexReductionRatio, equals(0.5));
     expect(network.performance.maxComplexLines, equals(3));
     expect(network.performance.denseThresholdFactor, equals(0.25));
 
