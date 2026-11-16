@@ -140,7 +140,8 @@ void main() {
             isComplex: false,
             fill: true,
             drawNetwork: true,
-            fastLineRendering: unified,
+            lineRenderer:
+                unified ? LineRenderer.vertices : LineRenderer.stroke,
           );
           final recorder = PictureRecorder();
           painter.paint(Canvas(recorder), size);
