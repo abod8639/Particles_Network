@@ -96,17 +96,6 @@ class OptimizedNetworkPainter extends CustomPainter {
     );
   }
 
-  /// Whether to automatically scale down connection distance in dense networks.
-  bool get adaptiveDensity => performance.adaptiveDensity;
-  set adaptiveDensity(bool value) {
-    performance = performance.copyWith(adaptiveDensity: value);
-  }
-
-  /// Whether to use ultra-fast single draw-call line rendering.
-  bool get fastLineRendering => performance.fastLineRendering;
-  set fastLineRendering(bool value) {
-    performance = performance.copyWith(fastLineRendering: value);
-  }
 
   /// Target upper bound on connection lines drawn per frame.
   ///
@@ -235,8 +224,6 @@ class OptimizedNetworkPainter extends CustomPainter {
     NetworkPerformance performance = const NetworkPerformance(),
     this.showQuadTree = false,
     int? maxConnectionsPerParticle,
-    bool? adaptiveDensity,
-    bool? fastLineRendering,
     int? maxLinesPerFrame,
     this.simulateTouchInPaint = true,
     LineRenderer? lineRenderer,
@@ -256,8 +243,6 @@ class OptimizedNetworkPainter extends CustomPainter {
           maxComplexLines: maxComplexLines,
           complexDensityFactor: complexDensityFactor,
           maxConnectionsPerParticle: maxConnectionsPerParticle,
-          adaptiveDensity: adaptiveDensity,
-          fastLineRendering: fastLineRendering,
           maxLinesPerFrame: maxLinesPerFrame,
           lineRenderer: lineRenderer,
           antiAlias: antiAlias,
@@ -324,8 +309,7 @@ class OptimizedNetworkPainter extends CustomPainter {
       touchFeatures: touchFeatures,
       spatialGrid: _sortedGrid,
       lineRenderer: touchFeatures.lineRenderer ?? this.performance.lineRenderer,
-      fastLineRendering:
-          touchFeatures.fastLineRendering ?? this.performance.fastLineRendering,
+      fastLineRendering: touchFeatures.fastLineRendering ?? true,
     );
   }
 
@@ -422,25 +406,12 @@ class OptimizedNetworkPainter extends CustomPainter {
           : 0.0;
 
       double? effectiveDistance;
-      if (adaptiveDensity &&
-          size.width > 0 &&
-          size.height > 0 &&
-          visibleParticles.isNotEmpty) {
-        final double screenArea = size.width * size.height;
-        final double areaPerParticle = screenArea / visibleParticles.length;
-        // 5333 px^2 corresponds to ~60 particles on a 400x800 screen.
-        final double factor =
-            math.sqrt(areaPerParticle / 5333.0).clamp(0.25, 1.0);
-        effectiveDistance = math.max(safetyFloor, lineDistance * factor);
-      }
-
-      final double baseDistance = effectiveDistance ?? lineDistance;
       final double distance = _budgetedDistance(
-        baseDistance,
+        lineDistance,
         size,
         visibleParticles.length,
       );
-      if (distance != baseDistance) effectiveDistance = distance;
+      if (distance != lineDistance) effectiveDistance = distance;
 
       // When capped, constrain pairing distance to cappedDistanceFactor to eliminate
       // jarring long lines and visual connection thrashing/flickering.
@@ -450,7 +421,7 @@ class OptimizedNetworkPainter extends CustomPainter {
           ? distance * performance.cappedDistanceFactor
           : distance;
 
-      if (adaptiveDensity || maxLinesPerFrame == null) {
+      if (maxLinesPerFrame == null) {
         activeDist = math.max(safetyFloor, activeDist);
       }
       _lastFrameLineDistance = activeDist;
@@ -471,8 +442,8 @@ class OptimizedNetworkPainter extends CustomPainter {
         performance.spatialCellMultiplier,
       );
 
-      _drawConnections(canvas, visibleParticles, activeDist);
-      _updateBudgetCorrection(distance, baseDistance);
+      _drawConnections(canvas, visibleParticles, effectiveDistance);
+      _updateBudgetCorrection(distance, lineDistance);
     } else {
       _lastFrameLineCount = 0;
       if (_isTouchActive && visibleParticles.isNotEmpty) {
@@ -490,8 +461,8 @@ class OptimizedNetworkPainter extends CustomPainter {
 
     if (_isTouchActive) {
       final bool useFast = touchFeatures.fastLineRendering ??
-          (fastLineRendering ||
-              lineRenderer == LineRenderer.vertices ||
+          (lineRenderer == LineRenderer.vertices ||
+              touchFeatures.lineRenderer == LineRenderer.vertices ||
               visibleParticles.length >= 30);
       _touchHandler.drawTouchLines(
         canvas,
@@ -626,31 +597,6 @@ class OptimizedNetworkPainter extends CustomPainter {
     _unifiedLineBuffer = newBuf;
   }
 
-  void _drawFastUnifiedConnections(Canvas canvas, double effectiveDistance) {
-    _unifiedLineCount = 0;
-    _collectSortedConnections(
-      effectiveDistance * effectiveDistance,
-      true,
-      effectiveDistance,
-    );
-
-    _lastFrameLineCount = _unifiedLineCount ~/ 4;
-    if (_unifiedLineCount > 0 && lineRenderer == LineRenderer.vertices) {
-      final double width = _vertexLineWidth();
-      _vertexPaint.color = Color(_scaledArgb(lineColor, lineWidth / width));
-      _lineVertexBatch
-        ..clear()
-        ..addSegments(_unifiedLineBuffer, _unifiedLineCount, width * 0.5)
-        ..draw(canvas, _vertexPaint);
-    } else if (_unifiedLineCount > 0) {
-      linePaint.color = lineColor;
-      canvas.drawRawPoints(
-        PointMode.lines,
-        Float32List.sublistView(_unifiedLineBuffer, 0, _unifiedLineCount),
-        linePaint,
-      );
-    }
-  }
 
   void _drawConnections(
     Canvas canvas,
@@ -665,9 +611,7 @@ class OptimizedNetworkPainter extends CustomPainter {
         ? dist * performance.cappedDistanceFactor
         : dist;
 
-    if (fastLineRendering) {
-      _drawFastUnifiedConnections(canvas, activeDist);
-    } else if (visibleParticles.length < 30) {
+    if (visibleParticles.length < 30) {
       _drawIndividualConnections(canvas, visibleParticles, activeDist);
     } else {
       _drawBatchedConnections(canvas, visibleParticles, activeDist);
@@ -1216,8 +1160,6 @@ class OptimizedNetworkPainter extends CustomPainter {
     }
     _touchHandler.lineRenderer =
         touchFeatures.lineRenderer ?? newPerformance.lineRenderer;
-    _touchHandler.fastLineRendering =
-        touchFeatures.fastLineRendering ?? newPerformance.fastLineRendering;
     performance = newPerformance;
   }
 
@@ -1225,8 +1167,6 @@ class OptimizedNetworkPainter extends CustomPainter {
   void updatePerformanceOptions({
     int? maxConnectionsPerParticle,
     bool clearMaxConnectionsPerParticle = false,
-    bool? adaptiveDensity,
-    bool? fastLineRendering,
     int? maxLinesPerFrame,
     bool clearMaxLinesPerFrame = false,
     LineRenderer? lineRenderer,
@@ -1275,14 +1215,6 @@ class OptimizedNetworkPainter extends CustomPainter {
       this.maxConnectionsPerParticle = null;
     } else if (maxConnectionsPerParticle != null) {
       this.maxConnectionsPerParticle = maxConnectionsPerParticle;
-    }
-    if (adaptiveDensity != null) {
-      this.adaptiveDensity = adaptiveDensity;
-    }
-    if (fastLineRendering != null) {
-      this.fastLineRendering = fastLineRendering;
-      _touchHandler.fastLineRendering =
-          touchFeatures.fastLineRendering ?? fastLineRendering;
     }
   }
 
@@ -1338,7 +1270,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     _touchHandler.lineRenderer =
         features.lineRenderer ?? performance.lineRenderer;
     _touchHandler.fastLineRendering =
-        features.fastLineRendering ?? performance.fastLineRendering;
+        features.fastLineRendering ?? true;
     if (features.color != touchColor) {
       touchColor = features.color;
       _touchHandler.rebuildTouchColorLut(features.color);
