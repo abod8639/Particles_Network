@@ -11,9 +11,6 @@ void main() {
       const perf = NetworkPerformance();
 
       expect(perf.maxConnectionsPerParticle, isNull);
-      expect(perf.adaptiveDensity, isFalse);
-      expect(perf.fastLineRendering, isFalse);
-      expect(perf.enableAdaptivePerformance, isFalse);
       expect(perf.maxLinesPerFrame, isNull);
       expect(perf.frameRateIndependent, isFalse);
       expect(perf.lineRenderer, equals(LineRenderer.vertices));
@@ -26,9 +23,6 @@ void main() {
       final perf = NetworkPerformance.highPerformance();
 
       expect(perf.maxConnectionsPerParticle, equals(4));
-      expect(perf.adaptiveDensity, isTrue);
-      expect(perf.fastLineRendering, isTrue);
-      expect(perf.enableAdaptivePerformance, isTrue);
       expect(perf.maxLinesPerFrame, equals(15000));
       expect(perf.frameRateIndependent, isTrue);
       expect(perf.lineRenderer, equals(LineRenderer.vertices));
@@ -41,25 +35,19 @@ void main() {
       final perf = NetworkPerformance.adaptive();
 
       expect(perf.maxConnectionsPerParticle, isNull);
-      expect(perf.adaptiveDensity, isTrue);
-      expect(perf.fastLineRendering, isFalse);
-      expect(perf.enableAdaptivePerformance, isTrue);
       expect(perf.maxLinesPerFrame, isNull);
       expect(perf.frameRateIndependent, isTrue);
       expect(perf.lineRenderer, equals(LineRenderer.vertices));
       expect(perf.isComplex, isFalse);
       expect(perf.cappedDistanceFactor, equals(0.75));
       expect(perf.antiAlias, isTrue);
-      expect(perf.autoBoost, isFalse);
+      expect(perf.autoBoost, isTrue);
     });
 
     test('auto preset has smart auto-performance scaling enabled', () {
       const perf = NetworkPerformance.auto();
 
       expect(perf.maxConnectionsPerParticle, equals(15000));
-      expect(perf.adaptiveDensity, isTrue);
-      expect(perf.fastLineRendering, isTrue);
-      expect(perf.enableAdaptivePerformance, isTrue);
       expect(perf.maxLinesPerFrame, equals(15000));
       expect(perf.frameRateIndependent, isTrue);
       expect(perf.lineRenderer, equals(LineRenderer.vertices));
@@ -71,9 +59,6 @@ void main() {
       const perf = NetworkPerformance.boost();
 
       expect(perf.maxConnectionsPerParticle, equals(15000));
-      expect(perf.adaptiveDensity, isTrue);
-      expect(perf.fastLineRendering, isTrue);
-      expect(perf.enableAdaptivePerformance, isTrue);
       expect(perf.maxLinesPerFrame, equals(15000));
       expect(perf.frameRateIndependent, isTrue);
       expect(perf.lineRenderer, equals(LineRenderer.vertices));
@@ -85,9 +70,6 @@ void main() {
       const perf = NetworkPerformance.balanced();
 
       expect(perf.maxConnectionsPerParticle, equals(6));
-      expect(perf.adaptiveDensity, isTrue);
-      expect(perf.fastLineRendering, isTrue);
-      expect(perf.enableAdaptivePerformance, isTrue);
       expect(perf.maxLinesPerFrame, equals(8000));
       expect(perf.frameRateIndependent, isTrue);
       expect(perf.lineRenderer, equals(LineRenderer.vertices));
@@ -99,9 +81,6 @@ void main() {
       const perf = NetworkPerformance.batterySaver();
 
       expect(perf.maxConnectionsPerParticle, equals(3));
-      expect(perf.adaptiveDensity, isTrue);
-      expect(perf.fastLineRendering, isTrue);
-      expect(perf.enableAdaptivePerformance, isTrue);
       expect(perf.maxLinesPerFrame, equals(3000));
       expect(perf.frameRateIndependent, isTrue);
       expect(perf.lineRenderer, equals(LineRenderer.vertices));
@@ -115,23 +94,18 @@ void main() {
     test('copyWith updates specified fields and preserves others', () {
       const initial = NetworkPerformance(
         maxConnectionsPerParticle: 5,
-        adaptiveDensity: false,
-        fastLineRendering: true,
+        frameRateIndependent: false,
       );
 
       final updated = initial.copyWith(
-        adaptiveDensity: true,
         maxLinesPerFrame: 3000,
         lineRenderer: LineRenderer.vertices,
         isComplex: true,
       );
 
       expect(updated.maxConnectionsPerParticle, equals(5));
-      expect(updated.adaptiveDensity, isTrue);
-      expect(updated.fastLineRendering, isTrue);
       expect(updated.maxLinesPerFrame, equals(3000));
       expect(updated.lineRenderer, equals(LineRenderer.vertices));
-      expect(updated.enableAdaptivePerformance, isFalse);
       expect(updated.isComplex, isTrue);
     });
 
@@ -153,9 +127,6 @@ void main() {
     test('equality and hashCode contract', () {
       const perf1 = NetworkPerformance(
         maxConnectionsPerParticle: 4,
-        adaptiveDensity: true,
-        fastLineRendering: true,
-        enableAdaptivePerformance: true,
         maxLinesPerFrame: 5000,
         frameRateIndependent: true,
         lineRenderer: LineRenderer.vertices,
@@ -164,9 +135,6 @@ void main() {
 
       const perf2 = NetworkPerformance(
         maxConnectionsPerParticle: 4,
-        adaptiveDensity: true,
-        fastLineRendering: true,
-        enableAdaptivePerformance: true,
         maxLinesPerFrame: 5000,
         frameRateIndependent: true,
         lineRenderer: LineRenderer.vertices,
@@ -175,9 +143,6 @@ void main() {
 
       const perf3 = NetworkPerformance(
         maxConnectionsPerParticle: 4,
-        adaptiveDensity: true,
-        fastLineRendering: true,
-        enableAdaptivePerformance: true,
         maxLinesPerFrame: 5000,
         frameRateIndependent: true,
         lineRenderer: LineRenderer.vertices,
@@ -292,8 +257,6 @@ void main() {
               child: ParticleNetwork(
                 performance: NetworkPerformance(
                   maxConnectionsPerParticle: 3,
-                  adaptiveDensity: true,
-                  fastLineRendering: true,
                   maxLinesPerFrame: 2500,
                   lineRenderer: LineRenderer.vertices,
                   isComplex: true,
@@ -313,8 +276,6 @@ void main() {
 
       final painter = customPaint.painter as OptimizedNetworkPainter;
       expect(painter.maxConnectionsPerParticle, equals(3));
-      expect(painter.adaptiveDensity, isTrue);
-      expect(painter.fastLineRendering, isTrue);
       expect(painter.maxLinesPerFrame, equals(2500));
       expect(painter.lineRenderer, equals(LineRenderer.vertices));
       expect(painter.isComplex, isTrue);
@@ -332,7 +293,6 @@ void main() {
               child: ParticleNetwork(
                 performance: NetworkPerformance(
                   maxConnectionsPerParticle: 2,
-                  fastLineRendering: false,
                   isComplex: false,
                 ),
               ),
@@ -349,7 +309,6 @@ void main() {
       var painter = tester.widget<CustomPaint>(customPaintFinder).painter
           as OptimizedNetworkPainter;
       expect(painter.maxConnectionsPerParticle, equals(2));
-      expect(painter.fastLineRendering, isFalse);
       expect(painter.isComplex, isFalse);
 
       await tester.pumpWidget(
@@ -361,7 +320,6 @@ void main() {
               child: ParticleNetwork(
                 performance: NetworkPerformance(
                   maxConnectionsPerParticle: 8,
-                  fastLineRendering: true,
                   lineRenderer: LineRenderer.vertices,
                   isComplex: true,
                 ),
@@ -374,7 +332,6 @@ void main() {
       painter = tester.widget<CustomPaint>(customPaintFinder).painter
           as OptimizedNetworkPainter;
       expect(painter.maxConnectionsPerParticle, equals(8));
-      expect(painter.fastLineRendering, isTrue);
       expect(painter.lineRenderer, equals(LineRenderer.vertices));
       expect(painter.isComplex, isTrue);
     });
@@ -504,7 +461,7 @@ void main() {
     );
 
     testWidgets(
-      'isComplex throttles dense clusters when fastLineRendering is true',
+      'isComplex throttles dense clusters',
       (WidgetTester tester) async {
         final denseParticles = List.generate(
           35,
@@ -527,7 +484,6 @@ void main() {
           lineColor: Colors.grey,
           lineWidth: 1.0,
           performance: const NetworkPerformance(
-            fastLineRendering: true,
             isComplex: false,
           ),
         );
@@ -543,7 +499,6 @@ void main() {
           lineColor: Colors.grey,
           lineWidth: 1.0,
           performance: const NetworkPerformance(
-            fastLineRendering: true,
             isComplex: true,
           ),
         );
@@ -629,7 +584,6 @@ void main() {
           lineWidth: 1.0,
           performance: const NetworkPerformance(
             maxConnectionsPerParticle: 1,
-            fastLineRendering: true,
           ),
         );
 
@@ -657,7 +611,6 @@ void main() {
           lineWidth: 1.0,
           performance: const NetworkPerformance(
             maxConnectionsPerParticle: 1,
-            fastLineRendering: false,
             isComplex: false,
           ),
         );
