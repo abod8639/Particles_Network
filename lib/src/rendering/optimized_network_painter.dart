@@ -40,6 +40,18 @@ class OptimizedNetworkPainter extends CustomPainter {
   Color touchColor;
 
   /// Whether touch interaction effects are enabled.
+  ///
+  /// Deprecated: Moved into [touchFeatures.enabled].
+  /// Configure via [TouchFeatures.enabled] instead:
+  /// ```dart
+  /// touchFeatures: TouchFeatures(enabled: false)
+  /// ```
+  /// This property will be removed in particles_network 2.0.0.
+  @Deprecated(
+    'touchActivation was moved to touchFeatures.enabled. '
+    'Use touchFeatures: TouchFeatures(enabled: ...) instead. '
+    'This property will be removed in particles_network 2.0.0.',
+  )
   bool touchActivation;
 
   /// The total number of particles, used for pre-allocation optimizations.
@@ -212,6 +224,11 @@ class OptimizedNetworkPainter extends CustomPainter {
     required this.particleColor,
     required this.lineColor,
     Color? touchColor,
+    @Deprecated(
+      'touchActivation was moved to touchFeatures.enabled. '
+      'Use touchFeatures: TouchFeatures(enabled: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
     bool? touchActivation,
     required this.lineWidth,
     @Deprecated(
@@ -421,9 +438,7 @@ class OptimizedNetworkPainter extends CustomPainter {
           ? distance * performance.cappedDistanceFactor
           : distance;
 
-      if (maxLinesPerFrame == null) {
-        activeDist = math.max(safetyFloor, activeDist);
-      }
+      activeDist = math.max(safetyFloor, activeDist);
       _lastFrameLineDistance = activeDist;
 
       // Fade lines relative to the active radius so connections smoothly
@@ -1245,6 +1260,11 @@ class OptimizedNetworkPainter extends CustomPainter {
     bool? drawNetwork,
     bool? fill,
     bool? isComplex,
+    @Deprecated(
+      'touchActivation was moved to touchFeatures.enabled. '
+      'Use updateTouchFeatures(touchFeatures.copyWith(enabled: ...)) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
     bool? touchActivation,
     bool? antiAlias,
   }) {
