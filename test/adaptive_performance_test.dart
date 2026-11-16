@@ -131,5 +131,123 @@ void main() {
       expect(controller.dropThresholdMs, closeTo(16.67 * 1.25, 0.01));
       expect(controller.smoothThresholdMs, closeTo(16.67 * 0.85, 0.01));
     });
+
+    group('autoBoost dynamic scaling', () {
+      late AdaptivePerformanceController boostController;
+
+      setUp(() {
+        boostController = AdaptivePerformanceController(
+          autoBoost: true,
+        );
+      });
+
+      test('initializes with maxScale of 2.5 when autoBoost is true', () {
+        expect(boostController.autoBoost, isTrue);
+        expect(boostController.maxScale, equals(2.5));
+        expect(boostController.scaleFactor, equals(1.0));
+      });
+
+      test('scales up beyond 1.0 during sustained smooth frames', () {
+        // Feed smooth frames with low latency (e.g. 5ms, well under 60% of budget)
+        for (int i = 0; i < 8; i++) {
+          boostController.recordFrameTime(const Duration(milliseconds: 5));
+        }
+        expect(boostController.scaleFactor, closeTo(1.05, 0.001));
+
+        for (int i = 0; i < 8; i++) {
+          boostController.recordFrameTime(const Duration(milliseconds: 5));
+        }
+        expect(boostController.scaleFactor, closeTo(1.10, 0.001));
+      });
+
+      test('getAdjustedMaxConnections scales up beyond base in autoBoost mode', () {
+        // Initially at scale 1.0
+        expect(boostController.getAdjustedMaxConnections(4), equals(4));
+
+        // Boost scale to ~1.5
+        for (int step = 0; step < 10; step++) {
+          for (int i = 0; i < 8; i++) {
+            boostController.recordFrameTime(const Duration(milliseconds: 5));
+          }
+        }
+        expect(boostController.scaleFactor, closeTo(1.5, 0.01));
+        // 4 * 1.5 = 6 connections
+        expect(boostController.getAdjustedMaxConnections(4), equals(6));
+      });
+
+      test('getAutoMaxConnections dynamically computes connections with cap', () {
+        expect(boostController.getAutoMaxConnections(base: 6), equals(6));
+
+        // Boost scale to 2.0
+        for (int step = 0; step < 20; step++) {
+          for (int i = 0; i < 8; i++) {
+            boostController.recordFrameTime(const Duration(milliseconds: 4));
+          }
+        }
+        expect(boostController.scaleFactor, closeTo(2.0, 0.01));
+        // 6 * 2.0 = 12 connections
+        expect(boostController.getAutoMaxConnections(base: 6), equals(12));
+      });
+
+      test('getAdjustedMaxLines scales line budget proportionally', () {
+        expect(boostController.getAdjustedMaxLines(15000), equals(15000));
+
+        // Boost scale to 1.5
+        for (int step = 0; step < 10; step++) {
+          for (int i = 0; i < 8; i++) {
+            boostController.recordFrameTime(const Duration(milliseconds: 5));
+          }
+        }
+        expect(boostController.getAdjustedMaxLines(15000), equals(22500));
+      });
+
+      test('getAdjustedLineDistance clamps to 1.0 baseDistance during boost', () {
+        expect(boostController.getAdjustedLineDistance(100.0), equals(100.0));
+
+        // Boost scale to 2.0
+        for (int step = 0; step < 20; step++) {
+          for (int i = 0; i < 8; i++) {
+            boostController.recordFrameTime(const Duration(milliseconds: 4));
+          }
+        }
+        expect(boostController.scaleFactor, closeTo(2.0, 0.01));
+        // Line distance should not stretch beyond configured base distance
+        expect(boostController.getAdjustedLineDistance(100.0), equals(100.0));
+      });
+
+      test('getAutoMaxConnections scales to high numbers when headroom and maxScale allow', () {
+        final highBoost = AdaptivePerformanceController(
+          autoBoost: true,
+          maxScale: 20.0,
+        );
+
+        expect(highBoost.getAutoMaxConnections(base: 6, maxCap: 100), equals(6));
+
+        // Boost scale to 10.0 (180 smooth steps of 0.05)
+        for (int step = 0; step < 180; step++) {
+          for (int i = 0; i < 8; i++) {
+            highBoost.recordFrameTime(const Duration(milliseconds: 3));
+          }
+        }
+        expect(highBoost.scaleFactor, closeTo(10.0, 0.01));
+        // 6 * 10.0 = 60 connections (well above the old 15 limit)
+        expect(highBoost.getAutoMaxConnections(base: 6, maxCap: 100), equals(60));
+      });
+
+      test('steps down scale when dropped frames occur even after boosting', () {
+        // Boost up to 1.10
+        for (int i = 0; i < 16; i++) {
+          boostController.recordFrameTime(const Duration(milliseconds: 5));
+        }
+        expect(boostController.scaleFactor, closeTo(1.10, 0.001));
+
+        // 3 dropped frames (> 20.83ms)
+        boostController.recordFrameTime(const Duration(milliseconds: 25));
+        boostController.recordFrameTime(const Duration(milliseconds: 25));
+        boostController.recordFrameTime(const Duration(milliseconds: 25));
+
+        expect(boostController.scaleFactor, closeTo(1.00, 0.001));
+      });
+    });
   });
 }
