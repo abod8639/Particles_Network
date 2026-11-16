@@ -1,6 +1,7 @@
 /// ParticleNetwork widget and state implementation.
 library;
 
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -282,6 +283,24 @@ class ParticleNetworkState extends State<ParticleNetwork>
   /// Exposes the underlying [SortedSpatialGrid] used by simulation and painter.
   SortedSpatialGrid get spatialGrid => simulation.spatialGrid;
 
+  /// Exposes the underlying painter.
+  OptimizedNetworkPainter get painter => _painter;
+
+  /// Exposes the adaptive performance controller.
+  AdaptivePerformanceController get adaptiveController => _adaptiveController;
+
+  /// Number of connection lines drawn in the most recent paint call.
+  int get lastFrameLineCount => _painter.lastFrameLineCount;
+
+  /// Connection radius actually used in the most recent paint call.
+  double get lastFrameLineDistance => _painter.lastFrameLineDistance;
+
+  /// Effective maximum connections allowed per particle in the current frame.
+  int? get effectiveMaxConnections => _painter.maxConnectionsPerParticle;
+
+  /// Effective maximum lines allowed per frame in the current frame.
+  int? get effectiveMaxLines => _painter.maxLinesPerFrame;
+
   late final Ticker ticker;
   Offset touchPoint = Offset.infinite;
   Size get currentSize => simulation.currentSize;
@@ -294,7 +313,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
 
   IParticleController get controller => simulation.controller;
 
-  late final AdaptivePerformanceController _adaptiveController;
+  late AdaptivePerformanceController _adaptiveController;
   bool _timingsCallbackRegistered = false;
   int _lastFrameMicros = 0;
 
@@ -349,6 +368,9 @@ class ParticleNetworkState extends State<ParticleNetwork>
         isComplex: widget._isComplex != null
             ? widget.effectiveIsComplex
             : widget.performance.isComplex,
+        maxConnectionsPerParticle: widget.performance.autoBoost
+            ? math.min(6, widget.performance.maxConnectionsPerParticle ?? 6)
+            : widget.performance.maxConnectionsPerParticle,
       ),
       simulateTouchInPaint: false,
       repaint: frameNotifier,
@@ -388,7 +410,25 @@ class ParticleNetworkState extends State<ParticleNetwork>
       _painter.updateLineDistance(adjustedDist);
     }
     final int? maxConn = widget.performance.maxConnectionsPerParticle;
-    if (maxConn != null) {
+    if (widget.performance.autoBoost) {
+      final int cap = maxConn ?? 15000;
+      final int base = math.min(6, cap);
+      final int adjustedConn = _adaptiveController.getAutoMaxConnections(
+        base: base,
+        maxCap: cap,
+      );
+      if (adjustedConn != _painter.maxConnectionsPerParticle) {
+        _painter.maxConnectionsPerParticle = adjustedConn;
+      }
+      final int? maxLines = widget.performance.maxLinesPerFrame;
+      if (maxLines != null) {
+        final int adjustedLines =
+            _adaptiveController.getAdjustedMaxLines(maxLines);
+        if (adjustedLines != _painter.maxLinesPerFrame) {
+          _painter.maxLinesPerFrame = adjustedLines;
+        }
+      }
+    } else if (maxConn != null) {
       final int adjustedConn =
           _adaptiveController.getAdjustedMaxConnections(maxConn);
       if (adjustedConn != _painter.maxConnectionsPerParticle) {
@@ -444,8 +484,16 @@ class ParticleNetworkState extends State<ParticleNetwork>
       }
     }
 
+    final double? maxScale = widget.performance.autoBoost
+        ? ((widget.performance.maxConnectionsPerParticle != null)
+            ? math.max(2.5, widget.performance.maxConnectionsPerParticle! / 6.0)
+            : 2500.0)
+        : null;
+
     _adaptiveController = AdaptivePerformanceController(
       targetFrameTimeMs: _displayFrameBudgetMs(),
+      autoBoost: widget.performance.autoBoost,
+      maxScale: maxScale,
     );
 
     simulation = ParticleSimulation(
@@ -591,6 +639,21 @@ class ParticleNetworkState extends State<ParticleNetwork>
     }
 
     if (effectivePerf != oldEffectivePerf) {
+      if (effectivePerf.autoBoost != oldEffectivePerf.autoBoost ||
+          effectivePerf.maxConnectionsPerParticle !=
+              oldEffectivePerf.maxConnectionsPerParticle) {
+        final double? maxScale = effectivePerf.autoBoost
+            ? ((effectivePerf.maxConnectionsPerParticle != null)
+                ? math.max(
+                    2.5, effectivePerf.maxConnectionsPerParticle! / 6.0)
+                : 2500.0)
+            : null;
+        _adaptiveController = AdaptivePerformanceController(
+          targetFrameTimeMs: _displayFrameBudgetMs(),
+          autoBoost: effectivePerf.autoBoost,
+          maxScale: maxScale,
+        );
+      }
       _painter.updatePerformance(effectivePerf);
       if (effectivePerf.enableAdaptivePerformance !=
           oldEffectivePerf.enableAdaptivePerformance) {
@@ -601,7 +664,26 @@ class ParticleNetworkState extends State<ParticleNetwork>
         if (_painter.lineDistance != targetDist) {
           _painter.updateLineDistance(targetDist);
         }
-        if (effectivePerf.maxConnectionsPerParticle != null) {
+        if (effectivePerf.autoBoost) {
+          final int? maxConn = effectivePerf.maxConnectionsPerParticle;
+          final int cap = maxConn ?? 15000;
+          final int base = math.min(6, cap);
+          final int adjustedConn = _adaptiveController.getAutoMaxConnections(
+            base: base,
+            maxCap: cap,
+          );
+          if (_painter.maxConnectionsPerParticle != adjustedConn) {
+            _painter.maxConnectionsPerParticle = adjustedConn;
+          }
+          final int? maxLines = effectivePerf.maxLinesPerFrame;
+          if (maxLines != null) {
+            final int adjustedLines =
+                _adaptiveController.getAdjustedMaxLines(maxLines);
+            if (_painter.maxLinesPerFrame != adjustedLines) {
+              _painter.maxLinesPerFrame = adjustedLines;
+            }
+          }
+        } else if (effectivePerf.maxConnectionsPerParticle != null) {
           final int adjustedConn =
               _adaptiveController.getAdjustedMaxConnections(
                   effectivePerf.maxConnectionsPerParticle!);
