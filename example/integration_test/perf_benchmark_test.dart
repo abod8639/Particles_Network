@@ -81,7 +81,6 @@ final List<PerfScenario> _baseScenarios = [
       particleCount: 2000,
       performance: NetworkPerformance(
         lineRenderer: r,
-        fastLineRendering: true,
       ),
       touchFeatures: const TouchFeatures(enabled: false),
     ),
@@ -159,7 +158,7 @@ final List<PerfScenario> _baseScenarios = [
       particleCount: 500,
       performance: NetworkPerformance(
         lineRenderer: r,
-        enableAdaptivePerformance: true,
+        autoBoost: true,
       ),
       touchFeatures: const TouchFeatures(enabled: false),
     ),
