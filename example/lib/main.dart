@@ -1103,9 +1103,6 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                 hoverEffect: _hoverEffect,
                 performance: NetworkPerformance(
                   isComplex: _isComplex,
-                  adaptiveDensity: _adaptiveDensity,
-                  enableAdaptivePerformance: _enableAdaptivePerformance,
-                  fastLineRendering: _fastLineRendering,
                   frameRateIndependent: _frameRateIndependent,
                   lineRenderer: _lineRenderer,
                   antiAlias: _antiAlias,
