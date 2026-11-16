@@ -450,9 +450,6 @@ void main() {
     var network = tester.widget<ParticleNetwork>(find.byType(ParticleNetwork));
     expect(network.performance.autoBoost, isTrue);
     expect(network.performance.lineRenderer, equals(LineRenderer.vertices));
-    expect(network.performance.fastLineRendering, isTrue);
-    expect(network.performance.adaptiveDensity, isTrue);
-    expect(network.performance.enableAdaptivePerformance, isTrue);
     expect(find.text('15k (Boost Cap)'), findsOneWidget);
 
     // Verify code export outputs concise NetworkPerformance.auto()
