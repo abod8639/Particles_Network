@@ -51,7 +51,7 @@ class NetworkPerformance {
   /// optimizes batched connections without degrading anti-aliasing.
   ///
   /// Can be fine-tuned via [complexReductionRatio], [maxComplexLines],
-  /// and [denseThresholdFactor].
+  /// and [complexDensityFactor].
   final bool isComplex;
 
   /// Connection reduction ratio for dense clusters and complex mode (default: null).
@@ -73,7 +73,7 @@ class NetworkPerformance {
   /// Factor multiplied by connection distance to determine when a particle is in a dense cluster (default: null).
   ///
   /// When null, defaults to 0.25 (`dist ~/ 4`) when [isComplex] is true, or ~0.67 (`dist ~/ 1.5`) otherwise.
-  final double? denseThresholdFactor;
+  final double? complexDensityFactor;
 
   /// Distance ratio threshold for capped connections (default: 0.75).
   ///
@@ -114,7 +114,7 @@ class NetworkPerformance {
     this.isComplex = false,
     this.complexReductionRatio,
     this.maxComplexLines,
-    this.denseThresholdFactor,
+    this.complexDensityFactor,
     this.cappedDistanceFactor = 0.75,
     this.antiAlias = true,
     this.spatialCellMultiplier,
@@ -130,8 +130,8 @@ class NetworkPerformance {
           'maxComplexLines must be greater than 0',
         ),
         assert(
-          denseThresholdFactor == null || denseThresholdFactor > 0.0,
-          'denseThresholdFactor must be greater than 0.0',
+          complexDensityFactor == null || complexDensityFactor > 0.0,
+          'complexDensityFactor must be greater than 0.0',
         );
 
   /// High-performance preset tuned for high particle counts and smooth frame rates.
@@ -146,7 +146,7 @@ class NetworkPerformance {
     this.isComplex = true,
     this.complexReductionRatio,
     this.maxComplexLines,
-    this.denseThresholdFactor,
+    this.complexDensityFactor,
     this.cappedDistanceFactor = 0.75,
     this.antiAlias = true,
     this.spatialCellMultiplier,
@@ -157,7 +157,7 @@ class NetworkPerformance {
   const NetworkPerformance.complex({
     this.complexReductionRatio = 0.5,
     this.maxComplexLines = 3,
-    this.denseThresholdFactor = 0.25,
+    this.complexDensityFactor = 0.25,
     this.maxConnectionsPerParticle,
     this.adaptiveDensity = false,
     this.fastLineRendering = false,
@@ -181,8 +181,8 @@ class NetworkPerformance {
           'maxComplexLines must be greater than 0',
         ),
         assert(
-          denseThresholdFactor == null || denseThresholdFactor > 0.0,
-          'denseThresholdFactor must be greater than 0.0',
+          complexDensityFactor == null || complexDensityFactor > 0.0,
+          'complexDensityFactor must be greater than 0.0',
         );
 
   /// Adaptive preset focusing on dynamic frame rate scaling and independent motion.
@@ -197,7 +197,7 @@ class NetworkPerformance {
     this.isComplex = false,
     this.complexReductionRatio,
     this.maxComplexLines,
-    this.denseThresholdFactor,
+    this.complexDensityFactor,
     this.cappedDistanceFactor = 0.75,
     this.antiAlias = true,
     this.spatialCellMultiplier,
@@ -218,7 +218,7 @@ class NetworkPerformance {
     this.isComplex = true,
     this.complexReductionRatio,
     this.maxComplexLines,
-    this.denseThresholdFactor,
+    this.complexDensityFactor,
     this.cappedDistanceFactor = 0.75,
     this.antiAlias = true,
     this.spatialCellMultiplier,
@@ -238,7 +238,7 @@ class NetworkPerformance {
     this.isComplex = true,
     this.complexReductionRatio,
     this.maxComplexLines,
-    this.denseThresholdFactor,
+    this.complexDensityFactor,
     this.cappedDistanceFactor = 0.75,
     this.antiAlias = true,
     this.spatialCellMultiplier,
@@ -257,7 +257,7 @@ class NetworkPerformance {
     this.isComplex = false,
     this.complexReductionRatio,
     this.maxComplexLines,
-    this.denseThresholdFactor,
+    this.complexDensityFactor,
     this.cappedDistanceFactor = 0.75,
     this.antiAlias = true,
     this.spatialCellMultiplier,
@@ -276,7 +276,7 @@ class NetworkPerformance {
     this.isComplex = true,
     this.complexReductionRatio = 0.5,
     this.maxComplexLines = 2,
-    this.denseThresholdFactor = 0.25,
+    this.complexDensityFactor = 0.25,
     this.cappedDistanceFactor = 0.75,
     this.antiAlias = true,
     this.spatialCellMultiplier,
@@ -299,8 +299,8 @@ class NetworkPerformance {
     bool clearcomplexReductionRatio = false,
     int? maxComplexLines,
     bool clearMaxComplexLines = false,
-    double? denseThresholdFactor,
-    bool clearDenseThresholdFactor = false,
+    double? complexDensityFactor,
+    bool clearcomplexDensityFactor = false,
     double? cappedDistanceFactor,
     bool? antiAlias,
     double? spatialCellMultiplier,
@@ -327,9 +327,9 @@ class NetworkPerformance {
       maxComplexLines: clearMaxComplexLines
           ? null
           : (maxComplexLines ?? this.maxComplexLines),
-      denseThresholdFactor: clearDenseThresholdFactor
+      complexDensityFactor: clearcomplexDensityFactor
           ? null
-          : (denseThresholdFactor ?? this.denseThresholdFactor),
+          : (complexDensityFactor ?? this.complexDensityFactor),
       cappedDistanceFactor: cappedDistanceFactor ?? this.cappedDistanceFactor,
       antiAlias: antiAlias ?? this.antiAlias,
       spatialCellMultiplier: clearSpatialCellMultiplier
@@ -354,7 +354,7 @@ class NetworkPerformance {
           isComplex == other.isComplex &&
           complexReductionRatio == other.complexReductionRatio &&
           maxComplexLines == other.maxComplexLines &&
-          denseThresholdFactor == other.denseThresholdFactor &&
+          complexDensityFactor == other.complexDensityFactor &&
           cappedDistanceFactor == other.cappedDistanceFactor &&
           antiAlias == other.antiAlias &&
           spatialCellMultiplier == other.spatialCellMultiplier &&
@@ -372,7 +372,7 @@ class NetworkPerformance {
         isComplex,
         complexReductionRatio,
         maxComplexLines,
-        denseThresholdFactor,
+        complexDensityFactor,
         cappedDistanceFactor,
         antiAlias,
         spatialCellMultiplier,
@@ -392,7 +392,7 @@ class NetworkPerformance {
         'isComplex: $isComplex, '
         'complexReductionRatio: $complexReductionRatio, '
         'maxComplexLines: $maxComplexLines, '
-        'denseThresholdFactor: $denseThresholdFactor, '
+        'complexDensityFactor: $complexDensityFactor, '
         'cappedDistanceFactor: $cappedDistanceFactor, '
         'antiAlias: $antiAlias, '
         'spatialCellMultiplier: $spatialCellMultiplier, '

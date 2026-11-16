@@ -157,14 +157,14 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   bool _fastLineRendering = false;
   bool _frameRateIndependent = false;
   bool _autoBoost = false;
-  LineRenderer _lineRenderer = LineRenderer.stroke;
+  LineRenderer _lineRenderer = LineRenderer.vertices;
   int? _maxConnectionsPerParticle;
   int? _maxLinesPerFrame;
   double _spatialCellMultiplier = 1.0;
   double _cappedDistanceFactor = 0.75;
-  double? _connectionReductionRatio;
+  double? _complexReductionRatio;
   int? _maxComplexLines;
-  double? _denseThresholdFactor;
+  double? _complexDensityFactor;
   String _activePerfPreset = "Default";
   bool _showPerformanceHud = true;
   final ValueNotifier<double> _liveFpsNotifier = ValueNotifier<double>(60.0);
@@ -251,7 +251,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       enableAdaptivePerformance: false,
       fastLineRendering: false,
       frameRateIndependent: false,
-      lineRenderer: LineRenderer.stroke,
+      lineRenderer: LineRenderer.vertices,
     ),
     ParticlePreset(
       name: "Cyberpunk Matrix",
@@ -278,7 +278,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       enableAdaptivePerformance: false,
       fastLineRendering: false,
       frameRateIndependent: true,
-      lineRenderer: LineRenderer.stroke,
+      lineRenderer: LineRenderer.vertices,
     ),
     ParticlePreset(
       name: "Black Hole Singularity",
@@ -364,7 +364,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       enableAdaptivePerformance: false,
       fastLineRendering: false,
       frameRateIndependent: true,
-      lineRenderer: LineRenderer.stroke,
+      lineRenderer: LineRenderer.vertices,
     ),
     ParticlePreset(
       name: "Quantum Foam",
@@ -391,7 +391,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       enableAdaptivePerformance: false,
       fastLineRendering: false,
       frameRateIndependent: true,
-      lineRenderer: LineRenderer.stroke,
+      lineRenderer: LineRenderer.vertices,
     ),
     ParticlePreset(
       name: "Extreme 60FPS Swarm",
@@ -488,7 +488,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       _isLineDistanceCustom = false;
       _lineDistance = _getResponsiveLineDistance(context);
       _fastLineRendering = false;
-      _lineRenderer = LineRenderer.stroke;
+      _lineRenderer = LineRenderer.vertices;
       _cappedDistanceFactor = 0.75;
     });
   }
@@ -531,15 +531,15 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       _fastLineRendering = false;
       _frameRateIndependent = false;
       _autoBoost = false;
-      _lineRenderer = LineRenderer.stroke;
+      _lineRenderer = LineRenderer.vertices;
       _antiAlias = true;
       _maxConnectionsPerParticle = null;
       _maxLinesPerFrame = null;
       _spatialCellMultiplier = 1.0;
       _cappedDistanceFactor = 0.75;
-      _connectionReductionRatio = null;
+      _complexReductionRatio = null;
       _maxComplexLines = null;
-      _denseThresholdFactor = null;
+      _complexDensityFactor = null;
       _activePerfPreset = "Default";
       _showPerformanceHud = true;
     });
@@ -575,14 +575,14 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       _fastLineRendering = false;
       _frameRateIndependent = false;
       _autoBoost = false;
-      _lineRenderer = LineRenderer.stroke;
+      _lineRenderer = LineRenderer.vertices;
       _maxConnectionsPerParticle = null;
       _maxLinesPerFrame = null;
       _spatialCellMultiplier = 1.0;
       _cappedDistanceFactor = 0.75;
-      _connectionReductionRatio = null;
+      _complexReductionRatio = null;
       _maxComplexLines = null;
-      _denseThresholdFactor = null;
+      _complexDensityFactor = null;
       _activePerfPreset = "Default";
       _showPerformanceHud = true;
       _particleColor = Colors.deepPurple;
@@ -681,15 +681,15 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       if (_maxLinesPerFrame != null) {
         buffer.writeln('    maxLinesPerFrame: $_maxLinesPerFrame,');
       }
-      if (_connectionReductionRatio != null) {
+      if (_complexReductionRatio != null) {
         buffer.writeln(
-            '    connectionReductionRatio: $_connectionReductionRatio,');
+            '    complexReductionRatio: $_complexReductionRatio,');
       }
       if (_maxComplexLines != null) {
         buffer.writeln('    maxComplexLines: $_maxComplexLines,');
       }
-      if (_denseThresholdFactor != null) {
-        buffer.writeln('    denseThresholdFactor: $_denseThresholdFactor,');
+      if (_complexDensityFactor != null) {
+        buffer.writeln('    complexDensityFactor: $_complexDensityFactor,');
       }
       if (_spatialCellMultiplier != 1.0) {
         buffer.writeln('    spatialCellMultiplier: $_spatialCellMultiplier,');
@@ -1113,9 +1113,9 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                   maxConnectionsPerParticle: _maxConnectionsPerParticle,
                   maxLinesPerFrame: _maxLinesPerFrame,
                   cappedDistanceFactor: _cappedDistanceFactor,
-                  connectionReductionRatio: _connectionReductionRatio,
+                  complexReductionRatio: _complexReductionRatio,
                   maxComplexLines: _maxComplexLines,
-                  denseThresholdFactor: _denseThresholdFactor,
+                  complexDensityFactor: _complexDensityFactor,
                   spatialCellMultiplier: _spatialCellMultiplier != 1.0
                       ? _spatialCellMultiplier
                       : null,
@@ -2592,9 +2592,9 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           _antiAlias = true;
           _maxConnectionsPerParticle = 15000;
           _maxLinesPerFrame = 15000;
-          _connectionReductionRatio = null;
+          _complexReductionRatio = null;
           _maxComplexLines = null;
-          _denseThresholdFactor = null;
+          _complexDensityFactor = null;
           _spatialCellMultiplier = 1.0;
           _cappedDistanceFactor = 0.75;
           break;
@@ -2609,9 +2609,9 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           _antiAlias = true;
           _maxConnectionsPerParticle = 15000;
           _maxLinesPerFrame = 15000;
-          _connectionReductionRatio = null;
+          _complexReductionRatio = null;
           _maxComplexLines = null;
-          _denseThresholdFactor = null;
+          _complexDensityFactor = null;
           _spatialCellMultiplier = 1.0;
           _cappedDistanceFactor = 0.75;
           break;
@@ -2626,9 +2626,9 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           _antiAlias = true;
           _maxConnectionsPerParticle = 4;
           _maxLinesPerFrame = 15000;
-          _connectionReductionRatio = null;
+          _complexReductionRatio = null;
           _maxComplexLines = null;
-          _denseThresholdFactor = null;
+          _complexDensityFactor = null;
           _spatialCellMultiplier = 1.0;
           _cappedDistanceFactor = 0.75;
           break;
@@ -2638,14 +2638,14 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           _enableAdaptivePerformance = true;
           _fastLineRendering = false;
           _frameRateIndependent = true;
-          _lineRenderer = LineRenderer.stroke;
+          _lineRenderer = LineRenderer.vertices;
           _isComplex = false;
           _antiAlias = true;
           _maxConnectionsPerParticle = null;
           _maxLinesPerFrame = null;
-          _connectionReductionRatio = null;
+          _complexReductionRatio = null;
           _maxComplexLines = null;
-          _denseThresholdFactor = null;
+          _complexDensityFactor = null;
           _spatialCellMultiplier = 1.0;
           _cappedDistanceFactor = 0.75;
           break;
@@ -2655,14 +2655,14 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           _enableAdaptivePerformance = true;
           _fastLineRendering = true;
           _frameRateIndependent = true;
-          _lineRenderer = LineRenderer.stroke;
+          _lineRenderer = LineRenderer.vertices;
           _isComplex = false;
           _antiAlias = true;
           _maxConnectionsPerParticle = 6;
           _maxLinesPerFrame = 8000;
-          _connectionReductionRatio = null;
+          _complexReductionRatio = null;
           _maxComplexLines = null;
-          _denseThresholdFactor = null;
+          _complexDensityFactor = null;
           _spatialCellMultiplier = 1.0;
           _cappedDistanceFactor = 0.75;
           break;
@@ -2677,9 +2677,9 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           _antiAlias = true;
           _maxConnectionsPerParticle = 3;
           _maxLinesPerFrame = 3000;
-          _connectionReductionRatio = 0.5;
+          _complexReductionRatio = 0.5;
           _maxComplexLines = 2;
-          _denseThresholdFactor = 0.25;
+          _complexDensityFactor = 0.25;
           _spatialCellMultiplier = 1.0;
           _cappedDistanceFactor = 0.75;
           break;
@@ -2689,14 +2689,14 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           _enableAdaptivePerformance = false;
           _fastLineRendering = false;
           _frameRateIndependent = false;
-          _lineRenderer = LineRenderer.stroke;
+          _lineRenderer = LineRenderer.vertices;
           _isComplex = true;
           _antiAlias = true;
           _maxConnectionsPerParticle = null;
           _maxLinesPerFrame = null;
-          _connectionReductionRatio = 0.5;
+          _complexReductionRatio = 0.5;
           _maxComplexLines = 3;
-          _denseThresholdFactor = 0.25;
+          _complexDensityFactor = 0.25;
           _spatialCellMultiplier = 1.0;
           _cappedDistanceFactor = 0.75;
           break;
@@ -2708,14 +2708,14 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           _enableAdaptivePerformance = false;
           _fastLineRendering = false;
           _frameRateIndependent = false;
-          _lineRenderer = LineRenderer.stroke;
+          _lineRenderer = LineRenderer.vertices;
           _isComplex = false;
           _antiAlias = true;
           _maxConnectionsPerParticle = null;
           _maxLinesPerFrame = null;
-          _connectionReductionRatio = null;
+          _complexReductionRatio = null;
           _maxComplexLines = null;
-          _denseThresholdFactor = null;
+          _complexDensityFactor = null;
           _spatialCellMultiplier = 1.0;
           _cappedDistanceFactor = 0.75;
           break;
@@ -2753,7 +2753,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       _enableAdaptivePerformance &&
       !_fastLineRendering &&
       _frameRateIndependent &&
-      _lineRenderer == LineRenderer.stroke &&
+      _lineRenderer == LineRenderer.vertices &&
       !_isComplex &&
       _maxConnectionsPerParticle == null &&
       _maxLinesPerFrame == null;
@@ -2764,7 +2764,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       _enableAdaptivePerformance &&
       _fastLineRendering &&
       _frameRateIndependent &&
-      _lineRenderer == LineRenderer.stroke &&
+      _lineRenderer == LineRenderer.vertices &&
       !_isComplex &&
       _maxConnectionsPerParticle == 6 &&
       _maxLinesPerFrame == 8000;
@@ -2779,9 +2779,9 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       _isComplex &&
       _maxConnectionsPerParticle == 3 &&
       _maxLinesPerFrame == 3000 &&
-      _connectionReductionRatio == 0.5 &&
+      _complexReductionRatio == 0.5 &&
       _maxComplexLines == 2 &&
-      _denseThresholdFactor == 0.25;
+      _complexDensityFactor == 0.25;
 
   bool get _isComplexPreset =>
       !_autoBoost &&
@@ -2789,13 +2789,13 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       !_enableAdaptivePerformance &&
       !_fastLineRendering &&
       !_frameRateIndependent &&
-      _lineRenderer == LineRenderer.stroke &&
+      _lineRenderer == LineRenderer.vertices &&
       _isComplex &&
       _maxConnectionsPerParticle == null &&
       _maxLinesPerFrame == null &&
-      _connectionReductionRatio == 0.5 &&
+      _complexReductionRatio == 0.5 &&
       _maxComplexLines == 3 &&
-      _denseThresholdFactor == 0.25;
+      _complexDensityFactor == 0.25;
 
   bool get _isDefaultPreset =>
       !_autoBoost &&
@@ -2803,13 +2803,13 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       !_enableAdaptivePerformance &&
       !_fastLineRendering &&
       !_frameRateIndependent &&
-      _lineRenderer == LineRenderer.stroke &&
+      _lineRenderer == LineRenderer.vertices &&
       !_isComplex &&
       _maxConnectionsPerParticle == null &&
       _maxLinesPerFrame == null &&
-      _connectionReductionRatio == null &&
+      _complexReductionRatio == null &&
       _maxComplexLines == null &&
-      _denseThresholdFactor == null;
+      _complexDensityFactor == null;
 
   String _getPresetDescription() {
     switch (_activePerfPreset) {
@@ -3019,7 +3019,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
             ),
             _buildPillToggle(
               label: "Stroke",
-              isSelected: _lineRenderer == LineRenderer.stroke,
+              isSelected: _lineRenderer == LineRenderer.vertices,
               onTap: () => setState(() {
                 _lineRenderer = LineRenderer.stroke;
                 _activePerfPreset = "Custom";
@@ -3202,16 +3202,16 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           const SizedBox(height: 8),
           _buildBudgetSlider(
             label: "Reduction Ratio",
-            value: (_connectionReductionRatio ?? 0.0),
+            value: (_complexReductionRatio ?? 0.0),
             min: 0.0,
             max: 0.9,
-            displayValue: _connectionReductionRatio == null
+            displayValue: _complexReductionRatio == null
                 ? "Auto (0%)"
-                : "${(_connectionReductionRatio! * 100).toStringAsFixed(0)}%",
+                : "${(_complexReductionRatio! * 100).toStringAsFixed(0)}%",
             onChanged: (v) {
               setState(() {
                 final val = (v * 10).round() / 10.0;
-                _connectionReductionRatio = val <= 0.0 ? null : val;
+                _complexReductionRatio = val <= 0.0 ? null : val;
                 _activePerfPreset = "Custom";
               });
             },
@@ -3234,16 +3234,16 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           ),
           _buildBudgetSlider(
             label: "Dense Threshold Factor",
-            value: (_denseThresholdFactor ?? 0.0),
+            value: (_complexDensityFactor ?? 0.0),
             min: 0.0,
             max: 1.0,
-            displayValue: _denseThresholdFactor == null
+            displayValue: _complexDensityFactor == null
                 ? "Auto (0.25)"
-                : _denseThresholdFactor!.toStringAsFixed(2),
+                : _complexDensityFactor!.toStringAsFixed(2),
             onChanged: (v) {
               setState(() {
                 final val = (v * 20).round() / 20.0;
-                _denseThresholdFactor = val <= 0.0 ? null : val;
+                _complexDensityFactor = val <= 0.0 ? null : val;
                 _activePerfPreset = "Custom";
               });
             },
@@ -4373,7 +4373,7 @@ class LivePerformanceMetrics {
     this.presetName = "Default",
     this.autoBoost = false,
     this.adaptive = false,
-    this.lineRenderer = LineRenderer.stroke,
+    this.lineRenderer = LineRenderer.vertices,
     this.fastLineRendering = false,
   });
 }

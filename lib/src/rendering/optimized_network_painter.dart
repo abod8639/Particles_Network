@@ -244,7 +244,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     bool? antiAlias,
     double? complexReductionRatio,
     int? maxComplexLines,
-    double? denseThresholdFactor,
+    double? complexDensityFactor,
     SortedSpatialGrid? spatialGrid,
     super.repaint,
   })  : _sortedGrid = spatialGrid ?? SortedSpatialGrid(),
@@ -254,7 +254,7 @@ class OptimizedNetworkPainter extends CustomPainter {
           isComplex: isComplex,
           complexReductionRatio: complexReductionRatio,
           maxComplexLines: maxComplexLines,
-          denseThresholdFactor: denseThresholdFactor,
+          complexDensityFactor: complexDensityFactor,
           maxConnectionsPerParticle: maxConnectionsPerParticle,
           adaptiveDensity: adaptiveDensity,
           fastLineRendering: fastLineRendering,
@@ -684,7 +684,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     final double invLineDistance = dist > 0 ? 255.0 / dist : 0.0;
     final int defaultMaxLines =
         performance.maxComplexLines ?? (isComplex ? 3 : 5);
-    final double? customFactor = performance.denseThresholdFactor;
+    final double? customFactor = performance.complexDensityFactor;
     final int denseThreshold = customFactor != null
         ? (dist * customFactor).toInt()
         : (isComplex ? (dist ~/ 4) : (dist ~/ 1.5));
@@ -960,7 +960,7 @@ class OptimizedNetworkPainter extends CustomPainter {
         performance.maxComplexLines != null;
     final double effectiveDist =
         dist ?? (maxDistSq > 0 ? math.sqrt(maxDistSq) : lineDistance);
-    final double? customFactor = performance.denseThresholdFactor;
+    final double? customFactor = performance.complexDensityFactor;
     final int denseThreshold = customFactor != null
         ? (effectiveDist > 0 ? (effectiveDist * customFactor).toInt() : 0)
         : (effectiveDist > 0 ? (effectiveDist ~/ 4) : 0);
@@ -1235,8 +1235,8 @@ class OptimizedNetworkPainter extends CustomPainter {
     bool clearcomplexReductionRatio = false,
     int? maxComplexLines,
     bool clearMaxComplexLines = false,
-    double? denseThresholdFactor,
-    bool clearDenseThresholdFactor = false,
+    double? complexDensityFactor,
+    bool clearcomplexDensityFactor = false,
     bool? antiAlias,
   }) {
     if (lineRenderer != null) {
@@ -1248,15 +1248,15 @@ class OptimizedNetworkPainter extends CustomPainter {
         complexReductionRatio != null ||
         clearMaxComplexLines ||
         maxComplexLines != null ||
-        clearDenseThresholdFactor ||
-        denseThresholdFactor != null) {
+        clearcomplexDensityFactor ||
+        complexDensityFactor != null) {
       performance = performance.copyWith(
         complexReductionRatio: complexReductionRatio,
         clearcomplexReductionRatio: clearcomplexReductionRatio,
         maxComplexLines: maxComplexLines,
         clearMaxComplexLines: clearMaxComplexLines,
-        denseThresholdFactor: denseThresholdFactor,
-        clearDenseThresholdFactor: clearDenseThresholdFactor,
+        complexDensityFactor: complexDensityFactor,
+        clearcomplexDensityFactor: clearcomplexDensityFactor,
       );
     }
     if (antiAlias != null && antiAlias != performance.antiAlias) {
