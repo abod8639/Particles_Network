@@ -46,7 +46,6 @@ OptimizedNetworkPainter _painter(
   List<Particle> particles,
   LineRenderer renderer, {
   bool isComplex = false,
-  bool fastLineRendering = false,
   double lineWidth = 1.0,
   double devicePixelRatio = 1.0,
 }) {
@@ -63,7 +62,6 @@ OptimizedNetworkPainter _painter(
     isComplex: isComplex,
     fill: true,
     drawNetwork: true,
-    fastLineRendering: fastLineRendering,
     lineRenderer: renderer,
     devicePixelRatio: devicePixelRatio,
   );
@@ -257,10 +255,9 @@ void main() {
   group('OptimizedNetworkPainter with LineRenderer.vertices', () {
     const Size size = Size(400, 400);
 
-    for (final (String name, bool complex, bool fast) in [
-      ('batched', false, false),
-      ('isComplex', true, false),
-      ('fastLineRendering', false, true),
+    for (final (String name, bool complex) in [
+      ('batched', false),
+      ('isComplex', true),
     ]) {
       test('$name: drawVertices per opacity level, no stroked lines', () {
         final particles = _particles(400, size);
@@ -268,7 +265,6 @@ void main() {
           particles,
           LineRenderer.vertices,
           isComplex: complex,
-          fastLineRendering: fast,
         );
         final canvas = _CountingCanvas();
         painter.paint(canvas, size);
@@ -286,13 +282,11 @@ void main() {
           particles,
           LineRenderer.stroke,
           isComplex: complex,
-          fastLineRendering: fast,
         );
         final vertices = _painter(
           particles,
           LineRenderer.vertices,
           isComplex: complex,
-          fastLineRendering: fast,
         );
         stroke.paint(_CountingCanvas(), size);
         vertices.paint(_CountingCanvas(), size);
