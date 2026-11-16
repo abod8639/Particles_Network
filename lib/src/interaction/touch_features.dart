@@ -32,8 +32,7 @@ class TouchFeatures {
   /// Highlight color for touch interactions (default: Colors.amber).
   final Color color;
 
-  /// Whether to use ultra-fast single draw-call line rendering for touch interactions.
-  /// If null (default), inherits from [NetworkPerformance.fastLineRendering] or painter heuristics.
+  /// Whether to use ultra-fast single draw-call line rendering for touch interactions (default: null).
   final bool? fastLineRendering;
 
   /// Optional line rasterization override for touch interaction lines ([LineRenderer.stroke] or [LineRenderer.vertices]).
