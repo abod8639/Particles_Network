@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
+import 'package:particles_network/src/legacy/legacy_deprecation_logger.dart';
 import 'package:particles_network/src/rendering/line_vertex_batch.dart';
 
 /// Configuration class for network rendering performance and optimization settings.
@@ -31,6 +32,30 @@ class NetworkPerformance {
 
   /// How connection lines are rasterized (default: [LineRenderer.vertices]).
   final LineRenderer lineRenderer;
+
+  final bool? _fastLineRendering;
+
+  /// Compatibility alias for [lineRenderer].
+  ///
+  /// Deprecated: Replaced by [lineRenderer]. Use [lineRenderer] instead:
+  /// - For fast single draw-call vertex batching: `LineRenderer.vertices`
+  /// - For individual canvas stroke lines: `LineRenderer.stroke`
+  /// This property will be removed in particles_network 2.0.0.
+  @Deprecated(
+    'fastLineRendering was replaced by lineRenderer. '
+    'Use NetworkPerformance(lineRenderer: LineRenderer.vertices) or LineRenderer.stroke instead. '
+    'This property will be removed in particles_network 2.0.0.',
+  )
+  bool? get fastLineRendering {
+    if (kDebugMode && _fastLineRendering != null) {
+      LegacyDeprecationLogger.warn(
+        deprecatedApi: 'NetworkPerformance.fastLineRendering',
+        replacement:
+            'NetworkPerformance(lineRenderer: LineRenderer.vertices) or LineRenderer.stroke',
+      );
+    }
+    return _fastLineRendering;
+  }
 
   /// Whether to use complex (high-density optimized) painting logic (default: false).
   ///
@@ -95,7 +120,13 @@ class NetworkPerformance {
     this.maxConnectionsPerParticle,
     this.maxLinesPerFrame,
     this.frameRateIndependent = false,
-    this.lineRenderer = LineRenderer.vertices,
+    @Deprecated(
+      'fastLineRendering was replaced by lineRenderer. '
+      'Use NetworkPerformance(lineRenderer: LineRenderer.vertices) or LineRenderer.stroke instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    bool? fastLineRendering,
+    LineRenderer? lineRenderer,
     this.isComplex = false,
     this.complexReductionRatio,
     this.maxComplexLines,
@@ -104,7 +135,14 @@ class NetworkPerformance {
     this.antiAlias = true,
     this.spatialCellMultiplier,
     this.autoBoost = false,
-  })  : assert(
+  })  : _fastLineRendering = fastLineRendering,
+        lineRenderer = lineRenderer ??
+            (fastLineRendering != null
+                ? (fastLineRendering
+                    ? LineRenderer.vertices
+                    : LineRenderer.stroke)
+                : LineRenderer.vertices),
+        assert(
           complexReductionRatio == null ||
               (complexReductionRatio >= 0.0 &&
                   complexReductionRatio <= 1.0),
@@ -133,7 +171,7 @@ class NetworkPerformance {
     this.antiAlias = true,
     this.spatialCellMultiplier,
     this.autoBoost = false,
-  });
+  }) : _fastLineRendering = null;
 
   /// Flexible complex preset for fine-grained control over dense cluster line reduction.
   const NetworkPerformance.complex({
@@ -149,7 +187,8 @@ class NetworkPerformance {
     this.antiAlias = true,
     this.spatialCellMultiplier,
     this.autoBoost = false,
-  })  : assert(
+  })  : _fastLineRendering = null,
+        assert(
           complexReductionRatio == null ||
               (complexReductionRatio >= 0.0 &&
                   complexReductionRatio <= 1.0),
@@ -178,7 +217,7 @@ class NetworkPerformance {
     this.antiAlias = true,
     this.spatialCellMultiplier,
     this.autoBoost = true,
-  });
+  }) : _fastLineRendering = null;
 
   /// Auto-performance preset that automatically adapts parameters based on
   /// device performance and frame rate, maximizing visual density and connections
@@ -196,10 +235,22 @@ class NetworkPerformance {
     this.antiAlias = true,
     this.spatialCellMultiplier,
     this.autoBoost = true,
-  });
+  }) : _fastLineRendering = null;
 
   /// Boost preset that dynamically tunes and scales connection budgets
   /// to unlock maximum performance and visual density for the host device.
+  ///
+  /// Deprecated: [NetworkPerformance.boost] is an identical duplicate of [NetworkPerformance.auto].
+  /// Use [NetworkPerformance.auto] instead:
+  /// ```dart
+  /// NetworkPerformance.auto()
+  /// ```
+  /// This preset will be removed in particles_network 2.0.0.
+  @Deprecated(
+    'NetworkPerformance.boost() is an identical duplicate of NetworkPerformance.auto(). '
+    'Use NetworkPerformance.auto() instead. '
+    'This preset will be removed in particles_network 2.0.0.',
+  )
   const NetworkPerformance.boost({
     this.maxConnectionsPerParticle = 15000,
     this.maxLinesPerFrame = 15000,
@@ -213,7 +264,7 @@ class NetworkPerformance {
     this.antiAlias = true,
     this.spatialCellMultiplier,
     this.autoBoost = true,
-  });
+  }) : _fastLineRendering = null;
 
   /// Balanced preset that maintains good visual quality with sensible performance limits.
   const NetworkPerformance.balanced({
@@ -229,7 +280,7 @@ class NetworkPerformance {
     this.antiAlias = true,
     this.spatialCellMultiplier,
     this.autoBoost = false,
-  });
+  }) : _fastLineRendering = null;
 
   /// Battery saver preset tuned to minimize CPU/GPU load on low-end or battery-constrained devices.
   const NetworkPerformance.batterySaver({
@@ -245,7 +296,7 @@ class NetworkPerformance {
     this.antiAlias = true,
     this.spatialCellMultiplier,
     this.autoBoost = false,
-  });
+  }) : _fastLineRendering = null;
 
   /// Creates a copy of this [NetworkPerformance] with updated parameters.
   NetworkPerformance copyWith({
@@ -254,6 +305,12 @@ class NetworkPerformance {
     int? maxLinesPerFrame,
     bool clearMaxLinesPerFrame = false,
     bool? frameRateIndependent,
+    @Deprecated(
+      'fastLineRendering was replaced by lineRenderer. '
+      'Use NetworkPerformance.copyWith(lineRenderer: LineRenderer.vertices) or LineRenderer.stroke instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    bool? fastLineRendering,
     LineRenderer? lineRenderer,
     bool? isComplex,
     double? complexReductionRatio,
@@ -276,6 +333,7 @@ class NetworkPerformance {
           ? null
           : (maxLinesPerFrame ?? this.maxLinesPerFrame),
       frameRateIndependent: frameRateIndependent ?? this.frameRateIndependent,
+      fastLineRendering: fastLineRendering ?? _fastLineRendering,
       lineRenderer: lineRenderer ?? this.lineRenderer,
       isComplex: isComplex ?? this.isComplex,
       complexReductionRatio: clearcomplexReductionRatio
