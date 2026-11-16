@@ -665,25 +665,23 @@ void main() {
 
   test('ParticleNetwork constructor handles NetworkPerformance', () {
     const network1 = ParticleNetwork(
-      performance: NetworkPerformance(fastLineRendering: true),
+      performance: NetworkPerformance(isComplex: true),
     );
-    expect(network1.performance.fastLineRendering, isTrue);
+    expect(network1.performance.isComplex, isTrue);
 
     const network2 = ParticleNetwork(
-      performance: NetworkPerformance(fastLineRendering: false),
+      performance: NetworkPerformance(isComplex: false),
     );
-    expect(network2.performance.fastLineRendering, isFalse);
+    expect(network2.performance.isComplex, isFalse);
 
     const network4 = ParticleNetwork(
       performance: NetworkPerformance(
         maxConnectionsPerParticle: 4,
-        adaptiveDensity: true,
-        enableAdaptivePerformance: true,
+        autoBoost: true,
       ),
     );
     expect(network4.performance.maxConnectionsPerParticle, equals(4));
-    expect(network4.performance.adaptiveDensity, isTrue);
-    expect(network4.performance.enableAdaptivePerformance, isTrue);
+    expect(network4.performance.autoBoost, isTrue);
   });
 
   testWidgets('ParticleNetworkState factory getter and setter', (
@@ -949,8 +947,7 @@ void main() {
               child: ParticleNetwork(
                 performance: NetworkPerformance(
                   maxConnectionsPerParticle: null,
-                  adaptiveDensity: false,
-                  fastLineRendering: false,
+                  lineRenderer: LineRenderer.stroke,
                 ),
               ),
             ),
@@ -966,8 +963,7 @@ void main() {
       );
       var painter = customPaint.painter as OptimizedNetworkPainter;
       expect(painter.maxConnectionsPerParticle, isNull);
-      expect(painter.adaptiveDensity, isFalse);
-      expect(painter.fastLineRendering, isFalse);
+      expect(painter.lineRenderer, equals(LineRenderer.stroke));
 
       await tester.pumpWidget(
         const MaterialApp(
@@ -978,8 +974,7 @@ void main() {
               child: ParticleNetwork(
                 performance: NetworkPerformance(
                   maxConnectionsPerParticle: 3,
-                  adaptiveDensity: true,
-                  fastLineRendering: true,
+                  lineRenderer: LineRenderer.vertices,
                 ),
               ),
             ),
@@ -995,13 +990,12 @@ void main() {
       );
       painter = customPaint.painter as OptimizedNetworkPainter;
       expect(painter.maxConnectionsPerParticle, equals(3));
-      expect(painter.adaptiveDensity, isTrue);
-      expect(painter.fastLineRendering, isTrue);
+      expect(painter.lineRenderer, equals(LineRenderer.vertices));
     },
   );
 
   testWidgets(
-    'ParticleNetwork adjusts line distance and max connections when enableAdaptivePerformance is true',
+    'ParticleNetwork adjusts line distance and max connections when autoBoost is true',
     (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -1013,7 +1007,7 @@ void main() {
                 lineDistance: 100.0,
                 performance: NetworkPerformance(
                   maxConnectionsPerParticle: 10,
-                  enableAdaptivePerformance: true,
+                  autoBoost: true,
                 ),
               ),
             ),
@@ -1057,7 +1051,7 @@ void main() {
   );
 
   testWidgets(
-    'ParticleNetwork does not adjust line distance when enableAdaptivePerformance is false',
+    'ParticleNetwork does not adjust line distance when autoBoost is false',
     (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -1069,7 +1063,7 @@ void main() {
                 lineDistance: 100.0,
                 performance: NetworkPerformance(
                   maxConnectionsPerParticle: 10,
-                  enableAdaptivePerformance: false,
+                  autoBoost: false,
                 ),
               ),
             ),
@@ -1100,7 +1094,7 @@ void main() {
   );
 
   testWidgets(
-    'ParticleNetwork didUpdateWidget updates enableAdaptivePerformance (L392)',
+    'ParticleNetwork didUpdateWidget updates autoBoost (L392)',
     (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -1112,7 +1106,7 @@ void main() {
                 lineDistance: 100.0,
                 performance: NetworkPerformance(
                   maxConnectionsPerParticle: 10,
-                  enableAdaptivePerformance: false,
+                  autoBoost: false,
                 ),
               ),
             ),
@@ -1149,7 +1143,7 @@ void main() {
       painter = customPaint.painter as OptimizedNetworkPainter;
       expect(painter.lineDistance, equals(100.0));
 
-      // Toggle enableAdaptivePerformance from false to true via didUpdateWidget
+      // Toggle autoBoost from false to true via didUpdateWidget
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -1160,7 +1154,7 @@ void main() {
                 lineDistance: 100.0,
                 performance: NetworkPerformance(
                   maxConnectionsPerParticle: 10,
-                  enableAdaptivePerformance: true,
+                  autoBoost: true,
                 ),
               ),
             ),
@@ -1176,7 +1170,7 @@ void main() {
       painter = customPaint.painter as OptimizedNetworkPainter;
       expect(painter.lineDistance, lessThan(100.0));
 
-      // Toggle enableAdaptivePerformance back to false via didUpdateWidget
+      // Toggle autoBoost back to false via didUpdateWidget
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -1187,7 +1181,7 @@ void main() {
                 lineDistance: 100.0,
                 performance: NetworkPerformance(
                   maxConnectionsPerParticle: 10,
-                  enableAdaptivePerformance: false,
+                  autoBoost: false,
                 ),
               ),
             ),
@@ -1231,7 +1225,7 @@ void main() {
               child: ParticleNetwork(
                 lineDistance: 100.0,
                 performance: NetworkPerformance(
-                  enableAdaptivePerformance: true,
+                  autoBoost: true,
                 ),
               ),
             ),
@@ -1258,7 +1252,7 @@ void main() {
               child: ParticleNetwork(
                 lineDistance: 200.0,
                 performance: NetworkPerformance(
-                  enableAdaptivePerformance: true,
+                  autoBoost: true,
                 ),
               ),
             ),
@@ -1356,7 +1350,7 @@ void main() {
               child: ParticleNetwork(
                 lineDistance: 100.0,
                 performance: NetworkPerformance(
-                  enableAdaptivePerformance: true,
+                  autoBoost: true,
                   maxConnectionsPerParticle: 10,
                 ),
               ),
@@ -1380,7 +1374,7 @@ void main() {
       initialPainter.updateLineDistance(50.0);
       expect(initialPainter.lineDistance, equals(50.0));
 
-      // Re-pump with updated performance parameters while keeping enableAdaptivePerformance: true
+      // Re-pump with updated performance parameters while keeping autoBoost: true
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -1390,7 +1384,7 @@ void main() {
               child: ParticleNetwork(
                 lineDistance: 100.0,
                 performance: NetworkPerformance(
-                  enableAdaptivePerformance: true,
+                  autoBoost: true,
                   maxConnectionsPerParticle: 10,
                   isComplex: true,
                 ),
