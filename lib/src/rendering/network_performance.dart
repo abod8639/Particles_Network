@@ -16,18 +16,6 @@ class NetworkPerformance {
   /// dramatically improving performance for large particle counts.
   final int? maxConnectionsPerParticle;
 
-  /// Whether to automatically scale down connection distance in dense networks.
-  final bool adaptiveDensity;
-
-  /// Whether to use ultra-fast single draw-call line rendering.
-  final bool fastLineRendering;
-
-  /// Whether to dynamically monitor frame cost and adapt quality to keep up
-  /// with the display refresh rate.
-  ///
-  /// Uses the engine's [FrameTiming] build and raster durations, reacting
-  /// to real GPU load rather than to the interval between ticks.
-  final bool enableAdaptivePerformance;
 
   /// Target upper bound on connection lines drawn per frame.
   ///
@@ -105,9 +93,6 @@ class NetworkPerformance {
   /// Creates a [NetworkPerformance] configuration.
   const NetworkPerformance({
     this.maxConnectionsPerParticle,
-    this.adaptiveDensity = false,
-    this.fastLineRendering = false,
-    this.enableAdaptivePerformance = false,
     this.maxLinesPerFrame,
     this.frameRateIndependent = false,
     this.lineRenderer = LineRenderer.vertices,
@@ -137,9 +122,6 @@ class NetworkPerformance {
   /// High-performance preset tuned for high particle counts and smooth frame rates.
   const NetworkPerformance.highPerformance({
     this.maxConnectionsPerParticle = 4,
-    this.adaptiveDensity = true,
-    this.fastLineRendering = true,
-    this.enableAdaptivePerformance = true,
     this.maxLinesPerFrame = 15000,
     this.frameRateIndependent = true,
     this.lineRenderer = LineRenderer.vertices,
@@ -159,9 +141,6 @@ class NetworkPerformance {
     this.maxComplexLines = 3,
     this.complexDensityFactor = 0.25,
     this.maxConnectionsPerParticle,
-    this.adaptiveDensity = false,
-    this.fastLineRendering = false,
-    this.enableAdaptivePerformance = false,
     this.maxLinesPerFrame,
     this.frameRateIndependent = false,
     this.lineRenderer = LineRenderer.vertices,
@@ -188,9 +167,6 @@ class NetworkPerformance {
   /// Adaptive preset focusing on dynamic frame rate scaling and independent motion.
   const NetworkPerformance.adaptive({
     this.maxConnectionsPerParticle,
-    this.adaptiveDensity = true,
-    this.fastLineRendering = false,
-    this.enableAdaptivePerformance = true,
     this.maxLinesPerFrame,
     this.frameRateIndependent = true,
     this.lineRenderer = LineRenderer.vertices,
@@ -201,7 +177,7 @@ class NetworkPerformance {
     this.cappedDistanceFactor = 0.75,
     this.antiAlias = true,
     this.spatialCellMultiplier,
-    this.autoBoost = false,
+    this.autoBoost = true,
   });
 
   /// Auto-performance preset that automatically adapts parameters based on
@@ -209,9 +185,6 @@ class NetworkPerformance {
   /// while maintaining smooth target frame rates.
   const NetworkPerformance.auto({
     this.maxConnectionsPerParticle = 15000,
-    this.adaptiveDensity = true,
-    this.fastLineRendering = true,
-    this.enableAdaptivePerformance = true,
     this.maxLinesPerFrame = 15000,
     this.frameRateIndependent = true,
     this.lineRenderer = LineRenderer.vertices,
@@ -229,9 +202,6 @@ class NetworkPerformance {
   /// to unlock maximum performance and visual density for the host device.
   const NetworkPerformance.boost({
     this.maxConnectionsPerParticle = 15000,
-    this.adaptiveDensity = true,
-    this.fastLineRendering = true,
-    this.enableAdaptivePerformance = true,
     this.maxLinesPerFrame = 15000,
     this.frameRateIndependent = true,
     this.lineRenderer = LineRenderer.vertices,
@@ -248,9 +218,6 @@ class NetworkPerformance {
   /// Balanced preset that maintains good visual quality with sensible performance limits.
   const NetworkPerformance.balanced({
     this.maxConnectionsPerParticle = 6,
-    this.adaptiveDensity = true,
-    this.fastLineRendering = true,
-    this.enableAdaptivePerformance = true,
     this.maxLinesPerFrame = 8000,
     this.frameRateIndependent = true,
     this.lineRenderer = LineRenderer.vertices,
@@ -267,9 +234,6 @@ class NetworkPerformance {
   /// Battery saver preset tuned to minimize CPU/GPU load on low-end or battery-constrained devices.
   const NetworkPerformance.batterySaver({
     this.maxConnectionsPerParticle = 3,
-    this.adaptiveDensity = true,
-    this.fastLineRendering = true,
-    this.enableAdaptivePerformance = true,
     this.maxLinesPerFrame = 3000,
     this.frameRateIndependent = true,
     this.lineRenderer = LineRenderer.vertices,
@@ -287,9 +251,6 @@ class NetworkPerformance {
   NetworkPerformance copyWith({
     int? maxConnectionsPerParticle,
     bool clearMaxConnectionsPerParticle = false,
-    bool? adaptiveDensity,
-    bool? fastLineRendering,
-    bool? enableAdaptivePerformance,
     int? maxLinesPerFrame,
     bool clearMaxLinesPerFrame = false,
     bool? frameRateIndependent,
@@ -311,10 +272,6 @@ class NetworkPerformance {
       maxConnectionsPerParticle: clearMaxConnectionsPerParticle
           ? null
           : (maxConnectionsPerParticle ?? this.maxConnectionsPerParticle),
-      adaptiveDensity: adaptiveDensity ?? this.adaptiveDensity,
-      fastLineRendering: fastLineRendering ?? this.fastLineRendering,
-      enableAdaptivePerformance:
-          enableAdaptivePerformance ?? this.enableAdaptivePerformance,
       maxLinesPerFrame: clearMaxLinesPerFrame
           ? null
           : (maxLinesPerFrame ?? this.maxLinesPerFrame),
@@ -345,9 +302,6 @@ class NetworkPerformance {
       other is NetworkPerformance &&
           runtimeType == other.runtimeType &&
           maxConnectionsPerParticle == other.maxConnectionsPerParticle &&
-          adaptiveDensity == other.adaptiveDensity &&
-          fastLineRendering == other.fastLineRendering &&
-          enableAdaptivePerformance == other.enableAdaptivePerformance &&
           maxLinesPerFrame == other.maxLinesPerFrame &&
           frameRateIndependent == other.frameRateIndependent &&
           lineRenderer == other.lineRenderer &&
@@ -363,9 +317,6 @@ class NetworkPerformance {
   @override
   int get hashCode => Object.hash(
         maxConnectionsPerParticle,
-        adaptiveDensity,
-        fastLineRendering,
-        enableAdaptivePerformance,
         maxLinesPerFrame,
         frameRateIndependent,
         lineRenderer,
@@ -383,9 +334,6 @@ class NetworkPerformance {
   String toString() {
     return 'NetworkPerformance('
         'maxConnectionsPerParticle: $maxConnectionsPerParticle, '
-        'adaptiveDensity: $adaptiveDensity, '
-        'fastLineRendering: $fastLineRendering, '
-        'enableAdaptivePerformance: $enableAdaptivePerformance, '
         'maxLinesPerFrame: $maxLinesPerFrame, '
         'frameRateIndependent: $frameRateIndependent, '
         'lineRenderer: $lineRenderer, '
