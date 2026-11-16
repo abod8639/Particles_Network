@@ -34,6 +34,12 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Vertices'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Stroke'),
+      50.0,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(find.text('Stroke'));
     await tester.pump(const Duration(milliseconds: 300));
   });
@@ -401,5 +407,104 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     network = tester.widget<ParticleNetwork>(find.byType(ParticleNetwork));
     expect(network.lineDistance, equals(100.0));
+  });
+
+  testWidgets(
+      'Performance presets (Auto, Boost, Balanced, Battery Saver, Complex) update ParticleNetwork performance configuration',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const MyApp());
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final performanceFinder =
+        find.byKey(const ValueKey('category_chip_Performance'));
+    await tester.scrollUntilVisible(
+      performanceFinder,
+      50.0,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(performanceFinder, findsOneWidget);
+    await tester.tap(performanceFinder);
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // Verify all preset buttons exist
+    expect(find.byKey(const ValueKey('perf_preset_Auto')), findsOneWidget);
+    expect(find.byKey(const ValueKey('perf_preset_Boost')), findsOneWidget);
+    expect(find.byKey(const ValueKey('perf_preset_High FPS')), findsOneWidget);
+    expect(find.byKey(const ValueKey('perf_preset_Adaptive')), findsOneWidget);
+    expect(find.byKey(const ValueKey('perf_preset_Balanced')), findsOneWidget);
+    expect(
+        find.byKey(const ValueKey('perf_preset_Battery Saver')), findsOneWidget);
+    expect(find.byKey(const ValueKey('perf_preset_Complex')), findsOneWidget);
+    expect(find.byKey(const ValueKey('perf_preset_Default')), findsOneWidget);
+
+    // Verify Live Telemetry Card exists and displays Live FPS and metrics
+    expect(find.text('Live Telemetry'), findsOneWidget);
+    expect(find.text('Live FPS'), findsOneWidget);
+    expect(find.text('Lines Drawn'), findsOneWidget);
+
+    // Apply "Auto" preset
+    await tester.tap(find.byKey(const ValueKey('perf_preset_Auto')));
+    await tester.pump(const Duration(milliseconds: 300));
+    var network = tester.widget<ParticleNetwork>(find.byType(ParticleNetwork));
+    expect(network.performance.autoBoost, isTrue);
+    expect(network.performance.lineRenderer, equals(LineRenderer.vertices));
+    expect(network.performance.fastLineRendering, isTrue);
+    expect(network.performance.adaptiveDensity, isTrue);
+    expect(network.performance.enableAdaptivePerformance, isTrue);
+    expect(find.text('15k (Boost Cap)'), findsOneWidget);
+
+    // Verify code export outputs concise NetworkPerformance.auto()
+    await tester.tap(find.byTooltip('Export Dart Code'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.textContaining('NetworkPerformance.auto()'), findsOneWidget);
+    await tester.tap(find.text('Close'));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // Apply "Balanced" preset
+    await tester.tap(find.byKey(const ValueKey('perf_preset_Balanced')));
+    await tester.pump(const Duration(milliseconds: 300));
+    network = tester.widget<ParticleNetwork>(find.byType(ParticleNetwork));
+    expect(network.performance.autoBoost, isFalse);
+    expect(network.performance.maxConnectionsPerParticle, equals(6));
+    expect(network.performance.maxLinesPerFrame, equals(8000));
+    expect(network.performance.lineRenderer, equals(LineRenderer.stroke));
+
+    // Verify code export outputs concise NetworkPerformance.balanced()
+    await tester.tap(find.byTooltip('Export Dart Code'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.textContaining('NetworkPerformance.balanced()'), findsOneWidget);
+    await tester.tap(find.text('Close'));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // Apply "Battery Saver" preset
+    await tester.tap(find.byKey(const ValueKey('perf_preset_Battery Saver')));
+    await tester.pump(const Duration(milliseconds: 300));
+    network = tester.widget<ParticleNetwork>(find.byType(ParticleNetwork));
+    expect(network.performance.autoBoost, isFalse);
+    expect(network.performance.maxConnectionsPerParticle, equals(3));
+    expect(network.performance.maxLinesPerFrame, equals(3000));
+    expect(network.performance.lineRenderer, equals(LineRenderer.vertices));
+
+    // Apply "Complex" preset
+    await tester.tap(find.byKey(const ValueKey('perf_preset_Complex')));
+    await tester.pump(const Duration(milliseconds: 300));
+    network = tester.widget<ParticleNetwork>(find.byType(ParticleNetwork));
+    expect(network.performance.isComplex, isTrue);
+    expect(network.performance.connectionReductionRatio, equals(0.5));
+    expect(network.performance.maxComplexLines, equals(3));
+    expect(network.performance.denseThresholdFactor, equals(0.25));
+
+    // Scroll down settings card and toggle Auto-Boost chip
+    await tester.drag(find.byType(Scrollable).last, const Offset(0, -250));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final autoBoostChipFinder = find.text('Auto-Boost ⚡');
+    expect(autoBoostChipFinder, findsOneWidget);
+    await tester.tap(autoBoostChipFinder);
+    await tester.pump(const Duration(milliseconds: 300));
+    network = tester.widget<ParticleNetwork>(find.byType(ParticleNetwork));
+    expect(network.performance.autoBoost, isTrue);
   });
 }
