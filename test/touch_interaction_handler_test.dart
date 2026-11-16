@@ -709,17 +709,15 @@ void main() {
         lineColor: Colors.blue,
         touchActivation: true,
         lineWidth: 1.0,
-        fastLineRendering: true,
         lineRenderer: LineRenderer.vertices,
       );
 
-      // In fastLineRendering with LineRenderer.vertices, painter uses drawVertices for touch
+      // With LineRenderer.vertices, painter uses drawVertices for touch
       painter.paint(mockCanvas, const Size(500, 500));
       verify(mockCanvas.drawVertices(any, any, any)).called(greaterThan(0));
 
       // updatePerformanceOptions updates handler
       painter.updatePerformanceOptions(
-        fastLineRendering: false,
         lineRenderer: LineRenderer.stroke,
       );
       reset(mockCanvas);
@@ -893,7 +891,6 @@ void main() {
         lineColor: Colors.blue,
         touchActivation: true,
         lineWidth: 1.0,
-        fastLineRendering: true,
         lineRenderer: LineRenderer.stroke, // painter default
         touchFeatures: const TouchFeatures(
           lineRenderer: LineRenderer.vertices, // touch feature override
