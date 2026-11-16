@@ -95,6 +95,13 @@ class NetworkPerformance {
   /// `max(radius, sqrt(area / particleCount))`.
   final double? spatialCellMultiplier;
 
+  /// Whether dynamic performance boosting is enabled (default: false).
+  ///
+  /// When true, dynamically scales connection limits and line budgets up or down
+  /// in real time based on actual engine frame timings to deliver the highest possible
+  /// visual fidelity that the host device can comfortably sustain.
+  final bool autoBoost;
+
   /// Creates a [NetworkPerformance] configuration.
   const NetworkPerformance({
     this.maxConnectionsPerParticle,
@@ -111,6 +118,7 @@ class NetworkPerformance {
     this.cappedDistanceFactor = 0.75,
     this.antiAlias = true,
     this.spatialCellMultiplier,
+    this.autoBoost = false,
   })  : assert(
           connectionReductionRatio == null ||
               (connectionReductionRatio >= 0.0 &&
@@ -142,6 +150,7 @@ class NetworkPerformance {
     this.cappedDistanceFactor = 0.75,
     this.antiAlias = true,
     this.spatialCellMultiplier,
+    this.autoBoost = false,
   });
 
   /// Flexible complex preset for fine-grained control over dense cluster line reduction.
@@ -160,6 +169,7 @@ class NetworkPerformance {
     this.cappedDistanceFactor = 0.75,
     this.antiAlias = true,
     this.spatialCellMultiplier,
+    this.autoBoost = false,
   })  : assert(
           connectionReductionRatio == null ||
               (connectionReductionRatio >= 0.0 &&
@@ -191,16 +201,58 @@ class NetworkPerformance {
     this.cappedDistanceFactor = 0.75,
     this.antiAlias = true,
     this.spatialCellMultiplier,
+    this.autoBoost = false,
   });
 
-  /// Auto-performance preset that automatically adjusts parameters based on particle count.
+  /// Auto-performance preset that automatically adapts parameters based on
+  /// device performance and frame rate, maximizing visual density and connections
+  /// while maintaining smooth target frame rates.
   const NetworkPerformance.auto({
     this.maxConnectionsPerParticle = 15000,
-    this.adaptiveDensity = false,
-    this.fastLineRendering = false,
-    this.enableAdaptivePerformance = false,
-    this.maxLinesPerFrame,
-    this.frameRateIndependent = false,
+    this.adaptiveDensity = true,
+    this.fastLineRendering = true,
+    this.enableAdaptivePerformance = true,
+    this.maxLinesPerFrame = 15000,
+    this.frameRateIndependent = true,
+    this.lineRenderer = LineRenderer.vertices,
+    this.isComplex = true,
+    this.connectionReductionRatio,
+    this.maxComplexLines,
+    this.denseThresholdFactor,
+    this.cappedDistanceFactor = 0.75,
+    this.antiAlias = true,
+    this.spatialCellMultiplier,
+    this.autoBoost = true,
+  });
+
+  /// Boost preset that dynamically tunes and scales connection budgets
+  /// to unlock maximum performance and visual density for the host device.
+  const NetworkPerformance.boost({
+    this.maxConnectionsPerParticle = 15000,
+    this.adaptiveDensity = true,
+    this.fastLineRendering = true,
+    this.enableAdaptivePerformance = true,
+    this.maxLinesPerFrame = 15000,
+    this.frameRateIndependent = true,
+    this.lineRenderer = LineRenderer.vertices,
+    this.isComplex = true,
+    this.connectionReductionRatio,
+    this.maxComplexLines,
+    this.denseThresholdFactor,
+    this.cappedDistanceFactor = 0.75,
+    this.antiAlias = true,
+    this.spatialCellMultiplier,
+    this.autoBoost = true,
+  });
+
+  /// Balanced preset that maintains good visual quality with sensible performance limits.
+  const NetworkPerformance.balanced({
+    this.maxConnectionsPerParticle = 6,
+    this.adaptiveDensity = true,
+    this.fastLineRendering = true,
+    this.enableAdaptivePerformance = true,
+    this.maxLinesPerFrame = 8000,
+    this.frameRateIndependent = true,
     this.lineRenderer = LineRenderer.stroke,
     this.isComplex = false,
     this.connectionReductionRatio,
@@ -209,6 +261,26 @@ class NetworkPerformance {
     this.cappedDistanceFactor = 0.75,
     this.antiAlias = true,
     this.spatialCellMultiplier,
+    this.autoBoost = false,
+  });
+
+  /// Battery saver preset tuned to minimize CPU/GPU load on low-end or battery-constrained devices.
+  const NetworkPerformance.batterySaver({
+    this.maxConnectionsPerParticle = 3,
+    this.adaptiveDensity = true,
+    this.fastLineRendering = true,
+    this.enableAdaptivePerformance = true,
+    this.maxLinesPerFrame = 3000,
+    this.frameRateIndependent = true,
+    this.lineRenderer = LineRenderer.vertices,
+    this.isComplex = true,
+    this.connectionReductionRatio = 0.5,
+    this.maxComplexLines = 2,
+    this.denseThresholdFactor = 0.25,
+    this.cappedDistanceFactor = 0.75,
+    this.antiAlias = true,
+    this.spatialCellMultiplier,
+    this.autoBoost = false,
   });
 
   /// Creates a copy of this [NetworkPerformance] with updated parameters.
@@ -233,6 +305,7 @@ class NetworkPerformance {
     bool? antiAlias,
     double? spatialCellMultiplier,
     bool clearSpatialCellMultiplier = false,
+    bool? autoBoost,
   }) {
     return NetworkPerformance(
       maxConnectionsPerParticle: clearMaxConnectionsPerParticle
@@ -262,6 +335,7 @@ class NetworkPerformance {
       spatialCellMultiplier: clearSpatialCellMultiplier
           ? null
           : (spatialCellMultiplier ?? this.spatialCellMultiplier),
+      autoBoost: autoBoost ?? this.autoBoost,
     );
   }
 
@@ -283,7 +357,8 @@ class NetworkPerformance {
           denseThresholdFactor == other.denseThresholdFactor &&
           cappedDistanceFactor == other.cappedDistanceFactor &&
           antiAlias == other.antiAlias &&
-          spatialCellMultiplier == other.spatialCellMultiplier;
+          spatialCellMultiplier == other.spatialCellMultiplier &&
+          autoBoost == other.autoBoost;
 
   @override
   int get hashCode => Object.hash(
@@ -301,6 +376,7 @@ class NetworkPerformance {
         cappedDistanceFactor,
         antiAlias,
         spatialCellMultiplier,
+        autoBoost,
       );
 
   @override
@@ -319,6 +395,7 @@ class NetworkPerformance {
         'denseThresholdFactor: $denseThresholdFactor, '
         'cappedDistanceFactor: $cappedDistanceFactor, '
         'antiAlias: $antiAlias, '
-        'spatialCellMultiplier: $spatialCellMultiplier)';
+        'spatialCellMultiplier: $spatialCellMultiplier, '
+        'autoBoost: $autoBoost)';
   }
 }
