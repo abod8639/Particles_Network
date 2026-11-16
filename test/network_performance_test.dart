@@ -50,6 +50,66 @@ void main() {
       expect(perf.isComplex, isFalse);
       expect(perf.cappedDistanceFactor, equals(0.75));
       expect(perf.antiAlias, isTrue);
+      expect(perf.autoBoost, isFalse);
+    });
+
+    test('auto preset has smart auto-performance scaling enabled', () {
+      const perf = NetworkPerformance.auto();
+
+      expect(perf.maxConnectionsPerParticle, equals(15000));
+      expect(perf.adaptiveDensity, isTrue);
+      expect(perf.fastLineRendering, isTrue);
+      expect(perf.enableAdaptivePerformance, isTrue);
+      expect(perf.maxLinesPerFrame, equals(15000));
+      expect(perf.frameRateIndependent, isTrue);
+      expect(perf.lineRenderer, equals(LineRenderer.vertices));
+      expect(perf.isComplex, isTrue);
+      expect(perf.autoBoost, isTrue);
+    });
+
+    test('boost preset matches auto configuration for maximum performance', () {
+      const perf = NetworkPerformance.boost();
+
+      expect(perf.maxConnectionsPerParticle, equals(15000));
+      expect(perf.adaptiveDensity, isTrue);
+      expect(perf.fastLineRendering, isTrue);
+      expect(perf.enableAdaptivePerformance, isTrue);
+      expect(perf.maxLinesPerFrame, equals(15000));
+      expect(perf.frameRateIndependent, isTrue);
+      expect(perf.lineRenderer, equals(LineRenderer.vertices));
+      expect(perf.isComplex, isTrue);
+      expect(perf.autoBoost, isTrue);
+    });
+
+    test('balanced preset has sensible performance and fidelity limits', () {
+      const perf = NetworkPerformance.balanced();
+
+      expect(perf.maxConnectionsPerParticle, equals(6));
+      expect(perf.adaptiveDensity, isTrue);
+      expect(perf.fastLineRendering, isTrue);
+      expect(perf.enableAdaptivePerformance, isTrue);
+      expect(perf.maxLinesPerFrame, equals(8000));
+      expect(perf.frameRateIndependent, isTrue);
+      expect(perf.lineRenderer, equals(LineRenderer.stroke));
+      expect(perf.isComplex, isFalse);
+      expect(perf.autoBoost, isFalse);
+    });
+
+    test('batterySaver preset has constrained limits and dense throttling', () {
+      const perf = NetworkPerformance.batterySaver();
+
+      expect(perf.maxConnectionsPerParticle, equals(3));
+      expect(perf.adaptiveDensity, isTrue);
+      expect(perf.fastLineRendering, isTrue);
+      expect(perf.enableAdaptivePerformance, isTrue);
+      expect(perf.maxLinesPerFrame, equals(3000));
+      expect(perf.frameRateIndependent, isTrue);
+      expect(perf.lineRenderer, equals(LineRenderer.vertices));
+      expect(perf.isComplex, isTrue);
+      expect(perf.connectionReductionRatio, equals(0.5));
+      expect(perf.maxComplexLines, equals(2));
+      expect(perf.denseThresholdFactor, equals(0.25));
+      expect(perf.autoBoost, isFalse);
     });
 
     test('copyWith updates specified fields and preserves others', () {
