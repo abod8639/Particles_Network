@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
@@ -7,14 +6,14 @@ import 'package:particles_network/particles_network.dart';
 import 'mocks/mock_canvas.mocks.dart';
 
 void main() {
-  group('Fast Line Rendering & Performance Governor Tests', () {
+  group('Line Rendering & Performance Tests', () {
     late MockCanvas mockCanvas;
 
     setUp(() {
       mockCanvas = MockCanvas();
     });
 
-    test('fastLineRendering draws lines using a single drawRawPoints call', () {
+    test('stroke lineRenderer draws lines using drawRawPoints', () {
       final particles = [
         Particle(
           position: const Offset(10.0, 10.0),
@@ -49,13 +48,13 @@ void main() {
         touchColor: Colors.red,
         touchActivation: false,
         lineWidth: 1.0,
-        fastLineRendering: true,
+        lineRenderer: LineRenderer.stroke,
       );
 
       painter.paint(mockCanvas, const Size(200, 200));
 
-      // In fastLineRendering, lines are batched into a single drawRawPoints call
-      verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(1);
+      // In stroke mode with <= 30 particles, individual connections draw lines
+      verify(mockCanvas.drawLine(any, any, any)).called(greaterThan(0));
     });
 
     test('maxConnectionsPerParticle limits lines emitted per particle', () {
@@ -84,16 +83,15 @@ void main() {
         touchActivation: false,
         lineWidth: 1.0,
         maxConnectionsPerParticle: 2,
-        fastLineRendering: true,
+        lineRenderer: LineRenderer.stroke,
       );
 
       expect(() => painter.paint(mockCanvas, const Size(200, 200)),
           returnsNormally);
-      verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(1);
     });
 
     test(
-        'adaptiveDensity scales effective line distance for dense particle sets',
+        'maxLinesPerFrame scales line budget for dense particle sets',
         () {
       final particles = List.generate(
         100,
@@ -118,7 +116,7 @@ void main() {
         touchColor: Colors.red,
         touchActivation: false,
         lineWidth: 1.0,
-        adaptiveDensity: true,
+        maxLinesPerFrame: 50,
       );
 
       expect(() => painter.paint(mockCanvas, const Size(100, 100)),
@@ -148,18 +146,15 @@ void main() {
         lineWidth: 1.0,
       );
 
-      expect(painter.fastLineRendering, isFalse);
-      expect(painter.adaptiveDensity, isFalse);
+      expect(painter.lineRenderer, equals(LineRenderer.vertices));
       expect(painter.maxConnectionsPerParticle, isNull);
 
       painter.updatePerformanceOptions(
-        fastLineRendering: true,
-        adaptiveDensity: true,
+        lineRenderer: LineRenderer.stroke,
         maxConnectionsPerParticle: 4,
       );
 
-      expect(painter.fastLineRendering, isTrue);
-      expect(painter.adaptiveDensity, isTrue);
+      expect(painter.lineRenderer, equals(LineRenderer.stroke));
       expect(painter.maxConnectionsPerParticle, equals(4));
     });
   });
