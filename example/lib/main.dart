@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'dart:collection';
 import 'dart:math' as math;
+
+import 'package:flutter/foundation.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart' as flutter_scheduler;
@@ -73,6 +76,7 @@ class ParticlePreset {
   final LineRenderer lineRenderer;
   final int? maxConnectionsPerParticle;
   final int? maxLinesPerFrame;
+  final bool autoBoost;
 
   const ParticlePreset({
     required this.name,
@@ -103,6 +107,7 @@ class ParticlePreset {
     required this.lineRenderer,
     this.maxConnectionsPerParticle,
     this.maxLinesPerFrame,
+    this.autoBoost = false,
   });
 }
 
@@ -151,11 +156,18 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   bool _enableAdaptivePerformance = false;
   bool _fastLineRendering = false;
   bool _frameRateIndependent = false;
+  bool _autoBoost = false;
   LineRenderer _lineRenderer = LineRenderer.stroke;
   int? _maxConnectionsPerParticle;
   int? _maxLinesPerFrame;
   double _spatialCellMultiplier = 1.0;
   double _cappedDistanceFactor = 0.75;
+  double? _connectionReductionRatio;
+  int? _maxComplexLines;
+  double? _denseThresholdFactor;
+  String _activePerfPreset = "Default";
+  bool _showPerformanceHud = true;
+  final ValueNotifier<double> _liveFpsNotifier = ValueNotifier<double>(60.0);
 
   // --- Styling Variables ---
   Color _particleColor = Colors.deepPurple;
@@ -172,12 +184,12 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   /// Tracks collapsed state of cards when in "All" view
   final Map<String, bool> _collapsedSections = {};
 
-  /// UniqueKey forces a full rebuild of the ParticleNetwork when user explicitly re-seeds
-  Key _particleKey = UniqueKey();
+  /// GlobalKey allows querying live performance metrics and forces rebuild on explicit re-seed
+  GlobalKey<ParticleNetworkState> _networkKey = GlobalKey<ParticleNetworkState>();
 
   void _refreshEngine() {
     setState(() {
-      _particleKey = UniqueKey();
+      _networkKey = GlobalKey<ParticleNetworkState>();
     });
   }
 
@@ -187,6 +199,12 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
     if (!_isLineDistanceCustom) {
       _lineDistance = _getResponsiveLineDistance(context);
     }
+  }
+
+  @override
+  void dispose() {
+    _liveFpsNotifier.dispose();
+    super.dispose();
   }
 
   /// Calculates responsive connection line distance based on screen width:
@@ -289,6 +307,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       frameRateIndependent: true,
       lineRenderer: LineRenderer.vertices,
       maxConnectionsPerParticle: 6,
+      autoBoost: true,
     ),
     ParticlePreset(
       name: "Supernova Repulsion",
@@ -318,6 +337,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       lineRenderer: LineRenderer.vertices,
       maxConnectionsPerParticle: 5,
       maxLinesPerFrame: 18000,
+      autoBoost: true,
     ),
     ParticlePreset(
       name: "Neural Synapse",
@@ -401,6 +421,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       lineRenderer: LineRenderer.vertices,
       maxConnectionsPerParticle: 4,
       maxLinesPerFrame: 15000,
+      autoBoost: true,
     ),
   ];
 
@@ -432,6 +453,8 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       _lineRenderer = preset.lineRenderer;
       _maxConnectionsPerParticle = preset.maxConnectionsPerParticle;
       _maxLinesPerFrame = preset.maxLinesPerFrame;
+      _autoBoost = preset.autoBoost;
+      _activePerfPreset = "Custom";
     });
     _refreshEngine();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -507,12 +530,18 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       _enableAdaptivePerformance = false;
       _fastLineRendering = false;
       _frameRateIndependent = false;
+      _autoBoost = false;
       _lineRenderer = LineRenderer.stroke;
       _antiAlias = true;
       _maxConnectionsPerParticle = null;
       _maxLinesPerFrame = null;
       _spatialCellMultiplier = 1.0;
       _cappedDistanceFactor = 0.75;
+      _connectionReductionRatio = null;
+      _maxComplexLines = null;
+      _denseThresholdFactor = null;
+      _activePerfPreset = "Default";
+      _showPerformanceHud = true;
     });
   }
 
@@ -545,11 +574,17 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       _enableAdaptivePerformance = false;
       _fastLineRendering = false;
       _frameRateIndependent = false;
+      _autoBoost = false;
       _lineRenderer = LineRenderer.stroke;
       _maxConnectionsPerParticle = null;
       _maxLinesPerFrame = null;
       _spatialCellMultiplier = 1.0;
       _cappedDistanceFactor = 0.75;
+      _connectionReductionRatio = null;
+      _maxComplexLines = null;
+      _denseThresholdFactor = null;
+      _activePerfPreset = "Default";
+      _showPerformanceHud = true;
       _particleColor = Colors.deepPurple;
       _lineColor = Colors.lightBlue;
       _touchColor = Colors.amber;
@@ -590,13 +625,13 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
     buffer.writeln('  fill: $_isFill,');
     buffer.writeln('  hoverEffect: $_hoverEffect,');
     buffer.writeln('  gravity: const ParticleGravity(');
-    buffer.writeln('    gravityType: GravityType.${_gravityType.name},');
-    buffer.writeln('    gravityStrength: $_gravityStrength,');
+    buffer.writeln('    type: GravityType.${_gravityType.name},');
+    buffer.writeln('    strength: $_gravityStrength,');
     buffer.writeln(
-        '    gravityDirection: Offset(${_gravityDirection.dx.toStringAsFixed(2)}, ${_gravityDirection.dy.toStringAsFixed(2)}),');
+        '    direction: Offset(${_gravityDirection.dx.toStringAsFixed(2)}, ${_gravityDirection.dy.toStringAsFixed(2)}),');
     if (_gravityCenter != null) {
       buffer.writeln(
-          '    gravityCenter: Offset(${_gravityCenter!.dx.toStringAsFixed(1)}, ${_gravityCenter!.dy.toStringAsFixed(1)}),');
+          '    center: Offset(${_gravityCenter!.dx.toStringAsFixed(1)}, ${_gravityCenter!.dy.toStringAsFixed(1)}),');
     }
     buffer.writeln('  ),');
     buffer.writeln('  touchFeatures: const TouchFeatures(');
@@ -609,30 +644,158 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
     buffer.writeln('    damping: $_touchDamping,');
     buffer.writeln('    lineDistance: $_touchLineDistance,');
     buffer.writeln('  ),');
-    buffer.writeln('  performance: const NetworkPerformance(');
-    buffer.writeln('    isComplex: $_isComplex,');
-    buffer.writeln('    adaptiveDensity: $_adaptiveDensity,');
-    buffer.writeln('    fastLineRendering: $_fastLineRendering,');
-    buffer.writeln('    enableAdaptivePerformance: $_enableAdaptivePerformance,');
-    buffer.writeln('    frameRateIndependent: $_frameRateIndependent,');
-    buffer.writeln('    lineRenderer: LineRenderer.${_lineRenderer.name},');
-    buffer.writeln('    antiAlias: $_antiAlias,');
-    if (_maxConnectionsPerParticle != null) {
+    if (_activePerfPreset == "Auto" && _isAutoPreset) {
+      buffer.writeln('  performance: const NetworkPerformance.auto(),');
+    } else if (_activePerfPreset == "Boost" && _isBoostPreset) {
+      buffer.writeln('  performance: const NetworkPerformance.boost(),');
+    } else if ((_activePerfPreset == "High FPS" ||
+            _activePerfPreset == "High Perf") &&
+        _isHighFpsPreset) {
       buffer.writeln(
-          '    maxConnectionsPerParticle: $_maxConnectionsPerParticle,');
+          '  performance: const NetworkPerformance.highPerformance(),');
+    } else if (_activePerfPreset == "Balanced" && _isBalancedPreset) {
+      buffer.writeln('  performance: const NetworkPerformance.balanced(),');
+    } else if (_activePerfPreset == "Battery Saver" && _isBatterySaverPreset) {
+      buffer.writeln('  performance: const NetworkPerformance.batterySaver(),');
+    } else if (_activePerfPreset == "Complex" && _isComplexPreset) {
+      buffer.writeln('  performance: const NetworkPerformance.complex(),');
+    } else if (_activePerfPreset == "Adaptive" && _isAdaptivePreset) {
+      buffer.writeln('  performance: const NetworkPerformance.adaptive(),');
+    } else if (_activePerfPreset == "Default" && _isDefaultPreset) {
+      buffer.writeln('  performance: const NetworkPerformance(),');
+    } else {
+      buffer.writeln('  performance: const NetworkPerformance(');
+      buffer.writeln('    isComplex: $_isComplex,');
+      buffer.writeln('    adaptiveDensity: $_adaptiveDensity,');
+      buffer.writeln('    fastLineRendering: $_fastLineRendering,');
+      buffer.writeln(
+          '    enableAdaptivePerformance: $_enableAdaptivePerformance,');
+      buffer.writeln('    autoBoost: $_autoBoost,');
+      buffer.writeln('    frameRateIndependent: $_frameRateIndependent,');
+      buffer.writeln('    lineRenderer: LineRenderer.${_lineRenderer.name},');
+      buffer.writeln('    antiAlias: $_antiAlias,');
+      if (_maxConnectionsPerParticle != null) {
+        buffer.writeln(
+            '    maxConnectionsPerParticle: $_maxConnectionsPerParticle,');
+      }
+      if (_maxLinesPerFrame != null) {
+        buffer.writeln('    maxLinesPerFrame: $_maxLinesPerFrame,');
+      }
+      if (_connectionReductionRatio != null) {
+        buffer.writeln(
+            '    connectionReductionRatio: $_connectionReductionRatio,');
+      }
+      if (_maxComplexLines != null) {
+        buffer.writeln('    maxComplexLines: $_maxComplexLines,');
+      }
+      if (_denseThresholdFactor != null) {
+        buffer.writeln('    denseThresholdFactor: $_denseThresholdFactor,');
+      }
+      if (_spatialCellMultiplier != 1.0) {
+        buffer.writeln('    spatialCellMultiplier: $_spatialCellMultiplier,');
+      }
+      if (_cappedDistanceFactor != 0.75) {
+        buffer.writeln('    cappedDistanceFactor: $_cappedDistanceFactor,');
+      }
+      buffer.writeln('  ),');
     }
-    if (_maxLinesPerFrame != null) {
-      buffer.writeln('    maxLinesPerFrame: $_maxLinesPerFrame,');
-    }
-    if (_spatialCellMultiplier != 1.0) {
-      buffer.writeln('    spatialCellMultiplier: $_spatialCellMultiplier,');
-    }
-    if (_cappedDistanceFactor != 0.75) {
-      buffer.writeln('    cappedDistanceFactor: $_cappedDistanceFactor,');
-    }
-    buffer.writeln('  ),');
     buffer.writeln(')');
     return buffer.toString();
+  }
+
+  /// Formats Dart code with syntax highlighting
+  TextSpan _highlightDartCode(String code, {double fontSize = 11.0}) {
+    const defaultColor = Color(0xFFD4D4D4);
+    const keywordColor = Color(0xFFC586C0);
+    const typeColor = Color(0xFF4EC9B0);
+    const propertyColor = Color(0xFF9CDCFE);
+    const numberColor = Color(0xFFB5CEA8);
+    const commentColor = Color(0xFF6A9955);
+    const enumValColor = Color(0xFF4FC1FF);
+
+    final spans = <TextSpan>[];
+    final lines = code.split('\n');
+
+    final tokenRegex = RegExp(
+      r'(//.*$)|'
+      r'(\b(?:const|final|var|true|false|null)\b)|'
+      r'([a-zA-Z_][a-zA-Z0-9_]*)(?=\s*:)|'
+      r'(\b[A-Z][a-zA-Z0-9_]*\b)|'
+      r'(\b0x[0-9a-fA-F]+\b|\b-?\d+(?:\.\d+)?\b)|'
+      r'(\.[a-zA-Z_][a-zA-Z0-9_]*)|'
+      r'([^a-zA-Z0-9_.\s]+)|'
+      r'(\s+)|'
+      r'([a-zA-Z_][a-zA-Z0-9_]*)',
+    );
+
+    for (int i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      int lastMatchEnd = 0;
+      for (final match in tokenRegex.allMatches(line)) {
+        if (match.start > lastMatchEnd) {
+          spans.add(TextSpan(text: line.substring(lastMatchEnd, match.start)));
+        }
+
+        if (match.group(1) != null) {
+          spans.add(TextSpan(
+            text: match.group(1),
+            style: const TextStyle(
+                color: commentColor, fontStyle: FontStyle.italic),
+          ));
+        } else if (match.group(2) != null) {
+          spans.add(TextSpan(
+              text: match.group(2),
+              style: const TextStyle(color: keywordColor)));
+        } else if (match.group(3) != null) {
+          spans.add(TextSpan(
+              text: match.group(3),
+              style: const TextStyle(color: propertyColor)));
+        } else if (match.group(4) != null) {
+          spans.add(TextSpan(
+              text: match.group(4),
+              style: const TextStyle(
+                  color: typeColor, fontWeight: FontWeight.w600)));
+        } else if (match.group(5) != null) {
+          spans.add(TextSpan(
+              text: match.group(5),
+              style: const TextStyle(color: numberColor)));
+        } else if (match.group(6) != null) {
+          final dotMember = match.group(6)!;
+          spans.add(
+              const TextSpan(text: '.', style: TextStyle(color: defaultColor)));
+          spans.add(TextSpan(
+              text: dotMember.substring(1),
+              style: const TextStyle(color: enumValColor)));
+        } else if (match.group(7) != null) {
+          spans.add(TextSpan(
+              text: match.group(7),
+              style: const TextStyle(color: defaultColor)));
+        } else {
+          spans.add(TextSpan(
+              text: match.group(0),
+              style: const TextStyle(color: defaultColor)));
+        }
+
+        lastMatchEnd = match.end;
+      }
+
+      if (lastMatchEnd < line.length) {
+        spans.add(TextSpan(text: line.substring(lastMatchEnd)));
+      }
+
+      if (i < lines.length - 1) {
+        spans.add(const TextSpan(text: '\n'));
+      }
+    }
+
+    return TextSpan(
+      style: TextStyle(
+        fontFamily: 'monospace',
+        fontSize: fontSize,
+        height: 1.4,
+      ),
+      children: spans,
+    );
   }
 
   void _showExportDialog() {
@@ -669,14 +832,8 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
             border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
           ),
           child: SingleChildScrollView(
-            child: SelectableText(
-              code,
-              style: const TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 11.5,
-                color: Color(0xFF38BDF8),
-                height: 1.4,
-              ),
+            child: SelectableText.rich(
+              _highlightDartCode(code, fontSize: 11.5),
             ),
           ),
         ),
@@ -910,8 +1067,30 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
             child: FPS(
               alignment: Alignment.topRight,
               showChart: _showChart,
+              showMetrics: _showPerformanceHud,
+              fpsNotifier: _liveFpsNotifier,
+              metricsGetter: () => LivePerformanceMetrics(
+                lineCount: _networkKey.currentState?.lastFrameLineCount ?? 0,
+                lineDistance: _networkKey.currentState?.lastFrameLineDistance ??
+                    _lineDistance,
+                scaleFactor:
+                    _networkKey.currentState?.adaptiveController.scaleFactor ??
+                        1.0,
+                frameTimeMs: _networkKey
+                        .currentState?.adaptiveController.emaFrameTimeMs ??
+                    16.67,
+                effectiveMaxConnections:
+                    _networkKey.currentState?.effectiveMaxConnections,
+                effectiveMaxLines:
+                    _networkKey.currentState?.effectiveMaxLines,
+                presetName: _activePerfPreset,
+                autoBoost: _autoBoost,
+                adaptive: _enableAdaptivePerformance,
+                lineRenderer: _lineRenderer,
+                fastLineRendering: _fastLineRendering,
+              ),
               child: ParticleNetwork(
-                key: _particleKey,
+                key: _networkKey,
                 drawNetwork: _drawNetwork,
                 fill: _isFill,
                 lineWidth: _lineWidth,
@@ -930,9 +1109,13 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                   frameRateIndependent: _frameRateIndependent,
                   lineRenderer: _lineRenderer,
                   antiAlias: _antiAlias,
+                  autoBoost: _autoBoost,
                   maxConnectionsPerParticle: _maxConnectionsPerParticle,
                   maxLinesPerFrame: _maxLinesPerFrame,
                   cappedDistanceFactor: _cappedDistanceFactor,
+                  connectionReductionRatio: _connectionReductionRatio,
+                  maxComplexLines: _maxComplexLines,
+                  denseThresholdFactor: _denseThresholdFactor,
                   spatialCellMultiplier: _spatialCellMultiplier != 1.0
                       ? _spatialCellMultiplier
                       : null,
@@ -1071,6 +1254,21 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                       label: "${_maxSpeed.toStringAsFixed(1)} px/f",
                       color: _controllerColor,
                     ),
+                    const SizedBox(width: 6),
+                    _buildHudPill(
+                      icon: Icons.hub_rounded,
+                      label:
+                          "${_networkKey.currentState?.lastFrameLineCount ?? 0} lines",
+                      color: const Color(0xFF38BDF8),
+                    ),
+                    if (_autoBoost) ...[
+                      const SizedBox(width: 6),
+                      _buildHudPill(
+                        icon: Icons.bolt_rounded,
+                        label: "Auto-Boost ⚡",
+                        color: Colors.amberAccent,
+                      ),
+                    ],
                     const SizedBox(width: 6),
                     _buildQuickActionBtn(
                       icon: Icons.code_rounded,
@@ -2381,99 +2579,390 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   /// Applies a named performance preset
   void _applyPerformancePreset(String preset) {
     setState(() {
+      _activePerfPreset = preset;
       switch (preset) {
-        case "Default":
-          _adaptiveDensity = false;
-          _enableAdaptivePerformance = false;
-          _fastLineRendering = false;
-          _frameRateIndependent = false;
-          _lineRenderer = LineRenderer.stroke;
-          _maxConnectionsPerParticle = null;
-          _maxLinesPerFrame = null;
-          _spatialCellMultiplier = 1.0;
-          break;
-        case "Adaptive":
-          _adaptiveDensity = true;
-          _enableAdaptivePerformance = true;
-          _fastLineRendering = false;
-          _frameRateIndependent = true;
-          _lineRenderer = LineRenderer.stroke;
-          _maxConnectionsPerParticle = null;
-          _maxLinesPerFrame = null;
-          _spatialCellMultiplier = 1.0;
-          break;
-        case "High FPS":
+        case "Auto":
+          _autoBoost = true;
           _adaptiveDensity = true;
           _enableAdaptivePerformance = true;
           _fastLineRendering = true;
           _frameRateIndependent = true;
           _lineRenderer = LineRenderer.vertices;
+          _isComplex = true;
+          _antiAlias = true;
+          _maxConnectionsPerParticle = 15000;
+          _maxLinesPerFrame = 15000;
+          _connectionReductionRatio = null;
+          _maxComplexLines = null;
+          _denseThresholdFactor = null;
+          _spatialCellMultiplier = 1.0;
+          _cappedDistanceFactor = 0.75;
+          break;
+        case "Boost":
+          _autoBoost = true;
+          _adaptiveDensity = true;
+          _enableAdaptivePerformance = true;
+          _fastLineRendering = true;
+          _frameRateIndependent = true;
+          _lineRenderer = LineRenderer.vertices;
+          _isComplex = true;
+          _antiAlias = true;
+          _maxConnectionsPerParticle = 15000;
+          _maxLinesPerFrame = 15000;
+          _connectionReductionRatio = null;
+          _maxComplexLines = null;
+          _denseThresholdFactor = null;
+          _spatialCellMultiplier = 1.0;
+          _cappedDistanceFactor = 0.75;
+          break;
+        case "High FPS":
+          _autoBoost = false;
+          _adaptiveDensity = true;
+          _enableAdaptivePerformance = true;
+          _fastLineRendering = true;
+          _frameRateIndependent = true;
+          _lineRenderer = LineRenderer.vertices;
+          _isComplex = true;
+          _antiAlias = true;
           _maxConnectionsPerParticle = 4;
           _maxLinesPerFrame = 15000;
+          _connectionReductionRatio = null;
+          _maxComplexLines = null;
+          _denseThresholdFactor = null;
           _spatialCellMultiplier = 1.0;
+          _cappedDistanceFactor = 0.75;
+          break;
+        case "Adaptive":
+          _autoBoost = false;
+          _adaptiveDensity = true;
+          _enableAdaptivePerformance = true;
+          _fastLineRendering = false;
+          _frameRateIndependent = true;
+          _lineRenderer = LineRenderer.stroke;
+          _isComplex = false;
+          _antiAlias = true;
+          _maxConnectionsPerParticle = null;
+          _maxLinesPerFrame = null;
+          _connectionReductionRatio = null;
+          _maxComplexLines = null;
+          _denseThresholdFactor = null;
+          _spatialCellMultiplier = 1.0;
+          _cappedDistanceFactor = 0.75;
+          break;
+        case "Balanced":
+          _autoBoost = false;
+          _adaptiveDensity = true;
+          _enableAdaptivePerformance = true;
+          _fastLineRendering = true;
+          _frameRateIndependent = true;
+          _lineRenderer = LineRenderer.stroke;
+          _isComplex = false;
+          _antiAlias = true;
+          _maxConnectionsPerParticle = 6;
+          _maxLinesPerFrame = 8000;
+          _connectionReductionRatio = null;
+          _maxComplexLines = null;
+          _denseThresholdFactor = null;
+          _spatialCellMultiplier = 1.0;
+          _cappedDistanceFactor = 0.75;
+          break;
+        case "Battery Saver":
+          _autoBoost = false;
+          _adaptiveDensity = true;
+          _enableAdaptivePerformance = true;
+          _fastLineRendering = true;
+          _frameRateIndependent = true;
+          _lineRenderer = LineRenderer.vertices;
+          _isComplex = true;
+          _antiAlias = true;
+          _maxConnectionsPerParticle = 3;
+          _maxLinesPerFrame = 3000;
+          _connectionReductionRatio = 0.5;
+          _maxComplexLines = 2;
+          _denseThresholdFactor = 0.25;
+          _spatialCellMultiplier = 1.0;
+          _cappedDistanceFactor = 0.75;
+          break;
+        case "Complex":
+          _autoBoost = false;
+          _adaptiveDensity = false;
+          _enableAdaptivePerformance = false;
+          _fastLineRendering = false;
+          _frameRateIndependent = false;
+          _lineRenderer = LineRenderer.stroke;
+          _isComplex = true;
+          _antiAlias = true;
+          _maxConnectionsPerParticle = null;
+          _maxLinesPerFrame = null;
+          _connectionReductionRatio = 0.5;
+          _maxComplexLines = 3;
+          _denseThresholdFactor = 0.25;
+          _spatialCellMultiplier = 1.0;
+          _cappedDistanceFactor = 0.75;
+          break;
+        case "Default":
+        default:
+          _activePerfPreset = "Default";
+          _autoBoost = false;
+          _adaptiveDensity = false;
+          _enableAdaptivePerformance = false;
+          _fastLineRendering = false;
+          _frameRateIndependent = false;
+          _lineRenderer = LineRenderer.stroke;
+          _isComplex = false;
+          _antiAlias = true;
+          _maxConnectionsPerParticle = null;
+          _maxLinesPerFrame = null;
+          _connectionReductionRatio = null;
+          _maxComplexLines = null;
+          _denseThresholdFactor = null;
+          _spatialCellMultiplier = 1.0;
+          _cappedDistanceFactor = 0.75;
           break;
       }
     });
   }
 
+  bool get _isAutoPreset =>
+      _autoBoost &&
+      _adaptiveDensity &&
+      _enableAdaptivePerformance &&
+      _fastLineRendering &&
+      _frameRateIndependent &&
+      _lineRenderer == LineRenderer.vertices &&
+      _isComplex &&
+      _maxConnectionsPerParticle == 15000 &&
+      _maxLinesPerFrame == 15000;
+
+  bool get _isBoostPreset => _isAutoPreset;
+
+  bool get _isHighFpsPreset =>
+      !_autoBoost &&
+      _adaptiveDensity &&
+      _enableAdaptivePerformance &&
+      _fastLineRendering &&
+      _frameRateIndependent &&
+      _lineRenderer == LineRenderer.vertices &&
+      _isComplex &&
+      _maxConnectionsPerParticle == 4 &&
+      _maxLinesPerFrame == 15000;
+
+  bool get _isAdaptivePreset =>
+      !_autoBoost &&
+      _adaptiveDensity &&
+      _enableAdaptivePerformance &&
+      !_fastLineRendering &&
+      _frameRateIndependent &&
+      _lineRenderer == LineRenderer.stroke &&
+      !_isComplex &&
+      _maxConnectionsPerParticle == null &&
+      _maxLinesPerFrame == null;
+
+  bool get _isBalancedPreset =>
+      !_autoBoost &&
+      _adaptiveDensity &&
+      _enableAdaptivePerformance &&
+      _fastLineRendering &&
+      _frameRateIndependent &&
+      _lineRenderer == LineRenderer.stroke &&
+      !_isComplex &&
+      _maxConnectionsPerParticle == 6 &&
+      _maxLinesPerFrame == 8000;
+
+  bool get _isBatterySaverPreset =>
+      !_autoBoost &&
+      _adaptiveDensity &&
+      _enableAdaptivePerformance &&
+      _fastLineRendering &&
+      _frameRateIndependent &&
+      _lineRenderer == LineRenderer.vertices &&
+      _isComplex &&
+      _maxConnectionsPerParticle == 3 &&
+      _maxLinesPerFrame == 3000 &&
+      _connectionReductionRatio == 0.5 &&
+      _maxComplexLines == 2 &&
+      _denseThresholdFactor == 0.25;
+
+  bool get _isComplexPreset =>
+      !_autoBoost &&
+      !_adaptiveDensity &&
+      !_enableAdaptivePerformance &&
+      !_fastLineRendering &&
+      !_frameRateIndependent &&
+      _lineRenderer == LineRenderer.stroke &&
+      _isComplex &&
+      _maxConnectionsPerParticle == null &&
+      _maxLinesPerFrame == null &&
+      _connectionReductionRatio == 0.5 &&
+      _maxComplexLines == 3 &&
+      _denseThresholdFactor == 0.25;
+
+  bool get _isDefaultPreset =>
+      !_autoBoost &&
+      !_adaptiveDensity &&
+      !_enableAdaptivePerformance &&
+      !_fastLineRendering &&
+      !_frameRateIndependent &&
+      _lineRenderer == LineRenderer.stroke &&
+      !_isComplex &&
+      _maxConnectionsPerParticle == null &&
+      _maxLinesPerFrame == null &&
+      _connectionReductionRatio == null &&
+      _maxComplexLines == null &&
+      _denseThresholdFactor == null;
+
+  String _getPresetDescription() {
+    switch (_activePerfPreset) {
+      case "Auto":
+        return "Auto-Boost ⚡: Monitors frame timings dynamically and scales connections up to 15,000 per particle based on device capabilities.";
+      case "Boost":
+        return "Boost ⚡: Unlocks maximum connections and line density while keeping frame rates locked to display refresh rate.";
+      case "High FPS":
+        return "High FPS 🚀: Hardware-accelerated batched vertices with max 4 connections/particle and 15,000 lines budget.";
+      case "Adaptive":
+        return "Adaptive 🎯: Dynamically scales connection distance and density based on engine build and raster frame costs.";
+      case "Balanced":
+        return "Balanced ⚖️: Smooth stroke rendering with 6 connections/particle, 8,000 lines budget, and adaptive density.";
+      case "Battery Saver":
+        return "Battery Saver 🔋: Heavy cluster throttling (50%) and 3,000 lines budget for low-end devices or battery saving.";
+      case "Complex":
+        return "Complex 🧬: 50% connection reduction in dense clusters with max 3 lines in dense zones.";
+      case "Default":
+        return "Default: Baseline unoptimized configuration with stroke rendering and fixed connection distance.";
+      default:
+        return "Custom: Fine-tuned configuration with custom performance parameters and budget limits.";
+    }
+  }
+
+  Widget _buildLivePerformanceCard() {
+    return _LivePerformanceCard(
+      networkKey: _networkKey,
+      activePreset: _activePerfPreset,
+      autoBoost: _autoBoost,
+      baseLineDistance: _lineDistance,
+      lineRenderer: _lineRenderer,
+      accentColor: _controllerColor,
+      liveFpsNotifier: _liveFpsNotifier,
+    );
+  }
+
   /// Builds the dedicated Performance configuration section
   Widget _buildPerformanceSection() {
-    final isHighFpsPreset = _adaptiveDensity &&
-        _enableAdaptivePerformance &&
-        _fastLineRendering &&
-        _frameRateIndependent &&
-        _lineRenderer == LineRenderer.vertices &&
-        _maxConnectionsPerParticle == 4 &&
-        _maxLinesPerFrame == 15000;
-
-    final isAdaptivePreset = _adaptiveDensity &&
-        _enableAdaptivePerformance &&
-        !_fastLineRendering &&
-        _frameRateIndependent &&
-        _lineRenderer == LineRenderer.stroke &&
-        _maxConnectionsPerParticle == null &&
-        _maxLinesPerFrame == null;
-
-    final isDefaultPreset = !_adaptiveDensity &&
-        !_enableAdaptivePerformance &&
-        !_fastLineRendering &&
-        !_frameRateIndependent &&
-        _lineRenderer == LineRenderer.stroke &&
-        _maxConnectionsPerParticle == null &&
-        _maxLinesPerFrame == null;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Presets row
+        // Presets Grid (2 rows x 4 presets)
         Row(
           children: [
             Expanded(
               child: _buildPresetButton(
-                "Default",
-                isDefaultPreset,
-                () => _applyPerformancePreset("Default"),
+                "Auto",
+                _activePerfPreset == "Auto" && _isAutoPreset,
+                () => _applyPerformancePreset("Auto"),
               ),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 5),
             Expanded(
               child: _buildPresetButton(
-                "Adaptive",
-                isAdaptivePreset,
-                () => _applyPerformancePreset("Adaptive"),
+                "Boost",
+                _activePerfPreset == "Boost" && _isBoostPreset,
+                () => _applyPerformancePreset("Boost"),
               ),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 5),
             Expanded(
               child: _buildPresetButton(
                 "High FPS",
-                isHighFpsPreset,
+                _activePerfPreset == "High FPS" && _isHighFpsPreset,
                 () => _applyPerformancePreset("High FPS"),
+              ),
+            ),
+            const SizedBox(width: 5),
+            Expanded(
+              child: _buildPresetButton(
+                "Adaptive",
+                _activePerfPreset == "Adaptive" && _isAdaptivePreset,
+                () => _applyPerformancePreset("Adaptive"),
               ),
             ),
           ],
         ),
+        const SizedBox(height: 5),
+        Row(
+          children: [
+            Expanded(
+              child: _buildPresetButton(
+                "Balanced",
+                _activePerfPreset == "Balanced" && _isBalancedPreset,
+                () => _applyPerformancePreset("Balanced"),
+              ),
+            ),
+            const SizedBox(width: 5),
+            Expanded(
+              child: _buildPresetButton(
+                "Battery Saver",
+                _activePerfPreset == "Battery Saver" && _isBatterySaverPreset,
+                () => _applyPerformancePreset("Battery Saver"),
+              ),
+            ),
+            const SizedBox(width: 5),
+            Expanded(
+              child: _buildPresetButton(
+                "Complex",
+                _activePerfPreset == "Complex" && _isComplexPreset,
+                () => _applyPerformancePreset("Complex"),
+              ),
+            ),
+            const SizedBox(width: 5),
+            Expanded(
+              child: _buildPresetButton(
+                "Default",
+                _activePerfPreset == "Default" && _isDefaultPreset,
+                () => _applyPerformancePreset("Default"),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+
+        // Active Preset Description Banner
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0xFF161920),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.info_outline_rounded,
+                size: 13,
+                color: _controllerColor.withValues(alpha: 0.8),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  _getPresetDescription(),
+                  style: TextStyle(
+                    fontSize: 9.8,
+                    height: 1.35,
+                    color: Colors.white.withValues(alpha: 0.75),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
         const SizedBox(height: 10),
+
+        // Live Telemetry Card
+        _buildLivePerformanceCard(),
+        const SizedBox(height: 10),
+
+        // Spatial Engine Status Banner
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -2507,7 +2996,10 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           _spatialCellMultiplier,
           0.5,
           2.5,
-          (v) => setState(() => _spatialCellMultiplier = v),
+          (v) => setState(() {
+            _spatialCellMultiplier = v;
+            _activePerfPreset = "Custom";
+          }),
           fractionDigits: 2,
         ),
         const SizedBox(height: 12),
@@ -2528,14 +3020,19 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
             _buildPillToggle(
               label: "Stroke",
               isSelected: _lineRenderer == LineRenderer.stroke,
-              onTap: () => setState(() => _lineRenderer = LineRenderer.stroke),
+              onTap: () => setState(() {
+                _lineRenderer = LineRenderer.stroke;
+                _activePerfPreset = "Custom";
+              }),
             ),
             const SizedBox(width: 6),
             _buildPillToggle(
               label: "Vertices",
               isSelected: _lineRenderer == LineRenderer.vertices,
-              onTap: () =>
-                  setState(() => _lineRenderer = LineRenderer.vertices),
+              onTap: () => setState(() {
+                _lineRenderer = LineRenderer.vertices;
+                _activePerfPreset = "Custom";
+              }),
             ),
           ],
         ),
@@ -2552,32 +3049,70 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                 label: "Adaptive Density",
                 icon: Icons.grain_rounded,
                 value: _adaptiveDensity,
-                onChanged: (v) => setState(() => _adaptiveDensity = v),
+                onChanged: (v) => setState(() {
+                  _adaptiveDensity = v;
+                  _activePerfPreset = "Custom";
+                }),
               ),
               _buildNeuToggleChip(
                 label: "Fast Line Draw",
                 icon: Icons.flash_on_rounded,
                 value: _fastLineRendering,
-                onChanged: (v) => setState(() => _fastLineRendering = v),
+                onChanged: (v) => setState(() {
+                  _fastLineRendering = v;
+                  _activePerfPreset = "Custom";
+                }),
+              ),
+              _buildNeuToggleChip(
+                label: "Auto-Boost ⚡",
+                icon: Icons.bolt_rounded,
+                value: _autoBoost,
+                onChanged: (v) => setState(() {
+                  _autoBoost = v;
+                  _activePerfPreset = "Custom";
+                }),
               ),
               _buildNeuToggleChip(
                 label: "Auto Quality",
                 icon: Icons.auto_graph_rounded,
                 value: _enableAdaptivePerformance,
-                onChanged: (v) =>
-                    setState(() => _enableAdaptivePerformance = v),
+                onChanged: (v) => setState(() {
+                  _enableAdaptivePerformance = v;
+                  _activePerfPreset = "Custom";
+                }),
               ),
               _buildNeuToggleChip(
                 label: "Delta-Time FPS",
                 icon: Icons.av_timer_rounded,
                 value: _frameRateIndependent,
-                onChanged: (v) => setState(() => _frameRateIndependent = v),
+                onChanged: (v) => setState(() {
+                  _frameRateIndependent = v;
+                  _activePerfPreset = "Custom";
+                }),
               ),
               _buildNeuToggleChip(
                 label: "Anti-Alias",
                 icon: Icons.blur_on_rounded,
                 value: _antiAlias,
-                onChanged: (v) => setState(() => _antiAlias = v),
+                onChanged: (v) => setState(() {
+                  _antiAlias = v;
+                  _activePerfPreset = "Custom";
+                }),
+              ),
+              _buildNeuToggleChip(
+                label: "Complex Mode",
+                icon: Icons.hub_outlined,
+                value: _isComplex,
+                onChanged: (v) => setState(() {
+                  _isComplex = v;
+                  _activePerfPreset = "Custom";
+                }),
+              ),
+              _buildNeuToggleChip(
+                label: "Telemetry HUD",
+                icon: Icons.monitor_heart_outlined,
+                value: _showPerformanceHud,
+                onChanged: (v) => setState(() => _showPerformanceHud = v),
               ),
             ],
           ),
@@ -2589,14 +3124,17 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           label: "Max Conn / Particle",
           value: (_maxConnectionsPerParticle ?? 0).toDouble(),
           min: 0,
-          max: 20,
+          max: 30,
           displayValue: _maxConnectionsPerParticle == null
-              ? "Off"
-              : "$_maxConnectionsPerParticle",
+              ? "Off / Dynamic"
+              : (_maxConnectionsPerParticle! >= 1000
+                  ? "${(_maxConnectionsPerParticle! / 1000).toStringAsFixed(0)}k (Boost Cap)"
+                  : "$_maxConnectionsPerParticle"),
           onChanged: (v) {
             setState(() {
               final val = v.round();
               _maxConnectionsPerParticle = val == 0 ? null : val;
+              _activePerfPreset = "Custom";
             });
           },
         ),
@@ -2606,15 +3144,111 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           min: 0,
           max: 30000,
           displayValue: _maxLinesPerFrame == null
-              ? "Off"
+              ? "Off / Unlimited"
               : "${(_maxLinesPerFrame! / 1000).toStringAsFixed(1)}k",
           onChanged: (v) {
             setState(() {
               final val = (v / 500).round() * 500;
               _maxLinesPerFrame = val <= 0 ? null : val;
+              _activePerfPreset = "Custom";
             });
           },
         ),
+        _buildBudgetSlider(
+          label: "Capped Distance Factor",
+          value: _cappedDistanceFactor,
+          min: 0.20,
+          max: 1.00,
+          displayValue:
+              "${(_cappedDistanceFactor * 100).toStringAsFixed(0)}%",
+          onChanged: (v) {
+            setState(() {
+              _cappedDistanceFactor = (v * 20).round() / 20.0;
+              _activePerfPreset = "Custom";
+            });
+          },
+        ),
+
+        // Complex Throttling Tuning Sliders (if complex mode active)
+        if (_isComplex) ...[
+          const SizedBox(height: 10),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.purple.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: Colors.purple.withValues(alpha: 0.35),
+              ),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.tune_rounded, size: 14, color: Colors.purpleAccent),
+                SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    "Complex Density Throttling Parameters",
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.purpleAccent,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          _buildBudgetSlider(
+            label: "Reduction Ratio",
+            value: (_connectionReductionRatio ?? 0.0),
+            min: 0.0,
+            max: 0.9,
+            displayValue: _connectionReductionRatio == null
+                ? "Auto (0%)"
+                : "${(_connectionReductionRatio! * 100).toStringAsFixed(0)}%",
+            onChanged: (v) {
+              setState(() {
+                final val = (v * 10).round() / 10.0;
+                _connectionReductionRatio = val <= 0.0 ? null : val;
+                _activePerfPreset = "Custom";
+              });
+            },
+          ),
+          _buildBudgetSlider(
+            label: "Max Complex Lines",
+            value: (_maxComplexLines ?? 0).toDouble(),
+            min: 0,
+            max: 10,
+            displayValue: _maxComplexLines == null
+                ? "Auto (3)"
+                : "$_maxComplexLines",
+            onChanged: (v) {
+              setState(() {
+                final val = v.round();
+                _maxComplexLines = val <= 0 ? null : val;
+                _activePerfPreset = "Custom";
+              });
+            },
+          ),
+          _buildBudgetSlider(
+            label: "Dense Threshold Factor",
+            value: (_denseThresholdFactor ?? 0.0),
+            min: 0.0,
+            max: 1.0,
+            displayValue: _denseThresholdFactor == null
+                ? "Auto (0.25)"
+                : _denseThresholdFactor!.toStringAsFixed(2),
+            onChanged: (v) {
+              setState(() {
+                final val = (v * 20).round() / 20.0;
+                _denseThresholdFactor = val <= 0.0 ? null : val;
+                _activePerfPreset = "Custom";
+              });
+            },
+          ),
+        ],
       ],
     );
   }
@@ -2770,14 +3404,8 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
             border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
           ),
           child: SingleChildScrollView(
-            child: SelectableText(
-              code,
-              style: const TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 10.5,
-                color: Color(0xFF38BDF8),
-                height: 1.35,
-              ),
+            child: SelectableText.rich(
+              _highlightDartCode(code, fontSize: 10.5),
             ),
           ),
         ),
@@ -2786,8 +3414,17 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   }
 
   /// Builds a Neumorphic preset selection button
-  Widget _buildPresetButton(String label, bool isSelected, VoidCallback onTap) {
+  Widget _buildPresetButton(
+    String label,
+    bool isSelected,
+    VoidCallback onTap, {
+    String? keyPrefix,
+    String? keyName,
+  }) {
+    final prefix = keyPrefix ?? 'perf_preset';
+    final keySuffix = keyName ?? label;
     return GestureDetector(
+      key: ValueKey('${prefix}_$keySuffix'),
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -3024,6 +3661,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                 "Default",
                 isDefault,
                 () => _applyTouchPreset("Default"),
+                keyPrefix: 'touch_preset',
               ),
             ),
             const SizedBox(width: 6),
@@ -3032,6 +3670,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                 "Magnetic",
                 isMagnetic,
                 () => _applyTouchPreset("Magnetic"),
+                keyPrefix: 'touch_preset',
               ),
             ),
             const SizedBox(width: 6),
@@ -3040,6 +3679,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                 "Gentle",
                 isGentle,
                 () => _applyTouchPreset("Gentle"),
+                keyPrefix: 'touch_preset',
               ),
             ),
             const SizedBox(width: 6),
@@ -3048,6 +3688,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                 "Vortex",
                 isVortex,
                 () => _applyTouchPreset("Vortex"),
+                keyPrefix: 'touch_preset',
               ),
             ),
           ],
@@ -3708,7 +4349,36 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   }
 }
 
-/// A widget that displays FPS (Frames Per Second) overlay with optional chart
+/// Holds live real-time performance telemetry for display in HUD overlays.
+class LivePerformanceMetrics {
+  final int lineCount;
+  final double lineDistance;
+  final double scaleFactor;
+  final double frameTimeMs;
+  final int? effectiveMaxConnections;
+  final int? effectiveMaxLines;
+  final String presetName;
+  final bool autoBoost;
+  final bool adaptive;
+  final LineRenderer lineRenderer;
+  final bool fastLineRendering;
+
+  const LivePerformanceMetrics({
+    this.lineCount = 0,
+    this.lineDistance = 100.0,
+    this.scaleFactor = 1.0,
+    this.frameTimeMs = 16.67,
+    this.effectiveMaxConnections,
+    this.effectiveMaxLines,
+    this.presetName = "Default",
+    this.autoBoost = false,
+    this.adaptive = false,
+    this.lineRenderer = LineRenderer.stroke,
+    this.fastLineRendering = false,
+  });
+}
+
+/// A widget that displays FPS (Frames Per Second) overlay with optional chart and real-time telemetry
 class FPS extends StatefulWidget {
   const FPS({
     super.key,
@@ -3716,12 +4386,18 @@ class FPS extends StatefulWidget {
     this.alignment = Alignment.topRight,
     this.visible = true,
     this.showChart = true,
+    this.showMetrics = true,
+    this.metricsGetter,
+    this.fpsNotifier,
   });
 
   final Widget child;
   final Alignment alignment;
   final bool visible;
   final bool showChart;
+  final bool showMetrics;
+  final ValueGetter<LivePerformanceMetrics>? metricsGetter;
+  final ValueNotifier<double>? fpsNotifier;
 
   @override
   State<FPS> createState() => _FPSState();
@@ -3762,6 +4438,7 @@ class _FPSState extends State<FPS> with SingleTickerProviderStateMixin {
             (_timings.length - 1) * _microsecondsPerSecond / duration;
 
         _fpsNotifier.value = currentFps;
+        widget.fpsNotifier?.value = currentFps;
 
         if (widget.showChart) {
           _fpsHistory.addLast(currentFps);
@@ -3810,13 +4487,14 @@ class _FPSState extends State<FPS> with SingleTickerProviderStateMixin {
 
   Widget _buildOverlay(double fps) {
     final Color color = _getFpsColor(fps);
+    final metrics = widget.metricsGetter?.call();
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           decoration: BoxDecoration(
             color: Colors.black87,
             borderRadius: BorderRadius.circular(8),
@@ -3838,14 +4516,101 @@ class _FPSState extends State<FPS> with SingleTickerProviderStateMixin {
                 "${fps.toStringAsFixed(1)} FPS",
                 style: TextStyle(
                   color: color,
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.bold,
                   fontFamily: 'monospace',
                 ),
               ),
+              if (metrics != null) ...[
+                const SizedBox(width: 8),
+                Text(
+                  "•",
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.3),
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(Icons.hub_rounded, size: 12, color: Colors.cyanAccent),
+                const SizedBox(width: 4),
+                Text(
+                  "${metrics.lineCount}",
+                  style: const TextStyle(
+                    color: Colors.cyanAccent,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ],
             ],
           ),
         ),
+        if (widget.showMetrics && metrics != null) ...[
+          const SizedBox(height: 3),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.black87,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: (metrics.autoBoost
+                        ? Colors.amberAccent
+                        : Colors.tealAccent)
+                    .withValues(alpha: 0.35),
+                width: 1,
+              ),
+            ),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (metrics.autoBoost) ...[
+                    const Icon(Icons.bolt_rounded,
+                        size: 12, color: Colors.amberAccent),
+                    const SizedBox(width: 3),
+                    Text(
+                      "Auto-Boost (${metrics.scaleFactor.toStringAsFixed(2)}x)",
+                      style: const TextStyle(
+                        color: Colors.amberAccent,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ] else ...[
+                    Text(
+                      metrics.presetName,
+                      style: const TextStyle(
+                        color: Colors.tealAccent,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(width: 6),
+                  Text(
+                    "|",
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      fontSize: 10,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    "${metrics.lineRenderer == LineRenderer.vertices ? 'Vertices' : 'Stroke'} · ${metrics.lineDistance.toStringAsFixed(0)}px${metrics.effectiveMaxConnections != null ? ' · ${metrics.effectiveMaxConnections! >= 1000 ? "${(metrics.effectiveMaxConnections! / 1000).toStringAsFixed(0)}k" : metrics.effectiveMaxConnections} conn' : ''}",
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.7),
+                      fontSize: 9.5,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
         if (widget.showChart && _fpsHistory.isNotEmpty)
           Container(
             margin: const EdgeInsets.only(top: 2),
@@ -3931,4 +4696,281 @@ class _FPSChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _FPSChartPainter oldDelegate) => true;
+}
+
+/// A reactive card that displays live performance telemetry updated continuously.
+class _LivePerformanceCard extends StatefulWidget {
+  final GlobalKey<ParticleNetworkState> networkKey;
+  final String activePreset;
+  final bool autoBoost;
+  final double baseLineDistance;
+  final LineRenderer lineRenderer;
+  final Color accentColor;
+  final ValueListenable<double>? liveFpsNotifier;
+
+  const _LivePerformanceCard({
+    required this.networkKey,
+    required this.activePreset,
+    required this.autoBoost,
+    required this.baseLineDistance,
+    required this.lineRenderer,
+    required this.accentColor,
+    this.liveFpsNotifier,
+  });
+
+  @override
+  State<_LivePerformanceCard> createState() => _LivePerformanceCardState();
+}
+
+class _LivePerformanceCardState extends State<_LivePerformanceCard> {
+  Timer? _telemetryTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    // 10Hz live update: smooth, real-time telemetry with negligible overhead
+    _telemetryTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _telemetryTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = widget.networkKey.currentState;
+    final lastLines = state?.lastFrameLineCount ?? 0;
+    final lastDist = state?.lastFrameLineDistance ?? widget.baseLineDistance;
+    final scale = state?.adaptiveController.scaleFactor ?? 1.0;
+    final liveFps = widget.liveFpsNotifier?.value ?? 60.0;
+    final adaptiveMs = state?.adaptiveController.emaFrameTimeMs;
+    final frameMs = adaptiveMs ?? (liveFps > 0 ? 1000.0 / liveFps : 16.67);
+    final maxConn = state?.effectiveMaxConnections;
+    final maxLines = state?.effectiveMaxLines;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF14171C),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: widget.autoBoost
+              ? Colors.amberAccent.withValues(alpha: 0.4)
+              : widget.accentColor.withValues(alpha: 0.3),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: (widget.autoBoost ? Colors.amberAccent : widget.accentColor)
+                .withValues(alpha: 0.08),
+            blurRadius: 8,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                widget.autoBoost ? Icons.bolt_rounded : Icons.analytics_outlined,
+                size: 15,
+                color: widget.autoBoost ? Colors.amberAccent : widget.accentColor,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  "Live Telemetry",
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: widget.autoBoost
+                        ? Colors.amberAccent
+                        : widget.accentColor,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: (widget.autoBoost
+                          ? Colors.amberAccent
+                          : widget.accentColor)
+                      .withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  widget.activePreset,
+                  style: TextStyle(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.bold,
+                    color: widget.autoBoost
+                        ? Colors.amberAccent
+                        : widget.accentColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTelemetryMetric(
+                  label: "Live FPS",
+                  value: "${liveFps.toStringAsFixed(1)} FPS",
+                  icon: Icons.speed_rounded,
+                  color: liveFps >= 55
+                      ? Colors.greenAccent
+                      : (liveFps >= 30 ? Colors.orangeAccent : Colors.redAccent),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _buildTelemetryMetric(
+                  label: "Lines Drawn",
+                  value: "$lastLines",
+                  icon: Icons.hub_rounded,
+                  color: const Color(0xFF38BDF8),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _buildTelemetryMetric(
+                  label: "Scale Factor",
+                  value: "${scale.toStringAsFixed(2)}x",
+                  icon: Icons.auto_graph_rounded,
+                  color: scale > 1.0 ? Colors.greenAccent : Colors.tealAccent,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTelemetryMetric(
+                  label: "Frame Time",
+                  value: "${frameMs.toStringAsFixed(1)} ms",
+                  icon: Icons.timer_outlined,
+                  color: frameMs <= 17.0
+                      ? Colors.greenAccent
+                      : Colors.orangeAccent,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _buildTelemetryMetric(
+                  label: "Eff. Distance",
+                  value: "${lastDist.toStringAsFixed(1)} px",
+                  icon: Icons.straighten_rounded,
+                  color: Colors.white70,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _buildTelemetryMetric(
+                  label: "Conn / Part.",
+                  value: maxConn == null ? "Unlimited" : "$maxConn",
+                  icon: Icons.scatter_plot_rounded,
+                  color: Colors.white70,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0D0F12),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.layers_rounded,
+                  size: 11,
+                  color: Colors.white.withValues(alpha: 0.5),
+                ),
+                const SizedBox(width: 5),
+                Expanded(
+                  child: Text(
+                    "Renderer: ${widget.lineRenderer == LineRenderer.vertices ? 'Vertices (Batched)' : 'Stroke'} · Budget: ${maxLines == null ? 'Unlimited' : '${(maxLines / 1000).toStringAsFixed(1)}k lines'}",
+                    style: TextStyle(
+                      fontSize: 9.2,
+                      fontFamily: 'monospace',
+                      color: Colors.white.withValues(alpha: 0.65),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTelemetryMetric({
+    required String label,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0D0F12),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 10, color: color),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 8.5,
+                    color: Colors.white.withValues(alpha: 0.5),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'monospace',
+              color: color,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
 }
