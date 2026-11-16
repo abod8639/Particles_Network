@@ -369,7 +369,11 @@ class ParticleNetworkState extends State<ParticleNetwork>
             ? widget.effectiveIsComplex
             : widget.performance.isComplex,
         maxConnectionsPerParticle: widget.performance.autoBoost
-            ? math.min(6, widget.performance.maxConnectionsPerParticle ?? 6)
+            ? (widget.performance.maxConnectionsPerParticle != null &&
+                    widget.performance.maxConnectionsPerParticle! <= 100
+                ? widget.performance.maxConnectionsPerParticle
+                : math.min(
+                    6, widget.performance.maxConnectionsPerParticle ?? 6))
             : widget.performance.maxConnectionsPerParticle,
       ),
       simulateTouchInPaint: false,
@@ -412,7 +416,9 @@ class ParticleNetworkState extends State<ParticleNetwork>
     final int? maxConn = widget.performance.maxConnectionsPerParticle;
     if (widget.performance.autoBoost) {
       final int cap = maxConn ?? 15000;
-      final int base = math.min(6, cap);
+      final int base = (maxConn != null && maxConn <= 100)
+          ? maxConn
+          : math.min(6, cap);
       final int adjustedConn = _adaptiveController.getAutoMaxConnections(
         base: base,
         maxCap: cap,
@@ -506,7 +512,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
     );
 
     _initPainter();
-    _setAdaptiveTimings(widget.performance.enableAdaptivePerformance);
+    _setAdaptiveTimings(widget.performance.autoBoost);
 
     ticker = createTicker((elapsed) {
       final int now = elapsed.inMicroseconds;
@@ -612,7 +618,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
     );
 
     if (widget.lineDistance != oldWidget.lineDistance) {
-      final double distance = effectivePerf.enableAdaptivePerformance
+      final double distance = effectivePerf.autoBoost
           ? _adaptiveController.getAdjustedLineDistance(widget.lineDistance)
           : widget.lineDistance;
       _painter.updateLineDistance(distance);
@@ -655,10 +661,10 @@ class ParticleNetworkState extends State<ParticleNetwork>
         );
       }
       _painter.updatePerformance(effectivePerf);
-      if (effectivePerf.enableAdaptivePerformance !=
-          oldEffectivePerf.enableAdaptivePerformance) {
-        _setAdaptiveTimings(effectivePerf.enableAdaptivePerformance);
-      } else if (effectivePerf.enableAdaptivePerformance) {
+      if (effectivePerf.autoBoost !=
+          oldEffectivePerf.autoBoost) {
+        _setAdaptiveTimings(effectivePerf.autoBoost);
+      } else if (effectivePerf.autoBoost) {
         final double targetDist =
             _adaptiveController.getAdjustedLineDistance(widget.lineDistance);
         if (_painter.lineDistance != targetDist) {
@@ -667,7 +673,9 @@ class ParticleNetworkState extends State<ParticleNetwork>
         if (effectivePerf.autoBoost) {
           final int? maxConn = effectivePerf.maxConnectionsPerParticle;
           final int cap = maxConn ?? 15000;
-          final int base = math.min(6, cap);
+          final int base = (maxConn != null && maxConn <= 100)
+              ? maxConn
+              : math.min(6, cap);
           final int adjustedConn = _adaptiveController.getAutoMaxConnections(
             base: base,
             maxCap: cap,
