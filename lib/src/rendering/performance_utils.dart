@@ -4,6 +4,7 @@
 // spatial grid updates efficiently based on frame performance.
 library;
 
+import 'dart:math' as math;
 import 'package:particles_network/src/legacy/legacy_deprecation_logger.dart';
 
 // Tracks the acceleration state of particles
@@ -152,6 +153,10 @@ class AdaptivePerformanceController {
   /// Weight factor (alpha) for exponential moving average updates (default: 0.1).
   final double emaWeight;
 
+  /// Whether dynamic performance boosting is active to maximize connections
+  /// and line density when excess frame headroom is available.
+  final bool autoBoost;
+
   double _currentScale = 1.0;
   int _consecutiveDrops = 0;
   int _consecutiveSmooth = 0;
@@ -171,9 +176,11 @@ class AdaptivePerformanceController {
     PerformanceMonitor? monitor,
     this.targetFrameTimeMs = 16.67,
     this.minScale = 0.4,
-    this.maxScale = 1.0,
+    double? maxScale,
     this.emaWeight = 0.1,
-  }) : monitor = monitor ?? PerformanceMonitor();
+    this.autoBoost = false,
+  })  : maxScale = maxScale ?? (autoBoost ? 2.5 : 1.0),
+        monitor = monitor ?? PerformanceMonitor();
 
   /// Current quality scale factor between [minScale] and [maxScale].
   double get scaleFactor => _currentScale;
@@ -197,7 +204,9 @@ class AdaptivePerformanceController {
     } else if (ms < smoothThresholdMs) {
       _consecutiveSmooth++;
       _consecutiveDrops = 0;
-      if (_consecutiveSmooth >= 15) {
+      final int requiredSmooth =
+          (autoBoost && ms < smoothThresholdMs * 0.6) ? 8 : 15;
+      if (_consecutiveSmooth >= requiredSmooth) {
         // Step up quality scale gradually when performance is consistently smooth
         _currentScale = (_currentScale + 0.05).clamp(minScale, maxScale);
         _consecutiveSmooth = 0;
@@ -210,15 +219,39 @@ class AdaptivePerformanceController {
   }
 
   /// Returns the line distance scaled by the current performance factor.
+  ///
+  /// Clamped between [minScale] and 1.0 so that dynamic performance boosting
+  /// increases connection limits and density without distorting the visual
+  /// reach of particles across the canvas.
   double getAdjustedLineDistance(double baseDistance) {
-    return baseDistance * _currentScale;
+    return baseDistance * _currentScale.clamp(minScale, 1.0);
   }
 
   /// Returns the maximum connection count scaled by the current performance factor.
-  int getAdjustedMaxConnections(int baseMaxConnections) {
-    return (baseMaxConnections * _currentScale)
-        .round()
-        .clamp(1, baseMaxConnections);
+  int getAdjustedMaxConnections(int baseMaxConnections, [int? maxAllowed]) {
+    final int upper = maxAllowed ??
+        (autoBoost
+            ? math.max(
+                baseMaxConnections, (baseMaxConnections * maxScale).round())
+            : baseMaxConnections);
+    return (baseMaxConnections * _currentScale).round().clamp(1, upper);
+  }
+
+  /// Dynamically computes the maximum connections per particle in auto-boost mode,
+  /// scaling up to [maxCap] to give the maximum possible number according to device speed.
+  int getAutoMaxConnections({int base = 6, int maxCap = 15000}) {
+    final int upper = math.min(maxCap, (base * maxScale).round());
+    final int target = (base * _currentScale).round();
+    return target.clamp(1, upper);
+  }
+
+  /// Returns the maximum lines per frame scaled by the current performance factor.
+  int getAdjustedMaxLines(int baseMaxLines, [int? maxAllowed]) {
+    final int upper = maxAllowed ??
+        (autoBoost
+            ? math.max(baseMaxLines, (baseMaxLines * maxScale).round())
+            : baseMaxLines);
+    return (baseMaxLines * _currentScale).round().clamp(100, upper);
   }
 
   /// Resets controller state and underlying monitor.
