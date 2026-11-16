@@ -1411,4 +1411,132 @@ void main() {
       expect(painter.maxConnectionsPerParticle, equals(9));
     },
   );
+
+  testWidgets(
+    'ParticleNetwork with NetworkPerformance.auto dynamically adapts connections and lines according to frame performance',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleNetwork(
+                lineDistance: 100.0,
+                performance: NetworkPerformance.auto(),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final customPaintFinder = find.descendant(
+        of: find.byType(ParticleNetwork),
+        matching: find.byType(CustomPaint),
+      );
+      var customPaint = tester.widget<CustomPaint>(customPaintFinder);
+      var painter = customPaint.painter as OptimizedNetworkPainter;
+
+      // Safe baseline initialized for auto preset
+      expect(painter.maxConnectionsPerParticle, equals(6));
+      expect(painter.maxLinesPerFrame, equals(15000));
+
+      // Feed fast frames (4ms raster time, smooth headroom)
+      final smoothTimings = List<FrameTiming>.generate(16, (int i) {
+        final int start = i * 20000;
+        return FrameTiming(
+          vsyncStart: start,
+          buildStart: start,
+          buildFinish: start + 2000,
+          rasterStart: start + 2000,
+          rasterFinish: start + 5000,
+          rasterFinishWallTime: start + 5000,
+        );
+      });
+      tester.binding.platformDispatcher.onReportTimings!(smoothTimings);
+      await tester.pump(const Duration(milliseconds: 16));
+
+      customPaint = tester.widget<CustomPaint>(customPaintFinder);
+      painter = customPaint.painter as OptimizedNetworkPainter;
+
+      // In autoBoost mode, smooth frames increase maxConnectionsPerParticle and maxLinesPerFrame
+      expect(painter.maxConnectionsPerParticle, greaterThanOrEqualTo(6));
+      expect(painter.maxLinesPerFrame, greaterThanOrEqualTo(15000));
+
+      // Now feed 6 dropped frames (30ms raster time, triggers two consecutive drop steps)
+      final dropTimings = List<FrameTiming>.generate(6, (int i) {
+        final int start = (i + 20) * 40000;
+        return FrameTiming(
+          vsyncStart: start,
+          buildStart: start,
+          buildFinish: start + 4000,
+          rasterStart: start + 4000,
+          rasterFinish: start + 34000,
+          rasterFinishWallTime: start + 34000,
+        );
+      });
+      tester.binding.platformDispatcher.onReportTimings!(dropTimings);
+      await tester.pump(const Duration(milliseconds: 16));
+
+      customPaint = tester.widget<CustomPaint>(customPaintFinder);
+      painter = customPaint.painter as OptimizedNetworkPainter;
+
+      // Dropped frames cause autoBoost to throttle down connections and line distance
+      expect(painter.maxConnectionsPerParticle, lessThan(7));
+      expect(painter.lineDistance, lessThan(100.0));
+    },
+  );
+
+  testWidgets(
+    'ParticleNetwork with NetworkPerformance.auto can scale connections beyond 15 on high performance',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleNetwork(
+                lineDistance: 100.0,
+                performance: NetworkPerformance.auto(),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final customPaintFinder = find.descendant(
+        of: find.byType(ParticleNetwork),
+        matching: find.byType(CustomPaint),
+      );
+      var customPaint = tester.widget<CustomPaint>(customPaintFinder);
+      var painter = customPaint.painter as OptimizedNetworkPainter;
+
+      // Safe baseline initialized for auto preset
+      expect(painter.maxConnectionsPerParticle, equals(6));
+
+      // Feed 320 fast frames (40 step-ups of 0.05, scaling scaleFactor to 3.0)
+      final smoothTimings = List<FrameTiming>.generate(320, (int i) {
+        final int start = i * 20000;
+        return FrameTiming(
+          vsyncStart: start,
+          buildStart: start,
+          buildFinish: start + 1000,
+          rasterStart: start + 1000,
+          rasterFinish: start + 3000,
+          rasterFinishWallTime: start + 3000,
+        );
+      });
+      tester.binding.platformDispatcher.onReportTimings!(smoothTimings);
+      await tester.pump(const Duration(milliseconds: 16));
+
+      customPaint = tester.widget<CustomPaint>(customPaintFinder);
+      painter = customPaint.painter as OptimizedNetworkPainter;
+
+      // Connections scaled beyond 15 limit
+      expect(painter.maxConnectionsPerParticle, greaterThan(15));
+      // Line distance was preserved at base distance (not stretched)
+      expect(painter.lineDistance, equals(100.0));
+    },
+  );
 }
