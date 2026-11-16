@@ -31,7 +31,7 @@ List<Particle> _uniformParticles(int count, Size size, [int seed = 7]) {
 OptimizedNetworkPainter _painter(
   List<Particle> particles, {
   int? maxLinesPerFrame,
-  bool fastLineRendering = false,
+  LineRenderer lineRenderer = LineRenderer.vertices,
   bool isComplex = false,
 }) {
   return OptimizedNetworkPainter(
@@ -47,7 +47,7 @@ OptimizedNetworkPainter _painter(
     isComplex: isComplex,
     fill: true,
     drawNetwork: true,
-    fastLineRendering: fastLineRendering,
+    lineRenderer: lineRenderer,
     maxLinesPerFrame: maxLinesPerFrame,
   );
 }
@@ -179,13 +179,13 @@ void main() {
       expect(painter.lastFrameLineDistance, 100);
     });
 
-    for (final bool fast in [false, true]) {
-      test('converges near the budget (fastLineRendering: $fast)', () {
+    for (final LineRenderer renderer in [LineRenderer.stroke, LineRenderer.vertices]) {
+      test('converges near the budget (lineRenderer: $renderer)', () {
         final particles = _uniformParticles(1500, size);
         final painter = _painter(
           particles,
           maxLinesPerFrame: 4000,
-          fastLineRendering: fast,
+          lineRenderer: renderer,
         );
         _paintFrames(painter, size, 20);
 
