@@ -1,7 +1,9 @@
 /// Configuration class for touch interaction behavior and physics.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:particles_network/src/legacy/legacy_deprecation_logger.dart';
 import 'package:particles_network/src/rendering/line_vertex_batch.dart';
 
 /// Configuration class for touch interaction behavior and physics.
@@ -10,7 +12,27 @@ class TouchFeatures {
   final bool enabled;
 
   /// Compatibility alias for [enabled].
-  bool get touchActivation => enabled;
+  ///
+  /// Deprecated: Renamed to [enabled]. Use [enabled] instead:
+  /// ```dart
+  /// TouchFeatures(enabled: true)
+  /// ```
+  /// This property will be removed in particles_network 2.0.0.
+  @Deprecated(
+    'touchActivation was renamed to enabled inside TouchFeatures. '
+    'Use TouchFeatures(enabled: ...) instead. '
+    'This property will be removed in particles_network 2.0.0.',
+  )
+  bool get touchActivation {
+    if (kDebugMode) {
+      LegacyDeprecationLogger.warn(
+        deprecatedApi: 'TouchFeatures.touchActivation',
+        replacement:
+            'TouchFeatures(enabled: ...) (touchActivation was renamed to enabled)',
+      );
+    }
+    return enabled;
+  }
 
   /// The recovery/settling decay rate after touch release (default: 0.42).
   /// Controls how gradually particles return to cruising speed after being dragged/touched.
@@ -32,8 +54,31 @@ class TouchFeatures {
   /// Highlight color for touch interactions (default: Colors.amber).
   final Color color;
 
-  /// Whether to use ultra-fast single draw-call line rendering for touch interactions (default: null).
-  final bool? fastLineRendering;
+  final bool? _fastLineRendering;
+
+  /// Compatibility alias for [lineRenderer].
+  ///
+  /// Deprecated: Replaced by [lineRenderer]. Use [lineRenderer] instead:
+  /// ```dart
+  /// TouchFeatures(lineRenderer: LineRenderer.vertices) // for fast vertex batching
+  /// TouchFeatures(lineRenderer: LineRenderer.stroke)   // for individual stroke lines
+  /// ```
+  /// This property will be removed in particles_network 2.0.0.
+  @Deprecated(
+    'fastLineRendering was replaced by lineRenderer. '
+    'Use TouchFeatures(lineRenderer: LineRenderer.vertices) or LineRenderer.stroke instead. '
+    'This property will be removed in particles_network 2.0.0.',
+  )
+  bool? get fastLineRendering {
+    if (kDebugMode && _fastLineRendering != null) {
+      LegacyDeprecationLogger.warn(
+        deprecatedApi: 'TouchFeatures.fastLineRendering',
+        replacement:
+            'TouchFeatures(lineRenderer: LineRenderer.vertices) or TouchFeatures(lineRenderer: LineRenderer.stroke)',
+      );
+    }
+    return _fastLineRendering;
+  }
 
   /// Optional line rasterization override for touch interaction lines ([LineRenderer.stroke] or [LineRenderer.vertices]).
   /// If null (default), inherits from [NetworkPerformance.lineRenderer].
@@ -42,72 +87,138 @@ class TouchFeatures {
   /// Creates a [TouchFeatures] configuration.
   const TouchFeatures({
     bool? enabled,
+    @Deprecated(
+      'touchActivation was renamed to enabled inside TouchFeatures. '
+      'Use TouchFeatures(enabled: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
     bool? touchActivation,
     double? speed,
     @Deprecated(
-      'Use speed instead. This parameter will be removed in particles_network 2.0.0.',
+      'decayRate was renamed to speed inside TouchFeatures. '
+      'Use TouchFeatures(speed: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
     )
     double? decayRate,
     double? force,
     @Deprecated(
-      'Use force instead. This parameter will be removed in particles_network 2.0.0.',
+      'pullForce was renamed to force inside TouchFeatures. '
+      'Use TouchFeatures(force: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
     )
     double? pullForce,
     this.maxTouchSpeed = 5.5,
     this.damping = 0.985,
     this.lineDistance,
     this.color = Colors.amber,
-    this.fastLineRendering,
-    this.lineRenderer,
+    @Deprecated(
+      'fastLineRendering was replaced by lineRenderer. '
+      'Use TouchFeatures(lineRenderer: LineRenderer.vertices) or LineRenderer.stroke instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    bool? fastLineRendering,
+    LineRenderer? lineRenderer,
   })  : enabled = touchActivation ?? enabled ?? true,
         speed = speed ?? decayRate ?? 0.42,
-        force = force ?? pullForce ?? 0.42;
+        force = force ?? pullForce ?? 0.42,
+        _fastLineRendering = fastLineRendering,
+        lineRenderer = lineRenderer ??
+            (fastLineRendering != null
+                ? (fastLineRendering
+                    ? LineRenderer.vertices
+                    : LineRenderer.stroke)
+                : null);
 
   /// Compatibility alias for [speed] (decay rate).
   ///
-  /// Deprecated: Use [speed] instead. This property will be removed in particles_network 2.0.0.
+  /// Deprecated: Renamed to [speed]. Use [speed] instead:
+  /// ```dart
+  /// TouchFeatures(speed: 0.42)
+  /// ```
+  /// This property will be removed in particles_network 2.0.0.
   @Deprecated(
-    'Use speed instead. This property will be removed in particles_network 2.0.0.',
+    'decayRate was renamed to speed inside TouchFeatures. '
+    'Use TouchFeatures(speed: ...) instead. '
+    'This property will be removed in particles_network 2.0.0.',
   )
-  double get decayRate => speed;
+  double get decayRate {
+    if (kDebugMode) {
+      LegacyDeprecationLogger.warn(
+        deprecatedApi: 'TouchFeatures.decayRate',
+        replacement:
+            'TouchFeatures(speed: ...) (decayRate was renamed to speed inside TouchFeatures)',
+      );
+    }
+    return speed;
+  }
 
   /// Compatibility alias for [force] (pull force).
   ///
-  /// Deprecated: Use [force] instead. This property will be removed in particles_network 2.0.0.
+  /// Deprecated: Renamed to [force]. Use [force] instead:
+  /// ```dart
+  /// TouchFeatures(force: 0.42)
+  /// ```
+  /// This property will be removed in particles_network 2.0.0.
   @Deprecated(
-    'Use force instead. This property will be removed in particles_network 2.0.0.',
+    'pullForce was renamed to force inside TouchFeatures. '
+    'Use TouchFeatures(force: ...) instead. '
+    'This property will be removed in particles_network 2.0.0.',
   )
-  double get pullForce => force;
+  double get pullForce {
+    if (kDebugMode) {
+      LegacyDeprecationLogger.warn(
+        deprecatedApi: 'TouchFeatures.pullForce',
+        replacement:
+            'TouchFeatures(force: ...) (pullForce was renamed to force inside TouchFeatures)',
+      );
+    }
+    return force;
+  }
 
   /// Creates a copy of this [TouchFeatures] with updated parameters.
   TouchFeatures copyWith({
     bool? enabled,
+    @Deprecated(
+      'touchActivation was renamed to enabled inside TouchFeatures. '
+      'Use TouchFeatures.copyWith(enabled: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    bool? touchActivation,
     double? speed,
+    @Deprecated(
+      'decayRate was renamed to speed inside TouchFeatures. '
+      'Use TouchFeatures.copyWith(speed: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    double? decayRate,
     double? force,
+    @Deprecated(
+      'pullForce was renamed to force inside TouchFeatures. '
+      'Use TouchFeatures.copyWith(force: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    double? pullForce,
     double? maxTouchSpeed,
     double? damping,
     double? lineDistance,
     Color? color,
+    @Deprecated(
+      'fastLineRendering was replaced by lineRenderer. '
+      'Use TouchFeatures.copyWith(lineRenderer: LineRenderer.vertices) or LineRenderer.stroke instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
     bool? fastLineRendering,
     LineRenderer? lineRenderer,
-    @Deprecated(
-      'Use speed instead. This parameter will be removed in particles_network 2.0.0.',
-    )
-    double? decayRate,
-    @Deprecated(
-      'Use force instead. This parameter will be removed in particles_network 2.0.0.',
-    )
-    double? pullForce,
   }) {
     return TouchFeatures(
-      enabled: enabled ?? this.enabled,
+      enabled: touchActivation ?? enabled ?? this.enabled,
       speed: speed ?? decayRate ?? this.speed,
       force: force ?? pullForce ?? this.force,
       maxTouchSpeed: maxTouchSpeed ?? this.maxTouchSpeed,
       damping: damping ?? this.damping,
       lineDistance: lineDistance ?? this.lineDistance,
       color: color ?? this.color,
-      fastLineRendering: fastLineRendering ?? this.fastLineRendering,
+      fastLineRendering: fastLineRendering ?? _fastLineRendering,
       lineRenderer: lineRenderer ?? this.lineRenderer,
     );
   }
@@ -124,7 +235,7 @@ class TouchFeatures {
           damping == other.damping &&
           lineDistance == other.lineDistance &&
           color == other.color &&
-          fastLineRendering == other.fastLineRendering &&
+          _fastLineRendering == other._fastLineRendering &&
           lineRenderer == other.lineRenderer;
 
   @override
@@ -136,7 +247,7 @@ class TouchFeatures {
         damping,
         lineDistance,
         color,
-        fastLineRendering,
+        _fastLineRendering,
         lineRenderer,
       );
 
@@ -145,5 +256,5 @@ class TouchFeatures {
       'TouchFeatures(enabled: $enabled, speed: $speed, force: $force, '
       'maxTouchSpeed: $maxTouchSpeed, damping: $damping, '
       'lineDistance: $lineDistance, color: $color, '
-      'fastLineRendering: $fastLineRendering, lineRenderer: $lineRenderer)';
+      'fastLineRendering: $_fastLineRendering, lineRenderer: $lineRenderer)';
 }
