@@ -41,7 +41,7 @@ class NetworkPerformance {
   /// as pixels per 1/60 s and integrated over the real elapsed time.
   final bool frameRateIndependent;
 
-  /// How connection lines are rasterized (default: [LineRenderer.stroke]).
+  /// How connection lines are rasterized (default: [LineRenderer.vertices]).
   final LineRenderer lineRenderer;
 
   /// Whether to use complex (high-density optimized) painting logic (default: false).
@@ -50,7 +50,7 @@ class NetworkPerformance {
   /// throttles dense clusters, tunes the spatial grid rebuild interval, and
   /// optimizes batched connections without degrading anti-aliasing.
   ///
-  /// Can be fine-tuned via [connectionReductionRatio], [maxComplexLines],
+  /// Can be fine-tuned via [complexReductionRatio], [maxComplexLines],
   /// and [denseThresholdFactor].
   final bool isComplex;
 
@@ -62,7 +62,7 @@ class NetworkPerformance {
   /// while `0.7` reduces them by 70% (keeping 30%).
   ///
   /// Specifying this automatically enables density throttling even if [isComplex] is false.
-  final double? connectionReductionRatio;
+  final double? complexReductionRatio;
 
   /// Maximum number of connection lines a particle can emit in dense clusters (default: null).
   ///
@@ -110,9 +110,9 @@ class NetworkPerformance {
     this.enableAdaptivePerformance = false,
     this.maxLinesPerFrame,
     this.frameRateIndependent = false,
-    this.lineRenderer = LineRenderer.stroke,
+    this.lineRenderer = LineRenderer.vertices,
     this.isComplex = false,
-    this.connectionReductionRatio,
+    this.complexReductionRatio,
     this.maxComplexLines,
     this.denseThresholdFactor,
     this.cappedDistanceFactor = 0.75,
@@ -120,10 +120,10 @@ class NetworkPerformance {
     this.spatialCellMultiplier,
     this.autoBoost = false,
   })  : assert(
-          connectionReductionRatio == null ||
-              (connectionReductionRatio >= 0.0 &&
-                  connectionReductionRatio <= 1.0),
-          'connectionReductionRatio must be between 0.0 and 1.0',
+          complexReductionRatio == null ||
+              (complexReductionRatio >= 0.0 &&
+                  complexReductionRatio <= 1.0),
+          'complexReductionRatio must be between 0.0 and 1.0',
         ),
         assert(
           maxComplexLines == null || maxComplexLines > 0,
@@ -144,7 +144,7 @@ class NetworkPerformance {
     this.frameRateIndependent = true,
     this.lineRenderer = LineRenderer.vertices,
     this.isComplex = true,
-    this.connectionReductionRatio,
+    this.complexReductionRatio,
     this.maxComplexLines,
     this.denseThresholdFactor,
     this.cappedDistanceFactor = 0.75,
@@ -155,7 +155,7 @@ class NetworkPerformance {
 
   /// Flexible complex preset for fine-grained control over dense cluster line reduction.
   const NetworkPerformance.complex({
-    this.connectionReductionRatio = 0.5,
+    this.complexReductionRatio = 0.5,
     this.maxComplexLines = 3,
     this.denseThresholdFactor = 0.25,
     this.maxConnectionsPerParticle,
@@ -164,17 +164,17 @@ class NetworkPerformance {
     this.enableAdaptivePerformance = false,
     this.maxLinesPerFrame,
     this.frameRateIndependent = false,
-    this.lineRenderer = LineRenderer.stroke,
+    this.lineRenderer = LineRenderer.vertices,
     this.isComplex = true,
     this.cappedDistanceFactor = 0.75,
     this.antiAlias = true,
     this.spatialCellMultiplier,
     this.autoBoost = false,
   })  : assert(
-          connectionReductionRatio == null ||
-              (connectionReductionRatio >= 0.0 &&
-                  connectionReductionRatio <= 1.0),
-          'connectionReductionRatio must be between 0.0 and 1.0',
+          complexReductionRatio == null ||
+              (complexReductionRatio >= 0.0 &&
+                  complexReductionRatio <= 1.0),
+          'complexReductionRatio must be between 0.0 and 1.0',
         ),
         assert(
           maxComplexLines == null || maxComplexLines > 0,
@@ -193,9 +193,9 @@ class NetworkPerformance {
     this.enableAdaptivePerformance = true,
     this.maxLinesPerFrame,
     this.frameRateIndependent = true,
-    this.lineRenderer = LineRenderer.stroke,
+    this.lineRenderer = LineRenderer.vertices,
     this.isComplex = false,
-    this.connectionReductionRatio,
+    this.complexReductionRatio,
     this.maxComplexLines,
     this.denseThresholdFactor,
     this.cappedDistanceFactor = 0.75,
@@ -216,7 +216,7 @@ class NetworkPerformance {
     this.frameRateIndependent = true,
     this.lineRenderer = LineRenderer.vertices,
     this.isComplex = true,
-    this.connectionReductionRatio,
+    this.complexReductionRatio,
     this.maxComplexLines,
     this.denseThresholdFactor,
     this.cappedDistanceFactor = 0.75,
@@ -236,7 +236,7 @@ class NetworkPerformance {
     this.frameRateIndependent = true,
     this.lineRenderer = LineRenderer.vertices,
     this.isComplex = true,
-    this.connectionReductionRatio,
+    this.complexReductionRatio,
     this.maxComplexLines,
     this.denseThresholdFactor,
     this.cappedDistanceFactor = 0.75,
@@ -253,9 +253,9 @@ class NetworkPerformance {
     this.enableAdaptivePerformance = true,
     this.maxLinesPerFrame = 8000,
     this.frameRateIndependent = true,
-    this.lineRenderer = LineRenderer.stroke,
+    this.lineRenderer = LineRenderer.vertices,
     this.isComplex = false,
-    this.connectionReductionRatio,
+    this.complexReductionRatio,
     this.maxComplexLines,
     this.denseThresholdFactor,
     this.cappedDistanceFactor = 0.75,
@@ -274,7 +274,7 @@ class NetworkPerformance {
     this.frameRateIndependent = true,
     this.lineRenderer = LineRenderer.vertices,
     this.isComplex = true,
-    this.connectionReductionRatio = 0.5,
+    this.complexReductionRatio = 0.5,
     this.maxComplexLines = 2,
     this.denseThresholdFactor = 0.25,
     this.cappedDistanceFactor = 0.75,
@@ -295,8 +295,8 @@ class NetworkPerformance {
     bool? frameRateIndependent,
     LineRenderer? lineRenderer,
     bool? isComplex,
-    double? connectionReductionRatio,
-    bool clearConnectionReductionRatio = false,
+    double? complexReductionRatio,
+    bool clearcomplexReductionRatio = false,
     int? maxComplexLines,
     bool clearMaxComplexLines = false,
     double? denseThresholdFactor,
@@ -321,9 +321,9 @@ class NetworkPerformance {
       frameRateIndependent: frameRateIndependent ?? this.frameRateIndependent,
       lineRenderer: lineRenderer ?? this.lineRenderer,
       isComplex: isComplex ?? this.isComplex,
-      connectionReductionRatio: clearConnectionReductionRatio
+      complexReductionRatio: clearcomplexReductionRatio
           ? null
-          : (connectionReductionRatio ?? this.connectionReductionRatio),
+          : (complexReductionRatio ?? this.complexReductionRatio),
       maxComplexLines: clearMaxComplexLines
           ? null
           : (maxComplexLines ?? this.maxComplexLines),
@@ -352,7 +352,7 @@ class NetworkPerformance {
           frameRateIndependent == other.frameRateIndependent &&
           lineRenderer == other.lineRenderer &&
           isComplex == other.isComplex &&
-          connectionReductionRatio == other.connectionReductionRatio &&
+          complexReductionRatio == other.complexReductionRatio &&
           maxComplexLines == other.maxComplexLines &&
           denseThresholdFactor == other.denseThresholdFactor &&
           cappedDistanceFactor == other.cappedDistanceFactor &&
@@ -370,7 +370,7 @@ class NetworkPerformance {
         frameRateIndependent,
         lineRenderer,
         isComplex,
-        connectionReductionRatio,
+        complexReductionRatio,
         maxComplexLines,
         denseThresholdFactor,
         cappedDistanceFactor,
@@ -390,7 +390,7 @@ class NetworkPerformance {
         'frameRateIndependent: $frameRateIndependent, '
         'lineRenderer: $lineRenderer, '
         'isComplex: $isComplex, '
-        'connectionReductionRatio: $connectionReductionRatio, '
+        'complexReductionRatio: $complexReductionRatio, '
         'maxComplexLines: $maxComplexLines, '
         'denseThresholdFactor: $denseThresholdFactor, '
         'cappedDistanceFactor: $cappedDistanceFactor, '
