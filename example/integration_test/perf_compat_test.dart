@@ -54,7 +54,7 @@ final scenarios = <(String, ParticleNetwork Function())>[
     'lines_1000_fast',
     () => const ParticleNetwork(
           particleCount: 1000,
-          performance: NetworkPerformance(fastLineRendering: true),
+          performance: NetworkPerformance(lineRenderer: LineRenderer.vertices),
           touchActivation: false,
         ),
   ),
@@ -62,7 +62,7 @@ final scenarios = <(String, ParticleNetwork Function())>[
     'lines_500_adaptive',
     () => const ParticleNetwork(
           particleCount: 500,
-          performance: NetworkPerformance(enableAdaptivePerformance: true),
+          performance: NetworkPerformance(autoBoost: true),
           touchActivation: false,
         ),
   ),
