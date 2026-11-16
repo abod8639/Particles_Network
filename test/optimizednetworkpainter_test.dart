@@ -505,7 +505,7 @@ void main() {
     });
 
     testWidgets(
-      'returns true when maxConnectionsPerParticle, adaptiveDensity, or fastLineRendering change (L1093-L1095)',
+      'returns true when maxConnectionsPerParticle or performance changes (L1093-L1095)',
       (tester) async {
         await setUpTest(tester);
 
@@ -526,7 +526,7 @@ void main() {
         );
         expect(painterWithMaxConn.shouldRepaint(defaultPainter), isTrue);
 
-        final painterWithAdaptiveDensity = OptimizedNetworkPainter(
+        final painterWithAutoBoost = OptimizedNetworkPainter(
           drawNetwork: true,
           fill: true,
           isComplex: false,
@@ -539,15 +539,14 @@ void main() {
           touchColor: Colors.red,
           touchActivation: true,
           lineWidth: 1.0,
-          adaptiveDensity: true,
+          performance: const NetworkPerformance(autoBoost: true),
         );
-        expect(
-            painterWithAdaptiveDensity.shouldRepaint(defaultPainter), isTrue);
+        expect(painterWithAutoBoost.shouldRepaint(defaultPainter), isTrue);
 
-        final painterWithVerticesRendering = OptimizedNetworkPainter(
+        final painterWithComplex = OptimizedNetworkPainter(
           drawNetwork: true,
           fill: true,
-          isComplex: false,
+          isComplex: true,
           particleCount: 1,
           particles: [particle],
           touchPoint: null,
@@ -557,10 +556,8 @@ void main() {
           touchColor: Colors.red,
           touchActivation: true,
           lineWidth: 1.0,
-          fastLineRendering: true,
         );
-        expect(
-            painterWithVerticesRendering.shouldRepaint(defaultPainter), isTrue);
+        expect(painterWithComplex.shouldRepaint(defaultPainter), isTrue);
       },
     );
   });
@@ -660,23 +657,14 @@ void main() {
         await setUpTest(tester);
 
         expect(defaultPainter.maxConnectionsPerParticle, isNull);
-        expect(defaultPainter.adaptiveDensity, isFalse);
-        expect(defaultPainter.fastLineRendering, isFalse);
 
         defaultPainter.updatePerformanceOptions(
           maxConnectionsPerParticle: 4,
-          adaptiveDensity: true,
-          fastLineRendering: true,
+          maxLinesPerFrame: 2000,
         );
 
         expect(defaultPainter.maxConnectionsPerParticle, equals(4));
-        expect(defaultPainter.adaptiveDensity, isTrue);
-        expect(defaultPainter.fastLineRendering, isTrue);
-
-        defaultPainter.updatePerformanceOptions(
-          fastLineRendering: false,
-        );
-        expect(defaultPainter.fastLineRendering, isFalse);
+        expect(defaultPainter.maxLinesPerFrame, equals(2000));
 
         defaultPainter.updatePerformanceOptions(
           clearMaxConnectionsPerParticle: true,
@@ -1146,70 +1134,11 @@ void main() {
         touchColor: Colors.red,
         touchActivation: false,
         lineWidth: 1.0,
-        fastLineRendering: true,
-      );
-
-      // Force buffer capacity to 4 floats (1 line) so line buffer growth is triggered in same-cell (L506) and neighbor cells (L427)
-      painter.setUnifiedLineBufferCapacityForTesting(4);
-
-      expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
-      verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(
-        greaterThan(0),
-      );
-    });
-
-    testWidgets(
-        '_drawFastUnifiedConnections handles maxConnectionsPerParticle skips in same-cell and neighbor cells (L414-L417, L434-L438, L494)',
-        (
-      tester,
-    ) async {
-      await setUpTest(tester);
-
-      // lineDistance = 100.0 -> cellSize = 100.0.
-      // Cell (0, 0): [0..100, 0..100]
-      // Cell (1, 0): [100..200, 0..100] (east neighbor of (0,0))
-      //
-      // Cell (0, 0):
-      // - p0 at (20.0, 10.0)
-      // - p1 at (95.0, 95.0)
-      // Distance(p0, p1) ≈ 113.3 > 100.0 (no intra-cell connection).
-      //
-      // Cell (1, 0):
-      // - p_target at (101.0, 50.0)
-      // - p_head at (195.0, 50.0)
-      //
-      // 1) p1 connects to p_target via east (dist ≈ 45.4 <= 100), count[p_target]=1, count[p1]=1 -> break at L438.
-      // 2) p0 visits p_target via east (dist ≈ 90.3 <= 100), count[p_target] == 1 >= maxConn -> triggers L415-L417.
-      // 3) In Cell (1, 0), p_head (count=0) visits p_target in same cell (dist = 94.0 <= 100), count[p_target] == 1 >= maxConn -> triggers L494-L496.
-      final particles = <MockParticle>[
-        MockParticle(position: const Offset(20.0, 10.0)), // p0 in (0, 0)
-        MockParticle(position: const Offset(95.0, 95.0)), // p1 in (0, 0)
-        MockParticle(position: const Offset(101.0, 50.0)), // p_target in (1, 0)
-        MockParticle(position: const Offset(195.0, 50.0)), // p_head in (1, 0)
-        // Cell (2, 2) to trigger same-cell maxConn tracking and break (L514-L518)
-        MockParticle(position: const Offset(250.0, 250.0)),
-        MockParticle(position: const Offset(251.0, 250.0)),
-      ];
-
-      final painter = OptimizedNetworkPainter(
-        drawNetwork: true,
-        fill: false,
-        isComplex: false,
-        particleCount: particles.length,
-        particles: particles,
-        touchPoint: null,
-        lineDistance: 100.0,
-        particleColor: Colors.white,
-        lineColor: Colors.grey,
-        touchColor: Colors.red,
-        touchActivation: false,
-        lineWidth: 1.0,
-        fastLineRendering: true,
-        maxConnectionsPerParticle: 1,
+        lineRenderer: LineRenderer.stroke,
       );
 
       expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
-      verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(
+      verify(mockCanvas.drawLine(any, any, any)).called(
         greaterThan(0),
       );
     });
@@ -1248,7 +1177,6 @@ void main() {
         touchColor: Colors.red,
         touchActivation: false,
         lineWidth: 1.0,
-        fastLineRendering: false,
         maxConnectionsPerParticle: 1,
       );
 
@@ -1285,9 +1213,6 @@ void main() {
         touchColor: Colors.red,
         touchActivation: false,
         lineWidth: 1.0,
-        fastLineRendering: false,
-        adaptiveDensity:
-            false, // ensures effectiveDistance is null -> tests ?? lineDistance (L597, L612)
       );
 
       // Force candidate buffer to be smaller than the number of neighbor candidates
@@ -1296,8 +1221,8 @@ void main() {
       expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
       verify(mockCanvas.drawLine(any, any, any)).called(greaterThan(0));
 
-      // 2) Also test with adaptiveDensity: true to verify effectiveDistance is non-null
-      final adaptivePainter = OptimizedNetworkPainter(
+      // 2) Also test with maxLinesPerFrame: 10 to verify effectiveDistance is non-null
+      final budgetedPainter = OptimizedNetworkPainter(
         drawNetwork: true,
         fill: false,
         isComplex: false,
@@ -1310,16 +1235,15 @@ void main() {
         touchColor: Colors.red,
         touchActivation: false,
         lineWidth: 1.0,
-        fastLineRendering: false,
-        adaptiveDensity: true,
+        maxLinesPerFrame: 10,
       );
 
-      expect(() => adaptivePainter.paint(mockCanvas, testScreenSize),
+      expect(() => budgetedPainter.paint(mockCanvas, testScreenSize),
           returnsNormally);
     });
 
     testWidgets(
-        '_drawBatchedConnections covers effectiveDistance fallback and active density (L694)',
+        '_drawBatchedConnections covers effectiveDistance fallback (L694)',
         (
       tester,
     ) async {
@@ -1332,7 +1256,6 @@ void main() {
             position: Offset(50.0 + (i % 6) * 10, 50.0 + (i ~/ 6) * 10)),
       );
 
-      // 1) adaptiveDensity: false -> effectiveDistance is null -> tests ?? lineDistance (L694)
       final painter = OptimizedNetworkPainter(
         drawNetwork: true,
         fill: false,
@@ -1346,8 +1269,6 @@ void main() {
         touchColor: Colors.red,
         touchActivation: false,
         lineWidth: 1.0,
-        fastLineRendering: false,
-        adaptiveDensity: false,
       );
 
       expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
@@ -1355,8 +1276,8 @@ void main() {
         greaterThan(0),
       );
 
-      // 2) adaptiveDensity: true -> effectiveDistance is non-null
-      final adaptivePainter = OptimizedNetworkPainter(
+      // 2) With maxLinesPerFrame: 50 -> effectiveDistance is non-null
+      final budgetedPainter = OptimizedNetworkPainter(
         drawNetwork: true,
         fill: false,
         isComplex: false,
@@ -1369,16 +1290,15 @@ void main() {
         touchColor: Colors.red,
         touchActivation: false,
         lineWidth: 1.0,
-        fastLineRendering: false,
-        adaptiveDensity: true,
+        maxLinesPerFrame: 50,
       );
 
-      expect(() => adaptivePainter.paint(mockCanvas, testScreenSize),
+      expect(() => budgetedPainter.paint(mockCanvas, testScreenSize),
           returnsNormally);
     });
 
     testWidgets(
-        'alpha distance and safety floor protect connection radius under adaptiveDensity',
+        'alpha distance and safety floor protect connection radius under maxLinesPerFrame',
         (
       tester,
     ) async {
@@ -1405,7 +1325,7 @@ void main() {
         touchColor: Colors.red,
         touchActivation: false,
         lineWidth: 1.0,
-        adaptiveDensity: true,
+        maxLinesPerFrame: 50,
       );
 
       painter.paint(mockCanvas, const Size(100, 100));
@@ -1646,7 +1566,6 @@ void main() {
           touchColor: Colors.red,
           touchActivation: false,
           lineWidth: 1.0,
-          fastLineRendering: false,
           maxConnectionsPerParticle: 1, // cap = 1
         );
 
@@ -1686,7 +1605,6 @@ void main() {
           touchColor: Colors.red,
           touchActivation: false,
           lineWidth: 1.0,
-          fastLineRendering: false,
         );
 
         painter.paint(mockCanvas, const Size(300, 300));
@@ -1727,7 +1645,6 @@ void main() {
           touchColor: Colors.red,
           touchActivation: false,
           lineWidth: 1.0,
-          fastLineRendering: true,
         );
 
         // Pre-build grid in complex mode with small candidate buffer to trigger L951-L952
