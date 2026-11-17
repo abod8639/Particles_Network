@@ -368,8 +368,8 @@ void main() {
       );
 
       touchPainter.paint(mockCanvas, testScreenSize);
-      // Verify that touch lines are drawn (drawLine for touch interactions)
-      verify(mockCanvas.drawLine(any, any, any)).called(greaterThan(0));
+      // Verify that touch lines are drawn (drawVertices by default for touch interactions)
+      verify(mockCanvas.drawVertices(any, any, any)).called(greaterThan(0));
     });
 
     testWidgets('ignores touch when touchActivation is false', (tester) async {
