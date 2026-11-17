@@ -325,8 +325,8 @@ class OptimizedNetworkPainter extends CustomPainter {
       linePaint: linePaint,
       touchFeatures: touchFeatures,
       spatialGrid: _sortedGrid,
-      lineRenderer: touchFeatures.lineRenderer ?? this.performance.lineRenderer,
-      fastLineRendering: touchFeatures.fastLineRendering ?? true,
+      lineRenderer: LineRenderer.vertices,
+      fastLineRendering: true,
     );
   }
 
@@ -475,16 +475,15 @@ class OptimizedNetworkPainter extends CustomPainter {
     }
 
     if (_isTouchActive) {
-      final bool useFast = touchFeatures.fastLineRendering ??
-          (lineRenderer == LineRenderer.vertices ||
-              touchFeatures.lineRenderer == LineRenderer.vertices ||
-              visibleParticles.length >= 30);
+      final bool useFast =
+          _touchHandler.lineRenderer == LineRenderer.vertices ||
+              lineRenderer == LineRenderer.vertices ||
+              visibleParticles.length >= 30;
       _touchHandler.drawTouchLines(
         canvas,
         visibleParticles,
         grid: _sortedGrid,
         fastLineRendering: useFast,
-        lineRenderer: touchFeatures.lineRenderer ?? lineRenderer,
       );
       if (simulateTouchInPaint) {
         _touchHandler.applyTouchPhysics(
@@ -1173,8 +1172,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     if (newPerformance.antiAlias != performance.antiAlias) {
       _updateAntiAlias(newPerformance.antiAlias);
     }
-    _touchHandler.lineRenderer =
-        touchFeatures.lineRenderer ?? newPerformance.lineRenderer;
+    _touchHandler.lineRenderer = newPerformance.lineRenderer;
     performance = newPerformance;
   }
 
@@ -1196,7 +1194,7 @@ class OptimizedNetworkPainter extends CustomPainter {
   }) {
     if (lineRenderer != null) {
       this.lineRenderer = lineRenderer;
-      _touchHandler.lineRenderer = touchFeatures.lineRenderer ?? lineRenderer;
+      _touchHandler.lineRenderer = lineRenderer;
     }
     if (isComplex != null) this.isComplex = isComplex;
     if (clearcomplexReductionRatio ||
@@ -1287,10 +1285,6 @@ class OptimizedNetworkPainter extends CustomPainter {
     touchFeatures = features;
     _touchHandler.touchFeatures = features;
     touchActivation = features.enabled;
-    _touchHandler.lineRenderer =
-        features.lineRenderer ?? performance.lineRenderer;
-    _touchHandler.fastLineRendering =
-        features.fastLineRendering ?? true;
     if (features.color != touchColor) {
       touchColor = features.color;
       _touchHandler.rebuildTouchColorLut(features.color);
