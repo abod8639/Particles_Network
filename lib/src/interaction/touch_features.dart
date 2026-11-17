@@ -4,7 +4,6 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:particles_network/src/legacy/legacy_deprecation_logger.dart';
-import 'package:particles_network/src/rendering/line_vertex_batch.dart';
 
 /// Configuration class for touch interaction behavior and physics.
 class TouchFeatures {
@@ -54,36 +53,6 @@ class TouchFeatures {
   /// Highlight color for touch interactions (default: Colors.amber).
   final Color color;
 
-  final bool? _fastLineRendering;
-
-  /// Compatibility alias for [lineRenderer].
-  ///
-  /// Deprecated: Replaced by [lineRenderer]. Use [lineRenderer] instead:
-  /// ```dart
-  /// TouchFeatures(lineRenderer: LineRenderer.vertices) // for fast vertex batching
-  /// TouchFeatures(lineRenderer: LineRenderer.stroke)   // for individual stroke lines
-  /// ```
-  /// This property will be removed in particles_network 2.0.0.
-  @Deprecated(
-    'fastLineRendering was replaced by lineRenderer. '
-    'Use TouchFeatures(lineRenderer: LineRenderer.vertices) or LineRenderer.stroke instead. '
-    'This property will be removed in particles_network 2.0.0.',
-  )
-  bool? get fastLineRendering {
-    if (kDebugMode && _fastLineRendering != null) {
-      LegacyDeprecationLogger.warn(
-        deprecatedApi: 'TouchFeatures.fastLineRendering',
-        replacement:
-            'TouchFeatures(lineRenderer: LineRenderer.vertices) or TouchFeatures(lineRenderer: LineRenderer.stroke)',
-      );
-    }
-    return _fastLineRendering;
-  }
-
-  /// Optional line rasterization override for touch interaction lines ([LineRenderer.stroke] or [LineRenderer.vertices]).
-  /// If null (default), inherits from [NetworkPerformance.lineRenderer].
-  final LineRenderer? lineRenderer;
-
   /// Creates a [TouchFeatures] configuration.
   const TouchFeatures({
     bool? enabled,
@@ -111,23 +80,9 @@ class TouchFeatures {
     this.damping = 0.985,
     this.lineDistance,
     this.color = Colors.amber,
-    @Deprecated(
-      'fastLineRendering was replaced by lineRenderer. '
-      'Use TouchFeatures(lineRenderer: LineRenderer.vertices) or LineRenderer.stroke instead. '
-      'This parameter will be removed in particles_network 2.0.0.',
-    )
-    bool? fastLineRendering,
-    LineRenderer? lineRenderer,
   })  : enabled = touchActivation ?? enabled ?? true,
         speed = speed ?? decayRate ?? 0.42,
-        force = force ?? pullForce ?? 0.42,
-        _fastLineRendering = fastLineRendering,
-        lineRenderer = lineRenderer ??
-            (fastLineRendering != null
-                ? (fastLineRendering
-                    ? LineRenderer.vertices
-                    : LineRenderer.stroke)
-                : null);
+        force = force ?? pullForce ?? 0.42;
 
   /// Compatibility alias for [speed] (decay rate).
   ///
@@ -202,13 +157,6 @@ class TouchFeatures {
     double? damping,
     double? lineDistance,
     Color? color,
-    @Deprecated(
-      'fastLineRendering was replaced by lineRenderer. '
-      'Use TouchFeatures.copyWith(lineRenderer: LineRenderer.vertices) or LineRenderer.stroke instead. '
-      'This parameter will be removed in particles_network 2.0.0.',
-    )
-    bool? fastLineRendering,
-    LineRenderer? lineRenderer,
   }) {
     return TouchFeatures(
       enabled: touchActivation ?? enabled ?? this.enabled,
@@ -218,8 +166,6 @@ class TouchFeatures {
       damping: damping ?? this.damping,
       lineDistance: lineDistance ?? this.lineDistance,
       color: color ?? this.color,
-      fastLineRendering: fastLineRendering ?? _fastLineRendering,
-      lineRenderer: lineRenderer ?? this.lineRenderer,
     );
   }
 
@@ -234,9 +180,7 @@ class TouchFeatures {
           maxTouchSpeed == other.maxTouchSpeed &&
           damping == other.damping &&
           lineDistance == other.lineDistance &&
-          color == other.color &&
-          _fastLineRendering == other._fastLineRendering &&
-          lineRenderer == other.lineRenderer;
+          color == other.color;
 
   @override
   int get hashCode => Object.hash(
@@ -247,14 +191,11 @@ class TouchFeatures {
         damping,
         lineDistance,
         color,
-        _fastLineRendering,
-        lineRenderer,
       );
 
   @override
   String toString() =>
       'TouchFeatures(enabled: $enabled, speed: $speed, force: $force, '
       'maxTouchSpeed: $maxTouchSpeed, damping: $damping, '
-      'lineDistance: $lineDistance, color: $color, '
-      'fastLineRendering: $_fastLineRendering, lineRenderer: $lineRenderer)';
+      'lineDistance: $lineDistance, color: $color)';
 }
