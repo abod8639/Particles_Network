@@ -71,10 +71,8 @@ class TouchInteractionHandler {
     LineRenderer? lineRenderer,
     bool? fastLineRendering,
   })  : _touchColor = touchColor,
-        lineRenderer =
-            lineRenderer ?? touchFeatures.lineRenderer ?? LineRenderer.vertices,
-        fastLineRendering =
-            fastLineRendering ?? touchFeatures.fastLineRendering ?? true;
+        lineRenderer = lineRenderer ?? LineRenderer.vertices,
+        fastLineRendering = fastLineRendering ?? true;
 
   // Test variable (kept for API compatibility)
   final int test = 0;
@@ -344,9 +342,7 @@ class TouchInteractionHandler {
     _lastLineCount = lineCount;
     if (lineCount == 0) return;
 
-    final bool effectiveFast = fastLineRendering ??
-        touchFeatures.fastLineRendering ??
-        this.fastLineRendering;
+    final bool effectiveFast = fastLineRendering ?? this.fastLineRendering;
 
     if (!effectiveFast) {
       // Legacy individual line drawing mode (retains canvas.drawLine for compatibility with small counts)
@@ -369,7 +365,7 @@ class TouchInteractionHandler {
 
     // Single unified draw call
     final LineRenderer effectiveRenderer =
-        lineRenderer ?? touchFeatures.lineRenderer ?? this.lineRenderer;
+        lineRenderer ?? this.lineRenderer;
 
     if (effectiveRenderer == LineRenderer.vertices) {
       final double halfWidth = math.max(0.5, linePaint.strokeWidth * 0.5);
