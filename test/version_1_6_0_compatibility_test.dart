@@ -157,14 +157,12 @@ void main() {
         decayRate: 0.35,
         pullForce: 0.45,
         touchActivation: false,
-        fastLineRendering: true,
       );
 
       // Canonical properties
       expect(touch.speed, equals(0.35));
       expect(touch.force, equals(0.45));
       expect(touch.enabled, isFalse);
-      expect(touch.lineRenderer, equals(LineRenderer.vertices));
 
       // Deprecated aliases
       // ignore: deprecated_member_use_from_same_package
@@ -173,8 +171,6 @@ void main() {
       expect(touch.pullForce, equals(touch.force));
       // ignore: deprecated_member_use_from_same_package
       expect(touch.touchActivation, equals(touch.enabled));
-      // ignore: deprecated_member_use_from_same_package
-      expect(touch.fastLineRendering, isTrue);
     });
   });
 }
