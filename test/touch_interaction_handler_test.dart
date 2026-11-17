@@ -394,34 +394,31 @@ void main() {
       expect(customFeatures.lineDistance, equals(150.0));
     });
 
-    test(
-        'fastLineRendering and lineRenderer configured correctly and equality works',
-        () {
+    test('TouchFeatures copyWith and equality work correctly', () {
       const f1 = TouchFeatures(
-        fastLineRendering: true,
-        lineRenderer: LineRenderer.vertices,
+        speed: 0.5,
+        force: 0.6,
       );
       const f2 = TouchFeatures(
-        fastLineRendering: true,
-        lineRenderer: LineRenderer.vertices,
+        speed: 0.5,
+        force: 0.6,
       );
       const f3 = TouchFeatures(
-        fastLineRendering: false,
-        lineRenderer: LineRenderer.stroke,
+        speed: 0.1,
+        force: 0.2,
       );
 
       expect(f1, equals(f2));
       expect(f1.hashCode, equals(f2.hashCode));
       expect(f1 == f3, isFalse);
-      expect(f1.fastLineRendering, isTrue);
-      expect(f1.lineRenderer, equals(LineRenderer.vertices));
+      expect(f1.speed, equals(0.5));
+      expect(f1.force, equals(0.6));
 
-      final copied = f1.copyWith(
-          fastLineRendering: false, lineRenderer: LineRenderer.stroke);
-      expect(copied.fastLineRendering, isFalse);
-      expect(copied.lineRenderer, equals(LineRenderer.stroke));
-      expect(f1.toString(), contains('fastLineRendering: true'));
-      expect(f1.toString(), contains('lineRenderer: LineRenderer.vertices'));
+      final copied = f1.copyWith(speed: 0.1, force: 0.2);
+      expect(copied.speed, equals(0.1));
+      expect(copied.force, equals(0.2));
+      expect(f1.toString(), contains('speed: 0.5'));
+      expect(f1.toString(), contains('force: 0.6'));
     });
   });
 
@@ -623,7 +620,7 @@ void main() {
       handler.drawTouchLines(mockCanvas, [0]);
 
       // Should fall back to direct loop and still draw lines
-      verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(1);
+      verify(mockCanvas.drawVertices(any, any, any)).called(1);
       expect(handler.lastLineCount, equals(1));
     });
 
@@ -684,7 +681,7 @@ void main() {
 
       expect(
           () => handler.drawTouchLines(mockCanvas, visible), returnsNormally);
-      verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(1);
+      verify(mockCanvas.drawVertices(any, any, any)).called(1);
       expect(handler.lastLineCount, equals(80));
     });
 
@@ -726,15 +723,14 @@ void main() {
       painter.paint(mockCanvas, const Size(500, 500));
       verify(mockCanvas.drawLine(any, any, any)).called(greaterThan(0));
 
-      // updateTouchFeatures updates handler overrides
+      // updateTouchFeatures updates handler features
       painter.updateTouchFeatures(const TouchFeatures(
-        fastLineRendering: true,
-        lineRenderer: LineRenderer.stroke,
+        enabled: true,
       ));
       reset(mockCanvas);
 
       painter.paint(mockCanvas, const Size(500, 500));
-      verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(1);
+      verify(mockCanvas.drawLine(any, any, any)).called(greaterThan(0));
     });
 
     test(
@@ -871,7 +867,7 @@ void main() {
     });
 
     test(
-        'OptimizedNetworkPainter respects TouchFeatures lineRenderer in constructor',
+        'OptimizedNetworkPainter defaults to LineRenderer.vertices for touch lines',
         () {
       final p = Particle(
         position: const Offset(100, 100),
@@ -892,13 +888,11 @@ void main() {
         touchActivation: true,
         lineWidth: 1.0,
         lineRenderer: LineRenderer.stroke, // painter default
-        touchFeatures: const TouchFeatures(
-          lineRenderer: LineRenderer.vertices, // touch feature override
-        ),
+        touchFeatures: const TouchFeatures(),
       );
 
       painter.paint(mockCanvas, const Size(500, 500));
-      // Should draw vertices because touchFeatures.lineRenderer overrides painter.lineRenderer
+      // Should draw vertices because touch handler defaults to LineRenderer.vertices
       verify(mockCanvas.drawVertices(any, any, any)).called(1);
     });
   });
