@@ -466,7 +466,7 @@ void main() {
     expect(network.performance.autoBoost, isFalse);
     expect(network.performance.maxConnectionsPerParticle, equals(6));
     expect(network.performance.maxLinesPerFrame, equals(8000));
-    expect(network.performance.lineRenderer, equals(LineRenderer.stroke));
+    expect(network.performance.lineRenderer, equals(LineRenderer.vertices));
 
     // Verify code export outputs concise NetworkPerformance.balanced()
     await tester.tap(find.byTooltip('Export Dart Code'));

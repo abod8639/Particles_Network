@@ -187,7 +187,7 @@ Perfect for creating stunning visual effects in:
 ## Quick Start
 
 ```dart
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:particles_network/particles_network.dart';
 
 void main() {
@@ -503,7 +503,7 @@ To prevent micro-stutters and frame drops caused by Garbage Collector (GC) pause
 ### 1. Simple Background Animation
 
 ```dart
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:particles_network/particles_network.dart';
 
 class HomePage extends StatelessWidget {

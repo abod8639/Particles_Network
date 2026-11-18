@@ -6,7 +6,6 @@ library;
 
 import 'dart:math' as math;
 
-import 'package:flutter/widgets.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// The Particle class represents a single particle in the particle network.
