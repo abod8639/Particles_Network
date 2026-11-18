@@ -4,7 +4,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/scheduler.dart' as flutter_scheduler;
 import 'package:flutter/services.dart';
 import 'package:particles_network/particles_network.dart';
@@ -1086,7 +1086,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                 presetName: _activePerfPreset,
                 autoBoost: _autoBoost,
                 adaptive: _enableAdaptivePerformance,
-                lineRenderer: _lineRenderer,
+                lineRenderer: _lineRenderer,     
                 fastLineRendering: _fastLineRendering,
               ),
               child: ParticleNetwork(
@@ -1127,10 +1127,10 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                   damping: _touchDamping,
                 ),
                 gravity: ParticleGravity(
-                  gravityType: _gravityType,
-                  gravityStrength: _gravityStrength,
-                  gravityDirection: _gravityDirection,
-                  gravityCenter: _gravityCenter,
+                  type: _gravityType,
+                  strength: _gravityStrength,
+                  direction: _gravityDirection,
+                  center: _gravityCenter,
                 ),
               ),
             ),

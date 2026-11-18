@@ -9,7 +9,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:particles_network/src/core/particle.dart';
 import 'package:particles_network/src/interaction/touch_interaction_handler.dart';
 import 'package:particles_network/src/legacy/legacy_deprecation_logger.dart';

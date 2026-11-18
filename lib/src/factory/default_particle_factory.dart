@@ -3,7 +3,6 @@ library;
 
 import 'dart:math';
 import 'dart:ui';
-import 'package:flutter/material.dart';
 
 import 'package:particles_network/src/core/particle.dart';
 import 'package:particles_network/src/factory/particle_factory.dart';
