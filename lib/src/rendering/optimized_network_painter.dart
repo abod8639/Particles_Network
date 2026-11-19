@@ -100,6 +100,13 @@ class OptimizedNetworkPainter extends CustomPainter {
   ///
   /// Clamping connections guarantees strict O(N) rendering complexity, preventing
   /// explosive line counts and maintaining high FPS in dense particle clusters.
+  ///
+  /// Note on capping semantics: Degree capping is evaluated in first-come, first-served
+  /// order as particles are scanned in row-major grid order. Once a particle reaches
+  /// its cap, further candidate pairings with it are rejected.
+  /// Note on top-k candidates: Candidate pairing uses a half-stencil to avoid duplicate
+  /// checks ($O(N^2)/2$). Therefore, when candidate selection or top-k throttling is
+  /// evaluated for particle $i$, it evaluates forward candidates ($j > i$ and South cells).
   int? get maxConnectionsPerParticle => performance.maxConnectionsPerParticle;
   set maxConnectionsPerParticle(int? value) {
     performance = performance.copyWith(
@@ -107,7 +114,6 @@ class OptimizedNetworkPainter extends CustomPainter {
       clearMaxConnectionsPerParticle: value == null,
     );
   }
-
 
   /// Target upper bound on connection lines drawn per frame.
   ///
@@ -167,6 +173,9 @@ class OptimizedNetworkPainter extends CustomPainter {
   late final TouchInteractionHandler _touchHandler;
   final SortedSpatialGrid _sortedGrid;
 
+  @visibleForTesting
+  TouchInteractionHandler get touchHandler => _touchHandler;
+
   /// Exposes the underlying [SortedSpatialGrid] used for neighbor lookups.
   SortedSpatialGrid get spatialGrid => _sortedGrid;
 
@@ -199,10 +208,12 @@ class OptimizedNetworkPainter extends CustomPainter {
   /// Resets cell sizing tuning to production defaults.
   static void resetTuning() {
     minSafetyLineDistance = defaultMinSafetyLineDistance;
-    SortedSpatialGrid.cellMultiplierK = SortedSpatialGrid.defaultCellMultiplierK;
+    SortedSpatialGrid.cellMultiplierK =
+        SortedSpatialGrid.defaultCellMultiplierK;
     SortedSpatialGrid.fitToBoundingBox = false;
     SortedSpatialGrid.minCellFloor = SortedSpatialGrid.defaultMinCellFloor;
   }
+
   Size? _lastSize;
 
   // Reusable internal buffers to avoid per-frame GC allocations
@@ -217,10 +228,22 @@ class OptimizedNetworkPainter extends CustomPainter {
 
   // Number of alpha buckets for GPU line draw call batching
   static const int _numLineBuckets = 32;
+  static final Int32List distBucketTable = _buildDistBucketTable();
+
+  static Int32List _buildDistBucketTable() {
+    final table = Int32List(1025);
+    for (int i = 0; i <= 1024; i++) {
+      final double ratio = math.sqrt(i / 1024.0);
+      table[i] = ((1.0 - ratio) * (_numLineBuckets - 1))
+          .round()
+          .clamp(0, _numLineBuckets - 1);
+    }
+    return table;
+  }
+
   late final List<Float32List> _rawBuckets;
   late final Int32List _rawOffsets;
   late final List<Paint> _lineBucketPaints;
-  late final Int32List _distBucketTable;
   late double _invMaxDistSq;
 
   // Precomputed color look-up table for zero-allocation alpha line rendering
@@ -322,13 +345,6 @@ class OptimizedNetworkPainter extends CustomPainter {
 
     final double maxDistSq = lineDistance * lineDistance;
     _invMaxDistSq = maxDistSq > 0 ? 1.0 / maxDistSq : 0.0;
-    _distBucketTable = Int32List(1025);
-    for (int i = 0; i <= 1024; i++) {
-      final double ratio = math.sqrt(i / 1024.0);
-      _distBucketTable[i] = ((1.0 - ratio) * (_numLineBuckets - 1))
-          .round()
-          .clamp(0, _numLineBuckets - 1);
-    }
 
     particlePaint = Paint()
       ..style = fill ? PaintingStyle.fill : PaintingStyle.stroke
@@ -351,8 +367,10 @@ class OptimizedNetworkPainter extends CustomPainter {
       linePaint: linePaint,
       touchFeatures: touchFeatures,
       spatialGrid: _sortedGrid,
-      lineRenderer: LineRenderer.vertices,
-      fastLineRendering: true,
+      lineRenderer: this.performance.lineRenderer,
+      fastLineRendering:
+          this.performance.lineRenderer == LineRenderer.vertices ||
+              particleCount >= 30,
     );
   }
 
@@ -448,13 +466,11 @@ class OptimizedNetworkPainter extends CustomPainter {
           ? math.min(lineDistance, minSafetyLineDistance)
           : 0.0;
 
-      double? effectiveDistance;
       final double distance = _budgetedDistance(
         lineDistance,
         size,
         visibleParticles.length,
       );
-      if (distance != lineDistance) effectiveDistance = distance;
 
       // When capped, constrain pairing distance to cappedDistanceFactor to eliminate
       // jarring long lines and visual connection thrashing/flickering.
@@ -492,7 +508,7 @@ class OptimizedNetworkPainter extends CustomPainter {
             SortedSpatialGrid.swBuild.elapsedMicroseconds;
       }
 
-      _drawConnections(canvas, visibleParticles, effectiveDistance);
+      _drawConnections(canvas, visibleParticles, activeDist);
       _updateBudgetCorrection(distance, lineDistance);
     } else {
       _lastFrameLineCount = 0;
@@ -738,24 +754,17 @@ class OptimizedNetworkPainter extends CustomPainter {
     _unifiedLineBuffer = newBuf;
   }
 
-
   void _drawConnections(
     Canvas canvas,
     List<int> visibleParticles, [
-    double? effectiveDistance,
+    double? scanRadius,
   ]) {
-    final double dist = effectiveDistance ?? lineDistance;
-    final double activeDist = (maxConnectionsPerParticle != null &&
-            performance.cappedDistanceFactor < 1.0 &&
-            performance.cappedDistanceFactor > 0.0 &&
-            effectiveDistance == null)
-        ? dist * performance.cappedDistanceFactor
-        : dist;
+    final double dist = scanRadius ?? lineDistance;
 
     if (visibleParticles.length < 30) {
-      _drawIndividualConnections(canvas, visibleParticles, activeDist);
+      _drawIndividualConnections(canvas, visibleParticles, dist);
     } else {
-      _drawBatchedConnections(canvas, visibleParticles, activeDist);
+      _drawBatchedConnections(canvas, visibleParticles, dist);
     }
   }
 
@@ -886,14 +895,14 @@ class OptimizedNetworkPainter extends CustomPainter {
 
               final bool isThrottled = drawCount < candidateCount;
               final Offset pos = Offset(px, py);
-              for (int c = 0; c < drawCount; c++) {
-                final int j = _candidateIndices[c];
-                final double distance = math.sqrt(_candidateDistSq[c]);
+              for (int candIdx = 0; candIdx < drawCount; candIdx++) {
+                final int j = _candidateIndices[candIdx];
+                final double distance = math.sqrt(_candidateDistSq[candIdx]);
                 int alpha =
                     (255 - (distance * invLineDistance)).toInt().clamp(0, 255);
                 if (isThrottled && drawCount > 1) {
                   final double rankFade =
-                      _calculateComplexLineFade(c, drawCount);
+                      _calculateComplexLineFade(candIdx, drawCount);
                   alpha = (alpha * rankFade).toInt().clamp(0, 255);
                 }
                 linePaint.color = _lineColorLut[alpha];
@@ -1234,7 +1243,7 @@ class OptimizedNetworkPainter extends CustomPainter {
 
     int tableIdx = ((distSq * _invMaxDistSq) * 1024).toInt();
     if (tableIdx > 1024) tableIdx = 1024;
-    int bucket = _distBucketTable[tableIdx];
+    int bucket = distBucketTable[tableIdx];
     if (rankFade < 1.0) {
       bucket = (bucket * rankFade).round().clamp(
             0,
@@ -1307,9 +1316,6 @@ class OptimizedNetworkPainter extends CustomPainter {
     if (newPerformance == performance) return;
     if (newPerformance.maxLinesPerFrame != performance.maxLinesPerFrame) {
       _budgetCorrection = 1.0;
-    }
-    if (newPerformance.isComplex != performance.isComplex) {
-      isComplex = newPerformance.isComplex;
     }
     if (newPerformance.antiAlias != performance.antiAlias) {
       _updateAntiAlias(newPerformance.antiAlias);
@@ -1388,12 +1394,6 @@ class OptimizedNetworkPainter extends CustomPainter {
     _touchHandler.lineDistance = distance;
     final double maxDistSq = distance * distance;
     _invMaxDistSq = maxDistSq > 0 ? 1.0 / maxDistSq : 0.0;
-    for (int i = 0; i <= 1024; i++) {
-      final double ratio = math.sqrt(i / 1024.0);
-      _distBucketTable[i] = ((1.0 - ratio) * (_numLineBuckets - 1))
-          .round()
-          .clamp(0, _numLineBuckets - 1);
-    }
   }
 
   void updateRenderFlags({
@@ -1440,6 +1440,12 @@ class OptimizedNetworkPainter extends CustomPainter {
         oldDelegate.lineDistance != lineDistance ||
         oldDelegate.particleColor != particleColor ||
         oldDelegate.lineColor != lineColor ||
+        oldDelegate.lineWidth != lineWidth ||
+        oldDelegate.fill != fill ||
+        oldDelegate.drawNetwork != drawNetwork ||
+        oldDelegate.devicePixelRatio != devicePixelRatio ||
+        oldDelegate.particles != particles ||
+        oldDelegate.particleCount != particleCount ||
         oldDelegate.touchFeatures != touchFeatures ||
         oldDelegate.performance != performance;
   }
