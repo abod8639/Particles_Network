@@ -160,7 +160,8 @@ void main() {
         expect(boostController.scaleFactor, closeTo(1.10, 0.001));
       });
 
-      test('getAdjustedMaxConnections scales up beyond base in autoBoost mode', () {
+      test('getAdjustedMaxConnections scales up beyond base in autoBoost mode',
+          () {
         // Initially at scale 1.0
         expect(boostController.getAdjustedMaxConnections(4), equals(4));
 
@@ -175,7 +176,8 @@ void main() {
         expect(boostController.getAdjustedMaxConnections(4), equals(6));
       });
 
-      test('getAutoMaxConnections dynamically computes connections with cap', () {
+      test('getAutoMaxConnections dynamically computes connections with cap',
+          () {
         expect(boostController.getAutoMaxConnections(base: 6), equals(6));
 
         // Boost scale to 2.0
@@ -201,7 +203,8 @@ void main() {
         expect(boostController.getAdjustedMaxLines(15000), equals(22500));
       });
 
-      test('getAdjustedLineDistance clamps to 1.0 baseDistance during boost', () {
+      test('getAdjustedLineDistance clamps to 1.0 baseDistance during boost',
+          () {
         expect(boostController.getAdjustedLineDistance(100.0), equals(100.0));
 
         // Boost scale to 2.0
@@ -215,13 +218,16 @@ void main() {
         expect(boostController.getAdjustedLineDistance(100.0), equals(100.0));
       });
 
-      test('getAutoMaxConnections scales to high numbers when headroom and maxScale allow', () {
+      test(
+          'getAutoMaxConnections scales to high numbers when headroom and maxScale allow',
+          () {
         final highBoost = AdaptivePerformanceController(
           autoBoost: true,
           maxScale: 20.0,
         );
 
-        expect(highBoost.getAutoMaxConnections(base: 6, maxCap: 100), equals(6));
+        expect(
+            highBoost.getAutoMaxConnections(base: 6, maxCap: 100), equals(6));
 
         // Boost scale to 10.0 (180 smooth steps of 0.05)
         for (int step = 0; step < 180; step++) {
@@ -231,10 +237,12 @@ void main() {
         }
         expect(highBoost.scaleFactor, closeTo(10.0, 0.01));
         // 6 * 10.0 = 60 connections (well above the old 15 limit)
-        expect(highBoost.getAutoMaxConnections(base: 6, maxCap: 100), equals(60));
+        expect(
+            highBoost.getAutoMaxConnections(base: 6, maxCap: 100), equals(60));
       });
 
-      test('steps down scale when dropped frames occur even after boosting', () {
+      test('steps down scale when dropped frames occur even after boosting',
+          () {
         // Boost up to 1.10
         for (int i = 0; i < 16; i++) {
           boostController.recordFrameTime(const Duration(milliseconds: 5));

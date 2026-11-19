@@ -85,7 +85,8 @@ void main() {
         );
 
         expect(widgetWithDependencies.particleFactory, equals(customFactory));
-        expect(widgetWithDependencies.particleController, equals(customController));
+        expect(widgetWithDependencies.particleController,
+            equals(customController));
         expect(widgetWithDependencies.touchActivation, isFalse);
         expect(widgetWithDependencies.effectiveTouchActivation, isFalse);
         expect(widgetWithDependencies.effectiveLineWidth, equals(1.2));
@@ -109,23 +110,29 @@ void main() {
   });
 
   group('Deduplication & Deprecation Verification', () {
-    test('NetworkPerformance.auto and NetworkPerformance.boost produce identical configurations', () {
+    test(
+        'NetworkPerformance.auto and NetworkPerformance.boost produce identical configurations',
+        () {
       const autoPreset = NetworkPerformance.auto();
       // ignore: deprecated_member_use_from_same_package
       const boostPreset = NetworkPerformance.boost();
 
-      expect(boostPreset.maxConnectionsPerParticle, equals(autoPreset.maxConnectionsPerParticle));
+      expect(boostPreset.maxConnectionsPerParticle,
+          equals(autoPreset.maxConnectionsPerParticle));
       expect(boostPreset.maxLinesPerFrame, equals(autoPreset.maxLinesPerFrame));
-      expect(boostPreset.frameRateIndependent, equals(autoPreset.frameRateIndependent));
+      expect(boostPreset.frameRateIndependent,
+          equals(autoPreset.frameRateIndependent));
       expect(boostPreset.lineRenderer, equals(autoPreset.lineRenderer));
       expect(boostPreset.isComplex, equals(autoPreset.isComplex));
       expect(boostPreset.autoBoost, equals(autoPreset.autoBoost));
-      expect(boostPreset.cappedDistanceFactor, equals(autoPreset.cappedDistanceFactor));
+      expect(boostPreset.cappedDistanceFactor,
+          equals(autoPreset.cappedDistanceFactor));
       expect(boostPreset.antiAlias, equals(autoPreset.antiAlias));
       expect(boostPreset, equals(autoPreset));
     });
 
-    test('ParticleGravity canonical properties and deprecated aliases match', () {
+    test('ParticleGravity canonical properties and deprecated aliases match',
+        () {
       // ignore: deprecated_member_use_from_same_package
       const gravity = ParticleGravity(
         gravityType: GravityType.global,

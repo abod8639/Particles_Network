@@ -90,9 +90,7 @@ void main() {
           returnsNormally);
     });
 
-    test(
-        'maxLinesPerFrame scales line budget for dense particle sets',
-        () {
+    test('maxLinesPerFrame scales line budget for dense particle sets', () {
       final particles = List.generate(
         100,
         (i) => Particle(

@@ -426,9 +426,8 @@ class ParticleNetworkState extends State<ParticleNetwork>
     final int? maxConn = widget.performance.maxConnectionsPerParticle;
     if (widget.performance.autoBoost) {
       final int cap = maxConn ?? 15000;
-      final int base = (maxConn != null && maxConn <= 100)
-          ? maxConn
-          : math.min(6, cap);
+      final int base =
+          (maxConn != null && maxConn <= 100) ? maxConn : math.min(6, cap);
       final int adjustedConn = _adaptiveController.getAutoMaxConnections(
         base: base,
         maxCap: cap,
@@ -660,8 +659,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
               oldEffectivePerf.maxConnectionsPerParticle) {
         final double? maxScale = effectivePerf.autoBoost
             ? ((effectivePerf.maxConnectionsPerParticle != null)
-                ? math.max(
-                    2.5, effectivePerf.maxConnectionsPerParticle! / 6.0)
+                ? math.max(2.5, effectivePerf.maxConnectionsPerParticle! / 6.0)
                 : 2500.0)
             : null;
         _adaptiveController = AdaptivePerformanceController(
@@ -671,8 +669,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
         );
       }
       _painter.updatePerformance(effectivePerf);
-      if (effectivePerf.autoBoost !=
-          oldEffectivePerf.autoBoost) {
+      if (effectivePerf.autoBoost != oldEffectivePerf.autoBoost) {
         _setAdaptiveTimings(effectivePerf.autoBoost);
       } else if (effectivePerf.autoBoost) {
         final double targetDist =
@@ -683,9 +680,8 @@ class ParticleNetworkState extends State<ParticleNetwork>
         if (effectivePerf.autoBoost) {
           final int? maxConn = effectivePerf.maxConnectionsPerParticle;
           final int cap = maxConn ?? 15000;
-          final int base = (maxConn != null && maxConn <= 100)
-              ? maxConn
-              : math.min(6, cap);
+          final int base =
+              (maxConn != null && maxConn <= 100) ? maxConn : math.min(6, cap);
           final int adjustedConn = _adaptiveController.getAutoMaxConnections(
             base: base,
             maxCap: cap,

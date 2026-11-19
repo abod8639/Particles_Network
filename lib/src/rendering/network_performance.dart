@@ -17,7 +17,6 @@ class NetworkPerformance {
   /// dramatically improving performance for large particle counts.
   final int? maxConnectionsPerParticle;
 
-
   /// Target upper bound on connection lines drawn per frame.
   ///
   /// Setting a budget shrinks the connection radius automatically so frame cost stays
@@ -144,8 +143,7 @@ class NetworkPerformance {
                 : LineRenderer.vertices),
         assert(
           complexReductionRatio == null ||
-              (complexReductionRatio >= 0.0 &&
-                  complexReductionRatio <= 1.0),
+              (complexReductionRatio >= 0.0 && complexReductionRatio <= 1.0),
           'complexReductionRatio must be between 0.0 and 1.0',
         ),
         assert(
@@ -190,8 +188,7 @@ class NetworkPerformance {
   })  : _fastLineRendering = null,
         assert(
           complexReductionRatio == null ||
-              (complexReductionRatio >= 0.0 &&
-                  complexReductionRatio <= 1.0),
+              (complexReductionRatio >= 0.0 && complexReductionRatio <= 1.0),
           'complexReductionRatio must be between 0.0 and 1.0',
         ),
         assert(

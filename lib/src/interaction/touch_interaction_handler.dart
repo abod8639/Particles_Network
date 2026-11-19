@@ -364,8 +364,7 @@ class TouchInteractionHandler {
     }
 
     // Single unified draw call
-    final LineRenderer effectiveRenderer =
-        lineRenderer ?? this.lineRenderer;
+    final LineRenderer effectiveRenderer = lineRenderer ?? this.lineRenderer;
 
     if (effectiveRenderer == LineRenderer.vertices) {
       final double halfWidth = math.max(0.5, linePaint.strokeWidth * 0.5);

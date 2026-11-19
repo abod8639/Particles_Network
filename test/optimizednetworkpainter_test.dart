@@ -1262,8 +1262,7 @@ void main() {
     });
 
     testWidgets(
-        '_drawBatchedConnections covers effectiveDistance fallback (L694)',
-        (
+        '_drawBatchedConnections covers effectiveDistance fallback (L694)', (
       tester,
     ) async {
       await setUpTest(tester);
@@ -1356,7 +1355,8 @@ void main() {
       // and with safety floor protection it never drops below the safety floor (defaultMinSafetyLineDistance).
       expect(
         painter.lastFrameLineDistance,
-        greaterThanOrEqualTo(OptimizedNetworkPainter.defaultMinSafetyLineDistance),
+        greaterThanOrEqualTo(
+            OptimizedNetworkPainter.defaultMinSafetyLineDistance),
       );
       expect(painter.lastFrameLineDistance, lessThan(100.0));
     });

@@ -178,7 +178,10 @@ void main() {
       expect(painter.lastFrameLineDistance, 100);
     });
 
-    for (final LineRenderer renderer in [LineRenderer.stroke, LineRenderer.vertices]) {
+    for (final LineRenderer renderer in [
+      LineRenderer.stroke,
+      LineRenderer.vertices
+    ]) {
       test('converges near the budget (lineRenderer: $renderer)', () {
         final particles = _uniformParticles(1500, size);
         final painter = _painter(
