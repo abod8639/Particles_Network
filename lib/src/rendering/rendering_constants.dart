@@ -28,3 +28,21 @@ const double kDenseRatioThreshold = 10.0;
 
 /// Minimum particle count for dense cluster reduction to activate.
 const int kDenseParticleThreshold = 500;
+
+/// Divisor for connection distance to classify dense neighborhood in batched mode.
+const double kDefaultDenseDivisor = 4.0;
+
+/// Divisor for connection distance to classify dense neighborhood in individual mode.
+const double kIndividualDenseDivisor = 1.5;
+
+/// Default target complex lines in individual mode.
+const int kDefaultMaxComplexLinesIndividual = 3;
+
+/// Default target complex lines in batched mode.
+const int kDefaultMaxComplexLinesBatched = 5;
+
+/// Minimum particle count below which particles are drawn as individual circles.
+const int kMinParticleBatchThreshold = 5;
+
+/// Number of discrete particle size buckets for batched drawRawPoints.
+const int kMaxParticleSizeBuckets = 64;

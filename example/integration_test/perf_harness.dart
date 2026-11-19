@@ -90,8 +90,10 @@ class PerfResult {
         'build_p50_ms': _round(_percentile(buildMs, 50)),
         'build_p90_ms': _round(_percentile(buildMs, 90)),
         'build_p99_ms': _round(_percentile(buildMs, 99)),
-        'build_worst_ms': _round(buildMs.isNotEmpty ? buildMs.reduce(math.max) : 0.0),
-        'total_worst_ms': _round(totalMs.isNotEmpty ? totalMs.reduce(math.max) : 0.0),
+        'build_worst_ms':
+            _round(buildMs.isNotEmpty ? buildMs.reduce(math.max) : 0.0),
+        'total_worst_ms':
+            _round(totalMs.isNotEmpty ? totalMs.reduce(math.max) : 0.0),
         'raster_p50_ms': _round(_percentile(rasterMs, 50)),
         'raster_p90_ms': _round(_percentile(rasterMs, 90)),
         'raster_p99_ms': _round(_percentile(rasterMs, 99)),
@@ -137,9 +139,6 @@ void runPerfScenarios(List<(String, Widget Function())> scenarios) {
       await Future<void>.delayed(_warmup);
       if (_screenshots) await binding.takeScreenshot(name);
 
-      const bool noInst =
-          bool.fromEnvironment('PERF_NO_INSTRUMENTATION', defaultValue: false);
-      SortedSpatialGrid.enableInstrumentation = !noInst;
       SortedSpatialGrid.resetCounters();
 
       final List<double> build = [];
@@ -158,7 +157,6 @@ void runPerfScenarios(List<(String, Widget Function())> scenarios) {
       // Timings are delivered in batches; give the last batch time to land.
       await Future<void>.delayed(const Duration(milliseconds: 300));
       SchedulerBinding.instance.removeTimingsCallback(onTimings);
-      SortedSpatialGrid.enableInstrumentation = false;
 
       final int frames = SortedSpatialGrid.frameCount;
       final int checks =

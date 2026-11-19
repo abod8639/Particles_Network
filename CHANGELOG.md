@@ -31,6 +31,8 @@
 * **Zero-Overhead Compile-Time Profiling**: Replaced runtime instrumentation flags with `kParticlesProfile` (`bool.fromEnvironment('PARTICLES_NETWORK_PROFILE')`) and centralized counters in `ScanStats`, allowing AOT compilers to completely prune profiling code in release builds.
 * **Phase 1 Inconsistency Fixes**:
   * Fixed radius discrepancy where `cappedDistanceFactor` was inconsistently bypassed when budgeting was combined with degree capping, ensuring `cellSize >= scanRadius` invariant always holds.
+  * Preserved 1.9.7 line alpha fade semantics via dedicated `alphaRadius` clamped to `legacyAlphaFloor` (20.0 px) while allowing spatial grid cells to scale to `minCellFloor` (4.0 px).
+  * Exposed `lastFrameScanRadius` alongside `lastFrameLineDistance` to explicitly document the actual connection scan radius.
   * Corrected `shouldRepaint` to detect changes in visual flags (`fill`, `drawNetwork`, `lineWidth`, `devicePixelRatio`, `particleCount`).
   * Removed redundant lookup table recomputation in `updateLineDistance`.
   * Removed redundant `isComplex` assignment in `updatePerformance`.

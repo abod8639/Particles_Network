@@ -147,7 +147,6 @@ ScenarioBenchmarkResult runScenarioBenchmark({
   final updater = ParticleUpdater();
 
   // Warm-up phase (stabilizes budget correction factor)
-  SortedSpatialGrid.enableInstrumentation = false;
   for (int f = 0; f < warmupFrames; f++) {
     updater.updateParticles(particles, size, gravity: gravity);
     final recorder = PictureRecorder();
@@ -158,7 +157,6 @@ ScenarioBenchmarkResult runScenarioBenchmark({
   }
 
   // Measured phase
-  SortedSpatialGrid.enableInstrumentation = true;
   int totalCandidateChecks = 0;
   int totalAcceptedPairs = 0;
   int totalPaintMicros = 0;
@@ -182,7 +180,6 @@ ScenarioBenchmarkResult runScenarioBenchmark({
     pic.dispose();
   }
 
-  SortedSpatialGrid.enableInstrumentation = false;
   SortedSpatialGrid.resetCounters();
 
   final double avgChecks = totalCandidateChecks / measuredFrames;

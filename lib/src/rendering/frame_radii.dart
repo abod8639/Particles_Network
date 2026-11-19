@@ -1,29 +1,38 @@
-/// Immutable or reusable container for per-frame connection radii.
+import 'package:flutter/foundation.dart';
+
+/// Immutable container for per-frame connection radii.
+///
+/// Guaranteed to uphold the invariant: `gridRadius >= scanRadius`.
+@immutable
 class FrameRadii {
   /// The radius used to partition particles into spatial grid cells.
-  double gridRadius;
+  final double gridRadius;
 
   /// The radius used during neighbor scan to check candidate pairs.
-  double scanRadius;
+  final double scanRadius;
 
   /// The radius used to compute alpha distance fade.
-  double alphaRadius;
+  final double alphaRadius;
 
-  FrameRadii({
-    this.gridRadius = 0.0,
-    this.scanRadius = 0.0,
-    this.alphaRadius = 0.0,
+  const FrameRadii({
+    required this.gridRadius,
+    required this.scanRadius,
+    required this.alphaRadius,
   });
 
-  /// In-place update to ensure zero heap allocations in steady-state rendering.
-  @pragma('vm:prefer-inline')
-  void update({
-    required double gridRadius,
-    required double scanRadius,
-    required double alphaRadius,
-  }) {
-    this.gridRadius = gridRadius;
-    this.scanRadius = scanRadius;
-    this.alphaRadius = alphaRadius;
-  }
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FrameRadii &&
+          runtimeType == other.runtimeType &&
+          gridRadius == other.gridRadius &&
+          scanRadius == other.scanRadius &&
+          alphaRadius == other.alphaRadius;
+
+  @override
+  int get hashCode => Object.hash(gridRadius, scanRadius, alphaRadius);
+
+  @override
+  String toString() =>
+      'FrameRadii(gridRadius: $gridRadius, scanRadius: $scanRadius, alphaRadius: $alphaRadius)';
 }

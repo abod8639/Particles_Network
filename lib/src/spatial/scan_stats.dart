@@ -3,12 +3,15 @@ import 'dart:typed_data';
 /// Compile-time constant flag for zero-overhead AOT profiling removal.
 ///
 /// When building without `--dart-define=PARTICLES_NETWORK_PROFILE=true`,
-/// the compiler strips all profiling blocks as dead code in release mode.
+/// the compiler strips all profiling blocks as dead code in AOT builds.
 const bool kParticlesProfile =
     bool.fromEnvironment('PARTICLES_NETWORK_PROFILE');
 
 /// Profiling statistics container for spatial grid neighbor scans.
 class ScanStats {
+  /// Global shared instance for profiling telemetry when [kParticlesProfile] is enabled.
+  static final ScanStats instance = ScanStats();
+
   int candidateChecks = 0;
   int loopIterations = 0;
   int acceptedPairs = 0;

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'candidate_buffer.dart';
 import 'network_performance.dart';
+import 'rendering_constants.dart';
 
 /// Throttles and fades candidate connections in dense clusters.
 ///
@@ -23,9 +24,11 @@ class ClusterThrottler {
       return distance > 0 ? (distance * customFactor).toInt() : 0;
     }
     if (performance.isComplex) {
-      return distance > 0 ? (distance ~/ 4) : 0;
+      return distance > 0 ? (distance ~/ kDefaultDenseDivisor) : 0;
     }
-    return distance > 0 ? (distance ~/ (isIndividual ? 1.5 : 4)) : 0;
+    final double divisor =
+        isIndividual ? kIndividualDenseDivisor : kDefaultDenseDivisor;
+    return distance > 0 ? (distance ~/ divisor) : 0;
   }
 
   /// Resolves the target number of allowed connection lines for a particle in a

@@ -2,21 +2,23 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui';
 
+import 'rendering_constants.dart';
+
 /// Precomputed styling palette and lookup tables for connection line rendering.
 ///
 /// Manages alpha color LUTs and pre-allocated bucket [Paint] objects to achieve
 /// zero allocations per frame during line emission and drawing.
 class LineStylePalette {
   /// Number of discrete opacity buckets for batched draw call submission.
-  static const int numLineBuckets = 32;
+  static const int numLineBuckets = kAlphaBucketCount;
 
   /// Shared static lookup table mapping distance ratio squared to bucket index.
   static final Int32List distBucketTable = _buildDistBucketTable();
 
   static Int32List _buildDistBucketTable() {
-    final table = Int32List(1025);
-    for (int i = 0; i <= 1024; i++) {
-      final double ratio = math.sqrt(i / 1024.0);
+    final table = Int32List(kDistBucketTableSize + 1);
+    for (int i = 0; i <= kDistBucketTableSize; i++) {
+      final double ratio = math.sqrt(i / kDistBucketTableSize);
       table[i] = ((1.0 - ratio) * (numLineBuckets - 1))
           .round()
           .clamp(0, numLineBuckets - 1);

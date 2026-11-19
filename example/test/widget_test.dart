@@ -221,7 +221,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
   });
 
-  testWidgets('Mobile responsive layout renders correctly and collapses/expands',
+  testWidgets(
+      'Mobile responsive layout renders correctly and collapses/expands',
       (WidgetTester tester) async {
     tester.view.physicalSize = const Size(400, 800);
     tester.view.devicePixelRatio = 1.0;
@@ -434,8 +435,8 @@ void main() {
     expect(find.byKey(const ValueKey('perf_preset_High FPS')), findsOneWidget);
     expect(find.byKey(const ValueKey('perf_preset_Adaptive')), findsOneWidget);
     expect(find.byKey(const ValueKey('perf_preset_Balanced')), findsOneWidget);
-    expect(
-        find.byKey(const ValueKey('perf_preset_Battery Saver')), findsOneWidget);
+    expect(find.byKey(const ValueKey('perf_preset_Battery Saver')),
+        findsOneWidget);
     expect(find.byKey(const ValueKey('perf_preset_Complex')), findsOneWidget);
     expect(find.byKey(const ValueKey('perf_preset_Default')), findsOneWidget);
 
@@ -471,7 +472,8 @@ void main() {
     // Verify code export outputs concise NetworkPerformance.balanced()
     await tester.tap(find.byTooltip('Export Dart Code'));
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.textContaining('NetworkPerformance.balanced()'), findsOneWidget);
+    expect(
+        find.textContaining('NetworkPerformance.balanced()'), findsOneWidget);
     await tester.tap(find.text('Close'));
     await tester.pump(const Duration(milliseconds: 300));
 

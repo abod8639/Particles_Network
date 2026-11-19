@@ -133,6 +133,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   int _particleCount = 300;
   double _maxSpeed = 5.0;
   double _maxSize = 2.0;
+
   /// Connection distance between particles. Automatically adapts to screen size
   /// (Phone: 60, Tablet: 80, Desktop: 100) unless customized by user via slider.
   bool _isLineDistanceCustom = false;
@@ -185,7 +186,8 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   final Map<String, bool> _collapsedSections = {};
 
   /// GlobalKey allows querying live performance metrics and forces rebuild on explicit re-seed
-  GlobalKey<ParticleNetworkState> _networkKey = GlobalKey<ParticleNetworkState>();
+  GlobalKey<ParticleNetworkState> _networkKey =
+      GlobalKey<ParticleNetworkState>();
 
   void _refreshEngine() {
     setState(() {
@@ -682,8 +684,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
         buffer.writeln('    maxLinesPerFrame: $_maxLinesPerFrame,');
       }
       if (_complexReductionRatio != null) {
-        buffer.writeln(
-            '    complexReductionRatio: $_complexReductionRatio,');
+        buffer.writeln('    complexReductionRatio: $_complexReductionRatio,');
       }
       if (_maxComplexLines != null) {
         buffer.writeln('    maxComplexLines: $_maxComplexLines,');
@@ -915,7 +916,8 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
             } else {
               // Mobile Portrait: Dynamic responsive height with guaranteed minimum canvas breathing room
               final availableHeight = constraints.maxHeight;
-              final maxAllowedPanel = (availableHeight - 90.0).clamp(160.0, 520.0);
+              final maxAllowedPanel =
+                  (availableHeight - 90.0).clamp(160.0, 520.0);
               final panelMaxHeight =
                   (availableHeight * 0.52).clamp(180.0, maxAllowedPanel);
 
@@ -1081,12 +1083,11 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                     16.67,
                 effectiveMaxConnections:
                     _networkKey.currentState?.effectiveMaxConnections,
-                effectiveMaxLines:
-                    _networkKey.currentState?.effectiveMaxLines,
+                effectiveMaxLines: _networkKey.currentState?.effectiveMaxLines,
                 presetName: _activePerfPreset,
                 autoBoost: _autoBoost,
                 adaptive: _enableAdaptivePerformance,
-                lineRenderer: _lineRenderer,     
+                lineRenderer: _lineRenderer,
                 fastLineRendering: _fastLineRendering,
               ),
               child: ParticleNetwork(
@@ -1153,8 +1154,8 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                 child: Center(
                   child: Container(
                     margin: const EdgeInsets.symmetric(horizontal: 16),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
                       color: Colors.black87,
                       borderRadius: BorderRadius.circular(20),
@@ -1579,7 +1580,8 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
             padding: const EdgeInsets.fromLTRB(12, 4, 6, 4),
             child: Row(
               children: [
-                const Icon(Icons.tune_rounded, size: 16, color: _controllerColor),
+                const Icon(Icons.tune_rounded,
+                    size: 16, color: _controllerColor),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
@@ -2048,15 +2050,17 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                 _lineDistance = _getResponsiveLineDistance(context);
               });
             }),
-            _buildMiniPill("Phone (60)",
-                _lineDistance == 60.0 && _isLineDistanceCustom, () {
+            _buildMiniPill(
+                "Phone (60)", _lineDistance == 60.0 && _isLineDistanceCustom,
+                () {
               setState(() {
                 _isLineDistanceCustom = true;
                 _lineDistance = 60.0;
               });
             }),
-            _buildMiniPill("Tablet (80)",
-                _lineDistance == 80.0 && _isLineDistanceCustom, () {
+            _buildMiniPill(
+                "Tablet (80)", _lineDistance == 80.0 && _isLineDistanceCustom,
+                () {
               setState(() {
                 _isLineDistanceCustom = true;
                 _lineDistance = 80.0;
@@ -2321,8 +2325,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                 _gravityDirection = const Offset(0, -1);
               });
             }),
-            _buildMiniPill(
-                "Attract 🌀",
+            _buildMiniPill("Attract 🌀",
                 _gravityType == GravityType.point && _gravityStrength > 0, () {
               setState(() {
                 _gravityType = GravityType.point;
@@ -2330,8 +2333,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
                 _gravityCenter = null;
               });
             }),
-            _buildMiniPill(
-                "Repel 💥",
+            _buildMiniPill("Repel 💥",
                 _gravityType == GravityType.point && _gravityStrength < 0, () {
               setState(() {
                 _gravityType = GravityType.point;
@@ -3156,8 +3158,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           value: _cappedDistanceFactor,
           min: 0.20,
           max: 1.00,
-          displayValue:
-              "${(_cappedDistanceFactor * 100).toStringAsFixed(0)}%",
+          displayValue: "${(_cappedDistanceFactor * 100).toStringAsFixed(0)}%",
           onChanged: (v) {
             setState(() {
               _cappedDistanceFactor = (v * 20).round() / 20.0;
@@ -3218,9 +3219,8 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
             value: (_maxComplexLines ?? 0).toDouble(),
             min: 0,
             max: 10,
-            displayValue: _maxComplexLines == null
-                ? "Auto (3)"
-                : "$_maxComplexLines",
+            displayValue:
+                _maxComplexLines == null ? "Auto (3)" : "$_maxComplexLines",
             onChanged: (v) {
               setState(() {
                 final val = v.round();
@@ -4056,7 +4056,8 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
         ),
         title: Row(
           children: [
-            const Icon(Icons.palette_rounded, size: 18, color: _controllerColor),
+            const Icon(Icons.palette_rounded,
+                size: 18, color: _controllerColor),
             const SizedBox(width: 8),
             Text(
               "Select $label Color",
@@ -4528,7 +4529,8 @@ class _FPSState extends State<FPS> with SingleTickerProviderStateMixin {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Icon(Icons.hub_rounded, size: 12, color: Colors.cyanAccent),
+                const Icon(Icons.hub_rounded,
+                    size: 12, color: Colors.cyanAccent),
                 const SizedBox(width: 4),
                 Text(
                   "${metrics.lineCount}",
@@ -4551,10 +4553,9 @@ class _FPSState extends State<FPS> with SingleTickerProviderStateMixin {
               color: Colors.black87,
               borderRadius: BorderRadius.circular(6),
               border: Border.all(
-                color: (metrics.autoBoost
-                        ? Colors.amberAccent
-                        : Colors.tealAccent)
-                    .withValues(alpha: 0.35),
+                color:
+                    (metrics.autoBoost ? Colors.amberAccent : Colors.tealAccent)
+                        .withValues(alpha: 0.35),
                 width: 1,
               ),
             ),
@@ -4776,9 +4777,12 @@ class _LivePerformanceCardState extends State<_LivePerformanceCard> {
           Row(
             children: [
               Icon(
-                widget.autoBoost ? Icons.bolt_rounded : Icons.analytics_outlined,
+                widget.autoBoost
+                    ? Icons.bolt_rounded
+                    : Icons.analytics_outlined,
                 size: 15,
-                color: widget.autoBoost ? Colors.amberAccent : widget.accentColor,
+                color:
+                    widget.autoBoost ? Colors.amberAccent : widget.accentColor,
               ),
               const SizedBox(width: 6),
               Expanded(
@@ -4828,7 +4832,9 @@ class _LivePerformanceCardState extends State<_LivePerformanceCard> {
                   icon: Icons.speed_rounded,
                   color: liveFps >= 55
                       ? Colors.greenAccent
-                      : (liveFps >= 30 ? Colors.orangeAccent : Colors.redAccent),
+                      : (liveFps >= 30
+                          ? Colors.orangeAccent
+                          : Colors.redAccent),
                 ),
               ),
               const SizedBox(width: 6),

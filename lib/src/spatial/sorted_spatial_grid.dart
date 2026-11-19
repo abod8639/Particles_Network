@@ -74,12 +74,7 @@ class SortedSpatialGrid {
   static const double maxCellsPerParticleFactor = 4.0;
 
   /// Profiling statistics container for spatial grid operations.
-  static final ScanStats stats = ScanStats();
-
-  /// Deprecated legacy flag for runtime instrumentation.
-  /// Use `--dart-define=PARTICLES_NETWORK_PROFILE=true` and [ScanStats] instead.
-  @Deprecated('Use kParticlesProfile and stats instead')
-  static bool enableInstrumentation = false;
+  static ScanStats get stats => ScanStats.instance;
 
   /// Number of candidate pairs visited in the inner scan loop before early rejection.
   static int get candidateChecks => stats.candidateChecks;
@@ -120,8 +115,7 @@ class SortedSpatialGrid {
   static void resetCounters() => stats.reset();
 
   /// Instance accessors forwarding to instrumentation counters.
-  bool get isInstrumentationEnabled =>
-      kParticlesProfile || (!kReleaseMode && enableInstrumentation);
+  bool get isInstrumentationEnabled => kParticlesProfile;
   int get currentCandidateChecks => stats.candidateChecks;
   int get currentLoopIterations => stats.loopIterations;
   int get currentAcceptedPairs => stats.acceptedPairs;
@@ -380,7 +374,7 @@ class SortedSpatialGrid {
         final int c = rowStart + cx;
         final int cellEnd = start[c + 1];
         for (int k = start[c]; k < cellEnd; k++) {
-          if (kParticlesProfile || (!kReleaseMode && enableInstrumentation)) {
+          if (kParticlesProfile) {
             stats.candidateChecks++;
             stats.loopIterations++;
           }
@@ -394,7 +388,7 @@ class SortedSpatialGrid {
 
           final double distSq = dx * dx + dy * dy;
           if (distSq <= radiusSq) {
-            if (kParticlesProfile || (!kReleaseMode && enableInstrumentation)) {
+            if (kParticlesProfile) {
               stats.acceptedPairs++;
             }
             visitor(pIndices[k], px, py, distSq);
@@ -499,7 +493,7 @@ class SortedSpatialGrid {
           final int idx1 = pIndices[k1];
 
           for (int k2 = k1 + 1; k2 < cellEnd; k2++) {
-            if (kParticlesProfile || (!kReleaseMode && enableInstrumentation)) {
+            if (kParticlesProfile) {
               stats.candidateChecks++;
               stats.loopIterations++;
             }
@@ -510,8 +504,7 @@ class SortedSpatialGrid {
 
             final double distSq = dx * dx + dy * dy;
             if (distSq <= maxDistSq) {
-              if (kParticlesProfile ||
-                  (!kReleaseMode && enableInstrumentation)) {
+              if (kParticlesProfile) {
                 stats.acceptedPairs++;
               }
               visitor(idx1, pIndices[k2], distSq);
@@ -566,7 +559,7 @@ class SortedSpatialGrid {
       final int idx1 = pIndices[k1];
 
       for (int k2 = nBegin; k2 < nEnd; k2++) {
-        if (kParticlesProfile || (!kReleaseMode && enableInstrumentation)) {
+        if (kParticlesProfile) {
           stats.candidateChecks++;
           stats.loopIterations++;
         }
@@ -577,7 +570,7 @@ class SortedSpatialGrid {
 
         final double distSq = dx * dx + dy * dy;
         if (distSq <= maxDistSq) {
-          if (kParticlesProfile || (!kReleaseMode && enableInstrumentation)) {
+          if (kParticlesProfile) {
             stats.acceptedPairs++;
           }
           visitor(idx1, pIndices[k2], distSq);

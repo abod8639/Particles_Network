@@ -4,6 +4,7 @@ import 'dart:ui';
 
 import 'line_style_palette.dart';
 import 'line_vertex_batch.dart';
+import 'rendering_constants.dart';
 
 /// Pre-allocated opacity-bucketed line segment buffers.
 ///
@@ -45,8 +46,8 @@ class LineBuckets {
     required double invMaxDistSq,
     double rankFade = 1.0,
   }) {
-    int tableIdx = ((distSq * invMaxDistSq) * 1024).toInt();
-    if (tableIdx > 1024) tableIdx = 1024;
+    int tableIdx = ((distSq * invMaxDistSq) * kDistBucketTableSize).toInt();
+    if (tableIdx > kDistBucketTableSize) tableIdx = kDistBucketTableSize;
     int bucket = LineStylePalette.distBucketTable[tableIdx];
     if (rankFade < 1.0) {
       bucket = (bucket * rankFade).round().clamp(0, numBuckets - 1);

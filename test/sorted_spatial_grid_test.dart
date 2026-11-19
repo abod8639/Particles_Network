@@ -7,6 +7,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:particles_network/particles_network.dart';
 import 'package:particles_network/src/legacy/legacy_deprecation_logger.dart';
+import 'package:particles_network/src/spatial/scan_stats.dart';
 
 List<Particle> _scatter(int n, Size size, int seed, {double spill = 0}) {
   final r = Random(seed);
@@ -753,59 +754,43 @@ void main() {
 
     group('Zero-Allocation Instrumentation', () {
       setUp(() {
-        SortedSpatialGrid.enableInstrumentation = false;
         SortedSpatialGrid.resetCounters();
       });
 
       tearDown(() {
-        SortedSpatialGrid.enableInstrumentation = false;
         SortedSpatialGrid.resetCounters();
       });
 
-      test('defaults to disabled and counters start at zero', () {
-        expect(SortedSpatialGrid.enableInstrumentation, isFalse);
+      test('defaults to disabled in release/AOT and counters start at zero',
+          () {
         expect(SortedSpatialGrid.candidateChecks, equals(0));
         expect(SortedSpatialGrid.acceptedPairs, equals(0));
         expect(SortedSpatialGrid.ratio, equals(0.0));
 
         final grid = SortedSpatialGrid();
-        expect(grid.isInstrumentationEnabled, isFalse);
+        expect(grid.isInstrumentationEnabled, equals(kParticlesProfile));
         expect(grid.currentCandidateChecks, equals(0));
         expect(grid.currentAcceptedPairs, equals(0));
         expect(grid.currentRatio, equals(0.0));
       });
 
-      test('when disabled, operations do not increment counters', () {
-        final ps = [
-          Particle(
-              position: const Offset(10, 10),
-              velocity: Offset.zero,
-              color: Colors.white,
-              size: 1),
-          Particle(
-              position: const Offset(15, 15),
-              velocity: Offset.zero,
-              color: Colors.white,
-              size: 1),
-          Particle(
-              position: const Offset(20, 20),
-              velocity: Offset.zero,
-              color: Colors.white,
-              size: 1),
-        ];
-        final grid = SortedSpatialGrid()..build(ps, null, 100, 100, 50);
+      test('ScanStats records counters and resets accurately', () {
+        final stats = ScanStats();
+        expect(stats.candidateChecks, equals(0));
+        expect(stats.acceptedPairs, equals(0));
+        expect(stats.ratio, equals(0.0));
 
-        grid.forEachPair(50, (i1, i2, distSq) {});
-        grid.queryRadius(10, 10, 50, (i, px, py, distSq) {});
+        stats.candidateChecks = 20;
+        stats.acceptedPairs = 4;
+        expect(stats.ratio, equals(5.0));
 
-        expect(SortedSpatialGrid.candidateChecks, equals(0));
-        expect(SortedSpatialGrid.acceptedPairs, equals(0));
-        expect(SortedSpatialGrid.ratio, equals(0.0));
+        stats.reset();
+        expect(stats.candidateChecks, equals(0));
+        expect(stats.acceptedPairs, equals(0));
+        expect(stats.ratio, equals(0.0));
       });
 
-      test(
-          'when enabled, forEachPair and queryRadius count candidates and accepted pairs',
-          () {
+      test('operations record counters when kParticlesProfile is enabled', () {
         final ps = [
           Particle(
               position: const Offset(10, 10),
@@ -824,20 +809,22 @@ void main() {
               size: 1),
         ];
         final grid = SortedSpatialGrid()..build(ps, null, 100, 100, 50);
-
-        SortedSpatialGrid.enableInstrumentation = true;
         SortedSpatialGrid.resetCounters();
 
         int pairsVisited = 0;
         grid.forEachPair(10, (i1, i2, distSq) {
           pairsVisited++;
         });
-
         expect(pairsVisited, equals(1)); // (10,10) and (12,12)
-        expect(SortedSpatialGrid.candidateChecks, greaterThanOrEqualTo(1));
-        expect(SortedSpatialGrid.acceptedPairs, equals(1));
-        expect(SortedSpatialGrid.ratio,
-            equals(SortedSpatialGrid.candidateChecks / 1.0));
+
+        if (kParticlesProfile) {
+          expect(SortedSpatialGrid.candidateChecks, greaterThanOrEqualTo(1));
+          expect(SortedSpatialGrid.acceptedPairs, equals(1));
+          expect(SortedSpatialGrid.ratio,
+              equals(SortedSpatialGrid.candidateChecks / 1.0));
+        } else {
+          expect(SortedSpatialGrid.candidateChecks, equals(0));
+        }
 
         SortedSpatialGrid.resetCounters();
         int queried = 0;
@@ -845,8 +832,13 @@ void main() {
           queried++;
         });
         expect(queried, equals(2)); // (10,10) and (12,12)
-        expect(SortedSpatialGrid.candidateChecks, greaterThanOrEqualTo(2));
-        expect(SortedSpatialGrid.acceptedPairs, equals(2));
+
+        if (kParticlesProfile) {
+          expect(SortedSpatialGrid.candidateChecks, greaterThanOrEqualTo(2));
+          expect(SortedSpatialGrid.acceptedPairs, equals(2));
+        } else {
+          expect(SortedSpatialGrid.candidateChecks, equals(0));
+        }
 
         SortedSpatialGrid.resetCounters();
         expect(SortedSpatialGrid.candidateChecks, equals(0));
@@ -855,7 +847,7 @@ void main() {
       });
 
       test(
-          'OptimizedNetworkPainter increments counters during paint when enabled',
+          'OptimizedNetworkPainter honors compile-time profiling configuration',
           () {
         final ps = [
           Particle(
@@ -889,14 +881,15 @@ void main() {
         final recorder = PictureRecorder();
         final canvas = Canvas(recorder);
 
-        SortedSpatialGrid.enableInstrumentation = true;
         SortedSpatialGrid.resetCounters();
-
         painter.paint(canvas, const Size(100, 100));
 
-        expect(SortedSpatialGrid.candidateChecks, greaterThan(0));
-        expect(SortedSpatialGrid.acceptedPairs, greaterThan(0));
-        expect(SortedSpatialGrid.ratio, greaterThan(0));
+        if (kParticlesProfile) {
+          expect(SortedSpatialGrid.candidateChecks, greaterThan(0));
+          expect(SortedSpatialGrid.acceptedPairs, greaterThan(0));
+        } else {
+          expect(SortedSpatialGrid.candidateChecks, equals(0));
+        }
 
         final pic = recorder.endRecording();
         pic.dispose();
@@ -905,7 +898,6 @@ void main() {
 
     group('Option A Correctness & Equivalence (Condition 3 & Condition 4)', () {
       tearDown(() {
-        SortedSpatialGrid.enableInstrumentation = false;
         SortedSpatialGrid.resetCounters();
       });
 
@@ -1072,7 +1064,6 @@ void main() {
           }
         }
 
-        SortedSpatialGrid.enableInstrumentation = true;
         SortedSpatialGrid.resetCounters();
 
         final actualIndices = <int>{};

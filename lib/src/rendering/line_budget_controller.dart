@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'frame_radii.dart';
+import 'rendering_constants.dart';
 
 /// Controls dynamic line budgeting and connection radii calculation.
 ///
@@ -17,8 +18,6 @@ class LineBudgetController {
 
   // Feedback correction applied on top of the analytic line-budget radius.
   double _budgetCorrection = 1.0;
-
-  final FrameRadii _radii = FrameRadii();
 
   /// Exposes the current budget correction multiplier.
   double get budgetCorrection => _budgetCorrection;
@@ -47,7 +46,7 @@ class LineBudgetController {
     return r < baseDistance ? r : baseDistance;
   }
 
-  /// Produces the unified [FrameRadii] for the current frame with zero heap allocations.
+  /// Produces the immutable [FrameRadii] for the current frame.
   @pragma('vm:prefer-inline')
   FrameRadii computeFrameRadii({
     required double baseDistance,
@@ -76,16 +75,17 @@ class LineBudgetController {
 
     activeDist = math.max(effectiveSafetyFloor, activeDist);
 
-    // Alpha fade preserves smooth fading relative to the active radius
-    final double alphaDist = activeDist;
+    // Phase 1 Item 2: Compute alphaRadius using 1.9.7 legacy floor semantics (20.0 px)
+    // to preserve the authentic line fade look without harsh clipping at 4.0 px.
+    final double legacySafetyFloor =
+        baseDistance > 0 ? math.min(baseDistance, legacyAlphaFloor) : 0.0;
+    final double alphaDist = math.max(legacySafetyFloor, activeDist);
 
-    _radii.update(
+    return FrameRadii(
       gridRadius: activeDist,
       scanRadius: activeDist,
       alphaRadius: alphaDist,
     );
-
-    return _radii;
   }
 
   /// Updates feedback correction factor based on the actual lines emitted.
@@ -106,6 +106,7 @@ class LineBudgetController {
     if (ratio > 0.9 && ratio < 1.1) return;
 
     _budgetCorrection =
-        (_budgetCorrection * math.pow(ratio, 0.25)).clamp(0.2, 5.0);
+        (_budgetCorrection * math.pow(ratio, kBudgetCorrectionExponent))
+            .clamp(kMinBudgetCorrection, kMaxBudgetCorrection);
   }
 }

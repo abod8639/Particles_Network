@@ -137,6 +137,7 @@ void main() {
         grid: grid,
         scanDistance: 50.0,
         maxDistSq: 2500.0,
+        alphaDistance: 50.0,
         lineColorLut: palette.lineColorLut,
         linePaint: Paint(),
         candidateBuffer: candidateBuffer,

@@ -4,13 +4,15 @@ import 'dart:ui';
 
 import 'package:particles_network/src/core/particle.dart';
 
+import 'rendering_constants.dart';
+
 /// Batched particle renderer for high-performance point and circle drawing.
 ///
 /// Automatically batches particles by size into separate raw point buffers,
 /// collapsing hundreds or thousands of individual canvas draw calls into a
 /// handful of bucketed GPU drawRawPoints calls.
 class ParticleBatchRenderer {
-  static const int maxParticleSizeBuckets = 64;
+  static const int maxParticleSizeBuckets = kMaxParticleSizeBuckets;
 
   final List<Float32List> _particleRawBuckets;
   final Int32List _particleRawOffsets = Int32List(maxParticleSizeBuckets);
@@ -36,7 +38,7 @@ class ParticleBatchRenderer {
     final int count = visibleParticles.length;
     if (count == 0) return;
 
-    if (!fill || count < 5) {
+    if (!fill || count < kMinParticleBatchThreshold) {
       for (int i = 0; i < count; i++) {
         final Particle p = particles[visibleParticles[i]];
         canvas.drawCircle(Offset(p.x, p.y), p.size, particlePaint);
