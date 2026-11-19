@@ -17,13 +17,6 @@ const String _filter = String.fromEnvironment('PERF_FILTER');
 const int _seconds = int.fromEnvironment('PERF_SECONDS', defaultValue: 5);
 const bool _screenshots = bool.fromEnvironment('PERF_SCREENSHOTS');
 const Duration _warmup = Duration(seconds: 1);
-final double _envSafetyFloor =
-    double.tryParse(const String.fromEnvironment('PERF_SAFETY_FLOOR')) ?? -1.0;
-final double _envCellK =
-    double.tryParse(const String.fromEnvironment('PERF_CELL_K')) ?? -1.0;
-const bool _envFitBB = bool.fromEnvironment('PERF_FIT_BB', defaultValue: false);
-final double _envMinFloor =
-    double.tryParse(const String.fromEnvironment('PERF_MIN_FLOOR')) ?? -1.0;
 
 bool _selected(String name) =>
     _filter.isEmpty ||
@@ -144,19 +137,6 @@ void runPerfScenarios(List<(String, Widget Function())> scenarios) {
       await Future<void>.delayed(_warmup);
       if (_screenshots) await binding.takeScreenshot(name);
 
-      if (_envSafetyFloor > 0) {
-        OptimizedNetworkPainter.minSafetyLineDistance = _envSafetyFloor;
-      }
-      if (_envCellK > 0) {
-        SortedSpatialGrid.cellMultiplierK = _envCellK;
-      }
-      if (_envFitBB) {
-        SortedSpatialGrid.fitToBoundingBox = true;
-      }
-      if (_envMinFloor > 0) {
-        SortedSpatialGrid.minCellFloor = _envMinFloor;
-      }
-
       const bool noInst =
           bool.fromEnvironment('PERF_NO_INSTRUMENTATION', defaultValue: false);
       SortedSpatialGrid.enableInstrumentation = !noInst;
@@ -237,7 +217,6 @@ void runPerfScenarios(List<(String, Widget Function())> scenarios) {
           'raster p50/p90=${json['raster_p50_ms']}/${json['raster_p90_ms']}ms');
 
       // Tear down so the next scenario starts from a clean slate.
-      OptimizedNetworkPainter.resetTuning();
       await tester.pumpWidget(const SizedBox.shrink());
       await Future<void>.delayed(const Duration(milliseconds: 300));
     });

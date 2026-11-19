@@ -104,12 +104,6 @@ Widget _wrapTuned({
   bool fitBoundingBox = false,
   double? minFloor,
 }) {
-  OptimizedNetworkPainter.configureTuning(
-    safetyFloor: safetyFloor,
-    k: k,
-    boundingBox: fitBoundingBox,
-    minFloor: minFloor,
-  );
   return child;
 }
 

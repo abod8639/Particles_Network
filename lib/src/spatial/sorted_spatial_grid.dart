@@ -8,6 +8,10 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:particles_network/src/core/particle.dart';
+import 'package:particles_network/src/spatial/grid_tuning.dart';
+import 'package:particles_network/src/spatial/scan_stats.dart';
+
+const bool kReleaseMode = bool.fromEnvironment('dart.vm.product');
 
 /// A uniform grid whose particles are counting-sorted by cell into flat
 /// structure-of-arrays buffers.
@@ -21,6 +25,13 @@ import 'package:particles_network/src/core/particle.dart';
 /// Build cost: O(N + C) for N particles and C cells, with no allocations
 /// once buffers have grown to size.
 class SortedSpatialGrid {
+  /// Tuning parameters governing cell density, safety floor, and bounds fitting.
+  final GridTuning tuning;
+
+  /// Creates a spatial grid with optional [tuning] configuration.
+  SortedSpatialGrid({GridTuning? tuning})
+      : tuning = tuning ?? const GridTuning();
+
   /// Edge length of a cell; always >= the query radius passed to [build].
   double cellSize = 0;
 
@@ -49,72 +60,72 @@ class SortedSpatialGrid {
   Int32List _cellOf = Int32List(0);
   Int32List _validIndices = Int32List(0);
 
-  /// Default cell density multiplier k = 4.0, which scales minCell = sqrt(area / (k * count)).
-  static const double defaultCellMultiplierK = 4.0;
+  /// Default cell density multiplier k = 4.0.
+  static const double defaultCellMultiplierK =
+      GridTuning.defaultCellMultiplierK;
 
-  /// Default cell size floor (4.0 px) when line budgeting shrinks effective distance below 20 px.
-  static const double defaultMinCellFloor = 4.0;
+  /// Default cell size floor (4.0 px) when line budgeting shrinks effective distance.
+  static const double defaultMinCellFloor = GridTuning.defaultMinCellFloor;
 
-  /// Absolute maximum total cells permitted in the grid to prevent memory/zeroing explosion.
-  static const int maxTotalCells = 250000;
+  /// Absolute maximum total cells permitted in the grid to prevent memory explosion.
+  static const int maxTotalCells = GridTuning.defaultMaxTotalCells;
 
   /// Maximum cell count multiplier relative to particle count (cells <= 4 * N).
   static const double maxCellsPerParticleFactor = 4.0;
 
-  /// When true, enables zero-allocation performance counters.
+  /// Profiling statistics container for spatial grid operations.
+  static final ScanStats stats = ScanStats();
+
+  /// Deprecated legacy flag for runtime instrumentation.
+  /// Use `--dart-define=PARTICLES_NETWORK_PROFILE=true` and [ScanStats] instead.
+  @Deprecated('Use kParticlesProfile and stats instead')
   static bool enableInstrumentation = false;
 
   /// Number of candidate pairs visited in the inner scan loop before early rejection.
-  static int candidateChecks = 0;
+  static int get candidateChecks => stats.candidateChecks;
+  static set candidateChecks(int value) => stats.candidateChecks = value;
 
   /// Dedicated counter for raw loop iterations visited across stencil cells.
-  static int loopIterations = 0;
+  static int get loopIterations => stats.loopIterations;
+  static set loopIterations(int value) => stats.loopIterations = value;
 
   /// Number of pairs/candidates within radius.
-  static int acceptedPairs = 0;
+  static int get acceptedPairs => stats.acceptedPairs;
+  static set acceptedPairs(int value) => stats.acceptedPairs = value;
 
-  /// Cumulative stopwatch microseconds for key hot paths.
-  static int scanLoopMicros = 0;
-  static int gridBuildMicros = 0;
-  static int physicsMicros = 0;
-  static int emissionMicros = 0;
-  static int frameCount = 0;
-  static final Float64List frameScanTimes = Float64List(4096);
-  static int frameScanCount = 0;
+  /// Cumulative stopwatch microseconds for profiling.
+  static int get scanLoopMicros => stats.scanLoopMicros;
+  static set scanLoopMicros(int value) => stats.scanLoopMicros = value;
 
-  /// Cell size tuning for Option A:
-  static double cellMultiplierK = defaultCellMultiplierK;
-  static bool fitToBoundingBox = false;
-  static double? minCellFloor = defaultMinCellFloor;
+  static int get gridBuildMicros => stats.gridBuildMicros;
+  static set gridBuildMicros(int value) => stats.gridBuildMicros = value;
 
-  static final Stopwatch swScan = Stopwatch();
-  static final Stopwatch swBuild = Stopwatch();
-  static final Stopwatch swPhysics = Stopwatch();
-  static final Stopwatch swEmission = Stopwatch();
+  static int get physicsMicros => stats.physicsMicros;
+  static set physicsMicros(int value) => stats.physicsMicros = value;
+
+  static int get emissionMicros => stats.emissionMicros;
+  static set emissionMicros(int value) => stats.emissionMicros = value;
+
+  static int get frameCount => stats.frameCount;
+  static set frameCount(int value) => stats.frameCount = value;
+
+  static Float64List get frameScanTimes => stats.frameScanTimes;
+  static int get frameScanCount => stats.frameScanCount;
+  static set frameScanCount(int value) => stats.frameScanCount = value;
 
   /// Ratio of candidate checks to accepted pairs.
-  static double get ratio =>
-      acceptedPairs > 0 ? candidateChecks / acceptedPairs : 0.0;
+  static double get ratio => stats.ratio;
 
   /// Resets instrumentation counters.
-  static void resetCounters() {
-    candidateChecks = 0;
-    loopIterations = 0;
-    acceptedPairs = 0;
-    scanLoopMicros = 0;
-    gridBuildMicros = 0;
-    physicsMicros = 0;
-    emissionMicros = 0;
-    frameCount = 0;
-    frameScanCount = 0;
-  }
+  static void resetCounters() => stats.reset();
 
-  /// Instance accessors forwarding to static instrumentation counters.
-  bool get isInstrumentationEnabled => enableInstrumentation;
-  int get currentCandidateChecks => candidateChecks;
-  int get currentLoopIterations => loopIterations;
-  int get currentAcceptedPairs => acceptedPairs;
-  double get currentRatio => ratio;
+  /// Instance accessors forwarding to instrumentation counters.
+  bool get isInstrumentationEnabled =>
+      kParticlesProfile || (!kReleaseMode && enableInstrumentation);
+  int get currentCandidateChecks => stats.candidateChecks;
+  int get currentLoopIterations => stats.loopIterations;
+  int get currentAcceptedPairs => stats.acceptedPairs;
+  double get currentRatio => stats.ratio;
 
   /// Sorts the [visible] subset of [particles] into cells for pair queries
   /// up to [radius] within a [width] × [height] area.
@@ -149,7 +160,7 @@ class SortedSpatialGrid {
     }
 
     double area = width * height;
-    if (fitToBoundingBox && rawCount > 1) {
+    if (tuning.fitToBoundingBox && rawCount > 1) {
       double minX = double.infinity;
       double maxX = -double.infinity;
       double minY = double.infinity;
@@ -167,10 +178,12 @@ class SortedSpatialGrid {
         area = (maxX - minX) * (maxY - minY);
       }
     }
-    final double k =
-        cellMultiplierK > 0 ? cellMultiplierK : defaultCellMultiplierK;
+    final double k = tuning.cellMultiplierK > 0
+        ? tuning.cellMultiplierK
+        : GridTuning.defaultCellMultiplierK;
+    final double densityCell = math.sqrt(area / (rawCount * k));
     final double minCell =
-        minCellFloor ?? math.sqrt(area / (rawCount * k));
+        densityCell > tuning.minCellFloor ? densityCell : tuning.minCellFloor;
     final double baseCell = radius > minCell ? radius : minCell;
     final double mult = (cellMultiplier != null &&
             cellMultiplier.isFinite &&
@@ -179,7 +192,7 @@ class SortedSpatialGrid {
         : 1.0;
     final double scaledCell = baseCell * mult;
     double finalCell = scaledCell < radius ? radius : scaledCell;
-    final double floorVal = minCellFloor ?? defaultMinCellFloor;
+    final double floorVal = tuning.minCellFloor;
     if (finalCell < floorVal) {
       finalCell = floorVal;
     }
@@ -187,7 +200,7 @@ class SortedSpatialGrid {
     // Guard against cell-count blowup (Condition 4):
     // Cap total cells to min(maxTotalCells, max(4 * N, 1024)).
     final int cellCap = math.min(
-      maxTotalCells,
+      tuning.maxTotalCells,
       math.max((rawCount * maxCellsPerParticleFactor).toInt(), 1024),
     );
     final double minCellForCap = math.sqrt(area / cellCap);
@@ -367,9 +380,9 @@ class SortedSpatialGrid {
         final int c = rowStart + cx;
         final int cellEnd = start[c + 1];
         for (int k = start[c]; k < cellEnd; k++) {
-          if (enableInstrumentation) {
-            candidateChecks++;
-            loopIterations++;
+          if (kParticlesProfile || (!kReleaseMode && enableInstrumentation)) {
+            stats.candidateChecks++;
+            stats.loopIterations++;
           }
           final double px = pXs[k];
           final double dx = x - px;
@@ -381,7 +394,9 @@ class SortedSpatialGrid {
 
           final double distSq = dx * dx + dy * dy;
           if (distSq <= radiusSq) {
-            if (enableInstrumentation) acceptedPairs++;
+            if (kParticlesProfile || (!kReleaseMode && enableInstrumentation)) {
+              stats.acceptedPairs++;
+            }
             visitor(pIndices[k], px, py, distSq);
           }
         }
@@ -466,10 +481,6 @@ class SortedSpatialGrid {
     final int cCols = cols;
     final int cRows = rows;
 
-    if (enableInstrumentation) {
-      swScan.reset();
-      swScan.start();
-    }
     for (int cy = 0; cy < cRows; cy++) {
       final int rowOffset = cy * cCols;
       final bool hasSouth = cy + 1 < cRows;
@@ -488,9 +499,9 @@ class SortedSpatialGrid {
           final int idx1 = pIndices[k1];
 
           for (int k2 = k1 + 1; k2 < cellEnd; k2++) {
-            if (enableInstrumentation) {
-              candidateChecks++;
-              loopIterations++;
+            if (kParticlesProfile || (!kReleaseMode && enableInstrumentation)) {
+              stats.candidateChecks++;
+              stats.loopIterations++;
             }
             final double dx = x1 - pXs[k2];
             if (dx > maxDistance || dx < -maxDistance) continue;
@@ -499,7 +510,10 @@ class SortedSpatialGrid {
 
             final double distSq = dx * dx + dy * dy;
             if (distSq <= maxDistSq) {
-              if (enableInstrumentation) acceptedPairs++;
+              if (kParticlesProfile ||
+                  (!kReleaseMode && enableInstrumentation)) {
+                stats.acceptedPairs++;
+              }
               visitor(idx1, pIndices[k2], distSq);
             }
           }
@@ -528,10 +542,6 @@ class SortedSpatialGrid {
         }
       }
     }
-    if (enableInstrumentation) {
-      swScan.stop();
-      scanLoopMicros += swScan.elapsedMicroseconds;
-    }
   }
 
   void _pairWithCell(
@@ -556,9 +566,9 @@ class SortedSpatialGrid {
       final int idx1 = pIndices[k1];
 
       for (int k2 = nBegin; k2 < nEnd; k2++) {
-        if (enableInstrumentation) {
-          candidateChecks++;
-          loopIterations++;
+        if (kParticlesProfile || (!kReleaseMode && enableInstrumentation)) {
+          stats.candidateChecks++;
+          stats.loopIterations++;
         }
         final double dx = x1 - pXs[k2];
         if (dx > maxDist || dx < -maxDist) continue;
@@ -567,7 +577,9 @@ class SortedSpatialGrid {
 
         final double distSq = dx * dx + dy * dy;
         if (distSq <= maxDistSq) {
-          if (enableInstrumentation) acceptedPairs++;
+          if (kParticlesProfile || (!kReleaseMode && enableInstrumentation)) {
+            stats.acceptedPairs++;
+          }
           visitor(idx1, pIndices[k2], distSq);
         }
       }

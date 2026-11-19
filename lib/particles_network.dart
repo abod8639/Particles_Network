@@ -49,6 +49,7 @@ export 'package:particles_network/src/rendering/performance_utils.dart'
 export 'package:particles_network/src/simulation/particle_simulation.dart'
     show ParticleSimulation;
 // High-performance canonical spatial partitioning engine
+export 'package:particles_network/src/spatial/grid_tuning.dart' show GridTuning;
 export 'package:particles_network/src/spatial/sorted_spatial_grid.dart'
     show SortedSpatialGrid;
 // Legacy spatial data structures (deprecated, scheduled for removal in 2.0.0)

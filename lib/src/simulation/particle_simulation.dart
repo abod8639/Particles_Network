@@ -69,10 +69,6 @@ class ParticleSimulation {
         currentSize.height <= 0) {
       return;
     }
-    if (SortedSpatialGrid.enableInstrumentation) {
-      SortedSpatialGrid.swPhysics.reset();
-      SortedSpatialGrid.swPhysics.start();
-    }
     final IParticleController c = controller;
     if (c is ITimeScaledParticleController) {
       c.updateParticlesScaled(
@@ -87,11 +83,6 @@ class ParticleSimulation {
         currentSize,
         gravity: gravityConfig,
       );
-    }
-    if (SortedSpatialGrid.enableInstrumentation) {
-      SortedSpatialGrid.swPhysics.stop();
-      SortedSpatialGrid.physicsMicros +=
-          SortedSpatialGrid.swPhysics.elapsedMicroseconds;
     }
   }
 
