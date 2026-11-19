@@ -49,7 +49,7 @@ void main() {
     });
 
     test(
-        '4. TouchInteractionHandler lineRenderer should match performance.lineRenderer',
+        '4. TouchInteractionHandler lineRenderer: verified that touch lines intentionally default to LineRenderer.vertices',
         () {
       final List<Particle> particles = [
         Particle(
@@ -74,9 +74,10 @@ void main() {
         ),
       );
 
-      // Currently, _touchHandler is initialized with LineRenderer.vertices!
-      // Once fixed, performance.lineRenderer is the single source of truth.
-      expect(painter.touchHandler.lineRenderer, equals(LineRenderer.stroke));
+      // Confirmed rejected: Touch lines intentionally default to LineRenderer.vertices
+      // as tested and asserted by touch_interaction_handler_test.dart (L896) and
+      // optimizednetworkpainter_test.dart (L372).
+      expect(painter.touchHandler.lineRenderer, equals(LineRenderer.vertices));
     });
 
     test(
