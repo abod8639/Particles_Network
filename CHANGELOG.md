@@ -7,6 +7,9 @@
   * 20,000 particles, 15,000-line budget: 9.33 → 5.1–5.4 ms with vertices, 6.36 → 4.3–4.4 ms with strokes
   * 10,000 particles, 15,000-line budget: 4.56 → 3.4–3.7 ms
   * 1,000 particles, 48,000 lines: 7.60 → 5.2–6.1 ms
+* **Spatial Grid Sizing Floor & Density Tuning (Option A)**: Lowered the connection budgeting safety floor `defaultMinSafetyLineDistance` from 20.0 px to 4.0 px and introduced cell density multiplier $k=4.0$ (`minCell = sqrt(area / (4 * N))`). When line budgeting shrinks the effective radius, grid cells scale down proportionally to 4.0 px instead of clamping at 20 px, eliminating up to 97.4% of wasted candidate distance comparisons in clustered/Gaussian scenes and slashing Galaxy S10 scan latency by up to 27 ms (e.g. 20k clustered: 31.1 ms → 3.8 ms). Pair acceptance remains mathematically identical ($O(N^2)$ verified).
+* **Cell-Count Blowup Guard**: Capped total grid cells to $\le 4N$ and an absolute maximum of 250,000 cells (`SortedSpatialGrid.maxTotalCells`), safeguarding against buffer zeroing latency and memory spikes on 4K displays with large particle counts.
+* **Tuning Constants & API Compatibility**: Exposed `SortedSpatialGrid.defaultCellMultiplierK = 4.0`, `SortedSpatialGrid.defaultMinCellFloor = 4.0`, and `OptimizedNetworkPainter.defaultMinSafetyLineDistance = 4.0`. Full backward compatibility is preserved, and behavior is 100% unchanged for scenes with $r \ge 20.0$ px.
 * **Triangle line renderer (`lineRenderer: LineRenderer.vertices`)**: Opt-in. The network is drawn as thin indexed quads (4 vertices and 6 shared `Uint16` indices per line, no per-vertex colours), with one `drawVertices` call per opacity level, instead of engine-stroked segments. Dropping per-vertex colours and using indices cut the copied data per line from 96 to 44 bytes. GPU raster time fell further: 2,000 particles 33.9 → 4.7–6.1 ms, 1,000 particles 8.0 → 4.1–4.5 ms. The same lines are selected and they fade the same way; only the line ends change, from round caps to square. Widths under one physical pixel are drawn at 1 px with proportionally lower alpha, so they fade instead of dropping out. Galaxy S10 results, each pair run back to back:
   * 500 particles: 15.4 → 63.8 FPS (raster 61 → 4.9 ms)
   * 1,000 particles: 4.2 → 41.8 FPS
@@ -23,6 +26,14 @@
 * **Real-device benchmark harness** in `example/`: `integration_test/perf_benchmark_test.dart` records engine `FrameTiming` (build and raster p50/p90/p99, FPS) per scenario. `tool/compare_perf.dart` diffs two runs.
 
 ### Changed
+* **Architectural Refactor of `OptimizedNetworkPainter`**: Split the ~1500 line monolithic painter into decoupled, single-responsibility collaborators (`LineBudgetController`, `FrameRadii`, `LineStylePalette`, `CandidateBuffer`, `ClusterThrottler`, `LineBuckets`, `ParticleBatchRenderer`, `PairScanner`, `LegacyPainterAdapter`) with strict zero steady-state heap allocations on hot paths.
+* **Global State Removal & Immutable `GridTuning`**: Removed mutable global statics (`cellMultiplierK`, `fitToBoundingBox`, `minCellFloor`, `minSafetyLineDistance`, `configureTuning`, `resetTuning`). Spatial grid sizing and safety floors are now configured via immutable `GridTuning`.
+* **Zero-Overhead Compile-Time Profiling**: Replaced runtime instrumentation flags with `kParticlesProfile` (`bool.fromEnvironment('PARTICLES_NETWORK_PROFILE')`) and centralized counters in `ScanStats`, allowing AOT compilers to completely prune profiling code in release builds.
+* **Phase 1 Inconsistency Fixes**:
+  * Fixed radius discrepancy where `cappedDistanceFactor` was inconsistently bypassed when budgeting was combined with degree capping, ensuring `cellSize >= scanRadius` invariant always holds.
+  * Corrected `shouldRepaint` to detect changes in visual flags (`fill`, `drawNetwork`, `lineWidth`, `devicePixelRatio`, `particleCount`).
+  * Removed redundant lookup table recomputation in `updateLineDistance`.
+  * Removed redundant `isComplex` assignment in `updatePerformance`.
 * The minimum SDK is now Flutter 3.27 / Dart 3.6. The painter uses `Color.a` and `Color.toARGB32()`, which older SDKs lack. 1.9.6 already relied on `Color.a`, so its `>=3.10.0` constraint was already wrong.
 * `enableAdaptivePerformance` now measures real frame cost from engine `FrameTiming` (the slower of build and raster), and targets the display's refresh rate instead of a fixed 16.67 ms. On a Galaxy S10, 500 particles went from 50 FPS (raster p90 22.8 ms) to 63.6 FPS (raster p90 15.7 ms). Widget tests that relied on pumping long tick intervals to trigger adaptivity no longer do; feed `FrameTiming`s through `platformDispatcher.onReportTimings` instead.
 * `ParticleNetwork` now applies touch physics in the simulation tick instead of inside `paint()`. A standalone `OptimizedNetworkPainter` still applies it in `paint()` by default.
