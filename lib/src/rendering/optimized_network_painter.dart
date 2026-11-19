@@ -635,6 +635,95 @@ class OptimizedNetworkPainter extends CustomPainter {
     }
   }
 
+  // ===========================================================================
+  // Complex Cluster Throttling & Aesthetic Optimization
+  // ===========================================================================
+
+  /// Returns whether complex cluster throttling is active based on [isComplex]
+  /// or explicit complex reduction tuning parameters.
+  bool get _isComplexThrottlingActive =>
+      isComplex ||
+      performance.complexReductionRatio != null ||
+      performance.maxComplexLines != null;
+
+  /// Calculates the neighbor count threshold above which a particle's neighborhood
+  /// is classified as a dense cluster.
+  @pragma('vm:prefer-inline')
+  int _computeDenseThreshold(double distance, {bool isIndividual = false}) {
+    final double? customFactor = performance.complexDensityFactor;
+    if (customFactor != null) {
+      return distance > 0 ? (distance * customFactor).toInt() : 0;
+    }
+    if (isComplex) {
+      return distance > 0 ? (distance ~/ 4) : 0;
+    }
+    return distance > 0 ? (distance ~/ (isIndividual ? 1.5 : 4)) : 0;
+  }
+
+  /// Resolves the target number of allowed connection lines for a particle in a
+  /// dense cluster based on [performance] settings.
+  @pragma('vm:prefer-inline')
+  int _resolveComplexTargetLines(int candidateCount, int defaultMaxLines) {
+    if (performance.complexReductionRatio != null) {
+      final double ratio = performance.complexReductionRatio!.clamp(0.0, 1.0);
+      final int reduced = (candidateCount * (1.0 - ratio)).round();
+      return performance.maxComplexLines != null
+          ? math.min(reduced, performance.maxComplexLines!)
+          : math.max(1, reduced);
+    }
+    return defaultMaxLines;
+  }
+
+  /// Filters and throttles candidate connections for a particle in complex or capped mode.
+  ///
+  /// If the particle is in a dense cluster or exceeds connection caps, this selects
+  /// the closest [k] candidates using [_selectTopKClosest] and returns the final
+  /// number of lines to draw. Returns 0 if no lines should be drawn.
+  @pragma('vm:prefer-inline')
+  int _filterComplexCandidates({
+    required int candidateCount,
+    required bool isCapped,
+    required int remainingCap,
+    required int denseThreshold,
+    required int defaultMaxLines,
+    required bool isComplexMode,
+  }) {
+    int maxAllowed = candidateCount;
+    if (isCapped && remainingCap < maxAllowed) {
+      maxAllowed = remainingCap;
+    }
+
+    if (isComplexMode && candidateCount > denseThreshold) {
+      final int target =
+          _resolveComplexTargetLines(candidateCount, defaultMaxLines);
+      if (target < maxAllowed) {
+        maxAllowed = target;
+      }
+    }
+
+    if (maxAllowed <= 0) return 0;
+
+    if (candidateCount > maxAllowed) {
+      _selectTopKClosest(candidateCount, maxAllowed);
+      return maxAllowed;
+    }
+
+    return candidateCount;
+  }
+
+  /// Calculates the visual fade factor for connection lines in dense clusters.
+  ///
+  /// Uses a smooth cosine-tapered falloff across candidate ranks instead of a sharp
+  /// linear cutoff. This prevents visual flickering (popping) when particles drift
+  /// across cluster boundaries while maintaining full opacity for the closest connections.
+  @pragma('vm:prefer-inline')
+  double _calculateComplexLineFade(int rank, int drawCount) {
+    if (drawCount <= 1) return 1.0;
+    final double progress = rank / (drawCount - 0.5);
+    if (progress >= 1.0) return 0.0;
+    return 0.5 * (1.0 + math.cos(math.pi * progress));
+  }
+
   Float32List _growBucket(int b, int needed) {
     final newBuf = Float32List(math.max(_rawBuckets[b].length * 2, needed));
     newBuf.setRange(0, _rawOffsets[b], _rawBuckets[b]);
@@ -680,10 +769,8 @@ class OptimizedNetworkPainter extends CustomPainter {
     final double invLineDistance = dist > 0 ? 255.0 / dist : 0.0;
     final int defaultMaxLines =
         performance.maxComplexLines ?? (isComplex ? 3 : 5);
-    final double? customFactor = performance.complexDensityFactor;
-    final int denseThreshold = customFactor != null
-        ? (dist * customFactor).toInt()
-        : (isComplex ? (dist ~/ 4) : (dist ~/ 1.5));
+    final int denseThreshold = _computeDenseThreshold(dist, isIndividual: true);
+    final bool complexMode = _isComplexThrottlingActive;
 
     final int? maxConn = maxConnectionsPerParticle;
     final bool capped = maxConn != null;
@@ -785,46 +872,19 @@ class OptimizedNetworkPainter extends CustomPainter {
             }
 
             if (candidateCount > 0) {
-              int drawCount = candidateCount;
-              bool isThrottled = false;
+              final int remainingCap =
+                  capped ? (cap - counts[i]) : candidateCount;
+              final int drawCount = _filterComplexCandidates(
+                candidateCount: candidateCount,
+                isCapped: capped,
+                remainingCap: remainingCap,
+                denseThreshold: denseThreshold,
+                defaultMaxLines: defaultMaxLines,
+                isComplexMode: complexMode,
+              );
+              if (drawCount <= 0) continue;
 
-              int maxAllowed = candidateCount;
-              if (capped) {
-                final int allowed = cap - counts[i];
-                if (allowed < maxAllowed) maxAllowed = allowed;
-              }
-              final bool shouldThrottle = isComplex ||
-                  performance.complexReductionRatio != null ||
-                  performance.maxComplexLines != null;
-              if (shouldThrottle) {
-                if (candidateCount > denseThreshold) {
-                  int targetLines = defaultMaxLines;
-                  if (performance.complexReductionRatio != null) {
-                    final double ratio =
-                        performance.complexReductionRatio!.clamp(0.0, 1.0);
-                    final int reduced =
-                        (candidateCount * (1.0 - ratio)).round();
-                    targetLines = performance.maxComplexLines != null
-                        ? math.min(reduced, performance.maxComplexLines!)
-                        : math.max(1, reduced);
-                  }
-                  if (targetLines < maxAllowed) {
-                    maxAllowed = targetLines;
-                    isThrottled = true;
-                  }
-                } else if (capped && candidateCount > maxAllowed) {
-                  isThrottled = true;
-                }
-              }
-
-              if (maxAllowed <= 0) continue;
-
-              if (candidateCount > maxAllowed) {
-                _selectTopKClosest(candidateCount, maxAllowed);
-                drawCount = maxAllowed;
-                isThrottled = true;
-              }
-
+              final bool isThrottled = drawCount < candidateCount;
               final Offset pos = Offset(px, py);
               for (int c = 0; c < drawCount; c++) {
                 final int j = _candidateIndices[c];
@@ -833,7 +893,7 @@ class OptimizedNetworkPainter extends CustomPainter {
                     (255 - (distance * invLineDistance)).toInt().clamp(0, 255);
                 if (isThrottled && drawCount > 1) {
                   final double rankFade =
-                      ((drawCount - c) / drawCount).clamp(0.0, 1.0);
+                      _calculateComplexLineFade(c, drawCount);
                   alpha = (alpha * rankFade).toInt().clamp(0, 255);
                 }
                 linePaint.color = _lineColorLut[alpha];
@@ -979,15 +1039,10 @@ class OptimizedNetworkPainter extends CustomPainter {
       counts = _connectionCounts;
     }
 
-    final bool complex = isComplex ||
-        performance.complexReductionRatio != null ||
-        performance.maxComplexLines != null;
+    final bool complex = _isComplexThrottlingActive;
     final double effectiveDist =
         dist ?? (maxDistSq > 0 ? math.sqrt(maxDistSq) : lineDistance);
-    final double? customFactor = performance.complexDensityFactor;
-    final int denseThreshold = customFactor != null
-        ? (effectiveDist > 0 ? (effectiveDist * customFactor).toInt() : 0)
-        : (effectiveDist > 0 ? (effectiveDist ~/ 4) : 0);
+    final int denseThreshold = _computeDenseThreshold(effectiveDist);
     final int maxComplexLines = performance.maxComplexLines ?? 5;
 
     if (SortedSpatialGrid.enableInstrumentation) {
@@ -1107,41 +1162,18 @@ class OptimizedNetworkPainter extends CustomPainter {
 
           if (candidateCount == 0) continue;
 
-          int maxAllowed = candidateCount;
-          bool isThrottled = false;
+          final int remainingCap = capped ? (cap - counts[i]) : candidateCount;
+          final int drawCount = _filterComplexCandidates(
+            candidateCount: candidateCount,
+            isCapped: capped,
+            remainingCap: remainingCap,
+            denseThreshold: denseThreshold,
+            defaultMaxLines: maxComplexLines,
+            isComplexMode: complex,
+          );
+          if (drawCount <= 0) continue;
 
-          if (capped) {
-            final int allowed = cap - counts[i];
-            if (allowed < maxAllowed) maxAllowed = allowed;
-          }
-          if (complex) {
-            if (candidateCount > denseThreshold) {
-              int targetLines = maxComplexLines;
-              if (performance.complexReductionRatio != null) {
-                final double ratio =
-                    performance.complexReductionRatio!.clamp(0.0, 1.0);
-                final int reduced = (candidateCount * (1.0 - ratio)).round();
-                targetLines = performance.maxComplexLines != null
-                    ? math.min(reduced, performance.maxComplexLines!)
-                    : math.max(1, reduced);
-              }
-              if (targetLines < maxAllowed) {
-                maxAllowed = targetLines;
-                isThrottled = true;
-              }
-            } else if (capped && candidateCount > maxAllowed) {
-              isThrottled = true;
-            }
-          }
-
-          if (maxAllowed <= 0) continue;
-
-          int drawCount = candidateCount;
-          if (candidateCount > maxAllowed) {
-            _selectTopKClosest(candidateCount, maxAllowed);
-            drawCount = maxAllowed;
-          }
-
+          final bool isThrottled = drawCount < candidateCount;
           for (int k = 0; k < drawCount; k++) {
             final int j = _candidateIndices[k];
             final double distSq = _candidateDistSq[k];
@@ -1150,7 +1182,7 @@ class OptimizedNetworkPainter extends CustomPainter {
 
             double rankFade = 1.0;
             if (complex && isThrottled && drawCount > 1) {
-              rankFade = ((drawCount - k) / drawCount).clamp(0.0, 1.0);
+              rankFade = _calculateComplexLineFade(k, drawCount);
             }
 
             _emitConnection(unified, x1, y1, x2, y2, distSq, rankFade);
