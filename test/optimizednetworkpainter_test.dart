@@ -1353,8 +1353,11 @@ void main() {
       painter.paint(mockCanvas, const Size(100, 100));
 
       // With 500 particles in 100x100, factor would shrink distance to 0.25 * 100 = 25,
-      // and with safety floor protection it never drops below 20px.
-      expect(painter.lastFrameLineDistance, greaterThanOrEqualTo(20.0));
+      // and with safety floor protection it never drops below the safety floor (defaultMinSafetyLineDistance).
+      expect(
+        painter.lastFrameLineDistance,
+        greaterThanOrEqualTo(OptimizedNetworkPainter.defaultMinSafetyLineDistance),
+      );
       expect(painter.lastFrameLineDistance, lessThan(100.0));
     });
 

@@ -49,6 +49,73 @@ class SortedSpatialGrid {
   Int32List _cellOf = Int32List(0);
   Int32List _validIndices = Int32List(0);
 
+  /// Default cell density multiplier k = 4.0, which scales minCell = sqrt(area / (k * count)).
+  static const double defaultCellMultiplierK = 4.0;
+
+  /// Default cell size floor (4.0 px) when line budgeting shrinks effective distance below 20 px.
+  static const double defaultMinCellFloor = 4.0;
+
+  /// Absolute maximum total cells permitted in the grid to prevent memory/zeroing explosion.
+  static const int maxTotalCells = 250000;
+
+  /// Maximum cell count multiplier relative to particle count (cells <= 4 * N).
+  static const double maxCellsPerParticleFactor = 4.0;
+
+  /// When true, enables zero-allocation performance counters.
+  static bool enableInstrumentation = false;
+
+  /// Number of candidate pairs visited in the inner scan loop before early rejection.
+  static int candidateChecks = 0;
+
+  /// Dedicated counter for raw loop iterations visited across stencil cells.
+  static int loopIterations = 0;
+
+  /// Number of pairs/candidates within radius.
+  static int acceptedPairs = 0;
+
+  /// Cumulative stopwatch microseconds for key hot paths.
+  static int scanLoopMicros = 0;
+  static int gridBuildMicros = 0;
+  static int physicsMicros = 0;
+  static int emissionMicros = 0;
+  static int frameCount = 0;
+  static final Float64List frameScanTimes = Float64List(4096);
+  static int frameScanCount = 0;
+
+  /// Cell size tuning for Option A:
+  static double cellMultiplierK = defaultCellMultiplierK;
+  static bool fitToBoundingBox = false;
+  static double? minCellFloor = defaultMinCellFloor;
+
+  static final Stopwatch swScan = Stopwatch();
+  static final Stopwatch swBuild = Stopwatch();
+  static final Stopwatch swPhysics = Stopwatch();
+  static final Stopwatch swEmission = Stopwatch();
+
+  /// Ratio of candidate checks to accepted pairs.
+  static double get ratio =>
+      acceptedPairs > 0 ? candidateChecks / acceptedPairs : 0.0;
+
+  /// Resets instrumentation counters.
+  static void resetCounters() {
+    candidateChecks = 0;
+    loopIterations = 0;
+    acceptedPairs = 0;
+    scanLoopMicros = 0;
+    gridBuildMicros = 0;
+    physicsMicros = 0;
+    emissionMicros = 0;
+    frameCount = 0;
+    frameScanCount = 0;
+  }
+
+  /// Instance accessors forwarding to static instrumentation counters.
+  bool get isInstrumentationEnabled => enableInstrumentation;
+  int get currentCandidateChecks => candidateChecks;
+  int get currentLoopIterations => loopIterations;
+  int get currentAcceptedPairs => acceptedPairs;
+  double get currentRatio => ratio;
+
   /// Sorts the [visible] subset of [particles] into cells for pair queries
   /// up to [radius] within a [width] × [height] area.
   ///
@@ -81,7 +148,29 @@ class SortedSpatialGrid {
       return;
     }
 
-    final double minCell = math.sqrt(width * height / rawCount);
+    double area = width * height;
+    if (fitToBoundingBox && rawCount > 1) {
+      double minX = double.infinity;
+      double maxX = -double.infinity;
+      double minY = double.infinity;
+      double maxY = -double.infinity;
+      for (int i = 0; i < rawCount; i++) {
+        final int idx = visible != null ? visible[i] : i;
+        if (idx < 0 || idx >= particles.length) continue;
+        final Particle p = particles[idx];
+        if (p.x < minX) minX = p.x;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.y > maxY) maxY = p.y;
+      }
+      if (maxX > minX && maxY > minY) {
+        area = (maxX - minX) * (maxY - minY);
+      }
+    }
+    final double k =
+        cellMultiplierK > 0 ? cellMultiplierK : defaultCellMultiplierK;
+    final double minCell =
+        minCellFloor ?? math.sqrt(area / (rawCount * k));
     final double baseCell = radius > minCell ? radius : minCell;
     final double mult = (cellMultiplier != null &&
             cellMultiplier.isFinite &&
@@ -89,11 +178,48 @@ class SortedSpatialGrid {
         ? cellMultiplier
         : 1.0;
     final double scaledCell = baseCell * mult;
-    cellSize = scaledCell < radius ? radius : scaledCell;
-    final double inv = 1.0 / cellSize;
-    cols = (width * inv).ceil() + 1;
-    rows = (height * inv).ceil() + 1;
-    final int cells = cols * rows;
+    double finalCell = scaledCell < radius ? radius : scaledCell;
+    final double floorVal = minCellFloor ?? defaultMinCellFloor;
+    if (finalCell < floorVal) {
+      finalCell = floorVal;
+    }
+
+    // Guard against cell-count blowup (Condition 4):
+    // Cap total cells to min(maxTotalCells, max(4 * N, 1024)).
+    final int cellCap = math.min(
+      maxTotalCells,
+      math.max((rawCount * maxCellsPerParticleFactor).toInt(), 1024),
+    );
+    final double minCellForCap = math.sqrt(area / cellCap);
+    if (finalCell < minCellForCap) {
+      finalCell = minCellForCap;
+    }
+    // Fundamental half-stencil invariant: cellSize must never fall below query radius.
+    if (finalCell < radius) {
+      finalCell = radius;
+    }
+
+    cellSize = finalCell;
+    double inv = 1.0 / cellSize;
+    int cCols = (width * inv).ceil() + 1;
+    int cRows = (height * inv).ceil() + 1;
+    int cells = cCols * cRows;
+
+    // In case ceil() + 1 pushed cell count slightly over the cap:
+    while (cells > cellCap && cellSize < math.max(width, height)) {
+      final double ratio = math.sqrt(cells / cellCap) * 1.02;
+      cellSize *= ratio;
+      if (cellSize < radius) cellSize = radius;
+      inv = 1.0 / cellSize;
+      cCols = (width * inv).ceil() + 1;
+      cRows = (height * inv).ceil() + 1;
+      final int newCells = cCols * cRows;
+      if (newCells >= cells) break; // Clamped by radius
+      cells = newCells;
+    }
+
+    cols = cCols;
+    rows = cRows;
 
     if (cellStart.length < cells + 1) {
       cellStart = Int32List(((cells + 1) * 1.25).ceil());
@@ -241,6 +367,10 @@ class SortedSpatialGrid {
         final int c = rowStart + cx;
         final int cellEnd = start[c + 1];
         for (int k = start[c]; k < cellEnd; k++) {
+          if (enableInstrumentation) {
+            candidateChecks++;
+            loopIterations++;
+          }
           final double px = pXs[k];
           final double dx = x - px;
           if (dx > radius || dx < -radius) continue;
@@ -251,6 +381,7 @@ class SortedSpatialGrid {
 
           final double distSq = dx * dx + dy * dy;
           if (distSq <= radiusSq) {
+            if (enableInstrumentation) acceptedPairs++;
             visitor(pIndices[k], px, py, distSq);
           }
         }
@@ -335,6 +466,10 @@ class SortedSpatialGrid {
     final int cCols = cols;
     final int cRows = rows;
 
+    if (enableInstrumentation) {
+      swScan.reset();
+      swScan.start();
+    }
     for (int cy = 0; cy < cRows; cy++) {
       final int rowOffset = cy * cCols;
       final bool hasSouth = cy + 1 < cRows;
@@ -353,6 +488,10 @@ class SortedSpatialGrid {
           final int idx1 = pIndices[k1];
 
           for (int k2 = k1 + 1; k2 < cellEnd; k2++) {
+            if (enableInstrumentation) {
+              candidateChecks++;
+              loopIterations++;
+            }
             final double dx = x1 - pXs[k2];
             if (dx > maxDistance || dx < -maxDistance) continue;
             final double dy = y1 - pYs[k2];
@@ -360,6 +499,7 @@ class SortedSpatialGrid {
 
             final double distSq = dx * dx + dy * dy;
             if (distSq <= maxDistSq) {
+              if (enableInstrumentation) acceptedPairs++;
               visitor(idx1, pIndices[k2], distSq);
             }
           }
@@ -388,6 +528,10 @@ class SortedSpatialGrid {
         }
       }
     }
+    if (enableInstrumentation) {
+      swScan.stop();
+      scanLoopMicros += swScan.elapsedMicroseconds;
+    }
   }
 
   void _pairWithCell(
@@ -412,6 +556,10 @@ class SortedSpatialGrid {
       final int idx1 = pIndices[k1];
 
       for (int k2 = nBegin; k2 < nEnd; k2++) {
+        if (enableInstrumentation) {
+          candidateChecks++;
+          loopIterations++;
+        }
         final double dx = x1 - pXs[k2];
         if (dx > maxDist || dx < -maxDist) continue;
         final double dy = y1 - pYs[k2];
@@ -419,6 +567,7 @@ class SortedSpatialGrid {
 
         final double distSq = dx * dx + dy * dy;
         if (distSq <= maxDistSq) {
+          if (enableInstrumentation) acceptedPairs++;
           visitor(idx1, pIndices[k2], distSq);
         }
       }

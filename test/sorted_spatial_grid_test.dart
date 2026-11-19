@@ -1,4 +1,5 @@
 // ignore_for_file: deprecated_member_use
+import 'dart:math' as math;
 import 'dart:math';
 import 'dart:ui';
 
@@ -78,7 +79,10 @@ void main() {
       final ps = _scatter(2000, size, 3);
       final visible = List<int>.generate(ps.length, (i) => i);
       final grid = SortedSpatialGrid()..build(ps, visible, 1920, 1080, 1);
-      expect(grid.cols * grid.rows, lessThan(2000 * 2));
+      expect(
+        grid.cols * grid.rows,
+        lessThanOrEqualTo((2000 * (SortedSpatialGrid.maxCellsPerParticleFactor + 1)).toInt()),
+      );
     });
 
     test(
@@ -745,6 +749,312 @@ void main() {
       expect(copy3, equals(perf));
       expect(copy3.hashCode, equals(perf.hashCode));
       expect(copy3.toString(), contains('spatialCellMultiplier: 1.3'));
+    });
+
+    group('Zero-Allocation Instrumentation', () {
+      setUp(() {
+        SortedSpatialGrid.enableInstrumentation = false;
+        SortedSpatialGrid.resetCounters();
+      });
+
+      tearDown(() {
+        SortedSpatialGrid.enableInstrumentation = false;
+        SortedSpatialGrid.resetCounters();
+      });
+
+      test('defaults to disabled and counters start at zero', () {
+        expect(SortedSpatialGrid.enableInstrumentation, isFalse);
+        expect(SortedSpatialGrid.candidateChecks, equals(0));
+        expect(SortedSpatialGrid.acceptedPairs, equals(0));
+        expect(SortedSpatialGrid.ratio, equals(0.0));
+
+        final grid = SortedSpatialGrid();
+        expect(grid.isInstrumentationEnabled, isFalse);
+        expect(grid.currentCandidateChecks, equals(0));
+        expect(grid.currentAcceptedPairs, equals(0));
+        expect(grid.currentRatio, equals(0.0));
+      });
+
+      test('when disabled, operations do not increment counters', () {
+        final ps = [
+          Particle(position: const Offset(10, 10), velocity: Offset.zero, color: Colors.white, size: 1),
+          Particle(position: const Offset(15, 15), velocity: Offset.zero, color: Colors.white, size: 1),
+          Particle(position: const Offset(20, 20), velocity: Offset.zero, color: Colors.white, size: 1),
+        ];
+        final grid = SortedSpatialGrid()..build(ps, null, 100, 100, 50);
+
+        grid.forEachPair(50, (i1, i2, distSq) {});
+        grid.queryRadius(10, 10, 50, (i, px, py, distSq) {});
+
+        expect(SortedSpatialGrid.candidateChecks, equals(0));
+        expect(SortedSpatialGrid.acceptedPairs, equals(0));
+        expect(SortedSpatialGrid.ratio, equals(0.0));
+      });
+
+      test('when enabled, forEachPair and queryRadius count candidates and accepted pairs', () {
+        final ps = [
+          Particle(position: const Offset(10, 10), velocity: Offset.zero, color: Colors.white, size: 1),
+          Particle(position: const Offset(12, 12), velocity: Offset.zero, color: Colors.white, size: 1),
+          Particle(position: const Offset(90, 90), velocity: Offset.zero, color: Colors.white, size: 1),
+        ];
+        final grid = SortedSpatialGrid()..build(ps, null, 100, 100, 50);
+
+        SortedSpatialGrid.enableInstrumentation = true;
+        SortedSpatialGrid.resetCounters();
+
+        int pairsVisited = 0;
+        grid.forEachPair(10, (i1, i2, distSq) {
+          pairsVisited++;
+        });
+
+        expect(pairsVisited, equals(1)); // (10,10) and (12,12)
+        expect(SortedSpatialGrid.candidateChecks, greaterThanOrEqualTo(1));
+        expect(SortedSpatialGrid.acceptedPairs, equals(1));
+        expect(SortedSpatialGrid.ratio, equals(SortedSpatialGrid.candidateChecks / 1.0));
+
+        SortedSpatialGrid.resetCounters();
+        int queried = 0;
+        grid.queryRadius(10, 10, 10, (idx, px, py, distSq) {
+          queried++;
+        });
+        expect(queried, equals(2)); // (10,10) and (12,12)
+        expect(SortedSpatialGrid.candidateChecks, greaterThanOrEqualTo(2));
+        expect(SortedSpatialGrid.acceptedPairs, equals(2));
+
+        SortedSpatialGrid.resetCounters();
+        expect(SortedSpatialGrid.candidateChecks, equals(0));
+        expect(SortedSpatialGrid.acceptedPairs, equals(0));
+        expect(SortedSpatialGrid.ratio, equals(0.0));
+      });
+
+      test('OptimizedNetworkPainter increments counters during paint when enabled', () {
+        final ps = [
+          Particle(position: const Offset(10, 10), velocity: Offset.zero, color: Colors.white, size: 1),
+          Particle(position: const Offset(15, 15), velocity: Offset.zero, color: Colors.white, size: 1),
+          Particle(position: const Offset(20, 20), velocity: Offset.zero, color: Colors.white, size: 1),
+        ];
+        final painter = OptimizedNetworkPainter(
+          particles: ps,
+          particleCount: ps.length,
+          touchPoint: null,
+          lineDistance: 50,
+          lineWidth: 1.0,
+          lineColor: Colors.white,
+          particleColor: Colors.white,
+          fill: true,
+          drawNetwork: true,
+        );
+
+        final recorder = PictureRecorder();
+        final canvas = Canvas(recorder);
+
+        SortedSpatialGrid.enableInstrumentation = true;
+        SortedSpatialGrid.resetCounters();
+
+        painter.paint(canvas, const Size(100, 100));
+
+        expect(SortedSpatialGrid.candidateChecks, greaterThan(0));
+        expect(SortedSpatialGrid.acceptedPairs, greaterThan(0));
+        expect(SortedSpatialGrid.ratio, greaterThan(0));
+
+        final pic = recorder.endRecording();
+        pic.dispose();
+      });
+    });
+
+    group('Option A Correctness & Equivalence (Condition 3 & Condition 4)', () {
+      tearDown(() {
+        OptimizedNetworkPainter.resetTuning();
+        SortedSpatialGrid.enableInstrumentation = false;
+        SortedSpatialGrid.resetCounters();
+      });
+
+      Set<int> bruteForcePairs(List<Particle> particles, double r) {
+        final rSq = r * r;
+        final pairs = <int>{};
+        for (int i = 0; i < particles.length; i++) {
+          final p1 = particles[i];
+          for (int j = i + 1; j < particles.length; j++) {
+            final p2 = particles[j];
+            final dx = p1.x - p2.x;
+            final dy = p1.y - p2.y;
+            final distSq = dx * dx + dy * dy;
+            if (distSq <= rSq) {
+              pairs.add((i << 20) | j);
+            }
+          }
+        }
+        return pairs;
+      }
+
+      Set<int> gridPairs(SortedSpatialGrid grid, double r) {
+        final pairs = <int>{};
+        grid.forEachPair(r, (i1, i2, distSq) {
+          final a = math.min(i1, i2);
+          final b = math.max(i1, i2);
+          pairs.add((a << 20) | b);
+        });
+        return pairs;
+      }
+
+      test('Brute force O(N^2) equivalence across floor {20, 4} and k in {1, 2, 4, 8} on random, clustered, coincident inputs', () {
+        const size = Size(500, 500);
+        final floors = [20.0, 4.0];
+        final ks = [1.0, 2.0, 4.0, 8.0];
+        final radii = [5.0, 15.0, 30.0];
+        final grid = SortedSpatialGrid();
+
+        for (int seed = 1; seed <= 3; seed++) {
+          final rng = math.Random(seed * 42);
+
+          // 1. Random input
+          final randomPs = List.generate(100, (i) => Particle(
+            position: Offset(rng.nextDouble() * size.width, rng.nextDouble() * size.height),
+            velocity: Offset.zero,
+            color: Colors.white,
+            size: 2,
+          ));
+
+          // 2. Clustered input
+          final center = Offset(size.width / 2, size.height / 2);
+          final clusteredPs = List.generate(100, (i) {
+            final angle = rng.nextDouble() * 2 * math.pi;
+            final dist = rng.nextDouble() * 25.0;
+            return Particle(
+              position: center + Offset(dist * math.cos(angle), dist * math.sin(angle)),
+              velocity: Offset.zero,
+              color: Colors.white,
+              size: 2,
+            );
+          });
+
+          // 3. Coincident particles input
+          final coincidentPs = List.generate(100, (i) {
+            final spot = Offset((i % 5) * 50.0 + 50.0, (i % 5) * 50.0 + 50.0);
+            return Particle(
+              position: spot,
+              velocity: Offset.zero,
+              color: Colors.white,
+              size: 2,
+            );
+          });
+
+          final testSets = {
+            'random': randomPs,
+            'clustered': clusteredPs,
+            'coincident': coincidentPs,
+          };
+
+          for (final entry in testSets.entries) {
+            final ps = entry.value;
+            for (final r in radii) {
+              final expectedPairs = bruteForcePairs(ps, r);
+              for (final fl in floors) {
+                for (final k in ks) {
+                  OptimizedNetworkPainter.configureTuning(
+                    safetyFloor: fl,
+                    k: k,
+                    minFloor: fl,
+                  );
+                  grid.build(ps, null, size.width, size.height, r);
+                  expect(grid.cellSize, greaterThanOrEqualTo(r),
+                      reason: 'cellSize must never fall below scan radius r');
+                  final actualPairs = gridPairs(grid, r);
+                  expect(actualPairs.length, equals(expectedPairs.length),
+                      reason: 'Pair count mismatch on ${entry.key} with seed=$seed, r=$r, floor=$fl, k=$k');
+                  expect(actualPairs, equals(expectedPairs),
+                      reason: 'Pairs set mismatch on ${entry.key} with seed=$seed, r=$r, floor=$fl, k=$k');
+                }
+              }
+            }
+          }
+        }
+      });
+
+      test('assert that cellSize >= the radius used by the scan across wide range of parameters', () {
+        const size = Size(1920, 1080);
+        final ps = _scatter(1000, size, 123);
+        final grid = SortedSpatialGrid();
+
+        for (final r in [1.0, 2.5, 4.0, 10.0, 20.0, 50.0, 100.0, 200.0]) {
+          for (final k in [1.0, 2.0, 4.0, 8.0]) {
+            SortedSpatialGrid.cellMultiplierK = k;
+            grid.build(ps, null, size.width, size.height, r);
+            expect(grid.cellSize, greaterThanOrEqualTo(r));
+          }
+        }
+      });
+
+      test('queryRadius with radius much larger than cellSize (e.g. 100px query on 4-10px cells) matches brute force and scales properly', () {
+        const size = Size(1000, 1000);
+        final rng = math.Random(999);
+        final ps = List.generate(5000, (i) => Particle(
+          position: Offset(rng.nextDouble() * size.width, rng.nextDouble() * size.height),
+          velocity: Offset.zero,
+          color: Colors.white,
+          size: 2,
+        ));
+
+        // Build with small radius (5px) and k=4, giving tiny cells ~7-10px
+        OptimizedNetworkPainter.configureTuning(safetyFloor: 4.0, k: 4.0, minFloor: 4.0);
+        final grid = SortedSpatialGrid();
+        grid.build(ps, null, size.width, size.height, 5.0);
+        expect(grid.cellSize, lessThanOrEqualTo(10.0));
+        expect(grid.cellSize, greaterThanOrEqualTo(4.0));
+
+        // Query with large touch/hover radius: 100px
+        const double queryR = 100.0;
+        const double queryRSq = queryR * queryR;
+        const double qx = 500.0;
+        const double qy = 500.0;
+
+        // Brute force reference
+        final expectedIndices = <int>{};
+        for (int i = 0; i < ps.length; i++) {
+          final dx = qx - ps[i].x;
+          final dy = qy - ps[i].y;
+          if (dx * dx + dy * dy <= queryRSq) {
+            expectedIndices.add(i);
+          }
+        }
+
+        SortedSpatialGrid.enableInstrumentation = true;
+        SortedSpatialGrid.resetCounters();
+
+        final actualIndices = <int>{};
+        final sw = Stopwatch()..start();
+        grid.queryRadius(qx, qy, queryR, (idx, px, py, distSq) {
+          actualIndices.add(idx);
+        });
+        sw.stop();
+
+        expect(actualIndices, equals(expectedIndices));
+        expect(actualIndices.length, equals(expectedIndices.length));
+        expect(sw.elapsedMicroseconds, lessThan(10000), reason: 'queryRadius cost on 4-10px cells should be sub-10ms');
+      });
+
+      test('Cell-count blowup guard: caps total cells at 3840x2160 with N=20k and 50k', () {
+        const size4K = Size(3840, 2160);
+        final grid = SortedSpatialGrid();
+
+        for (final n in [20000, 50000]) {
+          final ps = _scatter(n, size4K, 77);
+          OptimizedNetworkPainter.configureTuning(safetyFloor: 4.0, k: 8.0, minFloor: 4.0);
+          grid.build(ps, null, size4K.width, size4K.height, 4.0);
+
+          final int totalCells = grid.cols * grid.rows;
+          // Guard conditions:
+          // 1. Must never exceed absolute max cap (250,000 cells)
+          expect(totalCells, lessThanOrEqualTo(SortedSpatialGrid.maxTotalCells),
+              reason: 'Total cells $totalCells must not exceed maxTotalCells (${SortedSpatialGrid.maxTotalCells})');
+          // 2. Must be capped within 4 * N (with small margin for ceil row/col)
+          final int maxExpected = (n * SortedSpatialGrid.maxCellsPerParticleFactor).toInt() + grid.cols + grid.rows + 100;
+          expect(totalCells, lessThanOrEqualTo(maxExpected),
+              reason: 'Total cells $totalCells must be capped proportional to N=$n');
+          // 3. cellSize invariant must hold
+          expect(grid.cellSize, greaterThanOrEqualTo(4.0));
+        }
+      });
     });
   });
 }

@@ -176,7 +176,33 @@ class OptimizedNetworkPainter extends CustomPainter {
 
   // Performance optimization components
   late final AccelerationTracker _accelerationTracker;
-  static const double _minSafetyLineDistance = 20.0;
+
+  /// Default safety floor for connection radius budgeting.
+  /// When line budgeting shrinks connection radius, effective distance is allowed
+  /// down to [defaultMinSafetyLineDistance] (4.0 px), eliminating wasted candidate checks.
+  static const double defaultMinSafetyLineDistance = 4.0;
+  static double minSafetyLineDistance = defaultMinSafetyLineDistance;
+
+  /// Configures cell sizing floor and density multiplier.
+  static void configureTuning({
+    double safetyFloor = defaultMinSafetyLineDistance,
+    double k = SortedSpatialGrid.defaultCellMultiplierK,
+    bool boundingBox = false,
+    double? minFloor,
+  }) {
+    minSafetyLineDistance = safetyFloor;
+    SortedSpatialGrid.cellMultiplierK = k;
+    SortedSpatialGrid.fitToBoundingBox = boundingBox;
+    SortedSpatialGrid.minCellFloor = minFloor;
+  }
+
+  /// Resets cell sizing tuning to production defaults.
+  static void resetTuning() {
+    minSafetyLineDistance = defaultMinSafetyLineDistance;
+    SortedSpatialGrid.cellMultiplierK = SortedSpatialGrid.defaultCellMultiplierK;
+    SortedSpatialGrid.fitToBoundingBox = false;
+    SortedSpatialGrid.minCellFloor = SortedSpatialGrid.defaultMinCellFloor;
+  }
   Size? _lastSize;
 
   // Reusable internal buffers to avoid per-frame GC allocations
@@ -419,7 +445,7 @@ class OptimizedNetworkPainter extends CustomPainter {
 
     if (drawNetwork) {
       final double safetyFloor = lineDistance > 0
-          ? math.min(lineDistance, _minSafetyLineDistance)
+          ? math.min(lineDistance, minSafetyLineDistance)
           : 0.0;
 
       double? effectiveDistance;
@@ -448,6 +474,10 @@ class OptimizedNetworkPainter extends CustomPainter {
       _invMaxDistSq = alphaDistSq > 0 ? 1.0 / alphaDistSq : 0.0;
 
       // Build the unified cell-sorted SoA spatial grid for all connection paths.
+      if (SortedSpatialGrid.enableInstrumentation) {
+        SortedSpatialGrid.swBuild.reset();
+        SortedSpatialGrid.swBuild.start();
+      }
       _sortedGrid.build(
         particles,
         visibleParticles,
@@ -456,6 +486,11 @@ class OptimizedNetworkPainter extends CustomPainter {
         activeDist > 0 ? activeDist : 100.0,
         performance.spatialCellMultiplier,
       );
+      if (SortedSpatialGrid.enableInstrumentation) {
+        SortedSpatialGrid.swBuild.stop();
+        SortedSpatialGrid.gridBuildMicros +=
+            SortedSpatialGrid.swBuild.elapsedMicroseconds;
+      }
 
       _drawConnections(canvas, visibleParticles, effectiveDistance);
       _updateBudgetCorrection(distance, lineDistance);
@@ -495,6 +530,9 @@ class OptimizedNetworkPainter extends CustomPainter {
     }
 
     _drawParticles(canvas, visibleParticles);
+    if (SortedSpatialGrid.enableInstrumentation) {
+      SortedSpatialGrid.frameCount++;
+    }
   }
 
   void _drawParticles(Canvas canvas, List<int> visibleParticles) {
@@ -700,6 +738,10 @@ class OptimizedNetworkPainter extends CustomPainter {
 
             int candidateCount = 0;
             for (int j = i + 1; j < nearEnd; j++) {
+              if (SortedSpatialGrid.enableInstrumentation) {
+                SortedSpatialGrid.candidateChecks++;
+                SortedSpatialGrid.loopIterations++;
+              }
               if (capped && counts[j] >= cap) continue;
               final double dx = px - xs[j];
               final double dxSq = dx * dx;
@@ -707,6 +749,9 @@ class OptimizedNetworkPainter extends CustomPainter {
               final double dy = py - ys[j];
               final double distSq = dxSq + dy * dy;
               if (distSq <= maxDistSq) {
+                if (SortedSpatialGrid.enableInstrumentation) {
+                  SortedSpatialGrid.acceptedPairs++;
+                }
                 if (candidateCount >= _candidateIndices.length) {
                   _growCandidateBuffers();
                 }
@@ -716,6 +761,10 @@ class OptimizedNetworkPainter extends CustomPainter {
               }
             }
             for (int j = southStart; j < southEnd; j++) {
+              if (SortedSpatialGrid.enableInstrumentation) {
+                SortedSpatialGrid.candidateChecks++;
+                SortedSpatialGrid.loopIterations++;
+              }
               if (capped && counts[j] >= cap) continue;
               final double dx = px - xs[j];
               final double dxSq = dx * dx;
@@ -723,6 +772,9 @@ class OptimizedNetworkPainter extends CustomPainter {
               final double dy = py - ys[j];
               final double distSq = dxSq + dy * dy;
               if (distSq <= maxDistSq) {
+                if (SortedSpatialGrid.enableInstrumentation) {
+                  SortedSpatialGrid.acceptedPairs++;
+                }
                 if (candidateCount >= _candidateIndices.length) {
                   _growCandidateBuffers();
                 }
@@ -818,8 +870,17 @@ class OptimizedNetworkPainter extends CustomPainter {
       _drawBatchedConnectionsFast(maxDistSq, dist);
     }
 
+    if (SortedSpatialGrid.enableInstrumentation) {
+      SortedSpatialGrid.swEmission.reset();
+      SortedSpatialGrid.swEmission.start();
+    }
     if (lineRenderer == LineRenderer.vertices) {
       _drawBucketsAsVertices(canvas);
+      if (SortedSpatialGrid.enableInstrumentation) {
+        SortedSpatialGrid.swEmission.stop();
+        SortedSpatialGrid.emissionMicros +=
+            SortedSpatialGrid.swEmission.elapsedMicroseconds;
+      }
       return;
     }
 
@@ -836,6 +897,11 @@ class OptimizedNetworkPainter extends CustomPainter {
       }
     }
     _lastFrameLineCount = lineCount;
+    if (SortedSpatialGrid.enableInstrumentation) {
+      SortedSpatialGrid.swEmission.stop();
+      SortedSpatialGrid.emissionMicros +=
+          SortedSpatialGrid.swEmission.elapsedMicroseconds;
+    }
   }
 
   /// Quad thickness for [LineRenderer.vertices]: [lineWidth], but never
@@ -924,6 +990,11 @@ class OptimizedNetworkPainter extends CustomPainter {
         : (effectiveDist > 0 ? (effectiveDist ~/ 4) : 0);
     final int maxComplexLines = performance.maxComplexLines ?? 5;
 
+    if (SortedSpatialGrid.enableInstrumentation) {
+      SortedSpatialGrid.swScan.reset();
+      SortedSpatialGrid.swScan.start();
+    }
+
     for (int cy = 0; cy < rows; cy++) {
       final bool hasSouth = cy < rows - 1;
       final int rowBase = cy * cols;
@@ -950,22 +1021,36 @@ class OptimizedNetworkPainter extends CustomPainter {
 
           if (!complex && !capped) {
             for (int j = i + 1; j < nearEnd; j++) {
+              if (SortedSpatialGrid.enableInstrumentation) {
+                SortedSpatialGrid.candidateChecks++;
+                SortedSpatialGrid.loopIterations++;
+              }
               final double dx = x1 - xs[j];
               final double dxSq = dx * dx;
               if (dxSq > maxDistSq) continue;
               final double dy = y1 - ys[j];
               final double distSq = dxSq + dy * dy;
               if (distSq <= maxDistSq) {
+                if (SortedSpatialGrid.enableInstrumentation) {
+                  SortedSpatialGrid.acceptedPairs++;
+                }
                 _emitConnection(unified, x1, y1, xs[j], ys[j], distSq);
               }
             }
             for (int j = southStart; j < southEnd; j++) {
+              if (SortedSpatialGrid.enableInstrumentation) {
+                SortedSpatialGrid.candidateChecks++;
+                SortedSpatialGrid.loopIterations++;
+              }
               final double dx = x1 - xs[j];
               final double dxSq = dx * dx;
               if (dxSq > maxDistSq) continue;
               final double dy = y1 - ys[j];
               final double distSq = dxSq + dy * dy;
               if (distSq <= maxDistSq) {
+                if (SortedSpatialGrid.enableInstrumentation) {
+                  SortedSpatialGrid.acceptedPairs++;
+                }
                 _emitConnection(unified, x1, y1, xs[j], ys[j], distSq);
               }
             }
@@ -974,6 +1059,10 @@ class OptimizedNetworkPainter extends CustomPainter {
 
           int candidateCount = 0;
           for (int j = i + 1; j < nearEnd; j++) {
+            if (SortedSpatialGrid.enableInstrumentation) {
+              SortedSpatialGrid.candidateChecks++;
+              SortedSpatialGrid.loopIterations++;
+            }
             if (capped && counts[j] >= cap) continue;
             final double dx = x1 - xs[j];
             final double dxSq = dx * dx;
@@ -981,6 +1070,9 @@ class OptimizedNetworkPainter extends CustomPainter {
             final double dy = y1 - ys[j];
             final double distSq = dxSq + dy * dy;
             if (distSq <= maxDistSq) {
+              if (SortedSpatialGrid.enableInstrumentation) {
+                SortedSpatialGrid.acceptedPairs++;
+              }
               if (candidateCount >= _candidateIndices.length) {
                 _growCandidateBuffers();
               }
@@ -990,6 +1082,10 @@ class OptimizedNetworkPainter extends CustomPainter {
             }
           }
           for (int j = southStart; j < southEnd; j++) {
+            if (SortedSpatialGrid.enableInstrumentation) {
+              SortedSpatialGrid.candidateChecks++;
+              SortedSpatialGrid.loopIterations++;
+            }
             if (capped && counts[j] >= cap) continue;
             final double dx = x1 - xs[j];
             final double dxSq = dx * dx;
@@ -997,6 +1093,9 @@ class OptimizedNetworkPainter extends CustomPainter {
             final double dy = y1 - ys[j];
             final double distSq = dxSq + dy * dy;
             if (distSq <= maxDistSq) {
+              if (SortedSpatialGrid.enableInstrumentation) {
+                SortedSpatialGrid.acceptedPairs++;
+              }
               if (candidateCount >= _candidateIndices.length) {
                 _growCandidateBuffers();
               }
@@ -1062,6 +1161,17 @@ class OptimizedNetworkPainter extends CustomPainter {
             }
           }
         }
+      }
+    }
+
+    if (SortedSpatialGrid.enableInstrumentation) {
+      SortedSpatialGrid.swScan.stop();
+      final int micros = SortedSpatialGrid.swScan.elapsedMicroseconds;
+      SortedSpatialGrid.scanLoopMicros += micros;
+      if (SortedSpatialGrid.frameScanCount <
+          SortedSpatialGrid.frameScanTimes.length) {
+        SortedSpatialGrid.frameScanTimes[SortedSpatialGrid.frameScanCount++] =
+            micros / 1000.0;
       }
     }
   }

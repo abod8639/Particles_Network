@@ -11,11 +11,19 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:particles_network/particles_network.dart';
 
 const String _filter = String.fromEnvironment('PERF_FILTER');
 const int _seconds = int.fromEnvironment('PERF_SECONDS', defaultValue: 5);
 const bool _screenshots = bool.fromEnvironment('PERF_SCREENSHOTS');
 const Duration _warmup = Duration(seconds: 1);
+final double _envSafetyFloor =
+    double.tryParse(const String.fromEnvironment('PERF_SAFETY_FLOOR')) ?? -1.0;
+final double _envCellK =
+    double.tryParse(const String.fromEnvironment('PERF_CELL_K')) ?? -1.0;
+const bool _envFitBB = bool.fromEnvironment('PERF_FIT_BB', defaultValue: false);
+final double _envMinFloor =
+    double.tryParse(const String.fromEnvironment('PERF_MIN_FLOOR')) ?? -1.0;
 
 bool _selected(String name) =>
     _filter.isEmpty ||
@@ -29,14 +37,30 @@ class PerfResult {
   final List<double> buildMs;
   final List<double> rasterMs;
   final List<double> totalMs;
+  final int candidateChecks;
+  final int acceptedPairs;
+  final double ratio;
+  final double scanLoopP50Ms;
+  final double scanLoopP90Ms;
+  final double gridBuildMs;
+  final double physicsMs;
+  final double emissionMs;
 
-  PerfResult(
-    this.name,
-    this.refreshRate,
-    this.buildMs,
-    this.rasterMs,
-    this.totalMs,
-  ) : frames = totalMs.length;
+  PerfResult({
+    required this.name,
+    required this.refreshRate,
+    required this.buildMs,
+    required this.rasterMs,
+    required this.totalMs,
+    required this.candidateChecks,
+    required this.acceptedPairs,
+    required this.ratio,
+    required this.scanLoopP50Ms,
+    required this.scanLoopP90Ms,
+    required this.gridBuildMs,
+    required this.physicsMs,
+    required this.emissionMs,
+  }) : frames = totalMs.length;
 
   double get budgetMs => 1000.0 / refreshRate;
 
@@ -62,9 +86,19 @@ class PerfResult {
         'refresh_rate': refreshRate,
         'fps': _round(fps(window)),
         'jank_ratio': _round(jankRatio),
+        'candidate_checks': candidateChecks,
+        'accepted_pairs': acceptedPairs,
+        'ratio': _round(ratio),
+        'scan_loop_p50_ms': _round(scanLoopP50Ms),
+        'scan_loop_p90_ms': _round(scanLoopP90Ms),
+        'grid_build_ms': _round(gridBuildMs),
+        'physics_ms': _round(physicsMs),
+        'emission_ms': _round(emissionMs),
         'build_p50_ms': _round(_percentile(buildMs, 50)),
         'build_p90_ms': _round(_percentile(buildMs, 90)),
         'build_p99_ms': _round(_percentile(buildMs, 99)),
+        'build_worst_ms': _round(buildMs.isNotEmpty ? buildMs.reduce(math.max) : 0.0),
+        'total_worst_ms': _round(totalMs.isNotEmpty ? totalMs.reduce(math.max) : 0.0),
         'raster_p50_ms': _round(_percentile(rasterMs, 50)),
         'raster_p90_ms': _round(_percentile(rasterMs, 90)),
         'raster_p99_ms': _round(_percentile(rasterMs, 99)),
@@ -110,6 +144,24 @@ void runPerfScenarios(List<(String, Widget Function())> scenarios) {
       await Future<void>.delayed(_warmup);
       if (_screenshots) await binding.takeScreenshot(name);
 
+      if (_envSafetyFloor > 0) {
+        OptimizedNetworkPainter.minSafetyLineDistance = _envSafetyFloor;
+      }
+      if (_envCellK > 0) {
+        SortedSpatialGrid.cellMultiplierK = _envCellK;
+      }
+      if (_envFitBB) {
+        SortedSpatialGrid.fitToBoundingBox = true;
+      }
+      if (_envMinFloor > 0) {
+        SortedSpatialGrid.minCellFloor = _envMinFloor;
+      }
+
+      const bool noInst =
+          bool.fromEnvironment('PERF_NO_INSTRUMENTATION', defaultValue: false);
+      SortedSpatialGrid.enableInstrumentation = !noInst;
+      SortedSpatialGrid.resetCounters();
+
       final List<double> build = [];
       final List<double> raster = [];
       final List<double> total = [];
@@ -126,22 +178,66 @@ void runPerfScenarios(List<(String, Widget Function())> scenarios) {
       // Timings are delivered in batches; give the last batch time to land.
       await Future<void>.delayed(const Duration(milliseconds: 300));
       SchedulerBinding.instance.removeTimingsCallback(onTimings);
+      SortedSpatialGrid.enableInstrumentation = false;
+
+      final int frames = SortedSpatialGrid.frameCount;
+      final int checks =
+          frames > 0 ? (SortedSpatialGrid.candidateChecks ~/ frames) : 0;
+      final int accepted =
+          frames > 0 ? (SortedSpatialGrid.acceptedPairs ~/ frames) : 0;
+      final double ratio = accepted > 0 ? checks / accepted : 0.0;
+      final double gridBuildMs = frames > 0
+          ? (SortedSpatialGrid.gridBuildMicros / (frames * 1000.0))
+          : 0.0;
+      final double physicsMs = frames > 0
+          ? (SortedSpatialGrid.physicsMicros / (frames * 1000.0))
+          : 0.0;
+      final double emissionMs = frames > 0
+          ? (SortedSpatialGrid.emissionMicros / (frames * 1000.0))
+          : 0.0;
+
+      final int scanCount = math.min(
+        SortedSpatialGrid.frameScanCount,
+        SortedSpatialGrid.frameScanTimes.length,
+      );
+      final List<double> scanTimes =
+          SortedSpatialGrid.frameScanTimes.sublist(0, scanCount);
+      final double scanP50 = _percentile(scanTimes, 50);
+      final double scanP90 = _percentile(scanTimes, 90);
 
       final double refreshRate = math.max(
         PlatformDispatcher.instance.views.first.display.refreshRate,
         1.0,
       );
-      final result = PerfResult(name, refreshRate, build, raster, total);
+      final result = PerfResult(
+        name: name,
+        refreshRate: refreshRate,
+        buildMs: build,
+        rasterMs: raster,
+        totalMs: total,
+        candidateChecks: checks,
+        acceptedPairs: accepted,
+        ratio: ratio,
+        scanLoopP50Ms: scanP50,
+        scanLoopP90Ms: scanP90,
+        gridBuildMs: gridBuildMs,
+        physicsMs: physicsMs,
+        emissionMs: emissionMs,
+      );
       final json = result.toJson(window);
       report[name] = json;
       (binding.reportData ??= <String, dynamic>{})['scenarios'] = report;
 
-      print('PERF ${name.padRight(24)} '
-          'fps=${json['fps']} jank=${json['jank_ratio']} '
-          'build p50/p90=${json['build_p50_ms']}/${json['build_p90_ms']}ms '
+      print('PERF ${name.padRight(28)} '
+          'fps=${json['fps']} '
+          'checks/acc=${json['candidate_checks']}/${json['accepted_pairs']} (${json['ratio']}x) '
+          'scan p50/p90=${json['scan_loop_p50_ms']}/${json['scan_loop_p90_ms']}ms '
+          'build=${json['grid_build_ms']}ms phys=${json['physics_ms']}ms emit=${json['emission_ms']}ms '
+          'UI p50/p90=${json['build_p50_ms']}/${json['build_p90_ms']}ms '
           'raster p50/p90=${json['raster_p50_ms']}/${json['raster_p90_ms']}ms');
 
       // Tear down so the next scenario starts from a clean slate.
+      OptimizedNetworkPainter.resetTuning();
       await tester.pumpWidget(const SizedBox.shrink());
       await Future<void>.delayed(const Duration(milliseconds: 300));
     });
