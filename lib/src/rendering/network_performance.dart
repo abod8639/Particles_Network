@@ -175,7 +175,7 @@ class NetworkPerformance {
   const NetworkPerformance.complex({
     this.complexReductionRatio = 0.5,
     this.maxComplexLines = 3,
-    this.complexDensityFactor = 0.25,
+    this.complexDensityFactor = 0.60,
     this.maxConnectionsPerParticle,
     this.maxLinesPerFrame,
     this.frameRateIndependent = false,
@@ -288,7 +288,7 @@ class NetworkPerformance {
     this.isComplex = true,
     this.complexReductionRatio = 0.5,
     this.maxComplexLines = 2,
-    this.complexDensityFactor = 0.25,
+    this.complexDensityFactor = 0.60,
     this.cappedDistanceFactor = 0.75,
     this.antiAlias = true,
     this.spatialCellMultiplier,

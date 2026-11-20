@@ -493,7 +493,7 @@ void main() {
     expect(network.performance.isComplex, isTrue);
     expect(network.performance.complexReductionRatio, equals(0.5));
     expect(network.performance.maxComplexLines, equals(3));
-    expect(network.performance.complexDensityFactor, equals(0.25));
+    expect(network.performance.complexDensityFactor, equals(0.60));
 
     // Scroll down settings card and toggle Auto-Boost chip
     await tester.drag(find.byType(Scrollable).last, const Offset(0, -250));

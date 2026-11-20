@@ -2678,7 +2678,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           _maxLinesPerFrame = 3000;
           _complexReductionRatio = 0.5;
           _maxComplexLines = 2;
-          _complexDensityFactor = 0.25;
+          _complexDensityFactor = 0.60;
           _spatialCellMultiplier = 1.0;
           _cappedDistanceFactor = 0.75;
           break;
@@ -2695,7 +2695,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           _maxLinesPerFrame = null;
           _complexReductionRatio = 0.5;
           _maxComplexLines = 3;
-          _complexDensityFactor = 0.25;
+          _complexDensityFactor = 0.60;
           _spatialCellMultiplier = 1.0;
           _cappedDistanceFactor = 0.75;
           break;
@@ -2780,7 +2780,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       _maxLinesPerFrame == 3000 &&
       _complexReductionRatio == 0.5 &&
       _maxComplexLines == 2 &&
-      _complexDensityFactor == 0.25;
+      _complexDensityFactor == 0.60;
 
   bool get _isComplexPreset =>
       !_autoBoost &&
@@ -2794,7 +2794,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       _maxLinesPerFrame == null &&
       _complexReductionRatio == 0.5 &&
       _maxComplexLines == 3 &&
-      _complexDensityFactor == 0.25;
+      _complexDensityFactor == 0.60;
 
   bool get _isDefaultPreset =>
       !_autoBoost &&
@@ -3235,7 +3235,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
             min: 0.0,
             max: 1.0,
             displayValue: _complexDensityFactor == null
-                ? "Auto (0.25)"
+                ? "Auto (0.60)"
                 : _complexDensityFactor!.toStringAsFixed(2),
             onChanged: (v) {
               setState(() {

@@ -87,7 +87,7 @@ void main() {
       expect(perf.isComplex, isTrue);
       expect(perf.complexReductionRatio, equals(0.5));
       expect(perf.maxComplexLines, equals(2));
-      expect(perf.complexDensityFactor, equals(0.25));
+      expect(perf.complexDensityFactor, equals(0.60));
       expect(perf.autoBoost, isFalse);
     });
 
@@ -161,7 +161,7 @@ void main() {
       expect(perf.isComplex, isTrue);
       expect(perf.complexReductionRatio, equals(0.5));
       expect(perf.maxComplexLines, equals(3));
-      expect(perf.complexDensityFactor, equals(0.25));
+      expect(perf.complexDensityFactor, equals(0.60));
     });
 
     test('complex preset allows overriding throttling parameters', () {
