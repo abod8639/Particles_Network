@@ -220,8 +220,8 @@ class NetworkPerformance {
   /// device performance and frame rate, maximizing visual density and connections
   /// while maintaining smooth target frame rates.
   const NetworkPerformance.auto({
-    this.maxConnectionsPerParticle = 15000,
-    this.maxLinesPerFrame = 15000,
+    this.maxConnectionsPerParticle ,
+    this.maxLinesPerFrame ,
     this.frameRateIndependent = true,
     this.lineRenderer = LineRenderer.vertices,
     this.isComplex = true,
@@ -234,34 +234,6 @@ class NetworkPerformance {
     this.autoBoost = true,
   }) : _fastLineRendering = null;
 
-  /// Boost preset that dynamically tunes and scales connection budgets
-  /// to unlock maximum performance and visual density for the host device.
-  ///
-  /// Deprecated: [NetworkPerformance.boost] is an identical duplicate of [NetworkPerformance.auto].
-  /// Use [NetworkPerformance.auto] instead:
-  /// ```dart
-  /// NetworkPerformance.auto()
-  /// ```
-  /// This preset will be removed in particles_network 2.0.0.
-  @Deprecated(
-    'NetworkPerformance.boost() is an identical duplicate of NetworkPerformance.auto(). '
-    'Use NetworkPerformance.auto() instead. '
-    'This preset will be removed in particles_network 2.0.0.',
-  )
-  const NetworkPerformance.boost({
-    this.maxConnectionsPerParticle = 15000,
-    this.maxLinesPerFrame = 15000,
-    this.frameRateIndependent = true,
-    this.lineRenderer = LineRenderer.vertices,
-    this.isComplex = true,
-    this.complexReductionRatio,
-    this.maxComplexLines,
-    this.complexDensityFactor,
-    this.cappedDistanceFactor = 0.75,
-    this.antiAlias = true,
-    this.spatialCellMultiplier,
-    this.autoBoost = true,
-  }) : _fastLineRendering = null;
 
   /// Balanced preset that maintains good visual quality with sensible performance limits.
   const NetworkPerformance.balanced({
