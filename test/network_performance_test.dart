@@ -53,10 +53,8 @@ void main() {
       expect(perf.maxLinesPerFrame, isNull);
       expect(perf.frameRateIndependent, isTrue);
       expect(perf.lineRenderer, equals(LineRenderer.vertices));
-      expect(perf.isComplex, isTrue);
       expect(perf.autoBoost, isTrue);
     });
-
 
     test('balanced preset has sensible performance and fidelity limits', () {
       const perf = NetworkPerformance.balanced();

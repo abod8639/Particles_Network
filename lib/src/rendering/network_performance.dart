@@ -220,8 +220,8 @@ class NetworkPerformance {
   /// device performance and frame rate, maximizing visual density and connections
   /// while maintaining smooth target frame rates.
   const NetworkPerformance.auto({
-    this.maxConnectionsPerParticle ,
-    this.maxLinesPerFrame ,
+    this.maxConnectionsPerParticle,
+    this.maxLinesPerFrame,
     this.frameRateIndependent = true,
     this.lineRenderer = LineRenderer.vertices,
     this.isComplex = true,
@@ -233,7 +233,6 @@ class NetworkPerformance {
     this.spatialCellMultiplier,
     this.autoBoost = true,
   }) : _fastLineRendering = null;
-
 
   /// Balanced preset that maintains good visual quality with sensible performance limits.
   const NetworkPerformance.balanced({

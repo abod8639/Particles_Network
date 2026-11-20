@@ -303,7 +303,8 @@ void main() {
         particleCount: particles.length,
         particles: particles,
         touchPoint: null,
-        lineDistance: 5.0, // Resulting denseThreshold = (5.0 * 0.60).toInt() = 3
+        lineDistance:
+            5.0, // Resulting denseThreshold = (5.0 * 0.60).toInt() = 3
         particleColor: Colors.white,
         lineColor: Colors.grey,
         touchColor: Colors.red,

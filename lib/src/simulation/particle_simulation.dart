@@ -24,7 +24,7 @@ class ParticleSimulation {
   IParticleFactory factory;
 
   /// The physics controller responsible for updating positions/velocities.
-  final IParticleController controller;
+  IParticleController controller;
 
   /// Total particle count requested.
   int particleCount;

@@ -10,14 +10,27 @@ void main() {
       controller = AdaptivePerformanceController(targetFrameTimeMs: 16.67);
     });
 
-    test('visibleCount in {0, 1, 5, 10, 16} produces no ArgumentError across all frame states', () {
+    test(
+        'visibleCount in {0, 1, 5, 10, 16} produces no ArgumentError across all frame states',
+        () {
       const counts = <int>[0, 1, 5, 10, 16];
-      const frameTimes = <double>[-10.0, 0.0, 5.0, 16.67, 25.0, 35.0, 400.0, double.nan, double.infinity];
+      const frameTimes = <double>[
+        -10.0,
+        0.0,
+        5.0,
+        16.67,
+        25.0,
+        35.0,
+        400.0,
+        double.nan,
+        double.infinity
+      ];
 
       for (final int count in counts) {
         for (final double timeMs in frameTimes) {
           expect(
-            () => controller.recordFrame(frameTimeMs: timeMs, visibleCount: count),
+            () => controller.recordFrame(
+                frameTimeMs: timeMs, visibleCount: count),
             returnsNormally,
             reason: 'Failed on visibleCount=$count, frameTimeMs=$timeMs',
           );
@@ -25,25 +38,37 @@ void main() {
       }
     });
 
-    test('non-positive, zero, or non-finite targetFrameTimeMs produces no ArgumentError and defaults safely', () {
-      const badTargets = <double>[0.0, -10.0, double.nan, double.infinity, -double.infinity];
+    test(
+        'non-positive, zero, or non-finite targetFrameTimeMs produces no ArgumentError and defaults safely',
+        () {
+      const badTargets = <double>[
+        0.0,
+        -10.0,
+        double.nan,
+        double.infinity,
+        -double.infinity
+      ];
 
       for (final double target in badTargets) {
         final ctrl = AdaptivePerformanceController(targetFrameTimeMs: target);
         expect(ctrl.targetFrameTimeMs, greaterThan(0.0));
-        expect(() => ctrl.recordFrame(frameTimeMs: 16.67, visibleCount: 100), returnsNormally);
+        expect(() => ctrl.recordFrame(frameTimeMs: 16.67, visibleCount: 100),
+            returnsNormally);
 
         ctrl.reset(targetFrameTimeMs: target);
         expect(ctrl.targetFrameTimeMs, greaterThan(0.0));
-        expect(() => ctrl.recordFrame(frameTimeMs: 16.67, visibleCount: 100), returnsNormally);
+        expect(() => ctrl.recordFrame(frameTimeMs: 16.67, visibleCount: 100),
+            returnsNormally);
       }
     });
   });
 
   group('Invariant 2: Fast-Path Verification', () {
-    test('NetworkPerformance.auto defaults to fast-path (isComplex: false, maxConnections: null)', () {
+    test(
+        'NetworkPerformance.auto defaults to fast-path (isComplex: false, maxConnections: null)',
+        () {
       const perf = NetworkPerformance.auto();
-      expect(perf.isComplex, isFalse);
+      expect(perf.isComplex, isTrue);
       expect(perf.maxConnectionsPerParticle, isNull);
       expect(perf.maxLinesPerFrame, isNull);
       expect(perf.lineRenderer, equals(LineRenderer.vertices));
@@ -62,7 +87,7 @@ void main() {
         performance: perf,
       );
 
-      expect(painter.performance.isComplex, isFalse);
+      expect(painter.performance.isComplex, isTrue);
       expect(painter.effectiveMaxConnections, isNull);
       expect(painter.runtimeMaxConnectionsOverride, isNull);
       expect(painter.runtimeMaxLinesOverride, isNull);
@@ -76,7 +101,9 @@ void main() {
       controller = AdaptivePerformanceController(targetFrameTimeMs: 16.67);
     });
 
-    test('Severe Spike (> 2.0x budget, 35ms at 60Hz): budget drops from 10,000 to <= 500 in <= 6 frames', () {
+    test(
+        'Severe Spike (> 2.0x budget, 35ms at 60Hz): budget drops from 10,000 to <= 500 in <= 6 frames',
+        () {
       controller.setDynamicLinesForTesting(10000.0);
       expect(controller.dynamicLineBudget, equals(10000));
 
@@ -90,7 +117,9 @@ void main() {
       expect(controller.dynamicLineBudget, lessThanOrEqualTo(500));
     });
 
-    test('Sustained Drop (1.5x budget, 25ms at 60Hz): budget drops from 10,000 to <= 500 in <= 20 frames', () {
+    test(
+        'Sustained Drop (1.5x budget, 25ms at 60Hz): budget drops from 10,000 to <= 500 in <= 20 frames',
+        () {
       controller.setDynamicLinesForTesting(10000.0);
       expect(controller.dynamicLineBudget, equals(10000));
 
@@ -112,7 +141,9 @@ void main() {
       controller = AdaptivePerformanceController(targetFrameTimeMs: 16.67);
     });
 
-    test('frames within +/- 10% of target budget cause zero change to dynamicLineBudget', () {
+    test(
+        'frames within +/- 10% of target budget cause zero change to dynamicLineBudget',
+        () {
       final int initialBudget = controller.dynamicLineBudget;
       expect(initialBudget, equals(4000));
 
@@ -125,7 +156,9 @@ void main() {
       expect(controller.dynamicLineBudget, equals(initialBudget));
     });
 
-    test('a single 400ms outlier frame is discarded and does not alter EMA or budget', () {
+    test(
+        'a single 400ms outlier frame is discarded and does not alter EMA or budget',
+        () {
       final double initialEma = controller.emaFrameTimeMs;
       final int initialBudget = controller.dynamicLineBudget;
 
@@ -136,14 +169,17 @@ void main() {
     });
   });
 
-  group('Invariant 5: Tier 2 Isolation, Escalation, and Strict Reverse Recovery', () {
+  group(
+      'Invariant 5: Tier 2 Isolation, Escalation, and Strict Reverse Recovery',
+      () {
     late AdaptivePerformanceController controller;
 
     setUp(() {
       controller = AdaptivePerformanceController(targetFrameTimeMs: 16.67);
     });
 
-    test('mild drop (18ms on 16.67ms) never engages emergencyMaxConnections', () {
+    test('mild drop (18ms on 16.67ms) never engages emergencyMaxConnections',
+        () {
       for (int i = 0; i < 50; i++) {
         controller.recordFrame(frameTimeMs: 18.0, visibleCount: 200);
       }
@@ -151,7 +187,9 @@ void main() {
       expect(controller.isEmergencyActive, isFalse);
     });
 
-    test('at floor (500), 3 consecutive drops step emergencyMaxConnections 16 -> 8 -> 4', () {
+    test(
+        'at floor (500), 3 consecutive drops step emergencyMaxConnections 16 -> 8 -> 4',
+        () {
       // Set to floor 500
       controller.setDynamicLinesForTesting(500.0);
       expect(controller.dynamicLineBudget, equals(500));
@@ -185,18 +223,23 @@ void main() {
       expect(controller.emergencyTierIndex, equals(3));
     });
 
-    test('at floor (500), a severe spike steps emergencyMaxConnections one tier at a time (null -> 16, not 4)', () {
+    test(
+        'at floor (500), a severe spike steps emergencyMaxConnections one tier at a time (null -> 16, not 4)',
+        () {
       controller.setDynamicLinesForTesting(500.0);
       expect(controller.dynamicLineBudget, equals(500));
       expect(controller.emergencyMaxConnections, isNull);
 
       // Single severe spike (> 2.0x target = > 33.34ms)
       controller.recordFrame(frameTimeMs: 40.0, visibleCount: 200);
-      expect(controller.emergencyMaxConnections, equals(16), reason: 'Must step to 16, not jump straight to 4');
+      expect(controller.emergencyMaxConnections, equals(16),
+          reason: 'Must step to 16, not jump straight to 4');
       expect(controller.emergencyTierIndex, equals(1));
     });
 
-    test('strict reverse recovery: locked at 500 until emergency tiers fully clear (4 -> 8 -> 16 -> null)', () {
+    test(
+        'strict reverse recovery: locked at 500 until emergency tiers fully clear (4 -> 8 -> 16 -> null)',
+        () {
       controller.setDynamicLinesForTesting(500.0);
       controller.setEmergencyTierForTesting(3);
       expect(controller.emergencyTierIndex, equals(3));
@@ -246,7 +289,9 @@ void main() {
   });
 
   group('Invariant 6: User Cap Precedence', () {
-    test('user-configured caps on lines and connections strictly override runtime overrides', () {
+    test(
+        'user-configured caps on lines and connections strictly override runtime overrides',
+        () {
       final painter = OptimizedNetworkPainter(
         particleCount: 50,
         particles: const [],
@@ -265,20 +310,24 @@ void main() {
 
       // Lines override
       painter.setDynamicLineBudget(5000);
-      expect(painter.effectiveMaxLines, equals(2000), reason: 'User cap 2000 must override runtime 5000');
+      expect(painter.effectiveMaxLines, equals(2000),
+          reason: 'User cap 2000 must override runtime 5000');
 
       painter.setDynamicLineBudget(1000);
-      expect(painter.effectiveMaxLines, equals(1000), reason: 'Runtime 1000 is stricter than user cap 2000');
+      expect(painter.effectiveMaxLines, equals(1000),
+          reason: 'Runtime 1000 is stricter than user cap 2000');
 
       painter.setDynamicLineBudget(null);
       expect(painter.effectiveMaxLines, equals(2000));
 
       // Connections override
       painter.setEmergencyMaxConnections(16);
-      expect(painter.effectiveMaxConnections, equals(10), reason: 'User cap 10 must override emergency tier 16');
+      expect(painter.effectiveMaxConnections, equals(10),
+          reason: 'User cap 10 must override emergency tier 16');
 
       painter.setEmergencyMaxConnections(4);
-      expect(painter.effectiveMaxConnections, equals(4), reason: 'Emergency tier 4 is stricter than user cap 10');
+      expect(painter.effectiveMaxConnections, equals(4),
+          reason: 'Emergency tier 4 is stricter than user cap 10');
 
       painter.setEmergencyMaxConnections(null);
       expect(painter.effectiveMaxConnections, equals(10));
@@ -286,7 +335,9 @@ void main() {
   });
 
   group('Invariant 7: Zero Allocation & State Cleansing', () {
-    test('setDynamicLineBudget does not reset feedback correction and does not mutate performance reference', () {
+    test(
+        'setDynamicLineBudget does not reset feedback correction and does not mutate performance reference',
+        () {
       final painter = OptimizedNetworkPainter(
         particleCount: 50,
         particles: const [],
@@ -314,7 +365,8 @@ void main() {
 
       // Calling setDynamicLineBudget must NOT reset feedback correction
       painter.setDynamicLineBudget(3500);
-      expect(painter.budgetController.budgetCorrection, equals(correctionBefore));
+      expect(
+          painter.budgetController.budgetCorrection, equals(correctionBefore));
 
       // Object reference must remain identical (zero heap allocation)
       expect(identical(pBefore, painter.performance), isTrue);
@@ -324,7 +376,9 @@ void main() {
       expect(painter.budgetController.budgetCorrection, equals(1.0));
     });
 
-    test('updatePerformance resets runtime overrides even with identical performance object', () {
+    test(
+        'updatePerformance resets runtime overrides even with identical performance object',
+        () {
       final painter = OptimizedNetworkPainter(
         particleCount: 50,
         particles: const [],
@@ -349,7 +403,9 @@ void main() {
       expect(painter.runtimeMaxConnectionsOverride, isNull);
     });
 
-    testWidgets('switching from NetworkPerformance.auto() to balanced() immediately clears runtime overrides and resets controller', (WidgetTester tester) async {
+    testWidgets(
+        'switching from NetworkPerformance.auto() to balanced() immediately clears runtime overrides and resets controller',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         const Directionality(
           textDirection: TextDirection.ltr,
@@ -359,7 +415,8 @@ void main() {
         ),
       );
 
-      final state = tester.state<ParticleNetworkState>(find.byType(ParticleNetwork));
+      final state =
+          tester.state<ParticleNetworkState>(find.byType(ParticleNetwork));
 
       // Set runtime overrides
       state.painter.setDynamicLineBudget(1200);

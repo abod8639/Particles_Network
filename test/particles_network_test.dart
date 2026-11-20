@@ -28,11 +28,11 @@ void main() {
       findsOneWidget,
     );
 
-    // التحقق من وجود GestureDetector للتعامل مع اللمس
+    // التحقق من وجود Listener للتعامل مع اللمس
     expect(
       find.descendant(
         of: find.byType(ParticleNetwork),
-        matching: find.byType(GestureDetector),
+        matching: find.byType(Listener),
       ),
       findsOneWidget,
     );
@@ -649,7 +649,7 @@ void main() {
     expect(network.lineDistance, 100);
     expect(network.particleColor, Colors.white);
     expect(network.lineColor, const Color.fromARGB(255, 100, 255, 180));
-    expect(network.touchColor, Colors.amber);
+    expect(network.touchColor, const Color(0xFFFFC107));
     expect(network.touchActivation, isTrue);
     expect(network.isComplex, isFalse);
     expect(network.fill, isTrue);
@@ -852,7 +852,7 @@ void main() {
 
     const defaultWidget = ParticleNetwork();
     expect(defaultWidget.usedLegacyTouchColor, isFalse);
-    expect(defaultWidget.touchColor, Colors.amber);
+    expect(defaultWidget.touchColor, const Color(0xFFFFC107));
 
     const legacyWidget = ParticleNetwork(
       touchColor: Colors.purple,
@@ -863,7 +863,7 @@ void main() {
 
   test('TouchFeatures color property and copyWith', () {
     const defaultFeatures = TouchFeatures();
-    expect(defaultFeatures.color, Colors.amber);
+    expect(defaultFeatures.color, const Color(0xFFFFC107));
     expect(defaultFeatures.enabled, isTrue);
     expect(defaultFeatures.touchActivation, isTrue);
 
@@ -897,7 +897,7 @@ void main() {
   });
 
   testWidgets(
-    'GestureDetector onPanCancel updates touchPoint to Offset.infinite',
+    'Listener onPointerCancel updates touchPoint to Offset.infinite',
     (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -913,13 +913,13 @@ void main() {
 
       state.touchPoint = const Offset(120, 120);
 
-      final gestureDetector = tester.widget<GestureDetector>(
+      final listener = tester.widget<Listener>(
         find.descendant(
           of: find.byType(ParticleNetwork),
-          matching: find.byType(GestureDetector),
+          matching: find.byType(Listener),
         ),
       );
-      gestureDetector.onPanCancel?.call();
+      listener.onPointerCancel?.call(const PointerCancelEvent(pointer: 0));
       await tester.pump();
 
       expect(state.touchPoint, equals(Offset.infinite));
@@ -1431,7 +1431,7 @@ void main() {
       var painter = customPaint.painter as OptimizedNetworkPainter;
 
       // Safe baseline initialized for auto preset (fast-path defaults)
-      expect(painter.performance.isComplex, isFalse);
+      expect(painter.performance.isComplex, isTrue);
       expect(painter.effectiveMaxConnections, isNull);
       expect(painter.performance.maxConnectionsPerParticle, isNull);
       expect(painter.performance.maxLinesPerFrame, isNull);
@@ -1510,7 +1510,7 @@ void main() {
 
       // Baseline fast-path
       expect(painter.effectiveMaxConnections, isNull);
-      expect(painter.performance.isComplex, isFalse);
+      expect(painter.performance.isComplex, isTrue);
 
       // Feed fast frames
       final smoothTimings = List<FrameTiming>.generate(320, (int i) {

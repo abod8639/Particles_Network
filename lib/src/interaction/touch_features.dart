@@ -2,7 +2,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/widgets.dart';
 import 'package:particles_network/src/legacy/legacy_deprecation_logger.dart';
 
 /// Configuration class for touch interaction behavior and physics.
@@ -79,7 +79,7 @@ class TouchFeatures {
     this.maxTouchSpeed = 5.5,
     this.damping = 0.985,
     this.lineDistance,
-    this.color = Colors.amber,
+    this.color = const Color(0xFFFFC107), // Colors.amber
   })  : enabled = touchActivation ?? enabled ?? true,
         speed = speed ?? decayRate ?? 0.42,
         force = force ?? pullForce ?? 0.42;

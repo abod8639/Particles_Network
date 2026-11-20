@@ -201,9 +201,10 @@ class AdaptivePerformanceController {
     double? maxScale,
     double? emaWeight,
     PerformanceMonitor? monitor,
-  })  : _targetFrameTimeMs = (targetFrameTimeMs > 0 && targetFrameTimeMs.isFinite)
-            ? targetFrameTimeMs
-            : 16.67,
+  })  : _targetFrameTimeMs =
+            (targetFrameTimeMs > 0 && targetFrameTimeMs.isFinite)
+                ? targetFrameTimeMs
+                : 16.67,
         _emaFrameTimeMs = (targetFrameTimeMs > 0 && targetFrameTimeMs.isFinite)
             ? targetFrameTimeMs
             : 16.67;
@@ -276,7 +277,8 @@ class AdaptivePerformanceController {
         _consecutiveDrops = 0;
       }
 
-      if ((isSevereSpike || _consecutiveDrops >= 3) && _emergencyTierIndex < 3) {
+      if ((isSevereSpike || _consecutiveDrops >= 3) &&
+          _emergencyTierIndex < 3) {
         _emergencyTierIndex++;
         _smoothedDynamicLines = minFloor.toDouble();
         _consecutiveDrops = 0;

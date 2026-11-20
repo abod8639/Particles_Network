@@ -4,7 +4,7 @@ library;
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/widgets.dart';
 import 'package:particles_network/src/core/particle.dart';
 import 'package:particles_network/src/factory/particle_factory.dart';
 import 'package:particles_network/src/interaction/touch_features.dart';
@@ -102,6 +102,17 @@ class ParticleNetwork extends StatefulWidget {
 
   /// Checks whether the deprecated [isComplex] parameter was explicitly configured.
   bool get usedLegacyIsComplex => _isComplex != null;
+
+  /// Effective touch features configuration merging legacy and modern parameters.
+  TouchFeatures get effectiveTouchFeatures => touchFeatures.copyWith(
+        color: _touchColor,
+        enabled: _touchActivation,
+      );
+
+  /// Effective performance configuration merging legacy and modern parameters.
+  NetworkPerformance get effectivePerformance => performance.copyWith(
+        isComplex: _isComplex,
+      );
 
   /// Whether to fill particles (true) or stroke them (false) (default: true).
   final bool fill;
@@ -220,7 +231,7 @@ class ParticleNetwork extends StatefulWidget {
     )
     double? linewidth,
     this.lineDistance = 100,
-    this.particleColor = Colors.white,
+    this.particleColor = const Color(0xFFFFFFFF),
     this.lineColor = const Color.fromARGB(255, 100, 255, 180),
     @Deprecated(
       'Use touchFeatures (TouchFeatures(color: ...)) instead. This parameter will be removed in particles_network 2.0.0.',
@@ -313,6 +324,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
 
   late final Ticker ticker;
   Offset touchPoint = Offset.infinite;
+  int? _activePointerId;
   Size get currentSize => simulation.currentSize;
 
   final ValueNotifier<int> frameNotifier = ValueNotifier<int>(0);
@@ -350,35 +362,25 @@ class ParticleNetworkState extends State<ParticleNetwork>
   }
 
   void _initPainter() {
+    final effectiveTouch = widget.effectiveTouchFeatures;
+    final effectivePerf = widget.effectivePerformance;
+
     _painter = OptimizedNetworkPainter(
-      drawNetwork: widget.drawNetwork,
+      drawNetwork: widget.effectiveDrawNetwork,
       fill: widget.fill,
-      isComplex: widget.effectiveIsComplex,
-      lineWidth: widget.lineWidth,
+      isComplex: effectivePerf.isComplex,
+      lineWidth: widget.effectiveLineWidth,
       particleCount: widget.particleCount,
-      touchActivation: widget.effectiveTouchActivation,
+      touchActivation: effectiveTouch.enabled,
       particles: simulation.particles,
       spatialGrid: simulation.spatialGrid,
       touchPoint: touchPoint,
       lineDistance: widget.lineDistance,
       particleColor: widget.particleColor,
       lineColor: widget.lineColor,
-      touchColor: widget.effectiveTouchColor,
-      touchFeatures: widget.touchFeatures.copyWith(
-        color: widget._touchColor != null &&
-                widget.touchFeatures.color == Colors.amber
-            ? widget.effectiveTouchColor
-            : null,
-        enabled: widget._touchActivation != null &&
-                widget.touchFeatures.enabled == true
-            ? widget.effectiveTouchActivation
-            : null,
-      ),
-      performance: widget.performance.copyWith(
-        isComplex: widget._isComplex != null
-            ? widget.effectiveIsComplex
-            : widget.performance.isComplex,
-      ),
+      touchColor: effectiveTouch.color,
+      touchFeatures: effectiveTouch,
+      performance: effectivePerf,
       simulateTouchInPaint: false,
       repaint: frameNotifier,
     );
@@ -477,6 +479,8 @@ class ParticleNetworkState extends State<ParticleNetwork>
 
     simulation = ParticleSimulation(
       particleCount: widget.particleCount,
+      factory: widget.particleFactory,
+      controller: widget.particleController,
       maxSpeed: widget.maxSpeed,
       maxSize: widget.maxSize,
       particleColor: widget.particleColor,
@@ -539,7 +543,18 @@ class ParticleNetworkState extends State<ParticleNetwork>
     }
 
     bool factoryChanged = false;
-    if (widget.maxSpeed != oldWidget.maxSpeed ||
+    if (widget.particleFactory != oldWidget.particleFactory) {
+      if (widget.particleFactory != null) {
+        simulation.factory = widget.particleFactory!;
+      } else {
+        simulation.updateFactory(
+          maxSpeed: widget.maxSpeed,
+          maxSize: widget.maxSize,
+          color: widget.particleColor,
+        );
+      }
+      factoryChanged = true;
+    } else if (widget.maxSpeed != oldWidget.maxSpeed ||
         widget.maxSize != oldWidget.maxSize ||
         widget.particleColor != oldWidget.particleColor) {
       simulation.updateFactory(
@@ -548,6 +563,11 @@ class ParticleNetworkState extends State<ParticleNetwork>
         color: widget.particleColor,
       );
       factoryChanged = true;
+    }
+
+    if (widget.particleController != oldWidget.particleController &&
+        widget.particleController != null) {
+      simulation.controller = widget.particleController!;
     }
 
     if (widget.particleCount != oldWidget.particleCount || factoryChanged) {
@@ -562,67 +582,51 @@ class ParticleNetworkState extends State<ParticleNetwork>
       simulation.updateGravity(_buildGravityConfig(currentSize));
     }
 
+    final effectiveTouch = widget.effectiveTouchFeatures;
+    final oldEffectiveTouch = oldWidget.effectiveTouchFeatures;
+    final effectivePerf = widget.effectivePerformance;
+    final oldEffectivePerf = oldWidget.effectivePerformance;
+
     // Targeted painter updates
-    final currentTouchColor = widget.effectiveTouchColor;
-    final oldTouchColor = oldWidget.effectiveTouchColor;
     if (widget.particleColor != oldWidget.particleColor ||
         widget.lineColor != oldWidget.lineColor ||
-        currentTouchColor != oldTouchColor) {
+        effectiveTouch.color != oldEffectiveTouch.color) {
       _painter.updateColors(
         particleColor: widget.particleColor,
         lineColor: widget.lineColor,
-        touchColor: currentTouchColor,
+        touchColor: effectiveTouch.color,
       );
     }
 
-    if (widget.lineWidth != oldWidget.lineWidth) {
-      _painter.updateLineWidth(widget.lineWidth);
+    if (widget.effectiveLineWidth != oldWidget.effectiveLineWidth) {
+      _painter.updateLineWidth(widget.effectiveLineWidth);
     }
-
-    final effectivePerf = widget.performance.copyWith(
-      isComplex: widget._isComplex != null
-          ? widget.effectiveIsComplex
-          : widget.performance.isComplex,
-    );
-    final oldEffectivePerf = oldWidget.performance.copyWith(
-      isComplex: oldWidget._isComplex != null
-          ? oldWidget.effectiveIsComplex
-          : oldWidget.performance.isComplex,
-    );
 
     if (widget.lineDistance != oldWidget.lineDistance ||
         _painter.lineDistance != widget.lineDistance) {
       _painter.updateLineDistance(widget.lineDistance);
     }
 
-    final currentTouchActivation = widget.effectiveTouchActivation;
-    final oldTouchActivation = oldWidget.effectiveTouchActivation;
-    final currentIsComplex = widget.effectiveIsComplex;
-    final oldIsComplex = oldWidget.effectiveIsComplex;
-    if (widget.drawNetwork != oldWidget.drawNetwork ||
+    if (widget.effectiveDrawNetwork != oldWidget.effectiveDrawNetwork ||
         widget.fill != oldWidget.fill ||
-        currentIsComplex != oldIsComplex ||
-        currentTouchActivation != oldTouchActivation) {
+        effectivePerf.isComplex != oldEffectivePerf.isComplex ||
+        effectiveTouch.enabled != oldEffectiveTouch.enabled) {
       _painter.updateRenderFlags(
-        drawNetwork: widget.drawNetwork,
+        drawNetwork: widget.effectiveDrawNetwork,
         fill: widget.fill,
-        isComplex: currentIsComplex,
-        touchActivation: currentTouchActivation,
+        isComplex: effectivePerf.isComplex,
+        touchActivation: effectiveTouch.enabled,
       );
     }
 
-    if (widget.touchFeatures != oldWidget.touchFeatures) {
-      _painter.updateTouchFeatures(widget.touchFeatures);
+    if (effectiveTouch != oldEffectiveTouch) {
+      _painter.updateTouchFeatures(effectiveTouch);
     }
 
     if (effectivePerf != oldEffectivePerf) {
       _painter.updatePerformance(effectivePerf);
       if (effectivePerf.autoBoost != oldEffectivePerf.autoBoost) {
         _setAdaptiveTimings(effectivePerf.autoBoost);
-        if (!effectivePerf.autoBoost) {
-          _painter.resetRuntimeOverrides();
-          _adaptiveController.reset(targetFrameTimeMs: _displayFrameBudgetMs());
-        }
       } else if (effectivePerf.autoBoost) {
         _painter.resetRuntimeOverrides();
         _adaptiveController.reset(targetFrameTimeMs: _displayFrameBudgetMs());
@@ -653,27 +657,71 @@ class ParticleNetworkState extends State<ParticleNetwork>
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        _generateParticles(constraints.biggest);
+        final bool hasBoundedWidth = constraints.hasBoundedWidth;
+        final bool hasBoundedHeight = constraints.hasBoundedHeight;
 
-        return MouseRegion(
-          onHover:
-              hover ? (event) => _updateTouchPoint(event.localPosition) : null,
-          onExit: hover ? (_) => _updateTouchPoint(Offset.infinite) : null,
-          child: GestureDetector(
-            onPanDown: (d) => _updateTouchPoint(d.localPosition),
-            onPanUpdate: (d) => _updateTouchPoint(d.localPosition),
-            onPanEnd: (_) => _updateTouchPoint(Offset.infinite),
-            onPanCancel: () => _updateTouchPoint(Offset.infinite),
-            child: RepaintBoundary(
-              child: CustomPaint(
-                painter: _painter,
-                isComplex: widget.isComplex,
-                willChange: true,
-                child: const SizedBox.expand(),
-              ),
-            ),
+        final Size safeSize = Size(
+          hasBoundedWidth ? constraints.maxWidth : 0.0,
+          hasBoundedHeight ? constraints.maxHeight : 0.0,
+        );
+
+        if (hasBoundedWidth && hasBoundedHeight) {
+          _generateParticles(safeSize);
+        } else {
+          _generateParticles(Size.zero);
+        }
+
+        Widget content = RepaintBoundary(
+          child: CustomPaint(
+            painter: _painter,
+            willChange: true,
+            child: (hasBoundedWidth && hasBoundedHeight)
+                ? const SizedBox.expand()
+                : SizedBox(
+                    width: safeSize.width,
+                    height: safeSize.height,
+                  ),
           ),
         );
+
+        content = Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: (event) {
+            if (_activePointerId == null) {
+              _activePointerId = event.pointer;
+              _updateTouchPoint(event.localPosition);
+            }
+          },
+          onPointerMove: (event) {
+            if (event.pointer == _activePointerId) {
+              _updateTouchPoint(event.localPosition);
+            }
+          },
+          onPointerUp: (event) {
+            if (event.pointer == _activePointerId) {
+              _activePointerId = null;
+              _updateTouchPoint(Offset.infinite);
+            }
+          },
+          onPointerCancel: (event) {
+            if (_activePointerId == null || event.pointer == _activePointerId) {
+              _activePointerId = null;
+              _updateTouchPoint(Offset.infinite);
+            }
+          },
+          child: content,
+        );
+
+        if (hover) {
+          content = MouseRegion(
+            onEnter: (event) => _updateTouchPoint(event.localPosition),
+            onHover: (event) => _updateTouchPoint(event.localPosition),
+            onExit: (_) => _updateTouchPoint(Offset.infinite),
+            child: content,
+          );
+        }
+
+        return content;
       },
     );
   }

@@ -6,7 +6,7 @@ library;
 
 import 'dart:math' as math;
 
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/widgets.dart';
 
 /// The Particle class represents a single particle in the particle network.
 /// It contains properties for position, velocity, color, size, and visibility.
@@ -306,7 +306,7 @@ Particle createMockParticle({
   return Particle(
     position: position ?? Offset.zero,
     velocity: velocity ?? Offset.zero,
-    color: color ?? Colors.white,
+    color: color ?? const Color(0xFFFFFFFF),
     size: size ?? 1.0,
   );
 }
