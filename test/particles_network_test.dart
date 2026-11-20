@@ -995,7 +995,7 @@ void main() {
   );
 
   testWidgets(
-    'ParticleNetwork adjusts line distance and max connections when autoBoost is true',
+    'ParticleNetwork regulates dynamic line budget and keeps lineDistance constant when autoBoost is true',
     (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -1044,9 +1044,9 @@ void main() {
       customPaint = tester.widget<CustomPaint>(customPaintFinder);
       painter = customPaint.painter as OptimizedNetworkPainter;
 
-      // Adaptive controller should have throttled lineDistance and maxConnectionsPerParticle
-      expect(painter.lineDistance, lessThan(100.0));
-      expect(painter.maxConnectionsPerParticle, lessThan(10));
+      // Line distance remains constant; line budget is throttled down
+      expect(painter.lineDistance, equals(100.0));
+      expect(painter.effectiveMaxLines, lessThanOrEqualTo(4000));
     },
   );
 
@@ -1162,13 +1162,14 @@ void main() {
         ),
       );
 
-      // Now reporting slow timings throttles lineDistance
+      // Now reporting slow timings throttles line budget
       tester.binding.platformDispatcher.onReportTimings!(timings);
       await tester.pump(const Duration(milliseconds: 16));
 
       customPaint = tester.widget<CustomPaint>(customPaintFinder);
       painter = customPaint.painter as OptimizedNetworkPainter;
-      expect(painter.lineDistance, lessThan(100.0));
+      expect(painter.lineDistance, equals(100.0));
+      expect(painter.runtimeMaxLinesOverride, isNotNull);
 
       // Toggle autoBoost back to false via didUpdateWidget
       await tester.pumpWidget(
@@ -1192,12 +1193,14 @@ void main() {
       customPaint = tester.widget<CustomPaint>(customPaintFinder);
       painter = customPaint.painter as OptimizedNetworkPainter;
       expect(painter.lineDistance, equals(100.0));
+      expect(painter.runtimeMaxLinesOverride, isNull);
+      expect(painter.runtimeMaxConnectionsOverride, isNull);
       expect(painter.maxConnectionsPerParticle, equals(10));
     },
   );
 
   testWidgets(
-    'didUpdateWidget preserves adaptive distance scaling when lineDistance changes',
+    'didUpdateWidget preserves lineDistance when lineDistance changes',
     (WidgetTester tester) async {
       final customPaintFinder = find.descendant(
         of: find.byType(ParticleNetwork),
@@ -1233,16 +1236,13 @@ void main() {
         ),
       );
 
-      // Throttling drops scaleFactor (e.g. to 0.9)
       tester.binding.platformDispatcher.onReportTimings!(timings);
       await tester.pump(const Duration(milliseconds: 16));
 
       var customPaint = tester.widget<CustomPaint>(customPaintFinder);
       var painter = customPaint.painter as OptimizedNetworkPainter;
-      expect(painter.lineDistance, closeTo(90.0, 0.5));
+      expect(painter.lineDistance, equals(100.0));
 
-      // Rebuilding with lineDistance: 200 should immediately apply scaleFactor (0.9 * 200 = 180)
-      // without flickering back to raw 200 for one frame
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -1262,8 +1262,7 @@ void main() {
 
       customPaint = tester.widget<CustomPaint>(customPaintFinder);
       painter = customPaint.painter as OptimizedNetworkPainter;
-      expect(painter.lineDistance, closeTo(180.0, 1.0));
-      expect(painter.lineDistance, lessThan(200.0));
+      expect(painter.lineDistance, equals(200.0));
     },
   );
 
@@ -1401,8 +1400,8 @@ void main() {
         ),
       );
       final painter = customPaint.painter as OptimizedNetworkPainter;
-      expect(painter.lineDistance, closeTo(90.0, 1.0));
-      expect(painter.maxConnectionsPerParticle, equals(9));
+      expect(painter.lineDistance, equals(100.0));
+      expect(painter.maxConnectionsPerParticle, equals(10));
     },
   );
 
@@ -1431,9 +1430,11 @@ void main() {
       var customPaint = tester.widget<CustomPaint>(customPaintFinder);
       var painter = customPaint.painter as OptimizedNetworkPainter;
 
-      // Safe baseline initialized for auto preset
-      expect(painter.maxConnectionsPerParticle, equals(6));
-      expect(painter.maxLinesPerFrame, equals(15000));
+      // Safe baseline initialized for auto preset (fast-path defaults)
+      expect(painter.performance.isComplex, isFalse);
+      expect(painter.effectiveMaxConnections, isNull);
+      expect(painter.performance.maxConnectionsPerParticle, isNull);
+      expect(painter.performance.maxLinesPerFrame, isNull);
 
       // Feed fast frames (4ms raster time, smooth headroom)
       final smoothTimings = List<FrameTiming>.generate(16, (int i) {
@@ -1453,12 +1454,12 @@ void main() {
       customPaint = tester.widget<CustomPaint>(customPaintFinder);
       painter = customPaint.painter as OptimizedNetworkPainter;
 
-      // In autoBoost mode, smooth frames increase maxConnectionsPerParticle and maxLinesPerFrame
-      expect(painter.maxConnectionsPerParticle, greaterThanOrEqualTo(6));
-      expect(painter.maxLinesPerFrame, greaterThanOrEqualTo(15000));
+      // In autoBoost mode, smooth frames dynamically set line budget up to effectiveMaxCap
+      expect(painter.effectiveMaxLines, equals(1800));
+      expect(painter.effectiveMaxConnections, isNull);
 
-      // Now feed 6 dropped frames (30ms raster time, triggers two consecutive drop steps)
-      final dropTimings = List<FrameTiming>.generate(6, (int i) {
+      // Now feed dropped frames (30ms raster time) to hit floor and trigger Tier 2
+      final dropTimings = List<FrameTiming>.generate(20, (int i) {
         final int start = (i + 20) * 40000;
         return FrameTiming(
           vsyncStart: start,
@@ -1475,9 +1476,10 @@ void main() {
       customPaint = tester.widget<CustomPaint>(customPaintFinder);
       painter = customPaint.painter as OptimizedNetworkPainter;
 
-      // Dropped frames cause autoBoost to throttle down connections and line distance
-      expect(painter.maxConnectionsPerParticle, lessThan(7));
-      expect(painter.lineDistance, lessThan(100.0));
+      // Dropped frames cause Tier 1 to drop to floor (500) and Tier 2 to engage emergency capping
+      expect(painter.effectiveMaxLines, equals(500));
+      expect(painter.effectiveMaxConnections, isNotNull);
+      expect(painter.lineDistance, equals(100.0));
     },
   );
 
@@ -1506,10 +1508,11 @@ void main() {
       var customPaint = tester.widget<CustomPaint>(customPaintFinder);
       var painter = customPaint.painter as OptimizedNetworkPainter;
 
-      // Safe baseline initialized for auto preset
-      expect(painter.maxConnectionsPerParticle, equals(6));
+      // Baseline fast-path
+      expect(painter.effectiveMaxConnections, isNull);
+      expect(painter.performance.isComplex, isFalse);
 
-      // Feed 320 fast frames (40 step-ups of 0.05, scaling scaleFactor to 3.0)
+      // Feed fast frames
       final smoothTimings = List<FrameTiming>.generate(320, (int i) {
         final int start = i * 20000;
         return FrameTiming(
@@ -1527,9 +1530,10 @@ void main() {
       customPaint = tester.widget<CustomPaint>(customPaintFinder);
       painter = customPaint.painter as OptimizedNetworkPainter;
 
-      // Connections scaled beyond 15 limit
-      expect(painter.maxConnectionsPerParticle, greaterThan(15));
-      // Line distance was preserved at base distance (not stretched)
+      // Connections remain uncapped on fast path
+      expect(painter.effectiveMaxConnections, isNull);
+      expect(painter.effectiveMaxLines, equals(1800));
+      // Line distance was preserved at base distance
       expect(painter.lineDistance, equals(100.0));
     },
   );

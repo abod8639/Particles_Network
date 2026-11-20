@@ -1,6 +1,7 @@
 /// Specialized painter for rendering a high-performance particle network.
 library;
 
+import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 import 'package:particles_network/src/core/particle.dart';
 import 'package:particles_network/src/interaction/touch_interaction_handler.dart';
@@ -49,14 +50,65 @@ class OptimizedNetworkPainter extends CustomPainter {
   TouchFeatures touchFeatures;
   NetworkPerformance performance;
 
+  int? _runtimeMaxLinesOverride;
+  int? _runtimeMaxConnectionsOverride;
+
+  /// Runtime override for max lines per frame in adaptive/auto mode.
+  int? get runtimeMaxLinesOverride => _runtimeMaxLinesOverride;
+
+  /// Runtime override for max connections per particle in emergency capping mode.
+  int? get runtimeMaxConnectionsOverride => _runtimeMaxConnectionsOverride;
+
+  /// Number of currently visible particles in the viewport.
+  int get visibleParticleCount => _visibleParticles.length;
+
+  /// Effective upper bound on lines per frame respecting user-configured cap precedence.
+  int? get effectiveMaxLines {
+    final int? userCap = performance.maxLinesPerFrame;
+    final int? runtimeCap = _runtimeMaxLinesOverride;
+    if (userCap != null && runtimeCap != null) {
+      return math.min(userCap, runtimeCap);
+    }
+    return runtimeCap ?? userCap;
+  }
+
+  /// Effective upper bound on connections per particle respecting user-configured cap precedence.
+  int? get effectiveMaxConnections {
+    final int? userCap = performance.maxConnectionsPerParticle;
+    final int? runtimeCap = _runtimeMaxConnectionsOverride;
+    if (userCap != null && runtimeCap != null) {
+      return math.min(userCap, runtimeCap);
+    }
+    return runtimeCap ?? userCap;
+  }
+
+  /// Sets the dynamic line budget runtime override without resetting feedback correction.
+  void setDynamicLineBudget(int? budget) {
+    _runtimeMaxLinesOverride = budget;
+  }
+
+  /// Sets the emergency connection capping runtime override.
+  void setEmergencyMaxConnections(int? connections) {
+    _runtimeMaxConnectionsOverride = connections;
+  }
+
+  /// Clears all runtime overrides.
+  void resetRuntimeOverrides() {
+    _runtimeMaxLinesOverride = null;
+    _runtimeMaxConnectionsOverride = null;
+  }
+
   int? get maxConnectionsPerParticle => performance.maxConnectionsPerParticle;
-  set maxConnectionsPerParticle(int? v) =>
-      updatePerformance(performance.copyWith(
-          maxConnectionsPerParticle: v,
-          clearMaxConnectionsPerParticle: v == null));
+  set maxConnectionsPerParticle(int? v) {
+    resetRuntimeOverrides();
+    updatePerformance(performance.copyWith(
+        maxConnectionsPerParticle: v,
+        clearMaxConnectionsPerParticle: v == null));
+  }
 
   int? get maxLinesPerFrame => performance.maxLinesPerFrame;
   set maxLinesPerFrame(int? v) {
+    resetRuntimeOverrides();
     if (v != performance.maxLinesPerFrame) _budgetController.resetFeedback();
     updatePerformance(performance.copyWith(
         maxLinesPerFrame: v, clearMaxLinesPerFrame: v == null));
@@ -83,6 +135,8 @@ class OptimizedNetworkPainter extends CustomPainter {
 
   // Collaborators
   final LineBudgetController _budgetController = LineBudgetController();
+  @visibleForTesting
+  LineBudgetController get budgetController => _budgetController;
   late final LineStylePalette _palette;
   final CandidateBuffer _candidateBuffer = CandidateBuffer();
   static const ClusterThrottler _throttler = ClusterThrottler();
@@ -230,8 +284,8 @@ class OptimizedNetworkPainter extends CustomPainter {
         baseDistance: lineDistance,
         size: size,
         visibleCount: visible.length,
-        maxLinesPerFrame: maxLinesPerFrame,
-        maxConnectionsPerParticle: maxConnectionsPerParticle,
+        maxLinesPerFrame: effectiveMaxLines,
+        maxConnectionsPerParticle: effectiveMaxConnections,
         cappedDistanceFactor: performance.cappedDistanceFactor,
         safetyFloor: gridTuning.minCellFloor,
       );
@@ -248,7 +302,7 @@ class OptimizedNetworkPainter extends CustomPainter {
       _drawConnections(
           canvas, visible, r.scanRadius, r.alphaRadius, invMaxDistSq);
       _budgetController.updateFeedback(
-          maxLinesPerFrame: maxLinesPerFrame,
+          maxLinesPerFrame: effectiveMaxLines,
           lastFrameLineCount: _lastFrameLineCount,
           usedDistance: r.gridRadius,
           baseDistance: lineDistance);
@@ -293,7 +347,7 @@ class OptimizedNetworkPainter extends CustomPainter {
       double alphaDist, double invMaxDistSq) {
     final double maxDistSq = scanDist * scanDist;
     final bool complex = _isComplexThrottlingActive;
-    final bool capped = maxConnectionsPerParticle != null;
+    final bool capped = effectiveMaxConnections != null;
 
     if (visible.length < kBatchThreshold) {
       _lastFrameLineCount = _scanner.scanIndividual(
@@ -307,7 +361,7 @@ class OptimizedNetworkPainter extends CustomPainter {
         candidateBuffer: _candidateBuffer,
         throttler: _throttler,
         performance: performance,
-        maxConnectionsPerParticle: maxConnectionsPerParticle,
+        maxConnectionsPerParticle: effectiveMaxConnections,
         isComplexMode: complex,
       );
       return;
@@ -330,7 +384,7 @@ class OptimizedNetworkPainter extends CustomPainter {
         candidateBuffer: _candidateBuffer,
         throttler: _throttler,
         performance: performance,
-        maxConnectionsPerParticle: maxConnectionsPerParticle,
+        maxConnectionsPerParticle: effectiveMaxConnections,
         isComplexMode: complex,
       );
     }
@@ -375,6 +429,7 @@ class OptimizedNetworkPainter extends CustomPainter {
   }
 
   void updatePerformance(NetworkPerformance newPerformance) {
+    resetRuntimeOverrides();
     if (newPerformance == performance) return;
     if (newPerformance.maxLinesPerFrame != performance.maxLinesPerFrame) {
       _budgetController.resetFeedback();
@@ -400,23 +455,30 @@ class OptimizedNetworkPainter extends CustomPainter {
     double? complexDensityFactor,
     bool clearcomplexDensityFactor = false,
     bool? antiAlias,
-  }) =>
-      updatePerformance(LegacyPainterAdapter.foldPerformanceOptions(
-        current: performance,
-        lineRenderer: lineRenderer,
-        isComplex: isComplex,
-        complexReductionRatio: complexReductionRatio,
-        clearcomplexReductionRatio: clearcomplexReductionRatio,
-        maxComplexLines: maxComplexLines,
-        clearMaxComplexLines: clearMaxComplexLines,
-        complexDensityFactor: complexDensityFactor,
-        clearcomplexDensityFactor: clearcomplexDensityFactor,
-        antiAlias: antiAlias,
-        maxLinesPerFrame: maxLinesPerFrame,
-        clearMaxLinesPerFrame: clearMaxLinesPerFrame,
-        maxConnectionsPerParticle: maxConnectionsPerParticle,
-        clearMaxConnectionsPerParticle: clearMaxConnectionsPerParticle,
-      ));
+  }) {
+    if (maxLinesPerFrame != null ||
+        clearMaxLinesPerFrame ||
+        maxConnectionsPerParticle != null ||
+        clearMaxConnectionsPerParticle) {
+      resetRuntimeOverrides();
+    }
+    updatePerformance(LegacyPainterAdapter.foldPerformanceOptions(
+      current: performance,
+      lineRenderer: lineRenderer,
+      isComplex: isComplex,
+      complexReductionRatio: complexReductionRatio,
+      clearcomplexReductionRatio: clearcomplexReductionRatio,
+      maxComplexLines: maxComplexLines,
+      clearMaxComplexLines: clearMaxComplexLines,
+      complexDensityFactor: complexDensityFactor,
+      clearcomplexDensityFactor: clearcomplexDensityFactor,
+      antiAlias: antiAlias,
+      maxLinesPerFrame: maxLinesPerFrame,
+      clearMaxLinesPerFrame: clearMaxLinesPerFrame,
+      maxConnectionsPerParticle: maxConnectionsPerParticle,
+      clearMaxConnectionsPerParticle: clearMaxConnectionsPerParticle,
+    ));
+  }
 
   void updateLineWidth(double width) {
     if (width == lineWidth) return;
@@ -495,7 +557,7 @@ class OptimizedNetworkPainter extends CustomPainter {
       candidateBuffer: _candidateBuffer,
       throttler: _throttler,
       performance: performance,
-      maxConnectionsPerParticle: maxConnectionsPerParticle,
+      maxConnectionsPerParticle: effectiveMaxConnections,
       isComplexMode: _isComplexThrottlingActive,
     );
   }

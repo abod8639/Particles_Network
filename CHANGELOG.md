@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## [1.9.7]
+## [1.9.7] not released yet
 
 ### Added
 * **Cell-sorted SoA neighbour search (`SortedSpatialGrid`)**: The default batched path and the `fastLineRendering` path now counting-sort visible particles by cell into flat `Float64List` coordinate arrays. Each particle's candidates then come from just two contiguous memory ranges, instead of per-cell linked lists over `Particle` objects. The output is identical: tests compare the line count against brute force across densities, radii and out-of-bounds particles. The cell size is `max(r, sqrt(A/N))`, so tiny budgeted radii do not create huge grids. `Particle` and `List<Particle>` APIs are unchanged; physics was only 0.14 ms for 10,000 particles, so it stays array-of-objects. On a Galaxy S10, per-frame paint CPU time (tight loop at full clock, two runs vs. one before) went:

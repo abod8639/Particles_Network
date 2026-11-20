@@ -5,6 +5,7 @@
 library;
 
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'package:particles_network/src/legacy/legacy_deprecation_logger.dart';
 
 // Tracks the acceleration state of particles
@@ -136,130 +137,196 @@ class PerformanceMonitor {
 }
 
 /// Dynamically adjusts visualization quality metrics (distance, connections)
-/// to maintain a stable target frame rate without dropped frames.
+/// using a mathematically stable Dual-Tier Degradation Ladder to maintain a stable
+/// target frame rate without dropped frames.
 class AdaptivePerformanceController {
-  /// Underlying performance monitor tracking frame durations.
-  final PerformanceMonitor monitor;
+  /// Safety minimum floor for Tier 1 line budget regulation.
+  static const int minFloor = 500;
 
-  /// Target frame time in milliseconds (default: 16.67ms for 60 FPS).
-  final double targetFrameTimeMs;
+  /// Absolute upper cap on dynamic lines per frame.
+  static const int absoluteMaxCap = 25000;
 
-  /// Minimum quality scale allowed.
-  final double minScale;
+  /// Initial dynamic line budget on startup and reset.
+  static const double initialDynamicLines = 4000.0;
 
-  /// Maximum quality scale allowed.
-  final double maxScale;
+  /// Cutoff threshold for discarding outlier frames (transitions, resumes).
+  static const double outlierCutoffMs = 250.0;
 
-  /// Weight factor (alpha) for exponential moving average updates (default: 0.1).
-  final double emaWeight;
+  /// Emergency connection capping progression steps.
+  static const List<int> emergencySteps = <int>[16, 8, 4];
 
-  /// Whether dynamic performance boosting is active to maximize connections
-  /// and line density when excess frame headroom is available.
-  final bool autoBoost;
-
-  double _currentScale = 1.0;
+  double _targetFrameTimeMs;
+  double _emaFrameTimeMs;
+  double _smoothedDynamicLines = initialDynamicLines;
+  int _emergencyTierIndex = 0;
   int _consecutiveDrops = 0;
   int _consecutiveSmooth = 0;
-  double? _emaFrameTimeMs;
 
   /// Exponential moving average of recorded frame times in milliseconds.
-  double get emaFrameTimeMs => _emaFrameTimeMs ?? targetFrameTimeMs;
+  double get emaFrameTimeMs => _emaFrameTimeMs;
 
-  /// Upper threshold factor for detecting dropped frames (hysteresis upper bound).
-  double get dropThresholdMs => targetFrameTimeMs * 1.25;
+  /// Target frame time in milliseconds.
+  double get targetFrameTimeMs => _targetFrameTimeMs;
 
-  /// Lower threshold factor for detecting smooth frames (hysteresis lower bound).
-  double get smoothThresholdMs => targetFrameTimeMs * 0.85;
+  /// Current smoothed dynamic line budget rounded to nearest integer.
+  int get dynamicLineBudget => _smoothedDynamicLines.round();
+
+  /// Raw smoothed dynamic lines value.
+  double get smoothedDynamicLines => _smoothedDynamicLines;
+
+  /// Dynamic scale factor relative to the initial line budget (4000.0).
+  double get scaleFactor => _smoothedDynamicLines / initialDynamicLines;
+
+  /// Current emergency connection cap, or `null` if uncapped (fast-path).
+  int? get emergencyMaxConnections =>
+      _emergencyTierIndex > 0 ? emergencySteps[_emergencyTierIndex - 1] : null;
+
+  /// Whether Tier 2 emergency connection capping is currently engaged.
+  bool get isEmergencyActive => _emergencyTierIndex > 0;
+
+  /// Current emergency tier index (0 = uncapped, 1 = 16, 2 = 8, 3 = 4).
+  int get emergencyTierIndex => _emergencyTierIndex;
+
+  /// Consecutive dropped frames recorded while at the line budget floor.
+  int get consecutiveDrops => _consecutiveDrops;
+
+  /// Consecutive smooth frames recorded while in emergency recovery.
+  int get consecutiveSmooth => _consecutiveSmooth;
 
   /// Creates an [AdaptivePerformanceController].
   AdaptivePerformanceController({
-    PerformanceMonitor? monitor,
-    this.targetFrameTimeMs = 16.67,
-    this.minScale = 0.4,
+    double targetFrameTimeMs = 16.67,
+    bool autoBoost = false,
+    double? minScale,
     double? maxScale,
-    this.emaWeight = 0.1,
-    this.autoBoost = false,
-  })  : maxScale = maxScale ?? (autoBoost ? 2.5 : 1.0),
-        monitor = monitor ?? PerformanceMonitor();
+    double? emaWeight,
+    PerformanceMonitor? monitor,
+  })  : _targetFrameTimeMs = (targetFrameTimeMs > 0 && targetFrameTimeMs.isFinite)
+            ? targetFrameTimeMs
+            : 16.67,
+        _emaFrameTimeMs = (targetFrameTimeMs > 0 && targetFrameTimeMs.isFinite)
+            ? targetFrameTimeMs
+            : 16.67;
 
-  /// Current quality scale factor between [minScale] and [maxScale].
-  double get scaleFactor => _currentScale;
+  /// Records a frame timing duration and adapts the line budget and emergency tier.
+  void recordFrame({required double frameTimeMs, required int visibleCount}) {
+    // 1. Guards
+    if (visibleCount < 2 ||
+        frameTimeMs <= 0 ||
+        !frameTimeMs.isFinite ||
+        frameTimeMs > outlierCutoffMs) {
+      return;
+    }
 
-  /// Records a frame duration and adapts the scale factor if necessary.
-  void recordFrameTime(Duration duration) {
-    monitor.recordFrameTime(duration);
-    final double ms = duration.inMicroseconds / 1000.0;
-    _emaFrameTimeMs = _emaFrameTimeMs == null
-        ? ms
-        : (emaWeight * ms + (1.0 - emaWeight) * _emaFrameTimeMs!);
+    // 2. Safe Upper Bound (No ArgumentError)
+    final int effectiveMaxCap = math.max(
+      minFloor,
+      math.min(absoluteMaxCap, visibleCount * 30),
+    );
+    if (_smoothedDynamicLines > effectiveMaxCap) {
+      _smoothedDynamicLines = effectiveMaxCap.toDouble();
+    }
 
-    if (ms > dropThresholdMs) {
-      _consecutiveDrops++;
-      _consecutiveSmooth = 0;
-      if (_consecutiveDrops >= 3) {
-        // Step down quality scale to recover frame rate
-        _currentScale = (_currentScale - 0.1).clamp(minScale, maxScale);
+    // 3. Asymmetric EMA Update
+    final double maxBudgetMs = math.max(1.0, _targetFrameTimeMs * 3.0);
+    final double clampedMs = frameTimeMs.clamp(1.0, maxBudgetMs);
+    final double emaWeight = clampedMs > _emaFrameTimeMs ? 0.30 : 0.15;
+    _emaFrameTimeMs =
+        emaWeight * clampedMs + (1.0 - emaWeight) * _emaFrameTimeMs;
+
+    // 4. Tier 1 Update (Locked while Tier 2 is active)
+    if (_emergencyTierIndex > 0) {
+      _smoothedDynamicLines = minFloor.toDouble();
+    } else if (frameTimeMs > 2.0 * _targetFrameTimeMs) {
+      _smoothedDynamicLines =
+          math.max(minFloor.toDouble(), _smoothedDynamicLines * 0.5);
+    } else {
+      final double headroomRatio =
+          _targetFrameTimeMs / math.max(_emaFrameTimeMs, 1.0);
+      if (headroomRatio < 0.90 || headroomRatio > 1.10) {
+        final double scale;
+        final double alpha;
+        if (headroomRatio < 0.90) {
+          scale = headroomRatio * headroomRatio;
+          alpha = 0.35;
+        } else {
+          scale = headroomRatio;
+          alpha = 0.10;
+        }
+        final double targetLines = (_smoothedDynamicLines * scale).clamp(
+          minFloor.toDouble(),
+          effectiveMaxCap.toDouble(),
+        );
+        _smoothedDynamicLines += alpha * (targetLines - _smoothedDynamicLines);
+      }
+    }
+
+    // 5. Tier 2 State Machine (Emergency Connection Capping & Step-Up Recovery)
+    final bool atFloor = _smoothedDynamicLines <= minFloor * 1.15;
+    final bool isSevereSpike = frameTimeMs > 2.0 * _targetFrameTimeMs;
+    final bool isSustainedDrop = frameTimeMs > 1.35 * _targetFrameTimeMs;
+    final bool isSmoothFrame = frameTimeMs < 0.90 * _targetFrameTimeMs;
+
+    // Escalation (only when atFloor is true)
+    if (atFloor) {
+      if (isSustainedDrop) {
+        _consecutiveDrops++;
+        _consecutiveSmooth = 0;
+      } else {
         _consecutiveDrops = 0;
       }
-    } else if (ms < smoothThresholdMs) {
-      _consecutiveSmooth++;
-      _consecutiveDrops = 0;
-      final int requiredSmooth =
-          (autoBoost && ms < smoothThresholdMs * 0.6) ? 8 : 15;
-      if (_consecutiveSmooth >= requiredSmooth) {
-        // Step up quality scale gradually when performance is consistently smooth
-        _currentScale = (_currentScale + 0.05).clamp(minScale, maxScale);
+
+      if ((isSevereSpike || _consecutiveDrops >= 3) && _emergencyTierIndex < 3) {
+        _emergencyTierIndex++;
+        _smoothedDynamicLines = minFloor.toDouble();
+        _consecutiveDrops = 0;
         _consecutiveSmooth = 0;
       }
-    } else {
-      // Within hysteresis deadband: stabilize counters
-      _consecutiveDrops = 0;
-      _consecutiveSmooth = 0;
+    }
+
+    // Step-Up Recovery (only when _emergencyTierIndex > 0)
+    if (_emergencyTierIndex > 0) {
+      if (isSmoothFrame) {
+        _consecutiveSmooth++;
+        if (_consecutiveSmooth >= 15) {
+          _emergencyTierIndex--;
+          _consecutiveSmooth = 0;
+        }
+      } else {
+        _consecutiveSmooth = 0;
+      }
     }
   }
 
-  /// Returns the line distance scaled by the current performance factor.
-  ///
-  /// Clamped between [minScale] and 1.0 so that dynamic performance boosting
-  /// increases connection limits and density without distorting the visual
-  /// reach of particles across the canvas.
-  double getAdjustedLineDistance(double baseDistance) {
-    return baseDistance * _currentScale.clamp(minScale, 1.0);
+  /// Compatibility wrapper for recording Duration-based frame times.
+  void recordFrameTime(Duration duration, [int visibleCount = 100]) {
+    recordFrame(
+      frameTimeMs: duration.inMicroseconds / 1000.0,
+      visibleCount: visibleCount,
+    );
   }
 
-  /// Returns the maximum connection count scaled by the current performance factor.
-  int getAdjustedMaxConnections(int baseMaxConnections, [int? maxAllowed]) {
-    final int upper = maxAllowed ??
-        (autoBoost
-            ? math.max(
-                baseMaxConnections, (baseMaxConnections * maxScale).round())
-            : baseMaxConnections);
-    return (baseMaxConnections * _currentScale).round().clamp(1, upper);
-  }
-
-  /// Dynamically computes the maximum connections per particle in auto-boost mode,
-  /// scaling up to [maxCap] to give the maximum possible number according to device speed.
-  int getAutoMaxConnections({int base = 6, int maxCap = 15000}) {
-    final int upper = math.min(maxCap, (base * maxScale).round());
-    final int target = (base * _currentScale).round();
-    return target.clamp(1, upper);
-  }
-
-  /// Returns the maximum lines per frame scaled by the current performance factor.
-  int getAdjustedMaxLines(int baseMaxLines, [int? maxAllowed]) {
-    final int upper = maxAllowed ??
-        (autoBoost
-            ? math.max(baseMaxLines, (baseMaxLines * maxScale).round())
-            : baseMaxLines);
-    return (baseMaxLines * _currentScale).round().clamp(100, upper);
-  }
-
-  /// Resets controller state and underlying monitor.
-  void reset() {
-    _currentScale = 1.0;
+  /// Resets controller state and re-initializes EMA with target frame time.
+  void reset({required double targetFrameTimeMs}) {
+    final double safeTarget =
+        (targetFrameTimeMs > 0 && targetFrameTimeMs.isFinite)
+            ? targetFrameTimeMs
+            : 16.67;
+    _targetFrameTimeMs = safeTarget;
+    _emaFrameTimeMs = safeTarget;
+    _smoothedDynamicLines = initialDynamicLines;
+    _emergencyTierIndex = 0;
     _consecutiveDrops = 0;
     _consecutiveSmooth = 0;
-    _emaFrameTimeMs = null;
-    monitor.clear();
+  }
+
+  @visibleForTesting
+  void setDynamicLinesForTesting(double lines) {
+    _smoothedDynamicLines = lines;
+  }
+
+  @visibleForTesting
+  void setEmergencyTierForTesting(int tier) {
+    _emergencyTierIndex = tier;
   }
 }

@@ -306,10 +306,10 @@ class ParticleNetworkState extends State<ParticleNetwork>
   double get lastFrameLineDistance => _painter.lastFrameLineDistance;
 
   /// Effective maximum connections allowed per particle in the current frame.
-  int? get effectiveMaxConnections => _painter.maxConnectionsPerParticle;
+  int? get effectiveMaxConnections => _painter.effectiveMaxConnections;
 
   /// Effective maximum lines allowed per frame in the current frame.
-  int? get effectiveMaxLines => _painter.maxLinesPerFrame;
+  int? get effectiveMaxLines => _painter.effectiveMaxLines;
 
   late final Ticker ticker;
   Offset touchPoint = Offset.infinite;
@@ -378,13 +378,6 @@ class ParticleNetworkState extends State<ParticleNetwork>
         isComplex: widget._isComplex != null
             ? widget.effectiveIsComplex
             : widget.performance.isComplex,
-        maxConnectionsPerParticle: widget.performance.autoBoost
-            ? (widget.performance.maxConnectionsPerParticle != null &&
-                    widget.performance.maxConnectionsPerParticle! <= 100
-                ? widget.performance.maxConnectionsPerParticle
-                : math.min(
-                    6, widget.performance.maxConnectionsPerParticle ?? 6))
-            : widget.performance.maxConnectionsPerParticle,
       ),
       simulateTouchInPaint: false,
       repaint: frameNotifier,
@@ -394,69 +387,48 @@ class ParticleNetworkState extends State<ParticleNetwork>
   void _setAdaptiveTimings(bool enabled) {
     if (enabled == _timingsCallbackRegistered) return;
     if (enabled) {
+      _adaptiveController.reset(targetFrameTimeMs: _displayFrameBudgetMs());
       SchedulerBinding.instance.addTimingsCallback(_onFrameTimings);
     } else {
       SchedulerBinding.instance.removeTimingsCallback(_onFrameTimings);
-      _adaptiveController.reset();
-      _painter.updateLineDistance(widget.lineDistance);
-      if (widget.performance.maxConnectionsPerParticle != null) {
-        _painter.maxConnectionsPerParticle =
-            widget.performance.maxConnectionsPerParticle;
-      } else {
-        _painter.maxConnectionsPerParticle = null;
-      }
+      _painter.resetRuntimeOverrides();
+      _adaptiveController.reset(targetFrameTimeMs: _displayFrameBudgetMs());
     }
     _timingsCallbackRegistered = enabled;
   }
 
-  /// Feeds real frame cost (the slower of the UI and raster threads) into the
-  /// adaptive controller and applies the resulting quality scale.
+  /// Feeds real frame cost into the adaptive controller and applies dual-tier
+  /// dynamic budgeting and emergency capping overrides.
   void _onFrameTimings(List<FrameTiming> timings) {
     if (!mounted) return;
     for (final FrameTiming t in timings) {
-      final Duration build = t.buildDuration;
-      final Duration raster = t.rasterDuration;
-      _adaptiveController.recordFrameTime(build > raster ? build : raster);
-    }
-    final double adjustedDist =
-        _adaptiveController.getAdjustedLineDistance(widget.lineDistance);
-    if (adjustedDist != _painter.lineDistance) {
-      _painter.updateLineDistance(adjustedDist);
-    }
-    final int? maxConn = widget.performance.maxConnectionsPerParticle;
-    if (widget.performance.autoBoost) {
-      final int cap = maxConn ?? 15000;
-      final int base =
-          (maxConn != null && maxConn <= 100) ? maxConn : math.min(6, cap);
-      final int adjustedConn = _adaptiveController.getAutoMaxConnections(
-        base: base,
-        maxCap: cap,
+      final double durationMs = math.max(
+            t.buildDuration.inMicroseconds,
+            t.rasterDuration.inMicroseconds,
+          ) /
+          1000.0;
+      _adaptiveController.recordFrame(
+        frameTimeMs: durationMs,
+        visibleCount: _painter.visibleParticleCount,
       );
-      if (adjustedConn != _painter.maxConnectionsPerParticle) {
-        _painter.maxConnectionsPerParticle = adjustedConn;
-      }
-      final int? maxLines = widget.performance.maxLinesPerFrame;
-      if (maxLines != null) {
-        final int adjustedLines =
-            _adaptiveController.getAdjustedMaxLines(maxLines);
-        if (adjustedLines != _painter.maxLinesPerFrame) {
-          _painter.maxLinesPerFrame = adjustedLines;
-        }
-      }
-    } else if (maxConn != null) {
-      final int adjustedConn =
-          _adaptiveController.getAdjustedMaxConnections(maxConn);
-      if (adjustedConn != _painter.maxConnectionsPerParticle) {
-        _painter.maxConnectionsPerParticle = adjustedConn;
-      }
+    }
+    final int nextLines = _adaptiveController.dynamicLineBudget;
+    if (nextLines != _painter.runtimeMaxLinesOverride) {
+      _painter.setDynamicLineBudget(nextLines);
+    }
+    final int? nextConn = _adaptiveController.emergencyMaxConnections;
+    if (nextConn != _painter.runtimeMaxConnectionsOverride) {
+      _painter.setEmergencyMaxConnections(nextConn);
     }
   }
 
   double _displayFrameBudgetMs() {
-    final double refreshRate = WidgetsBinding
+    final double rawRate = WidgetsBinding
             .instance.platformDispatcher.implicitView?.display.refreshRate ??
         60.0;
-    return 1000.0 / (refreshRate > 0 ? refreshRate : 60.0);
+    final double safeRate =
+        (rawRate >= 30.0 && rawRate <= 240.0) ? rawRate : 60.0;
+    return 1000.0 / safeRate;
   }
 
   void _updateTouchPoint(Offset point) {
@@ -499,16 +471,8 @@ class ParticleNetworkState extends State<ParticleNetwork>
       }
     }
 
-    final double? maxScale = widget.performance.autoBoost
-        ? ((widget.performance.maxConnectionsPerParticle != null)
-            ? math.max(2.5, widget.performance.maxConnectionsPerParticle! / 6.0)
-            : 2500.0)
-        : null;
-
     _adaptiveController = AdaptivePerformanceController(
       targetFrameTimeMs: _displayFrameBudgetMs(),
-      autoBoost: widget.performance.autoBoost,
-      maxScale: maxScale,
     );
 
     simulation = ParticleSimulation(
@@ -626,11 +590,9 @@ class ParticleNetworkState extends State<ParticleNetwork>
           : oldWidget.performance.isComplex,
     );
 
-    if (widget.lineDistance != oldWidget.lineDistance) {
-      final double distance = effectivePerf.autoBoost
-          ? _adaptiveController.getAdjustedLineDistance(widget.lineDistance)
-          : widget.lineDistance;
-      _painter.updateLineDistance(distance);
+    if (widget.lineDistance != oldWidget.lineDistance ||
+        _painter.lineDistance != widget.lineDistance) {
+      _painter.updateLineDistance(widget.lineDistance);
     }
 
     final currentTouchActivation = widget.effectiveTouchActivation;
@@ -654,57 +616,16 @@ class ParticleNetworkState extends State<ParticleNetwork>
     }
 
     if (effectivePerf != oldEffectivePerf) {
-      if (effectivePerf.autoBoost != oldEffectivePerf.autoBoost ||
-          effectivePerf.maxConnectionsPerParticle !=
-              oldEffectivePerf.maxConnectionsPerParticle) {
-        final double? maxScale = effectivePerf.autoBoost
-            ? ((effectivePerf.maxConnectionsPerParticle != null)
-                ? math.max(2.5, effectivePerf.maxConnectionsPerParticle! / 6.0)
-                : 2500.0)
-            : null;
-        _adaptiveController = AdaptivePerformanceController(
-          targetFrameTimeMs: _displayFrameBudgetMs(),
-          autoBoost: effectivePerf.autoBoost,
-          maxScale: maxScale,
-        );
-      }
       _painter.updatePerformance(effectivePerf);
       if (effectivePerf.autoBoost != oldEffectivePerf.autoBoost) {
         _setAdaptiveTimings(effectivePerf.autoBoost);
+        if (!effectivePerf.autoBoost) {
+          _painter.resetRuntimeOverrides();
+          _adaptiveController.reset(targetFrameTimeMs: _displayFrameBudgetMs());
+        }
       } else if (effectivePerf.autoBoost) {
-        final double targetDist =
-            _adaptiveController.getAdjustedLineDistance(widget.lineDistance);
-        if (_painter.lineDistance != targetDist) {
-          _painter.updateLineDistance(targetDist);
-        }
-        if (effectivePerf.autoBoost) {
-          final int? maxConn = effectivePerf.maxConnectionsPerParticle;
-          final int cap = maxConn ?? 15000;
-          final int base =
-              (maxConn != null && maxConn <= 100) ? maxConn : math.min(6, cap);
-          final int adjustedConn = _adaptiveController.getAutoMaxConnections(
-            base: base,
-            maxCap: cap,
-          );
-          if (_painter.maxConnectionsPerParticle != adjustedConn) {
-            _painter.maxConnectionsPerParticle = adjustedConn;
-          }
-          final int? maxLines = effectivePerf.maxLinesPerFrame;
-          if (maxLines != null) {
-            final int adjustedLines =
-                _adaptiveController.getAdjustedMaxLines(maxLines);
-            if (_painter.maxLinesPerFrame != adjustedLines) {
-              _painter.maxLinesPerFrame = adjustedLines;
-            }
-          }
-        } else if (effectivePerf.maxConnectionsPerParticle != null) {
-          final int adjustedConn =
-              _adaptiveController.getAdjustedMaxConnections(
-                  effectivePerf.maxConnectionsPerParticle!);
-          if (_painter.maxConnectionsPerParticle != adjustedConn) {
-            _painter.maxConnectionsPerParticle = adjustedConn;
-          }
-        }
+        _painter.resetRuntimeOverrides();
+        _adaptiveController.reset(targetFrameTimeMs: _displayFrameBudgetMs());
       }
     }
   }
@@ -721,7 +642,6 @@ class ParticleNetworkState extends State<ParticleNetwork>
     _setAdaptiveTimings(false);
     ticker.dispose();
     frameNotifier.dispose();
-    _adaptiveController.reset();
     super.dispose();
   }
 

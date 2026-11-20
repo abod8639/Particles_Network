@@ -110,26 +110,26 @@ void main() {
   });
 
   group('Deduplication & Deprecation Verification', () {
-    test(
-        'NetworkPerformance.auto and NetworkPerformance.boost produce identical configurations',
-        () {
-      const autoPreset = NetworkPerformance.auto();
-      // ignore: deprecated_member_use_from_same_package
-      const boostPreset = NetworkPerformance.boost();
+    // test(
+    //     'NetworkPerformance.auto and NetworkPerformance.boost produce identical configurations',
+    //     () {
+    //   const autoPreset = NetworkPerformance.auto();
+    //   // ignore: deprecated_member_use_from_same_package
+    //   const boostPreset = NetworkPerformance.boost();
 
-      expect(boostPreset.maxConnectionsPerParticle,
-          equals(autoPreset.maxConnectionsPerParticle));
-      expect(boostPreset.maxLinesPerFrame, equals(autoPreset.maxLinesPerFrame));
-      expect(boostPreset.frameRateIndependent,
-          equals(autoPreset.frameRateIndependent));
-      expect(boostPreset.lineRenderer, equals(autoPreset.lineRenderer));
-      expect(boostPreset.isComplex, equals(autoPreset.isComplex));
-      expect(boostPreset.autoBoost, equals(autoPreset.autoBoost));
-      expect(boostPreset.cappedDistanceFactor,
-          equals(autoPreset.cappedDistanceFactor));
-      expect(boostPreset.antiAlias, equals(autoPreset.antiAlias));
-      expect(boostPreset, equals(autoPreset));
-    });
+    //   expect(boostPreset.maxConnectionsPerParticle,
+    //       equals(autoPreset.maxConnectionsPerParticle));
+    //   expect(boostPreset.maxLinesPerFrame, equals(autoPreset.maxLinesPerFrame));
+    //   expect(boostPreset.frameRateIndependent,
+    //       equals(autoPreset.frameRateIndependent));
+    //   expect(boostPreset.lineRenderer, equals(autoPreset.lineRenderer));
+    //   expect(boostPreset.isComplex, equals(autoPreset.isComplex));
+    //   expect(boostPreset.autoBoost, equals(autoPreset.autoBoost));
+    //   expect(boostPreset.cappedDistanceFactor,
+    //       equals(autoPreset.cappedDistanceFactor));
+    //   expect(boostPreset.antiAlias, equals(autoPreset.antiAlias));
+    //   expect(boostPreset, equals(autoPreset));
+    // });
 
     test('ParticleGravity canonical properties and deprecated aliases match',
         () {

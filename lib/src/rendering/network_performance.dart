@@ -200,21 +200,21 @@ class NetworkPerformance {
           'complexDensityFactor must be greater than 0.0',
         );
 
-  /// Adaptive preset focusing on dynamic frame rate scaling and independent motion.
-  const NetworkPerformance.adaptive({
-    this.maxConnectionsPerParticle,
-    this.maxLinesPerFrame,
-    this.frameRateIndependent = true,
-    this.lineRenderer = LineRenderer.vertices,
-    this.isComplex = false,
-    this.complexReductionRatio,
-    this.maxComplexLines,
-    this.complexDensityFactor,
-    this.cappedDistanceFactor = 0.75,
-    this.antiAlias = true,
-    this.spatialCellMultiplier,
-    this.autoBoost = true,
-  }) : _fastLineRendering = null;
+  // /// Adaptive preset focusing on dynamic frame rate scaling and independent motion.
+  // const NetworkPerformance.adaptive({
+  //   this.maxConnectionsPerParticle,
+  //   this.maxLinesPerFrame,
+  //   this.frameRateIndependent = true,
+  //   this.lineRenderer = LineRenderer.vertices,
+  //   this.isComplex = false,
+  //   this.complexReductionRatio,
+  //   this.maxComplexLines,
+  //   this.complexDensityFactor,
+  //   this.cappedDistanceFactor = 0.75,
+  //   this.antiAlias = true,
+  //   this.spatialCellMultiplier,
+  //   this.autoBoost = true,
+  // }) : _fastLineRendering = null;
 
   /// Auto-performance preset that automatically adapts parameters based on
   /// device performance and frame rate, maximizing visual density and connections
@@ -252,20 +252,20 @@ class NetworkPerformance {
   }) : _fastLineRendering = null;
 
   /// Battery saver preset tuned to minimize CPU/GPU load on low-end or battery-constrained devices.
-  const NetworkPerformance.batterySaver({
-    this.maxConnectionsPerParticle = 3,
-    this.maxLinesPerFrame = 3000,
-    this.frameRateIndependent = true,
-    this.lineRenderer = LineRenderer.vertices,
-    this.isComplex = true,
-    this.complexReductionRatio = 0.5,
-    this.maxComplexLines = 2,
-    this.complexDensityFactor = 0.60,
-    this.cappedDistanceFactor = 0.75,
-    this.antiAlias = true,
-    this.spatialCellMultiplier,
-    this.autoBoost = false,
-  }) : _fastLineRendering = null;
+  // const NetworkPerformance.batterySaver({
+  //   this.maxConnectionsPerParticle = 3,
+  //   this.maxLinesPerFrame = 3000,
+  //   this.frameRateIndependent = true,
+  //   this.lineRenderer = LineRenderer.vertices,
+  //   this.isComplex = true,
+  //   this.complexReductionRatio = 0.5,
+  //   this.maxComplexLines = 2,
+  //   this.complexDensityFactor = 0.60,
+  //   this.cappedDistanceFactor = 0.75,
+  //   this.antiAlias = true,
+  //   this.spatialCellMultiplier,
+  //   this.autoBoost = false,
+  // }) : _fastLineRendering = null;
 
   /// Creates a copy of this [NetworkPerformance] with updated parameters.
   NetworkPerformance copyWith({
