@@ -292,7 +292,7 @@ void main() {
       final neighbors = List.generate(
           10,
           (i) => MockParticle(
-                position: Offset(100 + (i + 1) * 2, 100),
+                position: Offset(100 + (i + 1) * 0.4, 100),
               ));
       final particles = [central, ...neighbors];
 
@@ -303,7 +303,7 @@ void main() {
         particleCount: particles.length,
         particles: particles,
         touchPoint: null,
-        lineDistance: 12, // Resulting denseThreshold = 12 ~/ 4 = 3
+        lineDistance: 5.0, // Resulting denseThreshold = (5.0 * 0.60).toInt() = 3
         particleColor: Colors.white,
         lineColor: Colors.grey,
         touchColor: Colors.red,

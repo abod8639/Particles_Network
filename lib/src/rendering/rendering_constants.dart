@@ -30,7 +30,7 @@ const double kDenseRatioThreshold = 10.0;
 const int kDenseParticleThreshold = 500;
 
 /// Divisor for connection distance to classify dense neighborhood in batched mode.
-const double kDefaultDenseDivisor = 4.0;
+const double kDefaultDenseDivisor = 1.0 / 0.60;
 
 /// Divisor for connection distance to classify dense neighborhood in individual mode.
 const double kIndividualDenseDivisor = 1.5;

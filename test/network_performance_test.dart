@@ -15,6 +15,7 @@ void main() {
       expect(perf.frameRateIndependent, isFalse);
       expect(perf.lineRenderer, equals(LineRenderer.vertices));
       expect(perf.isComplex, isFalse);
+      expect(perf.complexDensityFactor, isNull);
       expect(perf.cappedDistanceFactor, equals(0.75));
       expect(perf.antiAlias, isTrue);
     });
@@ -39,6 +40,7 @@ void main() {
       expect(perf.frameRateIndependent, isTrue);
       expect(perf.lineRenderer, equals(LineRenderer.vertices));
       expect(perf.isComplex, isFalse);
+      expect(perf.complexDensityFactor, isNull);
       expect(perf.cappedDistanceFactor, equals(0.75));
       expect(perf.antiAlias, isTrue);
       expect(perf.autoBoost, isTrue);
@@ -395,9 +397,9 @@ void main() {
       'isComplex reduces lines at dense cluster while keeping sparse connections',
       (WidgetTester tester) async {
         final denseParticles = List.generate(
-          30,
+          35,
           (i) => Particle(
-            position: Offset(100.0 + (i % 5) * 2.0, 100.0 + (i ~/ 5) * 2.0),
+            position: Offset(100.0 + (i % 6) * 2.0, 100.0 + (i ~/ 6) * 2.0),
             velocity: Offset.zero,
             color: Colors.white,
             size: 2.0,
@@ -692,9 +694,9 @@ void main() {
       'complexReductionRatio reduces lines proportionally in dense clusters',
       (WidgetTester tester) async {
         final denseParticles = List.generate(
-          20,
+          35,
           (i) => Particle(
-            position: Offset(100.0 + (i % 5) * 4.0, 100.0 + (i ~/ 5) * 4.0),
+            position: Offset(100.0 + (i % 6) * 2.0, 100.0 + (i ~/ 6) * 2.0),
             velocity: Offset.zero,
             color: Colors.white,
             size: 2.0,

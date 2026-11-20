@@ -59,7 +59,7 @@ void main() {
         distance: 100.0,
         performance: const NetworkPerformance(isComplex: true),
       );
-      expect(d1, equals(25)); // 100 ~/ 4
+      expect(d1, equals(60)); // 100 * 0.60 (or 100 ~/ (1.0 / 0.60))
 
       final d2 = throttler.computeDenseThreshold(
         distance: 100.0,

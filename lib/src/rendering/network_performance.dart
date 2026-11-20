@@ -82,9 +82,9 @@ class NetworkPerformance {
   /// when [isComplex] is true.
   final int? maxComplexLines;
 
-  /// Factor multiplied by connection distance to determine when a particle is in a dense cluster (default: null).
+  /// Factor multiplied by connection distance to determine when a particle is in a dense cluster (default: 0.60).
   ///
-  /// When null, defaults to 0.25 (`dist ~/ 4`) when [isComplex] is true, or ~0.67 (`dist ~/ 1.5`) otherwise.
+  /// When null, defaults to 0.60 (`dist ~/ (1.0 / 0.60)`) when [isComplex] is true, or ~0.67 (`dist ~/ 1.5`) otherwise.
   final double? complexDensityFactor;
 
   /// Distance ratio threshold for capped connections (default: 0.75).
