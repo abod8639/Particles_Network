@@ -227,23 +227,23 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
   }
 
   // --- Showcase Presets ---
-  static const List<ParticlePreset> _presets = [
+  List<ParticlePreset> get _presets => [
     ParticlePreset(
       name: "Cosmic Web",
       description: "Delicate starlight web drifting slowly in deep space",
       icon: Icons.auto_awesome_rounded,
-      particleColor: Color(0xFF818CF8),
-      lineColor: Color(0xFF38BDF8),
-      touchColor: Color(0xFFFBBF24),
-      backgroundColor: Color(0xFF070B14),
+      particleColor: const Color(0xFF818CF8),
+      lineColor: const Color(0xFF38BDF8),
+      touchColor: const Color(0xFFFBBF24),
+      backgroundColor: const Color(0xFF070B14),
       particleCount: 220,
       maxSpeed: 2.2,
       maxSize: 2.5,
       lineWidth: 0.8,
-      lineDistance: 130.0,
+      lineDistance: _getResponsiveLineDistance(context),
       gravityType: GravityType.none,
       gravityStrength: 0.1,
-      gravityDirection: Offset(0, 1),
+      gravityDirection: const Offset(0, 1),
       touchForce: 0.35,
       touchSpeed: 0.3,
       maxTouchSpeed: 4.0,
@@ -259,18 +259,18 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       name: "Cyberpunk Matrix",
       description: "Digital rain downward gravity with neon luminescence",
       icon: Icons.memory_rounded,
-      particleColor: Color(0xFF10B981),
-      lineColor: Color(0xFF06B6D4),
-      touchColor: Color(0xFFF43F5E),
-      backgroundColor: Color(0xFF02120A),
+      particleColor: const Color(0xFF10B981),
+      lineColor: const Color(0xFF06B6D4),
+      touchColor: const Color(0xFFF43F5E),
+      backgroundColor: const Color(0xFF02120A),
       particleCount: 380,
       maxSpeed: 6.5,
       maxSize: 2.2,
       lineWidth: 1.2,
-      lineDistance: 95.0,
+      lineDistance: _getResponsiveLineDistance(context),
       gravityType: GravityType.global,
       gravityStrength: 0.40,
-      gravityDirection: Offset(0, 1),
+      gravityDirection: const Offset(0, 1),
       touchForce: 0.80,
       touchSpeed: 0.5,
       maxTouchSpeed: 7.0,
@@ -282,7 +282,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       frameRateIndependent: true,
       lineRenderer: LineRenderer.vertices,
     ),
-    ParticlePreset(
+    const ParticlePreset(
       name: "Black Hole Singularity",
       description: "Intense gravitational vortex pulling particles inward",
       icon: Icons.all_inclusive_rounded,
@@ -311,7 +311,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       maxConnectionsPerParticle: 6,
       autoBoost: true,
     ),
-    ParticlePreset(
+    const ParticlePreset(
       name: "Supernova Repulsion",
       description: "Radial repulsive point gravity with explosive velocity",
       icon: Icons.flare_rounded,
@@ -345,18 +345,18 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       name: "Neural Synapse",
       description: "High-density interconnected cognitive network",
       icon: Icons.hub_rounded,
-      particleColor: Color(0xFFA855F7),
-      lineColor: Color(0xFF38BDF8),
-      touchColor: Color(0xFF34D399),
-      backgroundColor: Color(0xFF080718),
+      particleColor: const Color(0xFFA855F7),
+      lineColor: const Color(0xFF38BDF8),
+      touchColor: const Color(0xFF34D399),
+      backgroundColor: const Color(0xFF080718),
       particleCount: 320,
       maxSpeed: 3.5,
       maxSize: 2.4,
       lineWidth: 1.1,
-      lineDistance: 120.0,
+      lineDistance: _getResponsiveLineDistance(context),
       gravityType: GravityType.none,
       gravityStrength: 0.1,
-      gravityDirection: Offset(0, 1),
+      gravityDirection: const Offset(0, 1),
       touchForce: 0.75,
       touchSpeed: 0.40,
       maxTouchSpeed: 6.0,
@@ -368,7 +368,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       frameRateIndependent: true,
       lineRenderer: LineRenderer.vertices,
     ),
-    ParticlePreset(
+    const ParticlePreset(
       name: "Quantum Foam",
       description: "Dense turbulent micro-particles with rapid kinetic decay",
       icon: Icons.grain_rounded,
@@ -395,7 +395,7 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       frameRateIndependent: true,
       lineRenderer: LineRenderer.vertices,
     ),
-    ParticlePreset(
+    const ParticlePreset(
       name: "Extreme 60FPS Swarm",
       description: "1000 particles with hardware-accelerated batched vertices",
       icon: Icons.bolt_rounded,
@@ -459,14 +459,14 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
       _activePerfPreset = "Custom";
     });
     _refreshEngine();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Applied preset: ${preset.name}"),
-        duration: const Duration(seconds: 2),
-        backgroundColor: const Color(0xFF22262C),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    // ScaffoldMessenger.of(context).showSnackBar(
+    //   SnackBar(
+    //     content: Text("Applied preset: ${preset.name}"),
+    //     duration: const Duration(seconds: 2),
+    //     backgroundColor: const Color(0xFF22262C),
+    //     behavior: SnackBarBehavior.floating,
+    //   ),
+    // );
   }
 
   // --- Individual Section Reset Methods ---
