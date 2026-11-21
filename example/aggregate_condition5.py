@@ -2,7 +2,51 @@
 import json
 import glob
 import os
+import sys
 from statistics import median
+
+def get_device_info():
+    info_path = "build/perf/device_info.json"
+    if os.path.exists(info_path):
+        try:
+            with open(info_path, 'r') as f:
+                info = json.load(f)
+                display_name = info.get("display_name", "").strip()
+                android_ver = info.get("android_version", "").strip()
+                serial = info.get("serial", "").strip()
+                if display_name:
+                    extra = []
+                    if android_ver:
+                        extra.append(f"Android {android_ver}")
+                    if serial:
+                        extra.append(f"Serial: {serial}")
+                    details = f" ({', '.join(extra)})" if extra else ""
+                    return f"{display_name}{details}"
+        except Exception:
+            pass
+
+    # Check environment variable
+    env_device = os.environ.get("BENCHMARK_DEVICE")
+    if env_device:
+        return env_device
+
+    # Fallback to adb if connected
+    try:
+        import subprocess
+        model = subprocess.check_output(
+            ["adb", "shell", "getprop", "ro.product.model"],
+            stderr=subprocess.DEVNULL, timeout=2
+        ).decode('utf-8').strip()
+        manu = subprocess.check_output(
+            ["adb", "shell", "getprop", "ro.product.manufacturer"],
+            stderr=subprocess.DEVNULL, timeout=2
+        ).decode('utf-8').strip()
+        if model:
+            return f"{manu} {model}".strip()
+    except Exception:
+        pass
+
+    return "Android Device"
 
 def load_run(label):
     path = f"build/perf/{label}.json"
@@ -36,13 +80,17 @@ def extract_metrics(scenario_data_list):
     return res
 
 def main():
+    device_name = get_device_info()
+    if len(sys.argv) > 1 and not sys.argv[1].startswith("-"):
+        device_name = sys.argv[1]
+
     b_passes = [load_run(f"c5_pass{i}_baseline") for i in [1, 2, 3]]
     a_passes = [load_run(f"c5_pass{i}_optA") for i in [1, 2, 3]]
     no_inst = load_run("c5_optA_no_inst")
 
     all_scenarios = list(b_passes[0].keys()) if b_passes[0] else []
     
-    print("# Condition 5 Benchmark Results: Physical Galaxy S10 (SM-G973U)")
+    print(f"# Condition 5 Benchmark Results: {device_name}")
     print("\n## 1. Full Comparison Table: Baseline vs Option A (Median and [Min, Max] Run-to-Run Spread)\n")
     print("| Scenario | Config | Checks | Accepted | Ratio | Scan p50 (ms) | Grid Build (ms) | Physics (ms) | Emission (ms) | UI p50 (ms) | UI p90 (ms) | UI p99 (ms) | Worst UI (ms) | Raster p50 (ms) | FPS |")
     print("| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |")
