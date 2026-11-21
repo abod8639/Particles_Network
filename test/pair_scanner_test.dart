@@ -298,7 +298,9 @@ void main() {
       expect(canvas.lineCalls, isEmpty);
     });
 
-    test('scanIndividual does not apply complex rankFade when isComplexMode is false', () {
+    test(
+        'scanIndividual does not apply complex rankFade when isComplexMode is false',
+        () {
       // 4 particles: p0 is at (10, 10). Neighbors p1, p2, p3 are at distances 10, 20, 30.
       final particles = [
         Particle(
@@ -355,21 +357,25 @@ void main() {
 
       // Find the line between p0 and p2 (dist = 20)
       final lineP0P2 = canvas.lineCalls.firstWhere(
-        (c) => (c.p1 == const Offset(10, 10) && c.p2 == const Offset(30, 10)) ||
-               (c.p2 == const Offset(10, 10) && c.p1 == const Offset(30, 10)),
+        (c) =>
+            (c.p1 == const Offset(10, 10) && c.p2 == const Offset(30, 10)) ||
+            (c.p2 == const Offset(10, 10) && c.p1 == const Offset(30, 10)),
       );
 
       // With distance 20 and alphaDistance 100:
       // expected alpha without complex rank fade = (255 - 20 * 2.55) = 204 (0xCC)
       // With buggy complex rank fade (0.5) = (204 * 0.5) = 102 (0x66)
-      final int expectedAlphaWithoutFade = (255 - (20 * 255.0 / 100.0)).toInt().clamp(0, 255);
+      final int expectedAlphaWithoutFade =
+          (255 - (20 * 255.0 / 100.0)).toInt().clamp(0, 255);
       final expectedColor = palette.lineColorLut[expectedAlphaWithoutFade];
 
       expect(lineP0P2.color.toARGB32(), equals(expectedColor.toARGB32()));
       expect(lineP0P2.color.toARGB32(), equals(0xCCFFFFFF));
     });
 
-    test('scanner methods return early and emit 0 lines when maxDistSq <= 0 or non-finite', () {
+    test(
+        'scanner methods return early and emit 0 lines when maxDistSq <= 0 or non-finite',
+        () {
       final particles = [
         Particle(
             position: const Offset(10, 10),

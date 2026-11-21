@@ -20,26 +20,38 @@ import 'perf_harness.dart';
 final scenarios = <(String, ParticleNetwork Function())>[
   (
     'lines_100',
-    () => const ParticleNetwork(particleCount: 100, touchActivation: false),
+    () => const ParticleNetwork(
+          particleCount: 100,
+          touch: TouchFeatures(enabled: false),
+        ),
   ),
   (
     'lines_300',
-    () => const ParticleNetwork(particleCount: 300, touchActivation: false),
+    () => const ParticleNetwork(
+          particleCount: 300,
+          touch: TouchFeatures(enabled: false),
+        ),
   ),
   (
     'lines_500',
-    () => const ParticleNetwork(particleCount: 500, touchActivation: false),
+    () => const ParticleNetwork(
+          particleCount: 500,
+          touch: TouchFeatures(enabled: false),
+        ),
   ),
   (
     'lines_1000',
-    () => const ParticleNetwork(particleCount: 1000, touchActivation: false),
+    () => const ParticleNetwork(
+          particleCount: 1000,
+          touch: TouchFeatures(enabled: false),
+        ),
   ),
   (
     'lines_300_complex',
     () => const ParticleNetwork(
           particleCount: 300,
-          isComplex: true,
-          touchActivation: false,
+          performance: NetworkPerformance(isComplex: true),
+          touch: TouchFeatures(enabled: false),
         ),
   ),
   (
@@ -47,7 +59,7 @@ final scenarios = <(String, ParticleNetwork Function())>[
     () => const ParticleNetwork(
           particleCount: 1000,
           performance: NetworkPerformance(maxConnectionsPerParticle: 5),
-          touchActivation: false,
+          touch: TouchFeatures(enabled: false),
         ),
   ),
   (
@@ -55,7 +67,7 @@ final scenarios = <(String, ParticleNetwork Function())>[
     () => const ParticleNetwork(
           particleCount: 1000,
           performance: NetworkPerformance(lineRenderer: LineRenderer.vertices),
-          touchActivation: false,
+          touch: TouchFeatures(enabled: false),
         ),
   ),
   (
@@ -63,7 +75,7 @@ final scenarios = <(String, ParticleNetwork Function())>[
     () => const ParticleNetwork(
           particleCount: 500,
           performance: NetworkPerformance(autoBoost: true),
-          touchActivation: false,
+          touch: TouchFeatures(enabled: false),
         ),
   ),
   (
@@ -71,7 +83,7 @@ final scenarios = <(String, ParticleNetwork Function())>[
     () => const ParticleNetwork(
           particleCount: 5000,
           drawNetwork: false,
-          touchActivation: false,
+          touch: TouchFeatures(enabled: false),
         ),
   ),
   (
@@ -79,7 +91,7 @@ final scenarios = <(String, ParticleNetwork Function())>[
     () => const ParticleNetwork(
           particleCount: 20000,
           drawNetwork: false,
-          touchActivation: false,
+          touch: TouchFeatures(enabled: false),
         ),
   ),
 ];
