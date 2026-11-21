@@ -13,7 +13,7 @@ TARGET_DEVICE="${1:-${DEVICE:-${ANDROID_SERIAL:-}}}"
 
 if [ -z "$TARGET_DEVICE" ]; then
   if ! command -v adb &> /dev/null; then
-    echo "❌ Error: 'adb' command not found. Please ensure Android SDK platform-tools are in your PATH."
+    echo "Error: 'adb' command not found. Please ensure Android SDK platform-tools are in your PATH."
     exit 1
   fi
 
@@ -21,15 +21,15 @@ if [ -z "$TARGET_DEVICE" ]; then
   NUM_DEVICES=${#CONNECTED_DEVICES[@]}
 
   if [ "$NUM_DEVICES" -eq 0 ]; then
-    echo "❌ Error: No Android devices/emulators connected via ADB."
+    echo "Error: No Android devices/emulators connected via ADB."
     echo "Please connect an Android device with USB debugging enabled, or start an emulator."
     exit 1
   elif [ "$NUM_DEVICES" -eq 1 ]; then
     TARGET_DEVICE="${CONNECTED_DEVICES[0]}"
-    echo "ℹ️  Auto-detected connected Android device: $TARGET_DEVICE"
+    echo "Info: Auto-detected connected Android device: $TARGET_DEVICE"
   else
     TARGET_DEVICE="${CONNECTED_DEVICES[0]}"
-    echo "⚠️  Multiple devices detected: ${CONNECTED_DEVICES[*]}"
+    echo "Warning:  Multiple devices detected: ${CONNECTED_DEVICES[*]}"
     echo "Using default device: $TARGET_DEVICE"
     echo "Tip: You can specify a device via: ./run_condition5_benchmark.sh <device_serial>"
   fi
