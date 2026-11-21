@@ -8,12 +8,36 @@ class TouchFeatures {
   /// Whether touch interactions and proximity effects are enabled (default: true).
   final bool enabled;
 
+  /// Compatibility alias for [enabled].
+  @Deprecated(
+    'touchActivation was renamed to enabled inside TouchFeatures. '
+    'Use TouchFeatures.enabled instead. '
+    'This property will be removed in particles_network 2.0.0.',
+  )
+  bool get touchActivation => enabled;
+
   /// The recovery/settling speed after touch release (default: 0.42).
   /// Controls how gradually particles return to cruising speed after being dragged/touched.
   final double speed;
 
+  /// Compatibility alias for [speed] (decay rate).
+  @Deprecated(
+    'decayRate was renamed to speed inside TouchFeatures. '
+    'Use TouchFeatures.speed instead. '
+    'This property will be removed in particles_network 2.0.0.',
+  )
+  double get decayRate => speed;
+
   /// Attraction pull force towards touch point (default: 0.42).
   final double force;
+
+  /// Compatibility alias for [force] (pull force).
+  @Deprecated(
+    'pullForce was renamed to force inside TouchFeatures. '
+    'Use TouchFeatures.force instead. '
+    'This property will be removed in particles_network 2.0.0.',
+  )
+  double get pullForce => force;
 
   /// Maximum velocity cap for particles during touch interaction (default: 5.5).
   final double maxTouchSpeed;
@@ -30,29 +54,67 @@ class TouchFeatures {
 
   /// Creates a [TouchFeatures] configuration.
   const TouchFeatures({
-    this.enabled = true,
-    this.speed = 0.42,
-    this.force = 0.42,
+    bool? enabled,
+    @Deprecated(
+      'touchActivation was renamed to enabled inside TouchFeatures. '
+      'Use TouchFeatures(enabled: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    bool? touchActivation,
+    double? speed,
+    @Deprecated(
+      'decayRate was renamed to speed inside TouchFeatures. '
+      'Use TouchFeatures(speed: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    double? decayRate,
+    double? force,
+    @Deprecated(
+      'pullForce was renamed to force inside TouchFeatures. '
+      'Use TouchFeatures(force: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    double? pullForce,
     this.maxTouchSpeed = 5.5,
     this.damping = 0.985,
     this.lineDistance,
     this.color = const Color(0xFFFFC107), // Colors.amber
-  });
+  })  : enabled = touchActivation ?? enabled ?? true,
+        speed = speed ?? decayRate ?? 0.42,
+        force = force ?? pullForce ?? 0.42;
 
   /// Creates a copy of this [TouchFeatures] with updated parameters.
   TouchFeatures copyWith({
     bool? enabled,
+    @Deprecated(
+      'touchActivation was renamed to enabled inside TouchFeatures. '
+      'Use TouchFeatures.copyWith(enabled: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    bool? touchActivation,
     double? speed,
+    @Deprecated(
+      'decayRate was renamed to speed inside TouchFeatures. '
+      'Use TouchFeatures.copyWith(speed: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    double? decayRate,
     double? force,
+    @Deprecated(
+      'pullForce was renamed to force inside TouchFeatures. '
+      'Use TouchFeatures.copyWith(force: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    double? pullForce,
     double? maxTouchSpeed,
     double? damping,
     double? lineDistance,
     Color? color,
   }) {
     return TouchFeatures(
-      enabled: enabled ?? this.enabled,
-      speed: speed ?? this.speed,
-      force: force ?? this.force,
+      enabled: touchActivation ?? enabled ?? this.enabled,
+      speed: speed ?? decayRate ?? this.speed,
+      force: force ?? pullForce ?? this.force,
       maxTouchSpeed: maxTouchSpeed ?? this.maxTouchSpeed,
       damping: damping ?? this.damping,
       lineDistance: lineDistance ?? this.lineDistance,

@@ -58,8 +58,35 @@ class ParticleNetwork extends StatefulWidget {
   /// Checks whether the deprecated [isComplex] parameter was explicitly configured.
   bool get usedLegacyIsComplex => _isComplex != null;
 
-  /// Effective touch configuration.
-  TouchFeatures get effectiveTouchFeatures => touch;
+  /// Explicitly provided legacy touch activation flag, if any.
+  final bool? _touchActivation;
+
+  /// Explicitly provided legacy touch highlight color, if any.
+  final Color? _touchColor;
+
+  /// Effective touch configuration merging legacy and modern parameters.
+  TouchFeatures get effectiveTouchFeatures {
+    final baseTouch = touch;
+    if (_touchColor == null && _touchActivation == null) {
+      return baseTouch;
+    }
+    return baseTouch.copyWith(
+      color: _touchColor,
+      enabled: _touchActivation,
+    );
+  }
+
+  /// Whether touch interactions are enabled (legacy accessor).
+  @Deprecated(
+    'Use touch.enabled instead. This property will be removed in particles_network 2.0.0.',
+  )
+  bool get touchActivation => effectiveTouchFeatures.enabled;
+
+  /// Highlight color for touch interactions (legacy accessor).
+  @Deprecated(
+    'Use touch.color instead. This property will be removed in particles_network 2.0.0.',
+  )
+  Color get touchColor => effectiveTouchFeatures.color;
 
   /// Effective performance configuration merging legacy and modern parameters.
   NetworkPerformance get effectivePerformance => performance.copyWith(
@@ -223,12 +250,22 @@ class ParticleNetwork extends StatefulWidget {
       'Use gravity (ParticleGravity) instead. This parameter will be removed in particles_network 2.0.0.',
     )
     this.gravityCenter,
+    @Deprecated(
+      'Use touch: TouchFeatures(color: ...) instead. This parameter will be removed in particles_network 2.0.0.',
+    )
+    Color? touchColor,
+    @Deprecated(
+      'Use touch: TouchFeatures(enabled: ...) instead. This parameter will be removed in particles_network 2.0.0.',
+    )
+    bool? touchActivation,
     this.hoverEffect = false,
     TouchFeatures touch = const TouchFeatures(),
     TouchFeatures? touchFeatures,
     this.performance = const NetworkPerformance(),
     this.spatialGrid,
   })  : touch = touchFeatures ?? touch,
+        _touchActivation = touchActivation,
+        _touchColor = touchColor,
         _isComplex = isComplex,
         _linewidth = linewidth,
         _drawnetwork = drawnetwork;

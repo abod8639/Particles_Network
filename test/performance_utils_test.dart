@@ -69,93 +69,6 @@ void main() {
     });
   });
 
-  group('AdaptiveQuadTreeManager', () {
-    late AdaptiveQuadTreeManager manager;
-
-    setUp(() {
-      manager = AdaptiveQuadTreeManager();
-    });
-
-    test('initializes with rebuildInterval frame count', () {
-      expect(
-        manager.frameSinceLastRebuild,
-        equals(manager.rebuildInterval),
-      );
-    });
-
-    test('shouldRebuild returns true at rebuild interval', () {
-      // First call should return true (we're at interval)
-      expect(manager.shouldRebuild(), isTrue);
-      expect(manager.frameSinceLastRebuild, equals(0));
-
-      // Next frame: not time to rebuild yet
-      expect(manager.shouldRebuild(), isFalse);
-      expect(manager.frameSinceLastRebuild, equals(1));
-
-      // Continue calling until we hit the interval again
-      for (int i = 0; i < manager.rebuildInterval - 2; i++) {
-        expect(manager.shouldRebuild(), isFalse);
-      }
-
-      // This call should trigger rebuild
-      expect(manager.shouldRebuild(), isTrue);
-      expect(manager.frameSinceLastRebuild, equals(0));
-    });
-
-    test('forceRebuild triggers rebuild on next call', () {
-      manager.shouldRebuild(); // Reset to frame 0
-      expect(manager.shouldRebuild(), isFalse);
-
-      // Force rebuild
-      manager.forceRebuild();
-      expect(manager.shouldRebuild(), isTrue);
-      expect(manager.frameSinceLastRebuild, equals(0));
-    });
-
-    test('reset restores initial state', () {
-      manager.shouldRebuild();
-      manager.shouldRebuild();
-      manager.shouldRebuild();
-
-      expect(manager.frameSinceLastRebuild, isNot(0)); // Not at start
-
-      manager.reset();
-
-      expect(
-        manager.frameSinceLastRebuild,
-        equals(manager.rebuildInterval),
-      );
-    });
-
-    test('rebuild cycle follows expected pattern', () {
-      final interval = manager.rebuildInterval;
-      final rebuildFrames = <int>[];
-
-      for (int frame = 0; frame < interval * 3; frame++) {
-        if (manager.shouldRebuild()) {
-          rebuildFrames.add(frame);
-        }
-      }
-
-      // Should rebuild at frames 0, interval, interval*2
-      expect(rebuildFrames, equals([0, interval, interval * 2]));
-    });
-
-    test('multiple forceRebuild calls work correctly', () {
-      manager.shouldRebuild();
-
-      manager.forceRebuild();
-      expect(manager.shouldRebuild(), isTrue);
-
-      expect(manager.shouldRebuild(), isFalse);
-
-      manager.forceRebuild();
-      manager.forceRebuild(); // Multiple force calls
-
-      expect(manager.shouldRebuild(), isTrue);
-    });
-  });
-
   group('PerformanceMonitor', () {
     late PerformanceMonitor monitor;
 
@@ -291,23 +204,17 @@ void main() {
   });
 
   group('Integration Tests', () {
-    test('tracker and manager work together', () {
+    test('tracker records acceleration and resets frame correctly', () {
       final tracker = AccelerationTracker();
-      final manager = AdaptiveQuadTreeManager();
-
-      // Simulate frame with acceleration and rebuild
       tracker.recordAcceleration();
-      manager.shouldRebuild();
-
+      expect(tracker.acceleratedParticleCount, equals(1));
       tracker.resetFrame();
-
       expect(tracker.hadAcceleratedParticles, isTrue);
-      expect(manager.frameSinceLastRebuild, equals(0));
+      expect(tracker.lastFrameAcceleratedCount, equals(1));
     });
 
     test('full performance monitoring cycle', () {
       final tracker = AccelerationTracker();
-      final manager = AdaptiveQuadTreeManager();
       final monitor = PerformanceMonitor();
 
       // Simulate 10 frames
@@ -321,9 +228,7 @@ void main() {
         final frameTime = frame == 7 ? 25 : 16;
         monitor.recordFrameTime(Duration(milliseconds: frameTime));
 
-        // Check if rebuild needed
-        final shouldRebuild = manager.shouldRebuild();
-        if (shouldRebuild) {
+        if (frame % 3 == 0) {
           tracker.resetFrame();
         }
       }

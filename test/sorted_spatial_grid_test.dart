@@ -6,7 +6,6 @@ import 'dart:ui';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:particles_network/particles_network.dart';
-import 'package:particles_network/src/legacy/legacy_deprecation_logger.dart';
 import 'package:particles_network/src/spatial/scan_stats.dart';
 
 List<Particle> _scatter(int n, Size size, int seed, {double spill = 0}) {
@@ -661,35 +660,6 @@ void main() {
       expect(identical(painter.spatialGrid, customGrid), isTrue);
     });
 
-    test('OptimizedNetworkPainter showQuadTree logs deprecation warning', () {
-      LegacyDeprecationLogger.resetWarned();
-      final p = Particle(
-        position: const Offset(40, 40),
-        velocity: Offset.zero,
-        color: Colors.white,
-        size: 1,
-      );
-
-      OptimizedNetworkPainter(
-        particleCount: 1,
-        particles: [p],
-        touchPoint: null,
-        lineDistance: 50,
-        particleColor: Colors.white,
-        lineColor: Colors.blue,
-        lineWidth: 1.0,
-        fill: true,
-        drawNetwork: true,
-        showQuadTree: true,
-      );
-
-      expect(
-        LegacyDeprecationLogger.hasWarned(
-            'OptimizedNetworkPainter(showQuadTree: true)'),
-        isTrue,
-      );
-    });
-
     testWidgets(
         'ParticleNetwork shares spatialGrid across widget, sim, and painter',
         (tester) async {
@@ -716,23 +686,6 @@ void main() {
           tester.state<ParticleNetworkState>(find.byType(ParticleNetwork));
       expect(identical(state.spatialGrid, customGrid), isTrue);
       expect(identical(state.simulation.spatialGrid, customGrid), isTrue);
-    });
-
-    test('Legacy spatial classes constructor deprecation warnings', () {
-      LegacyDeprecationLogger.resetWarned();
-
-      SpatialGrid(cellSize: 20);
-      expect(LegacyDeprecationLogger.hasWarned('SpatialGrid'), isTrue);
-
-      CompressedQuadTree(const Rectangle(0, 0, 100, 100));
-      expect(LegacyDeprecationLogger.hasWarned('CompressedQuadTree'), isTrue);
-
-      StandardQuadTree(width: 100, height: 100);
-      expect(LegacyDeprecationLogger.hasWarned('StandardQuadTree'), isTrue);
-
-      AdaptiveQuadTreeManager();
-      expect(
-          LegacyDeprecationLogger.hasWarned('AdaptiveQuadTreeManager'), isTrue);
     });
 
     test('NetworkPerformance spatialCellMultiplier equality and copyWith', () {

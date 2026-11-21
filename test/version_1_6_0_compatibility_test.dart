@@ -11,7 +11,8 @@ void main() {
         // This is the EXACT syntax used in the 1.6.0 README and by 7,000 existing users
         const widget160 = ParticleNetwork(
           particleCount: 50,
-          touch: TouchFeatures(enabled: true, color: Colors.amber),
+          touchActivation: true,
+          touchColor: Colors.amber,
           maxSpeed: 0.5,
           maxSize: 3.5,
           lineDistance: 180,
@@ -22,13 +23,17 @@ void main() {
 
         // Verify property accessors reflect 1.6.0 values
         expect(widget160.particleCount, equals(50));
-        expect(widget160.touch.enabled, isTrue);
+        // ignore: deprecated_member_use_from_same_package
+        expect(widget160.touchActivation, isTrue);
+        expect(widget160.effectiveTouchFeatures.enabled, isTrue);
         expect(widget160.maxSpeed, equals(0.5));
         expect(widget160.maxSize, equals(3.5));
         expect(widget160.lineDistance, equals(180));
         expect(widget160.particleColor, equals(Colors.white));
         expect(widget160.lineColor, equals(const Color(0xFF64FFB4)));
-        expect(widget160.touch.color, equals(Colors.amber));
+        // ignore: deprecated_member_use_from_same_package
+        expect(widget160.touchColor, equals(Colors.amber));
+        expect(widget160.effectiveTouchFeatures.color, equals(Colors.amber));
         expect(widget160.effectiveLineWidth, equals(0.5));
         expect(widget160.usedLegacyLinewidth, isTrue);
 
@@ -69,7 +74,8 @@ void main() {
 
         final widgetWithDependencies = ParticleNetwork(
           particleCount: 20,
-          touch: const TouchFeatures(enabled: false, color: Colors.red),
+          touchActivation: false,
+          touchColor: Colors.red,
           maxSpeed: 0.8,
           maxSize: 4.0,
           lineDistance: 120,
@@ -83,7 +89,13 @@ void main() {
         expect(widgetWithDependencies.particleFactory, equals(customFactory));
         expect(widgetWithDependencies.particleController,
             equals(customController));
-        expect(widgetWithDependencies.touch.enabled, isFalse);
+        // ignore: deprecated_member_use_from_same_package
+        expect(widgetWithDependencies.touchActivation, isFalse);
+        expect(widgetWithDependencies.effectiveTouchFeatures.enabled, isFalse);
+        // ignore: deprecated_member_use_from_same_package
+        expect(widgetWithDependencies.touchColor, equals(Colors.red));
+        expect(widgetWithDependencies.effectiveTouchFeatures.color,
+            equals(Colors.red));
         expect(widgetWithDependencies.effectiveLineWidth, equals(1.2));
 
         await tester.pumpWidget(
@@ -153,17 +165,26 @@ void main() {
       expect(gravity.gravityCenter, equals(gravity.center));
     });
 
-    test('TouchFeatures canonical properties match', () {
+    test('TouchFeatures canonical properties and deprecated aliases match', () {
+      // ignore: deprecated_member_use_from_same_package
       const touch = TouchFeatures(
-        speed: 0.35,
-        force: 0.45,
-        enabled: false,
+        decayRate: 0.35,
+        pullForce: 0.45,
+        touchActivation: false,
       );
 
       // Canonical properties
       expect(touch.speed, equals(0.35));
       expect(touch.force, equals(0.45));
       expect(touch.enabled, isFalse);
+
+      // Deprecated aliases
+      // ignore: deprecated_member_use_from_same_package
+      expect(touch.decayRate, equals(touch.speed));
+      // ignore: deprecated_member_use_from_same_package
+      expect(touch.pullForce, equals(touch.force));
+      // ignore: deprecated_member_use_from_same_package
+      expect(touch.touchActivation, equals(touch.enabled));
     });
   });
 }

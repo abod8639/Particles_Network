@@ -6,7 +6,6 @@ library;
 
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
-import 'package:particles_network/src/legacy/legacy_deprecation_logger.dart';
 
 // Tracks the acceleration state of particles
 class AccelerationTracker {
@@ -29,64 +28,6 @@ class AccelerationTracker {
 
   // Check if there were any accelerated particles
   bool get hadAcceleratedParticles => _lastFrameAcceleratedCount > 0;
-}
-
-// Manages adaptive QuadTree updates (legacy)
-//
-// Deprecated: SortedSpatialGrid rebuilds in sub-0.1ms with zero allocations every frame,
-// making periodic skipping obsolete.
-@Deprecated(
-  'AdaptiveQuadTreeManager is deprecated. SortedSpatialGrid performs full '
-  'zero-allocation rebuilds in sub-0.1ms every frame without needing periodic skipping. '
-  'Scheduled for removal in particles_network 2.0.0.',
-)
-class AdaptiveQuadTreeManager {
-  // How many frames to skip between mandatory rebuilds
-  int rebuildInterval;
-
-  int _frameSinceLastRebuild;
-  bool _forceNextRebuild = false;
-
-  AdaptiveQuadTreeManager({this.rebuildInterval = 3})
-      : _frameSinceLastRebuild = rebuildInterval {
-    LegacyDeprecationLogger.warn(
-      deprecatedApi: 'AdaptiveQuadTreeManager',
-      replacement: 'SortedSpatialGrid',
-    );
-  }
-
-  // Check if QuadTree should be rebuilt this frame
-  bool shouldRebuild() {
-    // Force rebuild if explicitly requested
-    if (_forceNextRebuild) {
-      _frameSinceLastRebuild = 0;
-      _forceNextRebuild = false;
-      return true;
-    }
-
-    // Periodically rebuild to handle accumulated changes
-    _frameSinceLastRebuild++;
-    if (_frameSinceLastRebuild >= rebuildInterval) {
-      _frameSinceLastRebuild = 0;
-      return true;
-    }
-
-    return false;
-  }
-
-  // Force a rebuild on the next frame (e.g., after touch interaction)
-  void forceRebuild() {
-    _forceNextRebuild = true;
-  }
-
-  // Reset the frame counter
-  void reset() {
-    _frameSinceLastRebuild = rebuildInterval;
-    _forceNextRebuild = false;
-  }
-
-  // Get the number of frames since last rebuild
-  int get frameSinceLastRebuild => _frameSinceLastRebuild;
 }
 
 // Monitors frame performance and provides adaptive metrics

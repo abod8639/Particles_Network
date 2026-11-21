@@ -46,9 +46,6 @@ class OptimizedNetworkPainter extends CustomPainter {
   bool fill;
   bool drawNetwork;
 
-  @Deprecated('Superseded by SortedSpatialGrid. Removed in 2.0.0.')
-  final bool showQuadTree;
-
   TouchFeatures touchFeatures;
   NetworkPerformance performance;
 
@@ -179,7 +176,6 @@ class OptimizedNetworkPainter extends CustomPainter {
     required this.drawNetwork,
     TouchFeatures touchFeatures = const TouchFeatures(),
     NetworkPerformance performance = const NetworkPerformance(),
-    this.showQuadTree = false,
     int? maxConnectionsPerParticle,
     int? maxLinesPerFrame,
     this.simulateTouchInPaint = true,
@@ -212,7 +208,6 @@ class OptimizedNetworkPainter extends CustomPainter {
           lineRenderer: lineRenderer,
           antiAlias: antiAlias,
         ) {
-    LegacyPainterAdapter.warnIfQuadTreeRequested(showQuadTree);
     _palette = LineStylePalette(
         lineColor: lineColor,
         lineWidth: lineWidth,

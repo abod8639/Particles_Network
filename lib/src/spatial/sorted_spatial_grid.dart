@@ -16,7 +16,7 @@ const bool kReleaseMode = bool.fromEnvironment('dart.vm.product');
 /// A uniform grid whose particles are counting-sorted by cell into flat
 /// structure-of-arrays buffers.
 ///
-/// Compared to [SpatialGrid] (per-cell linked lists over `List<Particle>`),
+/// Compared to traditional spatial grids (per-cell linked lists over `List<Particle>`),
 /// every cell here is a contiguous range `[cellStart[c], cellStart[c + 1])`
 /// of [xs] / [ys] / [indices]. Pair loops therefore scan sequential typed
 /// memory instead of chasing `next` pointers and dereferencing `Particle`

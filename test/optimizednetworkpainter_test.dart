@@ -90,7 +90,6 @@ void main() {
       expect(defaultPainter.lineWidth, equals(1.0));
       expect(defaultPainter.fill, isTrue);
       expect(defaultPainter.drawNetwork, isTrue);
-      expect(defaultPainter.showQuadTree, isFalse);
     });
 
     testWidgets('handles null touchPoint', (tester) async {
@@ -808,34 +807,6 @@ void main() {
       complexPainter.paint(mockCanvas, testScreenSize);
       verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(
         greaterThan(0),
-      );
-    });
-
-    testWidgets('handles showQuadTree boundary update and insertion', (
-      tester,
-    ) async {
-      await setUpTest(tester);
-
-      final p = MockParticle(position: const Offset(50, 50));
-      final quadTreePainter = OptimizedNetworkPainter(
-        drawNetwork: true,
-        fill: true,
-        isComplex: false,
-        particleCount: 1,
-        particles: [p],
-        touchPoint: null,
-        lineDistance: 100,
-        particleColor: Colors.white,
-        lineColor: Colors.grey,
-        touchColor: Colors.red,
-        touchActivation: false,
-        lineWidth: 1.0,
-        showQuadTree: true,
-      );
-
-      expect(
-        () => quadTreePainter.paint(mockCanvas, testScreenSize),
-        returnsNormally,
       );
     });
 
