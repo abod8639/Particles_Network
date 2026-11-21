@@ -270,23 +270,23 @@ void main() {
   group('TouchFeatures', () {
     test('default values are set correctly', () {
       const features = TouchFeatures();
+      expect(features.enabled, isTrue);
       expect(features.speed, equals(0.42));
-      expect(features.decayRate, equals(0.42));
       expect(features.force, equals(0.42));
-      expect(features.pullForce, equals(0.42));
       expect(features.maxTouchSpeed, equals(5.5));
       expect(features.damping, equals(0.985));
     });
 
-    test('custom values and aliases are supported', () {
+    test('custom values are supported', () {
       const features = TouchFeatures(
+        enabled: false,
         speed: 0.02,
         force: 0.8,
         maxTouchSpeed: 10.0,
         damping: 0.95,
       );
+      expect(features.enabled, isFalse);
       expect(features.speed, equals(0.02));
-      expect(features.decayRate, equals(0.02));
       expect(features.force, equals(0.8));
       expect(features.maxTouchSpeed, equals(10.0));
       expect(features.damping, equals(0.95));
