@@ -2,7 +2,6 @@ import 'dart:ui';
 
 import 'package:flutter/widgets.dart';
 import 'package:particles_network/src/interaction/touch_features.dart';
-import 'package:particles_network/src/legacy/legacy_deprecation_logger.dart';
 import 'package:particles_network/src/rendering/line_vertex_batch.dart';
 import 'package:particles_network/src/rendering/network_performance.dart';
 import 'package:particles_network/src/rendering/optimized_network_painter.dart';
@@ -52,16 +51,6 @@ class LegacyPainterAdapter {
     required TouchFeatures touchFeatures,
   }) {
     return touchColor ?? touchFeatures.color;
-  }
-
-  /// Emits a deprecation warning if legacy `showQuadTree` was requested.
-  static void warnIfQuadTreeRequested(bool showQuadTree) {
-    if (showQuadTree) {
-      LegacyDeprecationLogger.warn(
-        deprecatedApi: 'OptimizedNetworkPainter(showQuadTree: true)',
-        replacement: 'SortedSpatialGrid (automatic zero-allocation grid)',
-      );
-    }
   }
 
   /// Folds multiple performance parameter updates into an updated [NetworkPerformance].
