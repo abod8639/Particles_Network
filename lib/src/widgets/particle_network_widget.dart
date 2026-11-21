@@ -40,51 +40,6 @@ class ParticleNetwork extends StatefulWidget {
   /// Color of connection lines between particles.
   final Color lineColor;
 
-  /// Explicitly provided legacy touch highlight color, if any.
-  final Color? _touchColor;
-
-  /// Highlight color for touch interactions (default: Colors.amber).
-  ///
-  /// Deprecated: Configure touch highlight color via [touchFeatures]
-  /// using [TouchFeatures.color] instead. This parameter will be removed in particles_network 2.0.0.
-  @Deprecated(
-    'Use touchFeatures (TouchFeatures(color: ...)) instead. This parameter will be removed in particles_network 2.0.0.',
-  )
-  Color get touchColor => _touchColor ?? touchFeatures.color;
-
-  /// Effective color used for touch highlight.
-  Color get effectiveTouchColor => _touchColor ?? touchFeatures.color;
-
-  /// Checks whether the deprecated [touchColor] parameter was explicitly configured.
-  bool get usedLegacyTouchColor => _touchColor != null;
-
-  /// Explicitly provided legacy touch activation flag, if any.
-  final bool? _touchActivation;
-
-  /// Whether touch interactions are enabled (default: true).
-  ///
-  /// Deprecated: Moved into [TouchFeatures] and renamed to [TouchFeatures.enabled].
-  /// Use `touchFeatures: TouchFeatures(enabled: ...)` instead:
-  /// ```dart
-  /// ParticleNetwork(
-  ///   touchFeatures: TouchFeatures(enabled: false),
-  /// )
-  /// ```
-  /// This parameter will be removed in particles_network 2.0.0.
-  @Deprecated(
-    'touchActivation was moved to TouchFeatures and renamed to enabled. '
-    'Use ParticleNetwork(touchFeatures: TouchFeatures(enabled: ...)) instead. '
-    'This parameter will be removed in particles_network 2.0.0.',
-  )
-  bool get touchActivation => _touchActivation ?? touchFeatures.enabled;
-
-  /// Effective flag used for touch activation.
-  bool get effectiveTouchActivation =>
-      _touchActivation ?? touchFeatures.enabled;
-
-  /// Checks whether the deprecated [touchActivation] parameter was explicitly configured.
-  bool get usedLegacyTouchActivation => _touchActivation != null;
-
   /// Explicitly provided legacy isComplex flag, if any.
   final bool? _isComplex;
 
@@ -103,11 +58,8 @@ class ParticleNetwork extends StatefulWidget {
   /// Checks whether the deprecated [isComplex] parameter was explicitly configured.
   bool get usedLegacyIsComplex => _isComplex != null;
 
-  /// Effective touch features configuration merging legacy and modern parameters.
-  TouchFeatures get effectiveTouchFeatures => touchFeatures.copyWith(
-        color: _touchColor,
-        enabled: _touchActivation,
-      );
+  /// Effective touch configuration.
+  TouchFeatures get effectiveTouchFeatures => touch;
 
   /// Effective performance configuration merging legacy and modern parameters.
   NetworkPerformance get effectivePerformance => performance.copyWith(
@@ -210,7 +162,10 @@ class ParticleNetwork extends StatefulWidget {
   final bool? hoverEffect;
 
   /// Advanced touch interaction features and physics configuration.
-  final TouchFeatures touchFeatures;
+  final TouchFeatures touch;
+
+  /// Compatibility alias for [touch].
+  TouchFeatures get touchFeatures => touch;
 
   /// Advanced performance settings and rendering optimizations.
   final NetworkPerformance performance;
@@ -233,16 +188,6 @@ class ParticleNetwork extends StatefulWidget {
     this.lineDistance = 100,
     this.particleColor = const Color(0xFFFFFFFF),
     this.lineColor = const Color.fromARGB(255, 100, 255, 180),
-    @Deprecated(
-      'Use touchFeatures (TouchFeatures(color: ...)) instead. This parameter will be removed in particles_network 2.0.0.',
-    )
-    Color? touchColor,
-    @Deprecated(
-      'touchActivation was moved to TouchFeatures and renamed to enabled. '
-      'Use ParticleNetwork(touchFeatures: TouchFeatures(enabled: ...)) instead. '
-      'This parameter will be removed in particles_network 2.0.0.',
-    )
-    bool? touchActivation,
     @Deprecated(
       'Use performance (NetworkPerformance(isComplex: ...)) instead. This parameter will be removed in particles_network 2.0.0.',
     )
@@ -279,11 +224,11 @@ class ParticleNetwork extends StatefulWidget {
     )
     this.gravityCenter,
     this.hoverEffect = false,
-    this.touchFeatures = const TouchFeatures(),
+    TouchFeatures touch = const TouchFeatures(),
+    TouchFeatures? touchFeatures,
     this.performance = const NetworkPerformance(),
     this.spatialGrid,
-  })  : _touchColor = touchColor,
-        _touchActivation = touchActivation,
+  })  : touch = touchFeatures ?? touch,
         _isComplex = isComplex,
         _linewidth = linewidth,
         _drawnetwork = drawnetwork;
@@ -450,20 +395,6 @@ class ParticleNetworkState extends State<ParticleNetwork>
           replacement: 'ParticleNetwork(gravity: ParticleGravity(...))',
         );
       }
-      if (widget.usedLegacyTouchColor) {
-        LegacyDeprecationLogger.warn(
-          deprecatedApi: 'ParticleNetwork(touchColor)',
-          replacement:
-              'ParticleNetwork(touchFeatures: TouchFeatures(color: ...))',
-        );
-      }
-      if (widget.usedLegacyTouchActivation) {
-        LegacyDeprecationLogger.warn(
-          deprecatedApi: 'ParticleNetwork(touchActivation)',
-          replacement:
-              'ParticleNetwork(touchFeatures: TouchFeatures(enabled: ...)) (touchActivation was moved to TouchFeatures and renamed to enabled)',
-        );
-      }
       if (widget.usedLegacyIsComplex) {
         LegacyDeprecationLogger.warn(
           deprecatedApi: 'ParticleNetwork(isComplex)',
@@ -517,20 +448,6 @@ class ParticleNetworkState extends State<ParticleNetwork>
           deprecatedApi:
               'ParticleNetwork(gravityType, gravityStrength, gravityDirection, gravityCenter)',
           replacement: 'ParticleNetwork(gravity: ParticleGravity(...))',
-        );
-      }
-      if (widget.usedLegacyTouchColor) {
-        LegacyDeprecationLogger.warn(
-          deprecatedApi: 'ParticleNetwork(touchColor)',
-          replacement:
-              'ParticleNetwork(touchFeatures: TouchFeatures(color: ...))',
-        );
-      }
-      if (widget.usedLegacyTouchActivation) {
-        LegacyDeprecationLogger.warn(
-          deprecatedApi: 'ParticleNetwork(touchActivation)',
-          replacement:
-              'ParticleNetwork(touchFeatures: TouchFeatures(enabled: ...)) (touchActivation was moved to TouchFeatures and renamed to enabled)',
         );
       }
       if (widget.usedLegacyIsComplex) {

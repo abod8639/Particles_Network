@@ -184,8 +184,8 @@ void main() {
     });
   });
 
-  group('Phase 1 - Item 3: Legacy touch merge', () {
-    testWidgets('legacy-only parameters are merged into touchFeatures',
+  group('Phase 1 - Item 3: Unified touch configuration', () {
+    testWidgets('touch parameter configures painter touchFeatures cleanly',
         (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -194,8 +194,10 @@ void main() {
               width: 300,
               height: 300,
               child: ParticleNetwork(
-                touchColor: Color(0xFF9C27B0), // Purple
-                touchActivation: false,
+                touch: TouchFeatures(
+                  color: Color(0xFF9C27B0), // Purple
+                  enabled: false,
+                ),
               ),
             ),
           ),
@@ -211,52 +213,7 @@ void main() {
       expect(state.painter.touchActivation, isFalse);
     });
 
-    testWidgets(
-        'didUpdateWidget preserves legacy touchColor on touchFeatures update',
-        (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 300,
-              height: 300,
-              child: ParticleNetwork(
-                touchColor: Color(0xFFE91E63), // Pink
-                touchFeatures: TouchFeatures(speed: 0.5),
-              ),
-            ),
-          ),
-        ),
-      );
-
-      final state = tester.state<ParticleNetworkState>(
-        find.byType(ParticleNetwork),
-      );
-      expect(state.painter.touchFeatures.color, const Color(0xFFE91E63));
-
-      // Update TouchFeatures speed without specifying touchColor
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 300,
-              height: 300,
-              child: ParticleNetwork(
-                touchColor: Color(0xFFE91E63),
-                touchFeatures: TouchFeatures(speed: 0.8),
-              ),
-            ),
-          ),
-        ),
-      );
-
-      expect(state.painter.touchFeatures.color, const Color(0xFFE91E63),
-          reason:
-              'Legacy touchColor must not be overwritten by TouchFeatures default color on update');
-      expect(state.painter.touchFeatures.speed, 0.8);
-    });
-
-    testWidgets('new-only parameters configure touchFeatures cleanly',
+    testWidgets('touchFeatures alias configures painter touchFeatures cleanly',
         (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -281,75 +238,6 @@ void main() {
 
       expect(state.painter.touchFeatures.color, const Color(0xFF00BCD4));
       expect(state.painter.touchFeatures.enabled, isFalse);
-    });
-
-    testWidgets(
-        'both provided: explicit legacy parameters override default/configured touchFeatures fields',
-        (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 300,
-              height: 300,
-              child: ParticleNetwork(
-                touchFeatures: TouchFeatures(
-                  color: Color(0xFF00BCD4), // Cyan
-                  enabled: true,
-                ),
-                touchColor: Color(0xFFFF5722), // Deep Orange
-                touchActivation: false,
-              ),
-            ),
-          ),
-        ),
-      );
-
-      final state = tester.state<ParticleNetworkState>(
-        find.byType(ParticleNetwork),
-      );
-
-      expect(state.painter.touchFeatures.color, const Color(0xFFFF5722));
-      expect(state.painter.touchFeatures.enabled, isFalse);
-    });
-
-    testWidgets('changing legacy parameter at runtime updates painter',
-        (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 300,
-              height: 300,
-              child: ParticleNetwork(
-                touchColor: Color(0xFFF44336), // Red
-              ),
-            ),
-          ),
-        ),
-      );
-
-      final state = tester.state<ParticleNetworkState>(
-        find.byType(ParticleNetwork),
-      );
-      expect(state.painter.touchFeatures.color, const Color(0xFFF44336));
-
-      // Update legacy touchColor to Green
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 300,
-              height: 300,
-              child: ParticleNetwork(
-                touchColor: Color(0xFF4CAF50), // Green
-              ),
-            ),
-          ),
-        ),
-      );
-
-      expect(state.painter.touchFeatures.color, const Color(0xFF4CAF50));
     });
 
     testWidgets('changing touchFeatures at runtime updates painter',

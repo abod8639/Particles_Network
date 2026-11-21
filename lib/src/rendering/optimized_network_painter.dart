@@ -32,7 +32,9 @@ class OptimizedNetworkPainter extends CustomPainter {
   Color touchColor;
 
   @Deprecated('Use touchFeatures.enabled. Removed in 2.0.0.')
-  bool touchActivation;
+  bool get touchActivation => touchFeatures.enabled;
+  set touchActivation(bool v) =>
+      updateTouchFeatures(touchFeatures.copyWith(enabled: v));
   final int particleCount;
   double lineWidth;
 
@@ -175,7 +177,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     @Deprecated('Use performance.isComplex. Removed in 2.0.0.') bool? isComplex,
     required this.fill,
     required this.drawNetwork,
-    this.touchFeatures = const TouchFeatures(),
+    TouchFeatures touchFeatures = const TouchFeatures(),
     NetworkPerformance performance = const NetworkPerformance(),
     this.showQuadTree = false,
     int? maxConnectionsPerParticle,
@@ -195,8 +197,10 @@ class OptimizedNetworkPainter extends CustomPainter {
             SortedSpatialGrid(tuning: gridTuning ?? const GridTuning()),
         touchColor = LegacyPainterAdapter.resolveTouchColor(
             touchColor: touchColor, touchFeatures: touchFeatures),
-        touchActivation = LegacyPainterAdapter.resolveTouchActivation(
-            touchActivation: touchActivation, touchFeatures: touchFeatures),
+        touchFeatures = touchFeatures.copyWith(
+          enabled: touchActivation ?? touchFeatures.enabled,
+          color: touchColor ?? touchFeatures.color,
+        ),
         performance = LegacyPainterAdapter.resolvePerformance(
           basePerformance: performance,
           isComplex: isComplex,
@@ -242,7 +246,7 @@ class OptimizedNetworkPainter extends CustomPainter {
   }
 
   bool get _isTouchActive =>
-      touchActivation &&
+      touchFeatures.enabled &&
       touchPoint != null &&
       touchPoint!.isFinite &&
       touchPoint != Offset.infinite;
@@ -501,7 +505,9 @@ class OptimizedNetworkPainter extends CustomPainter {
     bool? antiAlias,
   }) {
     if (drawNetwork != null) this.drawNetwork = drawNetwork;
-    if (touchActivation != null) this.touchActivation = touchActivation;
+    if (touchActivation != null) {
+      updateTouchFeatures(touchFeatures.copyWith(enabled: touchActivation));
+    }
     if (fill != null && fill != this.fill) {
       this.fill = fill;
       particlePaint.style = fill ? PaintingStyle.fill : PaintingStyle.stroke;
@@ -515,7 +521,6 @@ class OptimizedNetworkPainter extends CustomPainter {
   void updateTouchFeatures(TouchFeatures features) {
     touchFeatures = features;
     _touchHandler.touchFeatures = features;
-    touchActivation = features.enabled;
     if (features.color != touchColor) {
       touchColor = features.color;
       _touchHandler.rebuildTouchColorLut(features.color);
