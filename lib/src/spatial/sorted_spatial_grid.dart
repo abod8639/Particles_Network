@@ -5,8 +5,8 @@
 library;
 
 import 'dart:math' as math;
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:particles_network/src/core/particle.dart';
 import 'package:particles_network/src/spatial/grid_tuning.dart';
 import 'package:particles_network/src/spatial/scan_stats.dart';
@@ -114,8 +114,16 @@ class SortedSpatialGrid {
   /// Resets instrumentation counters.
   static void resetCounters() => stats.reset();
 
+  /// For testing: allows forcing profiling on in debug mode without `--dart-define`.
+  @visibleForTesting
+  static bool debugEnableProfiling = false;
+
+  @pragma('vm:prefer-inline')
+  static bool get _shouldProfile =>
+      kParticlesProfile || (!kReleaseMode && debugEnableProfiling);
+
   /// Instance accessors forwarding to instrumentation counters.
-  bool get isInstrumentationEnabled => kParticlesProfile;
+  bool get isInstrumentationEnabled => _shouldProfile;
   int get currentCandidateChecks => stats.candidateChecks;
   int get currentLoopIterations => stats.loopIterations;
   int get currentAcceptedPairs => stats.acceptedPairs;
@@ -374,7 +382,7 @@ class SortedSpatialGrid {
         final int c = rowStart + cx;
         final int cellEnd = start[c + 1];
         for (int k = start[c]; k < cellEnd; k++) {
-          if (kParticlesProfile) {
+          if (_shouldProfile) {
             stats.candidateChecks++;
             stats.loopIterations++;
           }
@@ -388,7 +396,7 @@ class SortedSpatialGrid {
 
           final double distSq = dx * dx + dy * dy;
           if (distSq <= radiusSq) {
-            if (kParticlesProfile) {
+            if (_shouldProfile) {
               stats.acceptedPairs++;
             }
             visitor(pIndices[k], px, py, distSq);
@@ -493,7 +501,7 @@ class SortedSpatialGrid {
           final int idx1 = pIndices[k1];
 
           for (int k2 = k1 + 1; k2 < cellEnd; k2++) {
-            if (kParticlesProfile) {
+            if (_shouldProfile) {
               stats.candidateChecks++;
               stats.loopIterations++;
             }
@@ -504,7 +512,7 @@ class SortedSpatialGrid {
 
             final double distSq = dx * dx + dy * dy;
             if (distSq <= maxDistSq) {
-              if (kParticlesProfile) {
+              if (_shouldProfile) {
                 stats.acceptedPairs++;
               }
               visitor(idx1, pIndices[k2], distSq);
@@ -559,7 +567,7 @@ class SortedSpatialGrid {
       final int idx1 = pIndices[k1];
 
       for (int k2 = nBegin; k2 < nEnd; k2++) {
-        if (kParticlesProfile) {
+        if (_shouldProfile) {
           stats.candidateChecks++;
           stats.loopIterations++;
         }
@@ -570,7 +578,7 @@ class SortedSpatialGrid {
 
         final double distSq = dx * dx + dy * dy;
         if (distSq <= maxDistSq) {
-          if (kParticlesProfile) {
+          if (_shouldProfile) {
             stats.acceptedPairs++;
           }
           visitor(idx1, pIndices[k2], distSq);

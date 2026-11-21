@@ -194,7 +194,10 @@ class OptimizedNetworkPainter extends CustomPainter {
         touchColor = LegacyPainterAdapter.resolveTouchColor(
             touchColor: touchColor, touchFeatures: touchFeatures),
         touchFeatures = touchFeatures.copyWith(
-          enabled: touchActivation ?? touchFeatures.enabled,
+          enabled: LegacyPainterAdapter.resolveTouchActivation(
+            touchActivation: touchActivation,
+            touchFeatures: touchFeatures,
+          ),
           color: touchColor ?? touchFeatures.color,
         ),
         performance = LegacyPainterAdapter.resolvePerformance(

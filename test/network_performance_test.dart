@@ -42,6 +42,18 @@ void main() {
       expect(perf.autoBoost, isTrue);
     });
 
+    test('complex preset has fine-grained dense cluster controls (L181-L182)', () {
+      final perf = NetworkPerformance.complex();
+
+      expect(perf.isComplex, isTrue);
+      expect(perf.complexReductionRatio, equals(0.5));
+      expect(perf.maxComplexLines, equals(3));
+      expect(perf.complexDensityFactor, equals(0.60));
+      expect(perf.cappedDistanceFactor, equals(0.75));
+      expect(perf.lineRenderer, equals(LineRenderer.vertices));
+      expect(perf.autoBoost, isFalse);
+    });
+
     test('balanced preset has sensible performance and fidelity limits', () {
       const perf = NetworkPerformance.balanced();
 
@@ -156,6 +168,105 @@ void main() {
       );
       expect(
         () => NetworkPerformance(complexDensityFactor: 0.0),
+        throwsAssertionError,
+      );
+    });
+
+    test(
+        'validates assertion errors for NetworkPerformance.complex (L195-L221)',
+        () {
+      expect(
+        () => NetworkPerformance.complex(maxConnectionsPerParticle: 0),
+        throwsAssertionError,
+      );
+      expect(
+        () => NetworkPerformance.complex(maxLinesPerFrame: 0),
+        throwsAssertionError,
+      );
+      expect(
+        () => NetworkPerformance.complex(cappedDistanceFactor: 0.0),
+        throwsAssertionError,
+      );
+      expect(
+        () => NetworkPerformance.complex(spatialCellMultiplier: 0.0),
+        throwsAssertionError,
+      );
+      expect(
+        () => NetworkPerformance.complex(complexReductionRatio: -0.1),
+        throwsAssertionError,
+      );
+      expect(
+        () => NetworkPerformance.complex(maxComplexLines: 0),
+        throwsAssertionError,
+      );
+      expect(
+        () => NetworkPerformance.complex(complexDensityFactor: 0.0),
+        throwsAssertionError,
+      );
+    });
+
+    test(
+        'validates assertion errors for NetworkPerformance.auto (L245-L267)',
+        () {
+      expect(
+        () => NetworkPerformance.auto(maxConnectionsPerParticle: 0),
+        throwsAssertionError,
+      );
+      expect(
+        () => NetworkPerformance.auto(maxLinesPerFrame: 0),
+        throwsAssertionError,
+      );
+      expect(
+        () => NetworkPerformance.auto(cappedDistanceFactor: 0.0),
+        throwsAssertionError,
+      );
+      expect(
+        () => NetworkPerformance.auto(spatialCellMultiplier: 0.0),
+        throwsAssertionError,
+      );
+      expect(
+        () => NetworkPerformance.auto(complexReductionRatio: -0.1),
+        throwsAssertionError,
+      );
+      expect(
+        () => NetworkPerformance.auto(maxComplexLines: 0),
+        throwsAssertionError,
+      );
+      expect(
+        () => NetworkPerformance.auto(complexDensityFactor: 0.0),
+        throwsAssertionError,
+      );
+    });
+
+    test(
+        'validates assertion errors for NetworkPerformance.balanced (L297-L311)',
+        () {
+      expect(
+        () => NetworkPerformance.balanced(maxConnectionsPerParticle: 0),
+        throwsAssertionError,
+      );
+      expect(
+        () => NetworkPerformance.balanced(maxLinesPerFrame: 0),
+        throwsAssertionError,
+      );
+      expect(
+        () => NetworkPerformance.balanced(cappedDistanceFactor: 0.0),
+        throwsAssertionError,
+      );
+      expect(
+        () => NetworkPerformance.balanced(spatialCellMultiplier: 0.0),
+        throwsAssertionError,
+      );
+      expect(
+        () => NetworkPerformance.balanced(complexReductionRatio: -0.1),
+        throwsAssertionError,
+      );
+      expect(
+        () => NetworkPerformance.balanced(maxComplexLines: 0),
+        throwsAssertionError,
+      );
+      expect(
+        () => NetworkPerformance.balanced(complexDensityFactor: 0.0),
         throwsAssertionError,
       );
     });

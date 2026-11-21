@@ -49,6 +49,19 @@ void main() {
       final counts2 = buffer.getClearedConnectionCounts(10);
       expect(counts2[0], equals(0)); // cleared
     });
+
+    test('connectionCounts and setCapacityForTesting work as expected (L28-L29, L85-L87)', () {
+      final buffer = CandidateBuffer();
+      expect(buffer.connectionCounts, isEmpty);
+
+      buffer.getClearedConnectionCounts(16);
+      expect(buffer.connectionCounts.length, greaterThanOrEqualTo(16));
+
+      buffer.setCapacityForTesting(32);
+      expect(buffer.capacity, equals(32));
+      expect(buffer.indices.length, equals(32));
+      expect(buffer.distSq.length, equals(32));
+    });
   });
 
   group('ClusterThrottler Unit Tests', () {
@@ -67,6 +80,69 @@ void main() {
         isIndividual: true,
       );
       expect(d2, equals(66)); // 100 ~/ 1.5
+    });
+
+    test('computeDenseThreshold respects complexDensityFactor when specified (L23-L25)', () {
+      final resPositive = throttler.computeDenseThreshold(
+        distance: 120.0,
+        performance: const NetworkPerformance(complexDensityFactor: 0.5),
+      );
+      expect(resPositive, equals(60));
+
+      final resZero = throttler.computeDenseThreshold(
+        distance: 0.0,
+        performance: const NetworkPerformance(complexDensityFactor: 0.5),
+      );
+      expect(resZero, equals(0));
+
+      final resNegative = throttler.computeDenseThreshold(
+        distance: -10.0,
+        performance: const NetworkPerformance(complexDensityFactor: 0.5),
+      );
+      expect(resNegative, equals(0));
+    });
+
+    test('resolveComplexTargetLines throttles complex lines using ratio and cap limits (L46-L47)', () {
+      // 1. When maxComplexLines != null (L46)
+      final resWithCap = throttler.resolveComplexTargetLines(
+        candidateCount: 20,
+        defaultMaxLines: 15,
+        performance: const NetworkPerformance(
+          complexReductionRatio: 0.5,
+          maxComplexLines: 6,
+        ),
+      );
+      expect(resWithCap, equals(6)); // min(10, 6) = 6
+
+      // 2. When maxComplexLines == null (L47)
+      final resWithoutCap = throttler.resolveComplexTargetLines(
+        candidateCount: 20,
+        defaultMaxLines: 15,
+        performance: const NetworkPerformance(
+          complexReductionRatio: 0.5,
+          maxComplexLines: null,
+        ),
+      );
+      expect(resWithoutCap, equals(10)); // max(1, 10) = 10
+
+      // 3. When maxComplexLines == null and reduction brings to 0 (clamps to at least 1)
+      final resClampedToOne = throttler.resolveComplexTargetLines(
+        candidateCount: 20,
+        defaultMaxLines: 15,
+        performance: const NetworkPerformance(
+          complexReductionRatio: 1.0,
+          maxComplexLines: null,
+        ),
+      );
+      expect(resClampedToOne, equals(1)); // max(1, 0) = 1
+
+      // 4. Fallback when complexReductionRatio == null
+      final resDefault = throttler.resolveComplexTargetLines(
+        candidateCount: 20,
+        defaultMaxLines: 15,
+        performance: const NetworkPerformance(complexReductionRatio: null),
+      );
+      expect(resDefault, equals(15));
     });
 
     test('calculateComplexLineFade provides smooth cosine falloff', () {

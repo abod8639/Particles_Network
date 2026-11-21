@@ -6,6 +6,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:particles_network/particles_network.dart';
+import 'package:particles_network/src/rendering/legacy_painter_adapter.dart';
 
 import 'mocks/mock_canvas.mocks.dart';
 
@@ -1655,5 +1656,94 @@ void main() {
         );
       },
     );
+  });
+
+  group('LegacyPainterAdapter Unit Tests (L14-L15, L41-L42, L45-L46)', () {
+    test('instantiation and constructor coverage (L14-L15)', () {
+      final adapter = LegacyPainterAdapter();
+      expect(adapter, isA<LegacyPainterAdapter>());
+    });
+
+    test(
+        'resolveTouchActivation resolves touchActivation or falls back to touchFeatures.enabled (L41-L42, L45-L46)',
+        () {
+      // 1. Explicit true overrides touchFeatures.enabled (false)
+      expect(
+        LegacyPainterAdapter.resolveTouchActivation(
+          touchActivation: true,
+          touchFeatures: const TouchFeatures(enabled: false),
+        ),
+        isTrue,
+      );
+
+      // 2. Explicit false overrides touchFeatures.enabled (true)
+      expect(
+        LegacyPainterAdapter.resolveTouchActivation(
+          touchActivation: false,
+          touchFeatures: const TouchFeatures(enabled: true),
+        ),
+        isFalse,
+      );
+
+      // 3. Null falls back to touchFeatures.enabled
+      expect(
+        LegacyPainterAdapter.resolveTouchActivation(
+          touchActivation: null,
+          touchFeatures: const TouchFeatures(enabled: true),
+        ),
+        isTrue,
+      );
+      expect(
+        LegacyPainterAdapter.resolveTouchActivation(
+          touchActivation: null,
+          touchFeatures: const TouchFeatures(enabled: false),
+        ),
+        isFalse,
+      );
+    });
+
+    test('touchActivation, isComplex, maxConnectionsPerParticle setters and test helpers', () {
+      final painter = OptimizedNetworkPainter(
+        particles: [MockParticle(position: const Offset(10, 10))],
+        particleCount: 1,
+        touchFeatures: const TouchFeatures(enabled: true),
+        performance: const NetworkPerformance.balanced(),
+        drawNetwork: true,
+        fill: true,
+        lineColor: Colors.grey,
+        lineDistance: 100,
+        lineWidth: 1.0,
+        particleColor: Colors.white,
+        touchPoint: null,
+      );
+
+      // touchActivation setter (L36-L37)
+      painter.touchActivation = false;
+      expect(painter.touchActivation, isFalse);
+      expect(painter.touchFeatures.enabled, isFalse);
+      painter.touchActivation = true;
+      expect(painter.touchActivation, isTrue);
+      expect(painter.touchFeatures.enabled, isTrue);
+
+      // isComplex setter (L43-L45)
+      painter.isComplex = true;
+      expect(painter.isComplex, isTrue);
+      expect(painter.performance.isComplex, isTrue);
+      painter.isComplex = false;
+      expect(painter.isComplex, isFalse);
+      expect(painter.performance.isComplex, isFalse);
+
+      // maxConnectionsPerParticle setter with int and null (L101-L106)
+      painter.maxConnectionsPerParticle = 5;
+      expect(painter.maxConnectionsPerParticle, equals(5));
+      expect(painter.performance.maxConnectionsPerParticle, equals(5));
+
+      painter.maxConnectionsPerParticle = null;
+      expect(painter.maxConnectionsPerParticle, isNull);
+      expect(painter.performance.maxConnectionsPerParticle, isNull);
+
+      // setUnifiedLineBufferCapacityForTesting (L537-L538)
+      painter.setUnifiedLineBufferCapacityForTesting(128);
+    });
   });
 }

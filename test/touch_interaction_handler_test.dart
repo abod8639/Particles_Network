@@ -895,6 +895,124 @@ void main() {
       // Should draw vertices because touch handler defaults to LineRenderer.vertices
       verify(mockCanvas.drawVertices(any, any, any)).called(1);
     });
+
+    group('Edge cases and line buffer expansion (L185-L188, L259-L260, L265-L266, L329-L330)', () {
+      test(
+          'clamps velocity to maxTouchSpeed when speedSq > maxTouchSpeedSq with active grid (L185-L188)',
+          () {
+        final p = Particle(
+          position: const Offset(90, 90),
+          velocity: Offset.zero,
+          color: Colors.white,
+          size: 2,
+        );
+        const double maxTouchSpeed = 4.0;
+        final grid = SortedSpatialGrid()..build([p], [0], 500, 500, 100);
+
+        final handler = TouchInteractionHandler(
+          particles: [p],
+          touchPoint: const Offset(100, 100),
+          lineDistance: 100.0,
+          touchColor: Colors.amber,
+          linePaint: Paint(),
+          spatialGrid: grid,
+          touchFeatures: const TouchFeatures(
+            force: 50.0,
+            maxTouchSpeed: maxTouchSpeed,
+            damping: 1.0,
+          ),
+        );
+
+        final tracker = AccelerationTracker();
+        handler.applyTouchPhysics([0], tracker);
+
+        expect(p.velocity.distance, closeTo(maxTouchSpeed, 1e-5));
+        expect(p.velocity.dx, greaterThan(0));
+        expect(p.velocity.dy, greaterThan(0));
+      });
+
+      test(
+          'drawTouchLines returns early when visibleParticles is empty (L259-L260)',
+          () {
+        final p = Particle(
+          position: const Offset(100, 100),
+          velocity: Offset.zero,
+          color: Colors.white,
+          size: 2,
+        );
+        final handler = TouchInteractionHandler(
+          particles: [p],
+          touchPoint: const Offset(105, 105),
+          lineDistance: 50.0,
+          touchColor: Colors.amber,
+          linePaint: Paint(),
+        );
+        handler.drawTouchLines(mockCanvas, []);
+        expect(handler.lastLineCount, equals(0));
+        verifyZeroInteractions(mockCanvas);
+      });
+
+      test(
+          'drawTouchLines returns early when lineDistance is <= 0 or not finite (L265-L266)',
+          () {
+        final p = Particle(
+          position: const Offset(100, 100),
+          velocity: Offset.zero,
+          color: Colors.white,
+          size: 2,
+        );
+        final handlerZero = TouchInteractionHandler(
+          particles: [p],
+          touchPoint: const Offset(105, 105),
+          lineDistance: 0.0,
+          touchColor: Colors.amber,
+          linePaint: Paint(),
+        );
+        handlerZero.drawTouchLines(mockCanvas, [0]);
+        expect(handlerZero.lastLineCount, equals(0));
+
+        final handlerInf = TouchInteractionHandler(
+          particles: [p],
+          touchPoint: const Offset(105, 105),
+          lineDistance: double.infinity,
+          touchColor: Colors.amber,
+          linePaint: Paint(),
+        );
+        handlerInf.drawTouchLines(mockCanvas, [0]);
+        expect(handlerInf.lastLineCount, equals(0));
+        verifyZeroInteractions(mockCanvas);
+      });
+
+      test(
+          'drawTouchLines expands line buffer in fallback loop when line count exceeds initial capacity (L329-L330)',
+          () {
+        final particles = List.generate(
+          70,
+          (i) => Particle(
+            position: Offset(100.0 + (i * 0.1), 100.0 + (i * 0.1)),
+            velocity: Offset.zero,
+            color: Colors.white,
+            size: 2,
+          ),
+        );
+        final visible = List.generate(70, (i) => i);
+
+        final handler = TouchInteractionHandler(
+          particles: particles,
+          touchPoint: const Offset(100, 100),
+          lineDistance: 50.0,
+          touchColor: Colors.amber,
+          linePaint: Paint(),
+          spatialGrid: null,
+          fastLineRendering: true,
+          lineRenderer: LineRenderer.stroke,
+        );
+
+        handler.drawTouchLines(mockCanvas, visible);
+        expect(handler.lastLineCount, equals(70));
+        verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(1);
+      });
+    });
   });
 }
 

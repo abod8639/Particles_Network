@@ -1517,4 +1517,114 @@ void main() {
       expect(painter.lineDistance, equals(100.0));
     },
   );
+
+  group('ParticleNetwork widget getters & factory update (L56-L57, L296-L306, L503-L509)', () {
+    test('effectiveIsComplex returns correct value based on isComplex and performance (L56-L57)', () {
+      const widgetLegacy = ParticleNetwork(isComplex: true);
+      expect(widgetLegacy.effectiveIsComplex, isTrue);
+
+      const widgetPerformance = ParticleNetwork(
+        performance: NetworkPerformance(isComplex: false),
+      );
+      expect(widgetPerformance.effectiveIsComplex, isFalse);
+
+      const widgetDefault = ParticleNetwork();
+      expect(widgetDefault.effectiveIsComplex, equals(widgetDefault.performance.isComplex));
+    });
+
+    testWidgets(
+        'ParticleNetworkState exposes painter frame statistics and limits getters (L296-L306)',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleNetwork(
+                particleCount: 20,
+                lineDistance: 50.0,
+                performance: NetworkPerformance(
+                  maxConnectionsPerParticle: 5,
+                  maxLinesPerFrame: 100,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump(const Duration(milliseconds: 16));
+
+      final state = tester.state<ParticleNetworkState>(
+        find.byType(ParticleNetwork),
+      );
+
+      expect(state.lastFrameLineCount, isA<int>());
+      expect(state.lastFrameLineCount, equals(state.painter.lastFrameLineCount));
+      expect(state.lastFrameLineDistance, isA<double>());
+      expect(state.lastFrameLineDistance, equals(state.painter.lastFrameLineDistance));
+      expect(state.effectiveMaxConnections, equals(5));
+      expect(state.effectiveMaxLines, equals(100));
+    });
+
+    testWidgets(
+        'didUpdateWidget resets to default factory when particleFactory is set to null (L503-L509)',
+        (WidgetTester tester) async {
+      final customFactory = DefaultParticleFactory(
+        random: Random(42),
+        maxSpeed: 10.0,
+        maxSize: 10.0,
+        color: Colors.blue,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleNetwork(
+                particleFactory: customFactory,
+                maxSpeed: 2.0,
+                maxSize: 3.0,
+                particleColor: Colors.white,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final state = tester.state<ParticleNetworkState>(
+        find.byType(ParticleNetwork),
+      );
+      expect(state.simulation.factory, equals(customFactory));
+
+      // Update widget: remove custom factory (set to null)
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleNetwork(
+                particleFactory: null,
+                maxSpeed: 4.5,
+                maxSize: 6.5,
+                particleColor: Colors.green,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Verify that simulation factory was updated with the new parameters
+      expect(state.simulation.factory, isNot(equals(customFactory)));
+      expect(state.simulation.factory, isA<DefaultParticleFactory>());
+      final defaultFactory = state.simulation.factory as DefaultParticleFactory;
+      expect(defaultFactory.maxSpeed, equals(4.5));
+      expect(defaultFactory.maxSize, equals(6.5));
+      expect(defaultFactory.color, equals(Colors.green));
+    });
+  });
 }

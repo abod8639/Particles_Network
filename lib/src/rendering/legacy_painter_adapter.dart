@@ -11,7 +11,7 @@ import 'package:particles_network/src/rendering/optimized_network_painter.dart';
 /// Ensures backward compatibility for deprecated constructor parameters and
 /// flags without polluting the painter's core rendering pipeline.
 class LegacyPainterAdapter {
-  const LegacyPainterAdapter._();
+  const LegacyPainterAdapter();
 
   /// Resolves the effective [NetworkPerformance] by folding in legacy parameters.
   static NetworkPerformance resolvePerformance({

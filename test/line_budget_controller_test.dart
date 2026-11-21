@@ -1,9 +1,37 @@
 import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:particles_network/src/rendering/frame_radii.dart';
 import 'package:particles_network/src/rendering/line_budget_controller.dart';
 
 void main() {
+  group('FrameRadii Unit Tests', () {
+    test('equality, hashCode and toString work as expected (L23-L37)', () {
+      const r1 = FrameRadii(gridRadius: 100.0, scanRadius: 80.0, alphaRadius: 60.0);
+      const r2 = FrameRadii(gridRadius: 100.0, scanRadius: 80.0, alphaRadius: 60.0);
+      const diffGrid = FrameRadii(gridRadius: 90.0, scanRadius: 80.0, alphaRadius: 60.0);
+      const diffScan = FrameRadii(gridRadius: 100.0, scanRadius: 70.0, alphaRadius: 60.0);
+      const diffAlpha = FrameRadii(gridRadius: 100.0, scanRadius: 80.0, alphaRadius: 50.0);
+
+      // Identical & value equality
+      expect(r1 == r1, isTrue);
+      expect(r1, equals(r2));
+      expect(r1.hashCode, equals(r2.hashCode));
+
+      // Differences
+      expect(r1 == diffGrid, isFalse);
+      expect(r1 == diffScan, isFalse);
+      expect(r1 == diffAlpha, isFalse);
+      expect(r1 == Object(), isFalse);
+
+      // toString
+      expect(
+        r1.toString(),
+        equals('FrameRadii(gridRadius: 100.0, scanRadius: 80.0, alphaRadius: 60.0)'),
+      );
+    });
+  });
+
   group('LineBudgetController Unit Tests', () {
     late LineBudgetController controller;
 

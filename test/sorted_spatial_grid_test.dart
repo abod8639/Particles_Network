@@ -794,6 +794,34 @@ void main() {
         }
 
         SortedSpatialGrid.resetCounters();
+        // Neighbor cell inter-cell test (L562-L565, L573-L575 in _pairWithCell)
+        final neighborPs = [
+          Particle(
+              position: const Offset(10, 10),
+              velocity: Offset.zero,
+              color: Colors.white,
+              size: 1),
+          Particle(
+              position: const Offset(55, 10),
+              velocity: Offset.zero,
+              color: Colors.white,
+              size: 1),
+        ];
+        final neighborGrid = SortedSpatialGrid()..build(neighborPs, null, 100, 100, 50);
+        int neighborPairs = 0;
+        neighborGrid.forEachPair(50, (i1, i2, distSq) {
+          neighborPairs++;
+        });
+        expect(neighborPairs, equals(1));
+
+        if (kParticlesProfile) {
+          expect(SortedSpatialGrid.candidateChecks, greaterThanOrEqualTo(1));
+          expect(SortedSpatialGrid.acceptedPairs, equals(1));
+        } else {
+          expect(SortedSpatialGrid.candidateChecks, equals(0));
+        }
+
+        SortedSpatialGrid.resetCounters();
         expect(SortedSpatialGrid.candidateChecks, equals(0));
         expect(SortedSpatialGrid.acceptedPairs, equals(0));
         expect(SortedSpatialGrid.ratio, equals(0.0));
@@ -846,6 +874,138 @@ void main() {
 
         final pic = recorder.endRecording();
         pic.dispose();
+      });
+
+      test('debugEnableProfiling exercises candidate and pair profiling loops (L377-L380, L391-L393, L496-L499, L507-L509, L562-L565, L573-L575)', () {
+        SortedSpatialGrid.debugEnableProfiling = true;
+        addTearDown(() {
+          SortedSpatialGrid.debugEnableProfiling = false;
+          SortedSpatialGrid.resetCounters();
+        });
+
+        final grid = SortedSpatialGrid();
+        expect(grid.isInstrumentationEnabled, isTrue);
+
+        final ps = [
+          Particle(
+              position: const Offset(10, 10),
+              velocity: Offset.zero,
+              color: Colors.white,
+              size: 1),
+          Particle(
+              position: const Offset(12, 12),
+              velocity: Offset.zero,
+              color: Colors.white,
+              size: 1),
+          Particle(
+              position: const Offset(55, 10),
+              velocity: Offset.zero,
+              color: Colors.white,
+              size: 1),
+        ];
+
+        grid.build(ps, null, 100, 100, 50);
+        SortedSpatialGrid.resetCounters();
+
+        // 1. queryRadius triggers L377-L380 & L391-L393
+        int queried = 0;
+        grid.queryRadius(10, 10, 10, (idx, px, py, distSq) {
+          queried++;
+        });
+        expect(queried, equals(2));
+        expect(SortedSpatialGrid.candidateChecks, greaterThanOrEqualTo(2));
+        expect(SortedSpatialGrid.loopIterations, greaterThanOrEqualTo(2));
+        expect(SortedSpatialGrid.acceptedPairs, equals(2));
+
+        SortedSpatialGrid.resetCounters();
+
+        // 2. forEachPair triggers L496-L499 & L507-L509 (intra-cell) and L562-L565 & L573-L575 (inter-cell)
+        int pairs = 0;
+        grid.forEachPair(50, (i1, i2, distSq) {
+          pairs++;
+        });
+        expect(pairs, greaterThanOrEqualTo(2));
+        expect(SortedSpatialGrid.candidateChecks, greaterThanOrEqualTo(2));
+        expect(SortedSpatialGrid.loopIterations, greaterThanOrEqualTo(2));
+        expect(SortedSpatialGrid.acceptedPairs, greaterThanOrEqualTo(2));
+      });
+
+      test('profiling getters and setters forward correctly to ScanStats', () {
+        SortedSpatialGrid.candidateChecks = 11;
+        SortedSpatialGrid.loopIterations = 22;
+        SortedSpatialGrid.acceptedPairs = 33;
+        SortedSpatialGrid.scanLoopMicros = 44;
+        SortedSpatialGrid.gridBuildMicros = 55;
+        SortedSpatialGrid.physicsMicros = 66;
+        SortedSpatialGrid.emissionMicros = 77;
+        SortedSpatialGrid.frameCount = 88;
+        SortedSpatialGrid.frameScanCount = 99;
+
+        expect(SortedSpatialGrid.candidateChecks, equals(11));
+        expect(SortedSpatialGrid.loopIterations, equals(22));
+        expect(SortedSpatialGrid.acceptedPairs, equals(33));
+        expect(SortedSpatialGrid.scanLoopMicros, equals(44));
+        expect(SortedSpatialGrid.gridBuildMicros, equals(55));
+        expect(SortedSpatialGrid.physicsMicros, equals(66));
+        expect(SortedSpatialGrid.emissionMicros, equals(77));
+        expect(SortedSpatialGrid.frameCount, equals(88));
+        expect(SortedSpatialGrid.frameScanCount, equals(99));
+        expect(SortedSpatialGrid.frameScanTimes, isNotNull);
+
+        final grid = SortedSpatialGrid();
+        expect(grid.currentLoopIterations, equals(22));
+        expect(grid.currentAcceptedPairs, equals(33));
+
+        SortedSpatialGrid.resetCounters();
+        expect(SortedSpatialGrid.candidateChecks, equals(0));
+        expect(SortedSpatialGrid.loopIterations, equals(0));
+      });
+
+      test('build with fitToBoundingBox computes area based on particle bounds (L157-L174)', () {
+        final grid = SortedSpatialGrid(
+          tuning: const GridTuning(fitToBoundingBox: true),
+        );
+        final ps = [
+          Particle(
+            position: const Offset(10, 20),
+            velocity: Offset.zero,
+            color: Colors.white,
+            size: 1,
+          ),
+          Particle(
+            position: const Offset(50, 80),
+            velocity: Offset.zero,
+            color: Colors.white,
+            size: 1,
+          ),
+          Particle(
+            position: const Offset(30, 40),
+            velocity: Offset.zero,
+            color: Colors.white,
+            size: 1,
+          ),
+        ];
+
+        grid.build(ps, [0, 1, 2, 99], 1000, 1000, 10);
+        expect(grid.count, equals(3));
+        expect(grid.cellSize, greaterThanOrEqualTo(10.0));
+      });
+
+      test('build resets cols, rows, and cellSize to 0 when all visible indices are out of range (L276-L281)', () {
+        final grid = SortedSpatialGrid();
+        final ps = [
+          Particle(
+            position: const Offset(10, 10),
+            velocity: Offset.zero,
+            color: Colors.white,
+            size: 1,
+          ),
+        ];
+        grid.build(ps, [-1, 50, 99], 200, 200, 20);
+        expect(grid.cols, equals(0));
+        expect(grid.rows, equals(0));
+        expect(grid.cellSize, equals(0));
+        expect(grid.count, equals(0));
       });
     });
 

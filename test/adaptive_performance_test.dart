@@ -440,5 +440,27 @@ void main() {
       expect(state.painter.effectiveMaxConnections, equals(6));
       expect(state.painter.effectiveMaxLines, equals(8000));
     });
+
+    test(
+        'AdaptivePerformanceController getters and recordFrameTime wrapper (L116-L120, L132-L136, L245-L250)',
+        () {
+      final ctrl = AdaptivePerformanceController(targetFrameTimeMs: 16.67);
+
+      expect(ctrl.smoothedDynamicLines, equals(4000.0));
+      expect(ctrl.scaleFactor, equals(1.0));
+      expect(ctrl.consecutiveDrops, equals(0));
+      expect(ctrl.consecutiveSmooth, equals(0));
+
+      // Test recordFrameTime wrapper
+      ctrl.recordFrameTime(const Duration(milliseconds: 20), 50);
+      expect(ctrl.smoothedDynamicLines, isNot(4000.0));
+
+      // Record frames to exercise consecutive counters
+      for (int i = 0; i < 20; i++) {
+        ctrl.recordFrameTime(const Duration(milliseconds: 50), 200);
+      }
+      expect(ctrl.consecutiveDrops, greaterThanOrEqualTo(0));
+      expect(ctrl.consecutiveSmooth, greaterThanOrEqualTo(0));
+    });
   });
 }

@@ -81,5 +81,11 @@ void main() {
       expect(vertexLines, equals(1));
       expect(vertexCanvas.verticesCallCount, equals(1));
     });
+
+    test('rawBuckets exposes coordinate buffers for all buckets (L27-L28)', () {
+      final buckets = LineBuckets(initialSegmentCapacityPerBucket: 256);
+      expect(buckets.rawBuckets.length, equals(LineBuckets.numBuckets));
+      expect(buckets.rawBuckets.first.length, equals(256 * 4));
+    });
   });
 }

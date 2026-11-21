@@ -144,5 +144,22 @@ void main() {
       expect(sim.particles, isEmpty);
       expect(sim.currentSize, equals(Size.zero));
     });
+
+    test(
+        'buildSpatialGrid clears grid and returns when particles empty or size <= 0 (L152-L153)',
+        () {
+      final sim = ParticleSimulation(particleCount: 5);
+      // Case 1: particles empty and currentSize is zero
+      sim.buildSpatialGrid();
+      expect(sim.spatialGrid.count, equals(0));
+
+      // Case 2: particles populated then cleared
+      sim.updateSize(const Size(200, 200));
+      expect(sim.particles.isNotEmpty, isTrue);
+
+      sim.clear();
+      sim.buildSpatialGrid();
+      expect(sim.spatialGrid.count, equals(0));
+    });
   });
 }

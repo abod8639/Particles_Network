@@ -1,7 +1,7 @@
 import 'dart:math' as math;
-import 'dart:typed_data';
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart' hide kReleaseMode;
 import 'package:particles_network/src/spatial/scan_stats.dart';
 import 'package:particles_network/src/spatial/sorted_spatial_grid.dart';
 
@@ -26,6 +26,14 @@ import 'rendering_constants.dart';
 ///   to the East and South) due to the half-stencil half-space optimization.
 class PairScanner {
   const PairScanner();
+
+  /// For testing: allows forcing profiling on in debug mode without `--dart-define`.
+  @visibleForTesting
+  static bool debugEnableProfiling = false;
+
+  @pragma('vm:prefer-inline')
+  static bool get _shouldProfile =>
+      kParticlesProfile || (!kReleaseMode && debugEnableProfiling);
 
   /// Scans pairs using the ultra-fast uncapped, non-complex path directly into [buckets].
   // Performance exception: This hot loop exceeds 50 lines to avoid per-pair
@@ -71,7 +79,7 @@ class PairScanner {
           final double y1 = ys[i];
 
           for (int j = i + 1; j < nearEnd; j++) {
-            if (kParticlesProfile) {
+            if (_shouldProfile) {
               ScanStats.instance.candidateChecks++;
               ScanStats.instance.loopIterations++;
             }
@@ -81,7 +89,7 @@ class PairScanner {
             final double dy = y1 - ys[j];
             final double distSq = dxSq + dy * dy;
             if (distSq <= maxDistSq) {
-              if (kParticlesProfile) {
+              if (_shouldProfile) {
                 ScanStats.instance.acceptedPairs++;
               }
               buckets.emitLine(
@@ -96,7 +104,7 @@ class PairScanner {
           }
 
           for (int j = southStart; j < southEnd; j++) {
-            if (kParticlesProfile) {
+            if (_shouldProfile) {
               ScanStats.instance.candidateChecks++;
               ScanStats.instance.loopIterations++;
             }
@@ -106,7 +114,7 @@ class PairScanner {
             final double dy = y1 - ys[j];
             final double distSq = dxSq + dy * dy;
             if (distSq <= maxDistSq) {
-              if (kParticlesProfile) {
+              if (_shouldProfile) {
                 ScanStats.instance.acceptedPairs++;
               }
               buckets.emitLine(
@@ -193,7 +201,7 @@ class PairScanner {
           int candidateCount = 0;
 
           for (int j = i + 1; j < nearEnd; j++) {
-            if (kParticlesProfile) {
+            if (_shouldProfile) {
               ScanStats.instance.candidateChecks++;
               ScanStats.instance.loopIterations++;
             }
@@ -204,7 +212,7 @@ class PairScanner {
             final double dy = y1 - ys[j];
             final double distSq = dxSq + dy * dy;
             if (distSq <= maxDistSq) {
-              if (kParticlesProfile) {
+              if (_shouldProfile) {
                 ScanStats.instance.acceptedPairs++;
               }
               if (candidateCount >= candCapacity) {
@@ -220,7 +228,7 @@ class PairScanner {
           }
 
           for (int j = southStart; j < southEnd; j++) {
-            if (kParticlesProfile) {
+            if (_shouldProfile) {
               ScanStats.instance.candidateChecks++;
               ScanStats.instance.loopIterations++;
             }
@@ -231,7 +239,7 @@ class PairScanner {
             final double dy = y1 - ys[j];
             final double distSq = dxSq + dy * dy;
             if (distSq <= maxDistSq) {
-              if (kParticlesProfile) {
+              if (_shouldProfile) {
                 ScanStats.instance.acceptedPairs++;
               }
               if (candidateCount >= candCapacity) {
@@ -373,7 +381,7 @@ class PairScanner {
             int candidateCount = 0;
 
             for (int j = i + 1; j < nearEnd; j++) {
-              if (kParticlesProfile) {
+              if (_shouldProfile) {
                 ScanStats.instance.candidateChecks++;
                 ScanStats.instance.loopIterations++;
               }
@@ -384,7 +392,7 @@ class PairScanner {
               final double dy = py - ys[j];
               final double distSq = dxSq + dy * dy;
               if (distSq <= maxDistSq) {
-                if (kParticlesProfile) {
+                if (_shouldProfile) {
                   ScanStats.instance.acceptedPairs++;
                 }
                 if (candidateCount >= candCapacity) {
@@ -400,7 +408,7 @@ class PairScanner {
             }
 
             for (int j = southStart; j < southEnd; j++) {
-              if (kParticlesProfile) {
+              if (_shouldProfile) {
                 ScanStats.instance.candidateChecks++;
                 ScanStats.instance.loopIterations++;
               }
@@ -411,7 +419,7 @@ class PairScanner {
               final double dy = py - ys[j];
               final double distSq = dxSq + dy * dy;
               if (distSq <= maxDistSq) {
-                if (kParticlesProfile) {
+                if (_shouldProfile) {
                   ScanStats.instance.acceptedPairs++;
                 }
                 if (candidateCount >= candCapacity) {

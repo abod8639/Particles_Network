@@ -4,7 +4,7 @@ import 'package:particles_network/particles_network.dart';
 void main() {
   group('Rectangle', () {
     test('constructor creates rectangle with correct properties', () {
-      const rect = Rectangle(10, 20, 30, 40);
+      final rect = Rectangle(10, 20, 30, 40);
       expect(rect.x, equals(10));
       expect(rect.y, equals(20));
       expect(rect.width, equals(30));
