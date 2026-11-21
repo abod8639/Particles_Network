@@ -202,24 +202,24 @@ class Particle {
     final double w = bounds.width;
     final double h = bounds.height;
 
-    if (x < 0) {
+    if (x < size) {
       if (vx < 0) {
         vx = -vx;
         defaultVx = -defaultVx;
       }
-    } else if (x > w) {
+    } else if (x > w - size) {
       if (vx > 0) {
         vx = -vx;
         defaultVx = -defaultVx;
       }
     }
 
-    if (y < 0) {
+    if (y < size) {
       if (vy < 0) {
         vy = -vy;
         defaultVy = -defaultVy;
       }
-    } else if (y > h) {
+    } else if (y > h - size) {
       if (vy > 0) {
         vy = -vy;
         defaultVy = -defaultVy;
@@ -233,24 +233,24 @@ class Particle {
 
   /// Handles collisions with the screen boundaries by reversing the velocity.
   void handleScreenBoundaries(Size bounds) {
-    if (x < 0) {
+    if (x < size) {
       if (vx < 0) {
         vx = -vx;
         defaultVx = -defaultVx;
       }
-    } else if (x > bounds.width) {
+    } else if (x > bounds.width - size) {
       if (vx > 0) {
         vx = -vx;
         defaultVx = -defaultVx;
       }
     }
 
-    if (y < 0) {
+    if (y < size) {
       if (vy < 0) {
         vy = -vy;
         defaultVy = -defaultVy;
       }
-    } else if (y > bounds.height) {
+    } else if (y > bounds.height - size) {
       if (vy > 0) {
         vy = -vy;
         defaultVy = -defaultVy;

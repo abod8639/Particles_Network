@@ -235,6 +235,53 @@ void main() {
         expect(particle.defaultVx, 3);
         expect(particle.defaultVy, 4);
       });
+
+      test(
+          'handleScreenBoundaries accounts for particle size (radius) at all edges',
+          () {
+        const Size bounds = Size(100, 100);
+        const double radius = 5.0;
+
+        // Left edge: x < size (4.0 < 5.0), center is still on screen (x > 0)
+        final leftParticle = createMockParticle(
+          position: const Offset(4.0, 50.0),
+          velocity: const Offset(-2.0, 0.0),
+          size: radius,
+        );
+        leftParticle.defaultVelocity = const Offset(-2.0, 0.0);
+        leftParticle.handleScreenBoundaries(bounds);
+        expect(leftParticle.vx, 2.0);
+
+        // Right edge: x > bounds.width - size (96.0 > 95.0), center is still on screen
+        final rightParticle = createMockParticle(
+          position: const Offset(96.0, 50.0),
+          velocity: const Offset(2.0, 0.0),
+          size: radius,
+        );
+        rightParticle.defaultVelocity = const Offset(2.0, 0.0);
+        rightParticle.handleScreenBoundaries(bounds);
+        expect(rightParticle.vx, -2.0);
+
+        // Top edge: y < size (4.0 < 5.0), center is still on screen (y > 0)
+        final topParticle = createMockParticle(
+          position: const Offset(50.0, 4.0),
+          velocity: const Offset(0.0, -2.0),
+          size: radius,
+        );
+        topParticle.defaultVelocity = const Offset(0.0, -2.0);
+        topParticle.handleScreenBoundaries(bounds);
+        expect(topParticle.vy, 2.0);
+
+        // Bottom edge: y > bounds.height - size (96.0 > 95.0), center is still on screen
+        final bottomParticle = createMockParticle(
+          position: const Offset(50.0, 96.0),
+          velocity: const Offset(0.0, 2.0),
+          size: radius,
+        );
+        bottomParticle.defaultVelocity = const Offset(0.0, 2.0);
+        bottomParticle.handleScreenBoundaries(bounds);
+        expect(bottomParticle.vy, -2.0);
+      });
     });
 
     group('Visibility', () {
