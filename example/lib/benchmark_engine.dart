@@ -25,9 +25,7 @@ enum BenchmarkScenarioType {
 
 /// Algorithm type for benchmarking.
 enum SpatialAlgorithmType {
-  sortedSpatialGrid('SortedSpatialGrid'),
-  compressedQuadTree('CompressedQuadTree'),
-  standardQuadTree('StandardQuadTree');
+  sortedSpatialGrid('SortedSpatialGrid');
 
   final String displayName;
   const SpatialAlgorithmType(this.displayName);
@@ -202,18 +200,8 @@ class SpatialBenchmarkEngine {
     final double width = screenSize.width;
     final double height = screenSize.height;
 
-    // Pre-create spatial structures
+    // Pre-create spatial structure
     final sortedGrid = SortedSpatialGrid();
-    final compressedQuadTree =
-        CompressedQuadTree(Rectangle(0, 0, width, height));
-    final standardQuadTree = StandardQuadTree(
-      width: width,
-      height: height,
-      nodeCapacity: 8,
-      maxDepth: 10,
-    );
-
-    final List<int> neighborBuffer = [];
 
     // Frame timings (in microseconds)
     final buildTimesUs = Float64List(measuredFrames);
@@ -233,9 +221,6 @@ class SpatialBenchmarkEngine {
         particles: particles,
         visibleIndices: visibleIndices,
         sortedGrid: sortedGrid,
-        compressedQuadTree: compressedQuadTree,
-        standardQuadTree: standardQuadTree,
-        neighborBuffer: neighborBuffer,
         width: width,
         height: height,
         sampleMatches: false,
@@ -267,59 +252,18 @@ class SpatialBenchmarkEngine {
 
       // Phase 2: Build / Partition
       swBuild.start();
-      switch (algorithm) {
-        case SpatialAlgorithmType.sortedSpatialGrid:
-          sortedGrid.build(
-              particles, visibleIndices, width, height, queryRadius);
-          break;
-        case SpatialAlgorithmType.compressedQuadTree:
-          compressedQuadTree.clear();
-          for (int i = 0; i < count; i++) {
-            final p = particles[i];
-            compressedQuadTree.insert(QuadTreeParticle(i, p.x, p.y));
-          }
-          break;
-        case SpatialAlgorithmType.standardQuadTree:
-          standardQuadTree.build(particles, visibleIndices);
-          break;
-      }
+      sortedGrid.build(particles, visibleIndices, width, height, queryRadius);
       swBuild.stop();
 
       // Phase 3: Query neighbors for all particles
       swQuery.start();
       int matchesInFrame = 0;
-      switch (algorithm) {
-        case SpatialAlgorithmType.sortedSpatialGrid:
-          for (int i = 0; i < count; i++) {
-            final p = particles[i];
-            sortedGrid.queryRadius(p.x, p.y, queryRadius,
-                (otherIdx, px, py, distSq) {
-              if (otherIdx != i) matchesInFrame++;
-            });
-          }
-          break;
-
-        case SpatialAlgorithmType.compressedQuadTree:
-          for (int i = 0; i < count; i++) {
-            final p = particles[i];
-            neighborBuffer.clear();
-            compressedQuadTree.findNearbyParticlesToOutput(
-                p.x, p.y, queryRadius, neighborBuffer);
-            for (int k = 0; k < neighborBuffer.length; k++) {
-              if (neighborBuffer[k] != i) matchesInFrame++;
-            }
-          }
-          break;
-
-        case SpatialAlgorithmType.standardQuadTree:
-          for (int i = 0; i < count; i++) {
-            final p = particles[i];
-            standardQuadTree.queryRadius(p.x, p.y, queryRadius,
-                (otherIdx, px, py, distSq) {
-              if (otherIdx != i) matchesInFrame++;
-            });
-          }
-          break;
+      for (int i = 0; i < count; i++) {
+        final p = particles[i];
+        sortedGrid.queryRadius(p.x, p.y, queryRadius,
+            (otherIdx, px, py, distSq) {
+          if (otherIdx != i) matchesInFrame++;
+        });
       }
       swQuery.stop();
 
@@ -402,43 +346,15 @@ class SpatialBenchmarkEngine {
     required List<Particle> particles,
     required List<int> visibleIndices,
     required SortedSpatialGrid sortedGrid,
-    required CompressedQuadTree compressedQuadTree,
-    required StandardQuadTree standardQuadTree,
-    required List<int> neighborBuffer,
     required double width,
     required double height,
     required bool sampleMatches,
   }) {
     final count = particles.length;
-    switch (algorithm) {
-      case SpatialAlgorithmType.sortedSpatialGrid:
-        sortedGrid.build(particles, visibleIndices, width, height, queryRadius);
-        for (int i = 0; i < count; i++) {
-          final p = particles[i];
-          sortedGrid.queryRadius(p.x, p.y, queryRadius, (_, __, ___, ____) {});
-        }
-        break;
-      case SpatialAlgorithmType.compressedQuadTree:
-        compressedQuadTree.clear();
-        for (int i = 0; i < count; i++) {
-          final p = particles[i];
-          compressedQuadTree.insert(QuadTreeParticle(i, p.x, p.y));
-        }
-        for (int i = 0; i < count; i++) {
-          final p = particles[i];
-          neighborBuffer.clear();
-          compressedQuadTree.findNearbyParticlesToOutput(
-              p.x, p.y, queryRadius, neighborBuffer);
-        }
-        break;
-      case SpatialAlgorithmType.standardQuadTree:
-        standardQuadTree.build(particles, visibleIndices);
-        for (int i = 0; i < count; i++) {
-          final p = particles[i];
-          standardQuadTree.queryRadius(
-              p.x, p.y, queryRadius, (_, __, ___, ____) {});
-        }
-        break;
+    sortedGrid.build(particles, visibleIndices, width, height, queryRadius);
+    for (int i = 0; i < count; i++) {
+      final p = particles[i];
+      sortedGrid.queryRadius(p.x, p.y, queryRadius, (_, __, ___, ____) {});
     }
   }
 

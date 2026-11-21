@@ -82,8 +82,6 @@ class _BenchmarkScreenState extends State<BenchmarkScreen> {
 
     final algorithms = [
       SpatialAlgorithmType.sortedSpatialGrid,
-      SpatialAlgorithmType.standardQuadTree,
-      SpatialAlgorithmType.compressedQuadTree,
     ];
 
     final int totalRuns = scenarios.length * algorithms.length;
