@@ -39,7 +39,9 @@ class PairScanner {
   }) {
     final int cols = grid.cols;
     final int rows = grid.rows;
-    if (cols <= 0 || rows <= 0) return;
+    if (cols <= 0 || rows <= 0 || maxDistSq <= 0 || !maxDistSq.isFinite) {
+      return;
+    }
 
     final Int32List start = grid.cellStart;
     final Float64List xs = grid.xs;
@@ -140,7 +142,9 @@ class PairScanner {
   }) {
     final int cols = grid.cols;
     final int rows = grid.rows;
-    if (cols <= 0 || rows <= 0) return;
+    if (cols <= 0 || rows <= 0 || maxDistSq <= 0 || !maxDistSq.isFinite) {
+      return;
+    }
 
     final Int32List start = grid.cellStart;
     final Float64List xs = grid.xs;
@@ -157,6 +161,10 @@ class PairScanner {
     final int cap = maxConnectionsPerParticle ?? 0;
     final Int32List counts =
         candidateBuffer.getClearedConnectionCounts(grid.count);
+
+    Int32List candIndices = candidateBuffer.indices;
+    Float64List candDistSq = candidateBuffer.distSq;
+    int candCapacity = candIndices.length;
 
     for (int cy = 0; cy < rows; cy++) {
       final bool hasSouth = cy < rows - 1;
@@ -199,11 +207,14 @@ class PairScanner {
               if (kParticlesProfile) {
                 ScanStats.instance.acceptedPairs++;
               }
-              if (candidateCount >= candidateBuffer.capacity) {
+              if (candidateCount >= candCapacity) {
                 candidateBuffer.ensureCapacity(candidateCount + 1);
+                candIndices = candidateBuffer.indices;
+                candDistSq = candidateBuffer.distSq;
+                candCapacity = candIndices.length;
               }
-              candidateBuffer.indices[candidateCount] = j;
-              candidateBuffer.distSq[candidateCount] = distSq;
+              candIndices[candidateCount] = j;
+              candDistSq[candidateCount] = distSq;
               candidateCount++;
             }
           }
@@ -223,11 +234,14 @@ class PairScanner {
               if (kParticlesProfile) {
                 ScanStats.instance.acceptedPairs++;
               }
-              if (candidateCount >= candidateBuffer.capacity) {
+              if (candidateCount >= candCapacity) {
                 candidateBuffer.ensureCapacity(candidateCount + 1);
+                candIndices = candidateBuffer.indices;
+                candDistSq = candidateBuffer.distSq;
+                candCapacity = candIndices.length;
               }
-              candidateBuffer.indices[candidateCount] = j;
-              candidateBuffer.distSq[candidateCount] = distSq;
+              candIndices[candidateCount] = j;
+              candDistSq[candidateCount] = distSq;
               candidateCount++;
             }
           }
@@ -248,8 +262,6 @@ class PairScanner {
           if (drawCount <= 0) continue;
 
           final bool isThrottled = drawCount < candidateCount;
-          final Int32List candIndices = candidateBuffer.indices;
-          final Float64List candDistSq = candidateBuffer.distSq;
 
           for (int k = 0; k < drawCount; k++) {
             final int j = candIndices[k];
@@ -271,9 +283,11 @@ class PairScanner {
             );
 
             if (capped) {
-              counts[i]++;
               counts[j]++;
             }
+          }
+          if (capped) {
+            counts[i] += drawCount;
           }
         }
       }
@@ -300,7 +314,9 @@ class PairScanner {
   }) {
     final int cols = grid.cols;
     final int rows = grid.rows;
-    if (cols <= 0 || rows <= 0) return 0;
+    if (cols <= 0 || rows <= 0 || maxDistSq <= 0 || !maxDistSq.isFinite) {
+      return 0;
+    }
 
     final Int32List start = grid.cellStart;
     final Float64List xs = grid.xs;
@@ -321,6 +337,10 @@ class PairScanner {
     final int cap = maxConnectionsPerParticle ?? 0;
     final Int32List counts =
         candidateBuffer.getClearedConnectionCounts(grid.count);
+
+    Int32List candIndices = candidateBuffer.indices;
+    Float64List candDistSq = candidateBuffer.distSq;
+    int candCapacity = candIndices.length;
 
     int lineCount = 0;
     final Color previousColor = linePaint.color;
@@ -367,11 +387,14 @@ class PairScanner {
                 if (kParticlesProfile) {
                   ScanStats.instance.acceptedPairs++;
                 }
-                if (candidateCount >= candidateBuffer.capacity) {
+                if (candidateCount >= candCapacity) {
                   candidateBuffer.ensureCapacity(candidateCount + 1);
+                  candIndices = candidateBuffer.indices;
+                  candDistSq = candidateBuffer.distSq;
+                  candCapacity = candIndices.length;
                 }
-                candidateBuffer.indices[candidateCount] = j;
-                candidateBuffer.distSq[candidateCount] = distSq;
+                candIndices[candidateCount] = j;
+                candDistSq[candidateCount] = distSq;
                 candidateCount++;
               }
             }
@@ -391,11 +414,14 @@ class PairScanner {
                 if (kParticlesProfile) {
                   ScanStats.instance.acceptedPairs++;
                 }
-                if (candidateCount >= candidateBuffer.capacity) {
+                if (candidateCount >= candCapacity) {
                   candidateBuffer.ensureCapacity(candidateCount + 1);
+                  candIndices = candidateBuffer.indices;
+                  candDistSq = candidateBuffer.distSq;
+                  candCapacity = candIndices.length;
                 }
-                candidateBuffer.indices[candidateCount] = j;
-                candidateBuffer.distSq[candidateCount] = distSq;
+                candIndices[candidateCount] = j;
+                candDistSq[candidateCount] = distSq;
                 candidateCount++;
               }
             }
@@ -418,8 +444,6 @@ class PairScanner {
 
             final bool isThrottled = drawCount < candidateCount;
             final Offset pos = Offset(px, py);
-            final Int32List candIndices = candidateBuffer.indices;
-            final Float64List candDistSq = candidateBuffer.distSq;
 
             // Phase 1 Item 8: loop index named candIdx so it does not shadow cellIndex
             for (int candIdx = 0; candIdx < drawCount; candIdx++) {
@@ -427,7 +451,7 @@ class PairScanner {
               final double distance = math.sqrt(candDistSq[candIdx]);
               int alpha =
                   (255 - (distance * invAlphaDistance)).toInt().clamp(0, 255);
-              if (isThrottled && drawCount > 1) {
+              if (isComplexMode && isThrottled && drawCount > 1) {
                 final double rankFade =
                     throttler.calculateComplexLineFade(candIdx, drawCount);
                 alpha = (alpha * rankFade).toInt().clamp(0, 255);
@@ -436,9 +460,11 @@ class PairScanner {
               canvas.drawLine(pos, Offset(xs[j], ys[j]), linePaint);
 
               if (capped) {
-                counts[i]++;
                 counts[j]++;
               }
+            }
+            if (capped) {
+              counts[i] += drawCount;
             }
             lineCount += drawCount;
           }

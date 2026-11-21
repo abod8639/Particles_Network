@@ -32,20 +32,6 @@ void main() {
       expect(perf.antiAlias, isTrue);
     });
 
-    // test('adaptive preset has dynamic scaling enabled', () {
-    //   final perf = NetworkPerformance.adaptive();
-
-    //   expect(perf.maxConnectionsPerParticle, isNull);
-    //   expect(perf.maxLinesPerFrame, isNull);
-    //   expect(perf.frameRateIndependent, isTrue);
-    //   expect(perf.lineRenderer, equals(LineRenderer.vertices));
-    //   expect(perf.isComplex, isFalse);
-    //   expect(perf.complexDensityFactor, isNull);
-    //   expect(perf.cappedDistanceFactor, equals(0.75));
-    //   expect(perf.antiAlias, isTrue);
-    //   expect(perf.autoBoost, isTrue);
-    // });
-
     test('auto preset has smart auto-performance scaling enabled', () {
       const perf = NetworkPerformance.auto();
 
@@ -66,20 +52,6 @@ void main() {
       expect(perf.isComplex, isFalse);
       expect(perf.autoBoost, isFalse);
     });
-
-    // test('batterySaver preset has constrained limits and dense throttling', () {
-    //   const perf = NetworkPerformance.batterySaver();
-
-    //   expect(perf.maxConnectionsPerParticle, equals(3));
-    //   expect(perf.maxLinesPerFrame, equals(3000));
-    //   expect(perf.frameRateIndependent, isTrue);
-    //   expect(perf.lineRenderer, equals(LineRenderer.vertices));
-    //   expect(perf.isComplex, isTrue);
-    //   expect(perf.complexReductionRatio, equals(0.5));
-    //   expect(perf.maxComplexLines, equals(2));
-    //   expect(perf.complexDensityFactor, equals(0.60));
-    //   expect(perf.autoBoost, isFalse);
-    // });
 
     test('copyWith updates specified fields and preserves others', () {
       const initial = NetworkPerformance(

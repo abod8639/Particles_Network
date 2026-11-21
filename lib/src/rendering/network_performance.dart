@@ -2,7 +2,6 @@
 library;
 
 import 'package:flutter/foundation.dart';
-import 'package:particles_network/src/legacy/legacy_deprecation_logger.dart';
 import 'package:particles_network/src/rendering/line_vertex_batch.dart';
 
 /// Configuration class for network rendering performance and optimization settings.
@@ -31,30 +30,6 @@ class NetworkPerformance {
 
   /// How connection lines are rasterized (default: [LineRenderer.vertices]).
   final LineRenderer lineRenderer;
-
-  final bool? _fastLineRendering;
-
-  /// Compatibility alias for [lineRenderer].
-  ///
-  /// Deprecated: Replaced by [lineRenderer]. Use [lineRenderer] instead:
-  /// - For fast single draw-call vertex batching: `LineRenderer.vertices`
-  /// - For individual canvas stroke lines: `LineRenderer.stroke`
-  /// This property will be removed in particles_network 2.0.0.
-  @Deprecated(
-    'fastLineRendering was replaced by lineRenderer. '
-    'Use NetworkPerformance(lineRenderer: LineRenderer.vertices) or LineRenderer.stroke instead. '
-    'This property will be removed in particles_network 2.0.0.',
-  )
-  bool? get fastLineRendering {
-    if (kDebugMode && _fastLineRendering != null) {
-      LegacyDeprecationLogger.warn(
-        deprecatedApi: 'NetworkPerformance.fastLineRendering',
-        replacement:
-            'NetworkPerformance(lineRenderer: LineRenderer.vertices) or LineRenderer.stroke',
-      );
-    }
-    return _fastLineRendering;
-  }
 
   /// Whether to use complex (high-density optimized) painting logic (default: false).
   ///
@@ -119,13 +94,7 @@ class NetworkPerformance {
     this.maxConnectionsPerParticle,
     this.maxLinesPerFrame,
     this.frameRateIndependent = false,
-    @Deprecated(
-      'fastLineRendering was replaced by lineRenderer. '
-      'Use NetworkPerformance(lineRenderer: LineRenderer.vertices) or LineRenderer.stroke instead. '
-      'This parameter will be removed in particles_network 2.0.0.',
-    )
-    bool? fastLineRendering,
-    LineRenderer? lineRenderer,
+    this.lineRenderer = LineRenderer.vertices,
     this.isComplex = false,
     this.complexReductionRatio,
     this.maxComplexLines,
@@ -134,13 +103,22 @@ class NetworkPerformance {
     this.antiAlias = true,
     this.spatialCellMultiplier,
     this.autoBoost = false,
-  })  : _fastLineRendering = fastLineRendering,
-        lineRenderer = lineRenderer ??
-            (fastLineRendering != null
-                ? (fastLineRendering
-                    ? LineRenderer.vertices
-                    : LineRenderer.stroke)
-                : LineRenderer.vertices),
+  })  : assert(
+          maxConnectionsPerParticle == null || maxConnectionsPerParticle > 0,
+          'maxConnectionsPerParticle must be greater than 0',
+        ),
+        assert(
+          maxLinesPerFrame == null || maxLinesPerFrame > 0,
+          'maxLinesPerFrame must be greater than 0',
+        ),
+        assert(
+          cappedDistanceFactor > 0.0 && cappedDistanceFactor <= 1.0,
+          'cappedDistanceFactor must be between 0.0 (exclusive) and 1.0 (inclusive)',
+        ),
+        assert(
+          spatialCellMultiplier == null || spatialCellMultiplier > 0.0,
+          'spatialCellMultiplier must be greater than 0.0',
+        ),
         assert(
           complexReductionRatio == null ||
               (complexReductionRatio >= 0.0 && complexReductionRatio <= 1.0),
@@ -169,7 +147,35 @@ class NetworkPerformance {
     this.antiAlias = true,
     this.spatialCellMultiplier,
     this.autoBoost = false,
-  }) : _fastLineRendering = null;
+  })  : assert(
+          maxConnectionsPerParticle == null || maxConnectionsPerParticle > 0,
+          'maxConnectionsPerParticle must be greater than 0',
+        ),
+        assert(
+          maxLinesPerFrame == null || maxLinesPerFrame > 0,
+          'maxLinesPerFrame must be greater than 0',
+        ),
+        assert(
+          cappedDistanceFactor > 0.0 && cappedDistanceFactor <= 1.0,
+          'cappedDistanceFactor must be between 0.0 (exclusive) and 1.0 (inclusive)',
+        ),
+        assert(
+          spatialCellMultiplier == null || spatialCellMultiplier > 0.0,
+          'spatialCellMultiplier must be greater than 0.0',
+        ),
+        assert(
+          complexReductionRatio == null ||
+              (complexReductionRatio >= 0.0 && complexReductionRatio <= 1.0),
+          'complexReductionRatio must be between 0.0 and 1.0',
+        ),
+        assert(
+          maxComplexLines == null || maxComplexLines > 0,
+          'maxComplexLines must be greater than 0',
+        ),
+        assert(
+          complexDensityFactor == null || complexDensityFactor > 0.0,
+          'complexDensityFactor must be greater than 0.0',
+        );
 
   /// Flexible complex preset for fine-grained control over dense cluster line reduction.
   const NetworkPerformance.complex({
@@ -185,7 +191,22 @@ class NetworkPerformance {
     this.antiAlias = true,
     this.spatialCellMultiplier,
     this.autoBoost = false,
-  })  : _fastLineRendering = null,
+  })  : assert(
+          maxConnectionsPerParticle == null || maxConnectionsPerParticle > 0,
+          'maxConnectionsPerParticle must be greater than 0',
+        ),
+        assert(
+          maxLinesPerFrame == null || maxLinesPerFrame > 0,
+          'maxLinesPerFrame must be greater than 0',
+        ),
+        assert(
+          cappedDistanceFactor > 0.0 && cappedDistanceFactor <= 1.0,
+          'cappedDistanceFactor must be between 0.0 (exclusive) and 1.0 (inclusive)',
+        ),
+        assert(
+          spatialCellMultiplier == null || spatialCellMultiplier > 0.0,
+          'spatialCellMultiplier must be greater than 0.0',
+        ),
         assert(
           complexReductionRatio == null ||
               (complexReductionRatio >= 0.0 && complexReductionRatio <= 1.0),
@@ -199,22 +220,6 @@ class NetworkPerformance {
           complexDensityFactor == null || complexDensityFactor > 0.0,
           'complexDensityFactor must be greater than 0.0',
         );
-
-  // /// Adaptive preset focusing on dynamic frame rate scaling and independent motion.
-  // const NetworkPerformance.adaptive({
-  //   this.maxConnectionsPerParticle,
-  //   this.maxLinesPerFrame,
-  //   this.frameRateIndependent = true,
-  //   this.lineRenderer = LineRenderer.vertices,
-  //   this.isComplex = false,
-  //   this.complexReductionRatio,
-  //   this.maxComplexLines,
-  //   this.complexDensityFactor,
-  //   this.cappedDistanceFactor = 0.75,
-  //   this.antiAlias = true,
-  //   this.spatialCellMultiplier,
-  //   this.autoBoost = true,
-  // }) : _fastLineRendering = null;
 
   /// Auto-performance preset that automatically adapts parameters based on
   /// device performance and frame rate, maximizing visual density and connections
@@ -232,7 +237,35 @@ class NetworkPerformance {
     this.antiAlias = true,
     this.spatialCellMultiplier,
     this.autoBoost = true,
-  }) : _fastLineRendering = null;
+  })  : assert(
+          maxConnectionsPerParticle == null || maxConnectionsPerParticle > 0,
+          'maxConnectionsPerParticle must be greater than 0',
+        ),
+        assert(
+          maxLinesPerFrame == null || maxLinesPerFrame > 0,
+          'maxLinesPerFrame must be greater than 0',
+        ),
+        assert(
+          cappedDistanceFactor > 0.0 && cappedDistanceFactor <= 1.0,
+          'cappedDistanceFactor must be between 0.0 (exclusive) and 1.0 (inclusive)',
+        ),
+        assert(
+          spatialCellMultiplier == null || spatialCellMultiplier > 0.0,
+          'spatialCellMultiplier must be greater than 0.0',
+        ),
+        assert(
+          complexReductionRatio == null ||
+              (complexReductionRatio >= 0.0 && complexReductionRatio <= 1.0),
+          'complexReductionRatio must be between 0.0 and 1.0',
+        ),
+        assert(
+          maxComplexLines == null || maxComplexLines > 0,
+          'maxComplexLines must be greater than 0',
+        ),
+        assert(
+          complexDensityFactor == null || complexDensityFactor > 0.0,
+          'complexDensityFactor must be greater than 0.0',
+        );
 
   /// Balanced preset that maintains good visual quality with sensible performance limits.
   const NetworkPerformance.balanced({
@@ -248,23 +281,35 @@ class NetworkPerformance {
     this.antiAlias = true,
     this.spatialCellMultiplier,
     this.autoBoost = false,
-  }) : _fastLineRendering = null;
-
-  /// Battery saver preset tuned to minimize CPU/GPU load on low-end or battery-constrained devices.
-  // const NetworkPerformance.batterySaver({
-  //   this.maxConnectionsPerParticle = 3,
-  //   this.maxLinesPerFrame = 3000,
-  //   this.frameRateIndependent = true,
-  //   this.lineRenderer = LineRenderer.vertices,
-  //   this.isComplex = true,
-  //   this.complexReductionRatio = 0.5,
-  //   this.maxComplexLines = 2,
-  //   this.complexDensityFactor = 0.60,
-  //   this.cappedDistanceFactor = 0.75,
-  //   this.antiAlias = true,
-  //   this.spatialCellMultiplier,
-  //   this.autoBoost = false,
-  // }) : _fastLineRendering = null;
+  })  : assert(
+          maxConnectionsPerParticle == null || maxConnectionsPerParticle > 0,
+          'maxConnectionsPerParticle must be greater than 0',
+        ),
+        assert(
+          maxLinesPerFrame == null || maxLinesPerFrame > 0,
+          'maxLinesPerFrame must be greater than 0',
+        ),
+        assert(
+          cappedDistanceFactor > 0.0 && cappedDistanceFactor <= 1.0,
+          'cappedDistanceFactor must be between 0.0 (exclusive) and 1.0 (inclusive)',
+        ),
+        assert(
+          spatialCellMultiplier == null || spatialCellMultiplier > 0.0,
+          'spatialCellMultiplier must be greater than 0.0',
+        ),
+        assert(
+          complexReductionRatio == null ||
+              (complexReductionRatio >= 0.0 && complexReductionRatio <= 1.0),
+          'complexReductionRatio must be between 0.0 and 1.0',
+        ),
+        assert(
+          maxComplexLines == null || maxComplexLines > 0,
+          'maxComplexLines must be greater than 0',
+        ),
+        assert(
+          complexDensityFactor == null || complexDensityFactor > 0.0,
+          'complexDensityFactor must be greater than 0.0',
+        );
 
   /// Creates a copy of this [NetworkPerformance] with updated parameters.
   NetworkPerformance copyWith({
@@ -273,19 +318,15 @@ class NetworkPerformance {
     int? maxLinesPerFrame,
     bool clearMaxLinesPerFrame = false,
     bool? frameRateIndependent,
-    @Deprecated(
-      'fastLineRendering was replaced by lineRenderer. '
-      'Use NetworkPerformance.copyWith(lineRenderer: LineRenderer.vertices) or LineRenderer.stroke instead. '
-      'This parameter will be removed in particles_network 2.0.0.',
-    )
-    bool? fastLineRendering,
     LineRenderer? lineRenderer,
     bool? isComplex,
     double? complexReductionRatio,
+    bool clearComplexReductionRatio = false,
     bool clearcomplexReductionRatio = false,
     int? maxComplexLines,
     bool clearMaxComplexLines = false,
     double? complexDensityFactor,
+    bool clearComplexDensityFactor = false,
     bool clearcomplexDensityFactor = false,
     double? cappedDistanceFactor,
     bool? antiAlias,
@@ -293,6 +334,11 @@ class NetworkPerformance {
     bool clearSpatialCellMultiplier = false,
     bool? autoBoost,
   }) {
+    final bool shouldClearReduction =
+        clearComplexReductionRatio || clearcomplexReductionRatio;
+    final bool shouldClearDensity =
+        clearComplexDensityFactor || clearcomplexDensityFactor;
+
     return NetworkPerformance(
       maxConnectionsPerParticle: clearMaxConnectionsPerParticle
           ? null
@@ -301,16 +347,15 @@ class NetworkPerformance {
           ? null
           : (maxLinesPerFrame ?? this.maxLinesPerFrame),
       frameRateIndependent: frameRateIndependent ?? this.frameRateIndependent,
-      fastLineRendering: fastLineRendering ?? _fastLineRendering,
       lineRenderer: lineRenderer ?? this.lineRenderer,
       isComplex: isComplex ?? this.isComplex,
-      complexReductionRatio: clearcomplexReductionRatio
+      complexReductionRatio: shouldClearReduction
           ? null
           : (complexReductionRatio ?? this.complexReductionRatio),
       maxComplexLines: clearMaxComplexLines
           ? null
           : (maxComplexLines ?? this.maxComplexLines),
-      complexDensityFactor: clearcomplexDensityFactor
+      complexDensityFactor: shouldClearDensity
           ? null
           : (complexDensityFactor ?? this.complexDensityFactor),
       cappedDistanceFactor: cappedDistanceFactor ?? this.cappedDistanceFactor,

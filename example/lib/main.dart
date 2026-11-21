@@ -648,10 +648,9 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
     buffer.writeln('    damping: $_touchDamping,');
     buffer.writeln('    lineDistance: $_touchLineDistance,');
     buffer.writeln('  ),');
-    if (_activePerfPreset == "Auto" && _isAutoPreset) {
+    if ((_activePerfPreset == "Auto" || _activePerfPreset == "Boost") &&
+        _isAutoPreset) {
       buffer.writeln('  performance: const NetworkPerformance.auto(),');
-    } else if (_activePerfPreset == "Boost" && _isBoostPreset) {
-      buffer.writeln('  performance: const NetworkPerformance.boost(),');
     } else if ((_activePerfPreset == "High FPS" ||
             _activePerfPreset == "High Perf") &&
         _isHighFpsPreset) {
@@ -659,12 +658,8 @@ class _ParticleControllerScreenState extends State<ParticleControllerScreen> {
           '  performance: const NetworkPerformance.highPerformance(),');
     } else if (_activePerfPreset == "Balanced" && _isBalancedPreset) {
       buffer.writeln('  performance: const NetworkPerformance.balanced(),');
-    } else if (_activePerfPreset == "Battery Saver" && _isBatterySaverPreset) {
-      buffer.writeln('  performance: const NetworkPerformance.batterySaver(),');
     } else if (_activePerfPreset == "Complex" && _isComplexPreset) {
       buffer.writeln('  performance: const NetworkPerformance.complex(),');
-    } else if (_activePerfPreset == "Adaptive" && _isAdaptivePreset) {
-      buffer.writeln('  performance: const NetworkPerformance.adaptive(),');
     } else if (_activePerfPreset == "Default" && _isDefaultPreset) {
       buffer.writeln('  performance: const NetworkPerformance(),');
     } else {
