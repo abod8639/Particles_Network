@@ -338,7 +338,7 @@ class SortedSpatialGrid {
   /// - `particleIndex`: The original index in the source particle list.
   /// - `px`: The x-coordinate of the particle.
   /// - `py`: The y-coordinate of the particle.
-  /// - `distSq`: The squared Euclidean distance between ([x], [y]) and ([px], [py]).
+  /// - `distSq`: The squared Euclidean distance between ([x], [y]) and (`px`, `py`).
   void queryRadius(
     double x,
     double y,
