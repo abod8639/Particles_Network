@@ -8,88 +8,170 @@ import 'package:particles_network/src/rendering/line_vertex_batch.dart';
 ///
 /// Encapsulates all performance-related configurations such as connection line limits,
 /// density adaptation, batched drawing, adaptive frame rate scaling, and line rasterization backend.
+///
+/// Performance Architecture:
+/// * **$O(N)$ Line Bounds**: By setting [maxConnectionsPerParticle], total connections are
+///   bounded to $O(N)$ instead of $O(N^2)$, preventing quadratic slowdowns at high particle counts.
+/// * **Dynamic Line Budget**: With [maxLinesPerFrame], connection radius dynamically shrinks
+///   under heavy load to maintain a flat frame budget (e.g. steady 60/120 FPS).
+/// * **GPU Triangle Batching**: [lineRenderer] set to [LineRenderer.vertices] submits indexed
+///   quads in a single GPU draw call per opacity level, avoiding per-segment stroke overhead.
+/// * **Delta-Time Motion**: Enabling [frameRateIndependent] ensures consistent visual speed
+///   across 60 Hz, 90 Hz, and 120 Hz displays.
+/// * **Cluster Throttling**: Setting [isComplex] prunes redundant connections in dense particle
+///   clusters, freeing GPU and CPU fill rate.
+/// * **Dynamic Auto-Boost**: Enabling [autoBoost] actively monitors engine frame times and
+///   scales connection limits in real time.
+///
+/// Predefined Presets:
+/// * [NetworkPerformance.highPerformance]: Tuned for 500+ particles with $O(N)$ capping and GPU batching.
+/// * [NetworkPerformance.balanced]: Ideal for general UI with moderate connection budgets.
+/// * [NetworkPerformance.auto]: Self-adjusting preset that dynamically targets optimal frame rate.
+/// * [NetworkPerformance.complex]: Fine-grained control over dense cluster connection pruning.
+///
+/// Example:
+/// ```dart
+/// // High-performance configuration for large particle counts:
+/// const performance = NetworkPerformance(
+///   maxConnectionsPerParticle: 4,
+///   maxLinesPerFrame: 10000,
+///   frameRateIndependent: true,
+///   lineRenderer: LineRenderer.vertices,
+///   isComplex: true,
+/// );
+/// ```
 @immutable
 class NetworkPerformance {
   /// Maximum number of connection lines a single particle can emit.
   ///
-  /// Setting this bounds the total connection count to O(N) instead of O(N^2),
-  /// dramatically improving performance for large particle counts.
+  /// Setting this bounds the total connection count to $O(N)$ instead of $O(N^2)$,
+  /// dramatically improving performance for large particle counts (e.g., 300+ particles).
+  ///
+  /// When `null`, no per-particle connection limit is enforced, allowing particles to connect
+  /// to all eligible neighbors within range.
+  ///
+  /// Defaults to `null`.
   final int? maxConnectionsPerParticle;
 
-  /// Target upper bound on connection lines drawn per frame.
+  /// Target upper bound on the total connection lines drawn across the network per frame.
   ///
-  /// Setting a budget shrinks the connection radius automatically so frame cost stays
-  /// flat no matter how many particles are shown. `null` (default) keeps lineDistance fixed.
+  /// Setting a budget causes the painter to automatically and smoothly shrink the connection
+  /// distance when density spikes, ensuring frame rendering cost stays completely flat
+  /// and predictable regardless of how many particles congregate on screen.
+  ///
+  /// When `null`, lines are drawn up to the unconstrained configured connection distance.
+  ///
+  /// Defaults to `null`.
   final int? maxLinesPerFrame;
 
-  /// Whether motion speed is independent of the display refresh rate (default: false).
+  /// Whether particle motion speed is independent of the display refresh rate.
   ///
-  /// When false, particles move pixels per frame. When true, speeds are interpreted
-  /// as pixels per 1/60 s and integrated over the real elapsed time.
+  /// When `false`, particles advance a fixed distance per frame tick (pixels per frame).
+  ///
+  /// When `true`, particle velocities are interpreted as pixels per 1/60 s reference frame
+  /// and integrated against real elapsed delta time, ensuring identical visual speed across
+  /// 60 Hz, 90 Hz, 120 Hz displays and during temporary frame drops.
+  ///
+  /// Defaults to `false`.
   final bool frameRateIndependent;
 
-  /// How connection lines are rasterized (default: [LineRenderer.vertices]).
+  /// The rasterization backend used to render connection lines on the GPU.
+  ///
+  /// * [LineRenderer.vertices]: Submits lines as indexed triangle quads in batched `drawVertices`
+  ///   calls. Substantially reduces GPU overhead for high line counts (lines render with square ends).
+  /// * [LineRenderer.stroke]: Uses native engine Canvas strokes (`drawLine` / `drawRawPoints`
+  ///   with rounded ends).
+  ///
+  /// Defaults to [LineRenderer.vertices].
   final LineRenderer lineRenderer;
 
-  /// Whether to use complex (high-density optimized) painting logic (default: false).
+  /// Whether to use complex (high-density optimized) painting and clustering logic.
   ///
-  /// Optimized mode for high particle counts (300+ / 500+ particles) that
-  /// throttles dense clusters, tunes the spatial grid rebuild interval, and
-  /// optimizes batched connections without degrading anti-aliasing.
+  /// Specially optimized for high particle counts (300+ to 1,000+ particles).
+  /// Throttles candidate connections in dense particle clusters, optimizes spatial grid rebuilds,
+  /// and prevents visual clutter and frame drops in congested areas.
   ///
-  /// Can be fine-tuned via [complexReductionRatio], [maxComplexLines],
-  /// and [complexDensityFactor].
+  /// Can be fine-tuned via [complexReductionRatio], [maxComplexLines], and [complexDensityFactor].
+  ///
+  /// Defaults to `false`.
   final bool isComplex;
 
-  /// Connection reduction ratio for dense clusters and complex mode (default: null).
+  /// Connection reduction ratio for dense clusters when complex mode or density throttling is active.
   ///
-  /// When specified (value between 0.0 and 1.0), controls the fraction of candidate
-  /// connections pruned in dense clusters when [isComplex] or density throttling is active.
-  /// For example, `0.4` reduces connections in dense clusters by 40% (keeping 60%),
-  /// while `0.7` reduces them by 70% (keeping 30%).
+  /// Controls the fraction of candidate connections pruned in dense clusters (value between `0.0` and `1.0`).
+  /// For example, `0.4` eliminates 40% of cluster lines (keeping 60%), while `0.7` eliminates 70% (keeping 30%).
   ///
-  /// Specifying this automatically enables density throttling even if [isComplex] is false.
+  /// Specifying this automatically enables density throttling even if [isComplex] is `false`.
+  /// When `null`, default internal reduction heuristics are used.
+  ///
+  /// Defaults to `null`.
   final double? complexReductionRatio;
 
-  /// Maximum number of connection lines a particle can emit in dense clusters (default: null).
+  /// Maximum number of connection lines an individual particle can emit when located in a dense cluster.
   ///
-  /// When null, defaults to 3 lines (in individual mode) or 5 lines (in batched mode)
-  /// when [isComplex] is true.
+  /// When `null`, automatically defaults to 3 lines (in individual mode) or 5 lines (in batched mode)
+  /// when [isComplex] is `true`.
+  ///
+  /// Defaults to `null`.
   final int? maxComplexLines;
 
-  /// Factor multiplied by connection distance to determine when a particle is in a dense cluster (default: 0.60).
+  /// Distance multiplier factor used to identify whether a particle is inside a dense cluster.
   ///
-  /// When null, defaults to 0.60 (`dist ~/ (1.0 / 0.60)`) when [isComplex] is true, or ~0.67 (`dist ~/ 1.5`) otherwise.
+  /// When `null`, defaults to `0.60` (`dist ~/ (1.0 / 0.60)`) when [isComplex] is `true`,
+  /// or approximately `0.67` (`dist ~/ 1.5`) otherwise.
+  ///
+  /// Defaults to `null`.
   final double? complexDensityFactor;
 
-  /// Distance ratio threshold for capped connections (default: 0.75).
+  /// Proximity distance ratio threshold applied when [maxConnectionsPerParticle] is active.
   ///
-  /// When [maxConnectionsPerParticle] is active, restricts candidate search
-  /// to `lineDistance * cappedDistanceFactor` to eliminate jarring long lines
-  /// to distant particles and prevent connection thrashing/flickering.
+  /// Restricts candidate connection searches to `lineDistance * cappedDistanceFactor`
+  /// (value between `0.0` exclusive and `1.0` inclusive). This eliminates jarring long lines
+  /// to distant particles and prevents flickering/thrashing as particles cross boundaries.
+  ///
+  /// Defaults to `0.75`.
   final double cappedDistanceFactor;
 
-  /// Whether to enable anti-aliasing on particle and line paints (default: true).
+  /// Whether to enable anti-aliasing on particle circles and connection lines.
   ///
-  /// Keeping anti-aliasing enabled produces smooth, circular particles and clean,
-  /// non-shimmering lines. Disabling anti-aliasing can be used for retro pixel art
-  /// aesthetics or extreme low-end hardware.
+  /// Keeping anti-aliasing enabled produces smooth, circular particles and clean, non-shimmering lines.
+  /// Disabling anti-aliasing can be used for retro pixel-art aesthetic styling or extreme low-end hardware.
+  ///
+  /// Defaults to `true`.
   final bool antiAlias;
 
-  /// Optional cell size multiplier for [SortedSpatialGrid] spatial partitioning (default: null).
+  /// Optional cell size multiplier for spatial partitioning grid calculations.
   ///
-  /// When null, [SortedSpatialGrid] automatically calculates the optimal cell size as
-  /// `max(radius, sqrt(area / particleCount))`.
+  /// When `null`, the spatial grid automatically derives the mathematically optimal cell size
+  /// as `max(radius, sqrt(area / (4 * particleCount)))`.
+  ///
+  /// Defaults to `null`.
   final double? spatialCellMultiplier;
 
-  /// Whether dynamic performance boosting is enabled (default: false).
+  /// Whether dynamic real-time performance auto-boosting is enabled.
   ///
-  /// When true, dynamically scales connection limits and line budgets up or down
-  /// in real time based on actual engine frame timings to deliver the highest possible
-  /// visual fidelity that the host device can comfortably sustain.
+  /// When `true`, the engine actively measures actual frame delivery timings and dynamically
+  /// scales connection budgets up or down in real time to deliver the maximum visual density
+  /// and line richness that the host device can comfortably sustain without dropping frames.
+  ///
+  /// Defaults to `false`.
   final bool autoBoost;
 
-  /// Creates a [NetworkPerformance] configuration.
+  /// Creates a [NetworkPerformance] configuration with customizable optimization settings.
+  ///
+  /// Parameters:
+  /// * [maxConnectionsPerParticle]: Per-particle line emission limit ($O(N)$ bound). Defaults to `null`.
+  /// * [maxLinesPerFrame]: Total connection line budget per frame. Defaults to `null`.
+  /// * [frameRateIndependent]: Normalizes movement across 60/90/120 Hz displays. Defaults to `false`.
+  /// * [lineRenderer]: GPU rasterization engine backend. Defaults to [LineRenderer.vertices].
+  /// * [isComplex]: Dense cluster throttling optimization. Defaults to `false`.
+  /// * [complexReductionRatio]: Fraction of pruned lines in clusters (0.0 to 1.0). Defaults to `null`.
+  /// * [maxComplexLines]: Max lines per particle in dense clusters. Defaults to `null`.
+  /// * [complexDensityFactor]: Cluster detection threshold multiplier. Defaults to `null`.
+  /// * [cappedDistanceFactor]: Distance ratio limit for capped lines. Defaults to `0.75`.
+  /// * [antiAlias]: Smooth edge anti-aliasing. Defaults to `true`.
+  /// * [spatialCellMultiplier]: Custom grid cell size multiplier. Defaults to `null`.
+  /// * [autoBoost]: Real-time frame-rate based dynamic optimization. Defaults to `false`.
   const NetworkPerformance({
     this.maxConnectionsPerParticle,
     this.maxLinesPerFrame,
@@ -133,7 +215,20 @@ class NetworkPerformance {
           'complexDensityFactor must be greater than 0.0',
         );
 
-  /// High-performance preset tuned for high particle counts and smooth frame rates.
+  /// High-performance preset tuned for high particle counts (300+ to 1,000+ particles) and rock-solid 60/120 FPS.
+  ///
+  /// Combines $O(N)$ connection clamping, line budgeting, GPU triangle-quad batching,
+  /// and high-density cluster throttling.
+  ///
+  /// Preconfigured Settings:
+  /// * [maxConnectionsPerParticle]: `4` (clamps each particle to 4 connections maximum).
+  /// * [maxLinesPerFrame]: `15000` (caps total frame lines at 15,000).
+  /// * [frameRateIndependent]: `true` (normalizes motion across 60/90/120 Hz displays).
+  /// * [lineRenderer]: [LineRenderer.vertices] (GPU triangle batching).
+  /// * [isComplex]: `true` (enables cluster throttling for dense groups).
+  /// * [cappedDistanceFactor]: `0.75` (avoids long flickering lines).
+  /// * [antiAlias]: `true` (smooth anti-aliased rendering).
+  /// * [autoBoost]: `false`.
   const NetworkPerformance.highPerformance({
     this.maxConnectionsPerParticle = 4,
     this.maxLinesPerFrame = 15000,
@@ -178,6 +273,18 @@ class NetworkPerformance {
         );
 
   /// Flexible complex preset for fine-grained control over dense cluster line reduction.
+  ///
+  /// Specifically designed to prevent visual clutter and GPU fill-rate degradation
+  /// when large numbers of particles gravitate into tight clusters.
+  ///
+  /// Preconfigured Settings:
+  /// * [complexReductionRatio]: `0.5` (prunes 50% of redundant candidate lines in clusters).
+  /// * [maxComplexLines]: `3` (caps lines per particle to 3 in dense clusters).
+  /// * [complexDensityFactor]: `0.60` (detects clusters within 60% of connection distance).
+  /// * [isComplex]: `true` (enables high-density cluster mode).
+  /// * [lineRenderer]: [LineRenderer.vertices] (GPU triangle batching).
+  /// * [cappedDistanceFactor]: `0.75`.
+  /// * [antiAlias]: `true`.
   const NetworkPerformance.complex({
     this.complexReductionRatio = 0.5,
     this.maxComplexLines = 3,
@@ -221,9 +328,19 @@ class NetworkPerformance {
           'complexDensityFactor must be greater than 0.0',
         );
 
-  /// Auto-performance preset that automatically adapts parameters based on
-  /// device performance and frame rate, maximizing visual density and connections
-  /// while maintaining smooth target frame rates.
+  /// Auto-performance preset that dynamically adapts parameters based on device frame rates.
+  ///
+  /// Actively measures frame rendering durations in real time and adjusts connection
+  /// limits to deliver the highest possible visual density that the device can comfortably
+  /// sustain at 60/90/120 FPS without dropping frames.
+  ///
+  /// Preconfigured Settings:
+  /// * [autoBoost]: `true` (enables real-time dynamic budget adaptation).
+  /// * [frameRateIndependent]: `true` (normalizes motion across all refresh rates).
+  /// * [isComplex]: `true` (activates cluster throttling).
+  /// * [lineRenderer]: [LineRenderer.vertices] (GPU triangle batching).
+  /// * [cappedDistanceFactor]: `0.75`.
+  /// * [antiAlias]: `true`.
   const NetworkPerformance.auto({
     this.maxConnectionsPerParticle,
     this.maxLinesPerFrame,
@@ -267,7 +384,19 @@ class NetworkPerformance {
           'complexDensityFactor must be greater than 0.0',
         );
 
-  /// Balanced preset that maintains good visual quality with sensible performance limits.
+  /// Balanced preset that maintains rich visual density with sensible performance limits.
+  ///
+  /// Ideal for standard applications and mobile screens with 50 to 200 particles where
+  /// full connection density is desired alongside delta-time smooth animation.
+  ///
+  /// Preconfigured Settings:
+  /// * [maxConnectionsPerParticle]: `6` (allows up to 6 connections per particle).
+  /// * [maxLinesPerFrame]: `8000` (caps total frame lines at 8,000).
+  /// * [frameRateIndependent]: `true` (normalizes motion across displays).
+  /// * [lineRenderer]: [LineRenderer.vertices] (GPU triangle batching).
+  /// * [isComplex]: `false` (standard unconstrained clustering).
+  /// * [cappedDistanceFactor]: `0.75`.
+  /// * [antiAlias]: `true`.
   const NetworkPerformance.balanced({
     this.maxConnectionsPerParticle = 6,
     this.maxLinesPerFrame = 8000,
@@ -311,7 +440,11 @@ class NetworkPerformance {
           'complexDensityFactor must be greater than 0.0',
         );
 
-  /// Creates a copy of this [NetworkPerformance] with updated parameters.
+  /// Creates a copy of this [NetworkPerformance] configuration with updated parameters.
+  ///
+  /// For nullable properties like [maxConnectionsPerParticle], [maxLinesPerFrame],
+  /// [complexReductionRatio], [maxComplexLines], [complexDensityFactor], and [spatialCellMultiplier],
+  /// passing the corresponding `clear*` flag as `true` explicitly resets the value to `null`.
   NetworkPerformance copyWith({
     int? maxConnectionsPerParticle,
     bool clearMaxConnectionsPerParticle = false,

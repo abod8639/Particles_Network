@@ -138,31 +138,23 @@ void main() {
     //   expect(boostPreset, equals(autoPreset));
     // });
 
-    test('ParticleGravity canonical properties and deprecated aliases match',
-        () {
+    test('ParticleNetwork legacy gravity properties work as expected', () {
       // ignore: deprecated_member_use_from_same_package
-      const gravity = ParticleGravity(
+      const network = ParticleNetwork(
         gravityType: GravityType.global,
         gravityStrength: 0.25,
         gravityDirection: Offset(0, -1),
         gravityCenter: Offset(50, 50),
       );
 
-      // Canonical properties
-      expect(gravity.type, equals(GravityType.global));
-      expect(gravity.strength, equals(0.25));
-      expect(gravity.direction, equals(const Offset(0, -1)));
-      expect(gravity.center, equals(const Offset(50, 50)));
-
-      // Deprecated aliases
       // ignore: deprecated_member_use_from_same_package
-      expect(gravity.gravityType, equals(gravity.type));
+      expect(network.gravityType, equals(GravityType.global));
       // ignore: deprecated_member_use_from_same_package
-      expect(gravity.gravityStrength, equals(gravity.strength));
+      expect(network.gravityStrength, equals(0.25));
       // ignore: deprecated_member_use_from_same_package
-      expect(gravity.gravityDirection, equals(gravity.direction));
+      expect(network.gravityDirection, equals(const Offset(0, -1)));
       // ignore: deprecated_member_use_from_same_package
-      expect(gravity.gravityCenter, equals(gravity.center));
+      expect(network.gravityCenter, equals(const Offset(50, 50)));
     });
 
     test('TouchFeatures canonical properties and deprecated aliases match', () {

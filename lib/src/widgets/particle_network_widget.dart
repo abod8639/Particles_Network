@@ -17,27 +17,99 @@ import 'package:particles_network/src/rendering/performance_utils.dart';
 import 'package:particles_network/src/simulation/particle_simulation.dart';
 import 'package:particles_network/src/spatial/sorted_spatial_grid.dart';
 
-/// A Flutter widget that renders an interactive particle network visualization.
+/// A high-performance Flutter widget that renders an interactive particle network (plexus) animation.
+///
+/// Simulates organic floating particles and dynamic proximity connection lines with full physics support,
+/// interactive touch responses, GPU-accelerated rendering, and adaptive performance scaling.
+///
+/// Features:
+/// * **Visual Customization**: Tailor [particleCount], [maxSpeed], [maxSize], [lineWidth],
+///   [lineDistance], [particleColor], [lineColor], and [fill] mode.
+/// * **Gravitational Fields**: Add directional gravity (falling rain, rising bubbles) or radial
+///   vortexes (black hole, repulsion shield) via [gravity] with [ParticleGravity].
+/// * **Interactive Touch & Hover**: Attract nearby particles with fluid settling and glowing lines
+///   via [touch] with [TouchFeatures].
+/// * **High-Performance Architecture**: Scalable to 1,000+ particles with $O(N)$ connection clamping,
+///   GPU triangle-batch rendering, dynamic line budgeting, and spatial grid acceleration via [performance] with [NetworkPerformance].
+///
+/// Example:
+/// ```dart
+/// ParticleNetwork(
+///   particleCount: 80,
+///   maxSpeed: 0.8,
+///   maxSize: 2.0,
+///   lineWidth: 0.8,
+///   lineDistance: 120.0,
+///   particleColor: Colors.white,
+///   lineColor: const Color(0xFF00E5FF),
+///   touch: const TouchFeatures(
+///     enabled: true,
+///     color: Colors.amber,
+///   ),
+///   gravity: const ParticleGravity.global(
+///     strength: 0.15,
+///     direction: Offset(0, 1),
+///   ),
+///   performance: const NetworkPerformance(
+///     frameRateIndependent: true,
+///     lineRenderer: LineRenderer.vertices,
+///   ),
+/// )
+/// ```
 class ParticleNetwork extends StatefulWidget {
-  /// Total number of particles in the visualization (default: 60).
+  /// Total number of particles simulated and rendered on the canvas.
+  ///
+  /// Controls the visual density of the particle cloud. Higher counts (200+) produce
+  /// dense cosmic or plexus effects, while lower counts (30-80) produce clean, subtle
+  /// interactive backgrounds.
+  ///
+  /// Defaults to `60`.
   final int particleCount;
 
-  /// Maximum speed of particles in pixels per frame (default: 0.5).
+  /// Maximum base velocity of particles in pixels per frame.
+  ///
+  /// Each particle is initialized with a randomized velocity between `0.0` and [maxSpeed].
+  /// When [NetworkPerformance.frameRateIndependent] is enabled, this speed is interpreted
+  /// as pixels per 1/60 s reference frame.
+  ///
+  /// Defaults to `0.5`.
   final double maxSpeed;
 
-  /// Maximum radius of particles in pixels (default: 1.5).
+  /// Maximum radius of particles in logical pixels.
+  ///
+  /// Each particle's radius is randomized between `0.5` and [maxSize] upon initialization.
+  ///
+  /// Defaults to `1.5`.
   final double maxSize;
 
-  /// Stroke width of connection lines in pixels (default: 0.5).
+  /// Stroke width of connection lines between particles in logical pixels.
+  ///
+  /// Lines thinner than 1 physical pixel are automatically rendered with proportionally
+  /// reduced opacity when using [LineRenderer.vertices] to eliminate visual aliasing dropouts.
+  ///
+  /// Defaults to `0.5`.
   final double lineWidth;
 
-  /// Maximum connection distance between particles in pixels (default: 100).
+  /// Maximum connection distance between particles in logical pixels.
+  ///
+  /// Two particles connect with a line if the distance between them is less than [lineDistance].
+  /// Lines fade out smoothly with distance, reaching full transparency at [lineDistance].
+  /// Also serves as the default reach for touch interactions when [TouchFeatures.lineDistance] is `null`.
+  ///
+  /// Defaults to `100.0`.
   final double lineDistance;
 
-  /// Base color of all particles (default: Colors.white).
+  /// Base solid color used to render all particles on the canvas.
+  ///
+  /// Defaults to `const Color(0xFFFFFFFF)` (white).
   final Color particleColor;
 
-  /// Color of connection lines between particles.
+  /// Base color used to render connecting lines between particles.
+  ///
+  /// Line opacity scales dynamically with particle proximity, fading from full opacity
+  /// when particles touch to completely transparent at [lineDistance].
+  ///
+  /// Defaults to `const Color.fromARGB(255, 100, 255, 180)` (cyan-green).
   final Color lineColor;
 
   /// Explicitly provided legacy isComplex flag, if any.
@@ -93,10 +165,21 @@ class ParticleNetwork extends StatefulWidget {
         isComplex: _isComplex,
       );
 
-  /// Whether to fill particles (true) or stroke them (false) (default: true).
+  /// Whether particles are rendered as filled solid circles or hollow stroked outlines.
+  ///
+  /// When `true`, particles are drawn as filled discs (`PaintingStyle.fill`).
+  /// When `false`, particles are drawn as outlined rings (`PaintingStyle.stroke`).
+  ///
+  /// Defaults to `true`.
   final bool fill;
 
-  /// Whether to draw connecting lines between particles (default: true).
+  /// Whether to draw connection lines between neighboring particles.
+  ///
+  /// When `true`, lines connect neighboring particles within [lineDistance].
+  /// When `false`, line calculations and drawing are completely bypassed, rendering
+  /// only the floating particles (ideal for starfield or floating dust effects).
+  ///
+  /// Defaults to `true`.
   final bool drawNetwork;
 
   /// Explicitly provided legacy drawnetwork flag, if any.
@@ -135,15 +218,19 @@ class ParticleNetwork extends StatefulWidget {
   )
   final IParticleController? particleController;
 
-  /// Gravity configuration for the particle network.
+  /// Gravitational physics configuration governing directional or point-based particle acceleration.
   ///
-  /// Controls global or point gravity effects.
-  /// Prefer using this parameter over the deprecated individual gravity parameters.
+  /// Configured using [ParticleGravity], supporting:
+  /// * [ParticleGravity.none]: Free-floating particles without external gravity.
+  /// * [ParticleGravity.global]: Uniform directional acceleration (gravity, wind, rain).
+  /// * [ParticleGravity.point]: Radial attraction or repulsion (black hole, vortex, repulsion shield).
+  ///
+  /// Defaults to `null` (which defaults to no gravity).
   final ParticleGravity? gravity;
 
   /// The type of gravity effect to apply (default: [GravityType.none]).
   ///
-  /// Deprecated: Use [gravity] with [ParticleGravity.gravityType] instead.
+  /// Deprecated: Use [gravity] with [ParticleGravity.type] instead.
   /// This parameter will be removed in particles_network 2.0.0.
   @Deprecated(
     'Use gravity (ParticleGravity) instead. This parameter will be removed in particles_network 2.0.0.',
@@ -152,7 +239,7 @@ class ParticleNetwork extends StatefulWidget {
 
   /// The strength of the applied gravity force (default: 0.1).
   ///
-  /// Deprecated: Use [gravity] with [ParticleGravity.gravityStrength] instead.
+  /// Deprecated: Use [gravity] with [ParticleGravity.strength] instead.
   /// This parameter will be removed in particles_network 2.0.0.
   @Deprecated(
     'Use gravity (ParticleGravity) instead. This parameter will be removed in particles_network 2.0.0.',
@@ -161,7 +248,7 @@ class ParticleNetwork extends StatefulWidget {
 
   /// The direction vector for global gravity (default: `Offset(0, 1)` - downwards).
   ///
-  /// Deprecated: Use [gravity] with [ParticleGravity.gravityDirection] instead.
+  /// Deprecated: Use [gravity] with [ParticleGravity.direction] instead.
   /// This parameter will be removed in particles_network 2.0.0.
   @Deprecated(
     'Use gravity (ParticleGravity) instead. This parameter will be removed in particles_network 2.0.0.',
@@ -170,7 +257,7 @@ class ParticleNetwork extends StatefulWidget {
 
   /// The center point for point-based gravity effects.
   ///
-  /// Deprecated: Use [gravity] with [ParticleGravity.gravityCenter] instead.
+  /// Deprecated: Use [gravity] with [ParticleGravity.center] instead.
   /// This parameter will be removed in particles_network 2.0.0.
   @Deprecated(
     'Use gravity (ParticleGravity) instead. This parameter will be removed in particles_network 2.0.0.',
@@ -185,83 +272,193 @@ class ParticleNetwork extends StatefulWidget {
           gravityDirection != const Offset(0, 1) ||
           gravityCenter != null);
 
-  /// Whether hover effects are enabled.
+  /// Whether mouse cursor movement triggers interactive proximity effects on web and desktop.
+  ///
+  /// When `true`, hovering the mouse over the widget attracts nearby particles without
+  /// requiring a mouse button press or drag gesture.
+  ///
+  /// Defaults to `false`.
   final bool? hoverEffect;
 
-  /// Advanced touch interaction features and physics configuration.
+  /// Advanced touch and pointer interaction configuration.
+  ///
+  /// Governs attraction pull force, recovery speed, fluid damping, interaction radius,
+  /// and highlight line color. See [TouchFeatures] for configuration options.
+  ///
+  /// Defaults to `const TouchFeatures()`.
   final TouchFeatures touch;
 
   /// Compatibility alias for [touch].
   TouchFeatures get touchFeatures => touch;
 
-  /// Advanced performance settings and rendering optimizations.
+  /// Advanced rendering performance and physics optimization configuration.
+  ///
+  /// Governs connection line limits ($O(N)$ bound), line budgets, GPU vertex batching,
+  /// delta-time scaling, cluster throttling, and dynamic auto-boost. See [NetworkPerformance]
+  /// for configuration options and presets.
+  ///
+  /// Defaults to `const NetworkPerformance()`.
   final NetworkPerformance performance;
 
-  /// Optional custom spatial grid for particle queries.
-  /// If null, a default [SortedSpatialGrid] is used.
+  /// Optional custom spatial indexing grid for particle neighbor queries.
+  ///
+  /// When `null`, a default [SortedSpatialGrid] is automatically created and tuned
+  /// to optimal cell dimensions based on canvas bounds and [particleCount].
+  ///
+  /// Defaults to `null`.
   final SortedSpatialGrid? spatialGrid;
 
-  /// Creates a [ParticleNetwork] widget with customizable visualization parameters.
+  /// Creates a [ParticleNetwork] widget with customizable visualization and physics parameters.
+  ///
+  /// Parameters:
+  /// * [particleCount]: Total number of particles on screen. Defaults to `60`.
+  /// * [maxSpeed]: Peak base particle velocity in pixels per frame. Defaults to `0.5`.
+  /// * [maxSize]: Maximum particle radius in pixels. Defaults to `1.5`.
+  /// * [lineWidth]: Stroke width of connection lines. Defaults to `0.5`.
+  /// * [lineDistance]: Max proximity distance for connection lines. Defaults to `100.0`.
+  /// * [particleColor]: Base solid color for particles. Defaults to `const Color(0xFFFFFFFF)` (white).
+  /// * [lineColor]: Color for connection lines. Defaults to `const Color.fromARGB(255, 100, 255, 180)`.
+  /// * [fill]: Whether particles are filled discs or stroked rings. Defaults to `true`.
+  /// * [drawNetwork]: Whether connection lines are rendered. Defaults to `true`.
+  /// * [gravity]: Gravitational force configuration ([ParticleGravity]). Defaults to `null`.
+  /// * [hoverEffect]: Whether mouse hover triggers touch interaction. Defaults to `false`.
+  /// * [touch]: Interactive touch and pointer physics settings ([TouchFeatures]). Defaults to `const TouchFeatures()`.
+  /// * [performance]: Rendering performance and optimization settings ([NetworkPerformance]). Defaults to `const NetworkPerformance()`.
+  /// * [spatialGrid]: Custom spatial partition grid ([SortedSpatialGrid]). Defaults to `null`.
   const ParticleNetwork({
     super.key,
+
+    /// Total number of particles simulated and rendered on the canvas.
+    ///
+    /// Defaults to `60`.
     this.particleCount = 60,
+
+    /// Maximum base velocity of particles in pixels per frame.
+    ///
+    /// Defaults to `0.5`.
     this.maxSpeed = 0.5,
+
+    /// Maximum radius of particles in logical pixels.
+    ///
+    /// Defaults to `1.5`.
     this.maxSize = 1.5,
+
+    /// Stroke width of connection lines between particles in logical pixels.
+    ///
+    /// Defaults to `0.5`.
     this.lineWidth = 0.5,
+
     @Deprecated(
       'Use lineWidth instead. This parameter will be removed in particles_network 2.0.0.',
     )
     double? linewidth,
+
+    /// Maximum connection distance between particles in logical pixels.
+    ///
+    /// Defaults to `100.0`.
     this.lineDistance = 100,
+
+    /// Base solid color used to render all particles on the canvas.
+    ///
+    /// Defaults to `const Color(0xFFFFFFFF)` (white).
     this.particleColor = const Color(0xFFFFFFFF),
+
+    /// Base color used to render connecting lines between particles.
+    ///
+    /// Defaults to `const Color.fromARGB(255, 100, 255, 180)`.
     this.lineColor = const Color.fromARGB(255, 100, 255, 180),
+
     @Deprecated(
       'Use performance (NetworkPerformance(isComplex: ...)) instead. This parameter will be removed in particles_network 2.0.0.',
     )
     bool? isComplex,
+
+    /// Whether particles are rendered as filled solid circles or hollow stroked outlines.
+    ///
+    /// Defaults to `true`.
     this.fill = true,
+
+    /// Whether to draw connection lines between neighboring particles.
+    ///
+    /// Defaults to `true`.
     this.drawNetwork = true,
+
     @Deprecated(
       'Use drawNetwork instead. This parameter will be removed in particles_network 2.0.0.',
     )
     bool? drawnetwork,
+
     @Deprecated(
       'Use ParticleSimulation for custom particle creation. This parameter will be removed in particles_network 2.0.0.',
     )
     this.particleFactory,
+
     @Deprecated(
       'Use ParticleSimulation for custom particle controllers. This parameter will be removed in particles_network 2.0.0.',
     )
     this.particleController,
+
+    /// Gravitational physics configuration governing directional or point-based particle acceleration.
+    ///
+    /// Defaults to `null`.
     this.gravity,
+
     @Deprecated(
       'Use gravity (ParticleGravity) instead. This parameter will be removed in particles_network 2.0.0.',
     )
     this.gravityType = GravityType.none,
+
     @Deprecated(
       'Use gravity (ParticleGravity) instead. This parameter will be removed in particles_network 2.0.0.',
     )
     this.gravityStrength = 0.1,
+
     @Deprecated(
       'Use gravity (ParticleGravity) instead. This parameter will be removed in particles_network 2.0.0.',
     )
     this.gravityDirection = const Offset(0, 1),
+
     @Deprecated(
       'Use gravity (ParticleGravity) instead. This parameter will be removed in particles_network 2.0.0.',
     )
     this.gravityCenter,
+
     @Deprecated(
       'Use touch: TouchFeatures(color: ...) instead. This parameter will be removed in particles_network 2.0.0.',
     )
     Color? touchColor,
+
     @Deprecated(
       'Use touch: TouchFeatures(enabled: ...) instead. This parameter will be removed in particles_network 2.0.0.',
     )
     bool? touchActivation,
+
+    /// Whether mouse cursor movement triggers interactive proximity effects on web and desktop.
+    ///
+    /// Defaults to `false`.
     this.hoverEffect = false,
+
+    /// Advanced touch interaction features and physics configuration.
+    ///
+    /// Defaults to `const TouchFeatures()`.
     TouchFeatures touch = const TouchFeatures(),
+
+    /// Compatibility alias for [touch].
+    ///
+    /// Defaults to `const TouchFeatures()`.
+    @Deprecated(
+      'Use touch instead. This parameter will be removed in particles_network 2.0.0.',
+    )
     TouchFeatures? touchFeatures,
+
+    /// Advanced rendering performance and physics optimization configuration.
+    ///
+    /// Defaults to `const NetworkPerformance()`.
     this.performance = const NetworkPerformance(),
+
+    /// Optional custom spatial grid for particle queries.
+    ///
+    /// Defaults to `null`.
     this.spatialGrid,
   })  : touch = touchFeatures ?? touch,
         _touchActivation = touchActivation,

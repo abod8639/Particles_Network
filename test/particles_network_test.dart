@@ -809,10 +809,10 @@ void main() {
               height: 300,
               child: ParticleNetwork(
                 gravity: ParticleGravity(
-                  gravityType: GravityType.point,
-                  gravityStrength: 0.9,
-                  gravityDirection: Offset(0, -1),
-                  gravityCenter: Offset(120, 120),
+                  type: GravityType.point,
+                  strength: 0.9,
+                  direction: Offset(0, -1),
+                  center: Offset(120, 120),
                 ),
               ),
             ),
@@ -829,7 +829,7 @@ void main() {
 
   test('ParticleNetwork detects usedLegacyGravity correctly', () {
     const modern = ParticleNetwork(
-      gravity: ParticleGravity(gravityType: GravityType.global),
+      gravity: ParticleGravity(type: GravityType.global),
     );
     expect(modern.usedLegacyGravity, isFalse);
 
