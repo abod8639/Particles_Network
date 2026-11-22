@@ -6,6 +6,10 @@ library;
 
 export 'package:particles_network/src/core/particle.dart'
     show Particle, computeVelocity, createMockParticle, scaleFrameRate;
+export 'package:particles_network/src/core/particle_features.dart'
+    show ParticleFeatures;
+export 'package:particles_network/src/core/network_features.dart'
+    show NetworkFeatures;
 export 'package:particles_network/src/core/rectangle.dart' show Rectangle;
 export 'package:particles_network/src/core/trajectory_buffer.dart'
     show TrajectoryBuffer;
