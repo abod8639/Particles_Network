@@ -3,126 +3,118 @@ library;
 
 import 'dart:ui';
 
-/// Enum to define different types of gravity effects.
+/// Enum defining the gravitational physics models available for the particle network.
 enum GravityType {
-  /// No gravity effect applied.
+  /// Disables gravity simulation.
+  ///
+  /// Particles move freely according to their initial velocity and Brownian motion
+  /// without experiencing external gravitational forces.
   none,
 
-  /// Constant force applied to all particles in a specific direction.
+  /// Applies a constant, uniform directional gravitational force across the entire canvas.
+  ///
+  /// All particles accelerate along the vector specified by [ParticleGravity.direction]
+  /// (e.g., simulating natural downward gravity, snowfall, or horizontal wind drift).
   global,
 
-  /// Force directed towards or away from a specific center point.
+  /// Applies a radial, distance-dependent gravitational force centered on a specific point.
+  ///
+  /// Forces emanate from or pull toward [ParticleGravity.center] (e.g., simulating
+  /// black holes, orbital vortexes, magnets, or radial explosive repulsion).
   point,
 }
 
 /// Configuration class for gravity effects applied to particles.
 ///
-/// Gravity can be disabled ([GravityType.none]), directional across the canvas
-/// ([GravityType.global]), or radial towards/away from a specific point
-/// ([GravityType.point]).
+/// Supports three modes through [GravityType]:
+/// * [GravityType.none]: Particles drift freely with zero gravity.
+/// * [GravityType.global]: Constant directional pull across the entire canvas via [direction].
+/// * [GravityType.point]: Radial attraction or repulsion around a focal [center] point.
+///
+/// Positive [strength] values accelerate particles in the designated direction or pull
+/// them toward the focal center. Negative [strength] values invert the force (e.g., creating
+/// an anti-gravity or repulsive field).
+///
+/// Example:
+/// ```dart
+/// // Directional gravity (falling downward like rain):
+/// const gravity = ParticleGravity.global(
+///   strength: 0.15,
+///   direction: Offset(0, 1),
+/// );
+///
+/// // Point-based vortex (pulling inward toward the center):
+/// const blackHole = ParticleGravity.point(
+///   strength: 0.50,
+/// );
+/// ```
 class ParticleGravity {
-  /// The type of gravity effect to apply.
+  /// The gravitational physics model to apply.
+  ///
+  /// * [GravityType.none]: Disables gravity entirely.
+  /// * [GravityType.global]: Uniform directional force across the whole canvas.
+  /// * [GravityType.point]: Radial force radiating toward or away from [center].
+  ///
+  /// Defaults to [GravityType.none].
   final GravityType type;
 
-  /// The intensity of the gravity force.
+  /// The magnitude or intensity of the gravitational acceleration force.
+  ///
+  /// * In [GravityType.global] mode: scales the acceleration vector applied along [direction].
+  /// * In [GravityType.point] mode: positive values attract particles inward toward [center]
+  ///   (black hole / vortex effect), while negative values repel particles outward away from [center]
+  ///   (anti-gravity / explosion shield effect).
+  ///
+  /// Defaults to `0.1`.
   final double strength;
 
-  /// The direction vector for [GravityType.global].
+  /// The directional acceleration vector used when [type] is [GravityType.global].
+  ///
+  /// Determines the orientation of the uniform gravity field across the canvas:
+  /// * `Offset(0, 1)` pulls particles downwards (natural Earth gravity).
+  /// * `Offset(0, -1)` pulls particles upwards (rising smoke or helium).
+  /// * `Offset(1, 0)` pulls particles toward the right (horizontal wind).
+  /// * `Offset(-1, 0)` pulls particles toward the left.
+  ///
+  /// This property is ignored when [type] is [GravityType.point] or [GravityType.none].
+  ///
+  /// Defaults to `const Offset(0, 1)` (downward).
   final Offset direction;
 
-  /// The center point coordinates for [GravityType.point].
+  /// The focal coordinates `(x, y)` on the canvas used when [type] is [GravityType.point].
   ///
-  /// If `null` when used with `ParticleNetwork`, defaults to the center of the canvas.
+  /// Particles accelerate radially toward this point when [strength] is positive,
+  /// or radially away from this point when [strength] is negative.
+  ///
+  /// If `null`, the particle system automatically defaults to the center of the canvas
+  /// (`size.center(Offset.zero)`).
+  ///
+  /// This property is ignored when [type] is [GravityType.global] or [GravityType.none].
+  ///
+  /// Defaults to `null` (canvas center).
   final Offset? center;
 
-  /// Compatibility alias for [type].
+  /// Creates a [ParticleGravity] configuration with customizable parameters.
   ///
-  /// Deprecated: Redundant with [type]. Use [type] instead:
-  /// ```dart
-  /// ParticleGravity(type: GravityType.global)
-  /// ```
-  /// This property will be removed in particles_network 2.0.0.
-  @Deprecated(
-    'gravityType inside ParticleGravity is redundant with type. '
-    'Use type instead. This property will be removed in particles_network 2.0.0.',
-  )
-  GravityType get gravityType => type;
-
-  /// Compatibility alias for [strength].
-  ///
-  /// Deprecated: Redundant with [strength]. Use [strength] instead:
-  /// ```dart
-  /// ParticleGravity(strength: 0.2)
-  /// ```
-  /// This property will be removed in particles_network 2.0.0.
-  @Deprecated(
-    'gravityStrength inside ParticleGravity is redundant with strength. '
-    'Use strength instead. This property will be removed in particles_network 2.0.0.',
-  )
-  double get gravityStrength => strength;
-
-  /// Compatibility alias for [direction].
-  ///
-  /// Deprecated: Redundant with [direction]. Use [direction] instead:
-  /// ```dart
-  /// ParticleGravity(direction: Offset(0, 1))
-  /// ```
-  /// This property will be removed in particles_network 2.0.0.
-  @Deprecated(
-    'gravityDirection inside ParticleGravity is redundant with direction. '
-    'Use direction instead. This property will be removed in particles_network 2.0.0.',
-  )
-  Offset get gravityDirection => direction;
-
-  /// Compatibility alias for [center].
-  ///
-  /// Deprecated: Redundant with [center]. Use [center] instead:
-  /// ```dart
-  /// ParticleGravity(center: Offset(100, 100))
-  /// ```
-  /// This property will be removed in particles_network 2.0.0.
-  @Deprecated(
-    'gravityCenter inside ParticleGravity is redundant with center. '
-    'Use center instead. This property will be removed in particles_network 2.0.0.',
-  )
-  Offset? get gravityCenter => center;
-
-  /// Creates a [ParticleGravity] configuration.
-  ///
-  /// Canonical parameters are [type], [strength], [direction], and [center].
-  /// The explicit prefix parameters ([gravityType], [gravityStrength], [gravityDirection], [gravityCenter])
-  /// are deprecated aliases.
+  /// Parameters:
+  /// * [type]: Gravitational model to apply. Defaults to [GravityType.none].
+  /// * [strength]: Intensity of acceleration. Defaults to `0.1`.
+  /// * [direction]: Directional vector for global gravity. Defaults to `const Offset(0, 1)`.
+  /// * [center]: Focal coordinates for point gravity. Defaults to `null` (canvas center).
   const ParticleGravity({
-    GravityType? type,
-    @Deprecated(
-      'gravityType is redundant with type. Use type instead. '
-      'This parameter will be removed in particles_network 2.0.0.',
-    )
-    GravityType? gravityType,
-    double? strength,
-    @Deprecated(
-      'gravityStrength is redundant with strength. Use strength instead. '
-      'This parameter will be removed in particles_network 2.0.0.',
-    )
-    double? gravityStrength,
-    Offset? direction,
-    @Deprecated(
-      'gravityDirection is redundant with direction. Use direction instead. '
-      'This parameter will be removed in particles_network 2.0.0.',
-    )
-    Offset? gravityDirection,
-    Offset? center,
-    @Deprecated(
-      'gravityCenter is redundant with center. Use center instead. '
-      'This parameter will be removed in particles_network 2.0.0.',
-    )
-    Offset? gravityCenter,
-  })  : type = gravityType ?? type ?? GravityType.none,
-        strength = gravityStrength ?? strength ?? 0.1,
-        direction = gravityDirection ?? direction ?? const Offset(0, 1),
-        center = gravityCenter ?? center;
+    this.type = GravityType.none,
+    this.strength = 0.1,
+    this.direction = const Offset(0, 1),
+    this.center,
+  });
 
-  /// Creates a disabled gravity configuration (no gravity effect).
+  /// Creates a disabled gravity configuration (zero gravitational forces).
+  ///
+  /// Particles move according to their initial velocity and boundary collisions only.
+  /// * Sets [type] to [GravityType.none].
+  /// * Sets [strength] to `0.0`.
+  /// * Sets [direction] to `const Offset(0, 1)`.
+  /// * Sets [center] to `null`.
   const ParticleGravity.none()
       : type = GravityType.none,
         strength = 0.0,
@@ -130,20 +122,55 @@ class ParticleGravity {
         center = null;
 
   /// Creates a global directional gravity configuration.
+  ///
+  /// Applies a uniform gravitational pull across the canvas along [direction].
+  ///
+  /// Parameters:
+  /// * [strength]: Intensity of directional acceleration. Defaults to `0.1`.
+  /// * [direction]: Directional vector for the uniform pull. Defaults to `const Offset(0, 1)` (downwards).
+  ///
+  /// Example:
+  /// ```dart
+  /// const rainGravity = ParticleGravity.global(
+  ///   strength: 0.25,
+  ///   direction: Offset(0, 1),
+  /// );
+  /// ```
   const ParticleGravity.global({
     this.strength = 0.1,
     this.direction = const Offset(0, 1),
   })  : type = GravityType.global,
         center = null;
 
-  /// Creates a point-based gravity configuration (attraction or repulsion).
+  /// Creates a point-based radial gravity configuration (attraction or repulsion).
+  ///
+  /// Particles accelerate radially toward or away from [center].
+  ///
+  /// Parameters:
+  /// * [strength]: Attraction intensity when positive, or repulsion intensity when negative.
+  ///   Defaults to `0.1`.
+  /// * [center]: Focal point coordinates `(x, y)`. If `null`, defaults to the center of the canvas.
+  ///
+  /// Example:
+  /// ```dart
+  /// // Black hole pulling particles toward screen center:
+  /// const blackHole = ParticleGravity.point(
+  ///   strength: 0.60,
+  /// );
+  ///
+  /// // Repulsive force pushing particles away from a focal point:
+  /// const repulsor = ParticleGravity.point(
+  ///   strength: -0.40,
+  ///   center: Offset(150, 150),
+  /// );
+  /// ```
   const ParticleGravity.point({
     this.strength = 0.1,
     this.center,
   })  : type = GravityType.point,
         direction = const Offset(0, 1);
 
-  /// Creates a copy of this [ParticleGravity] with updated fields.
+  /// Creates a copy of this [ParticleGravity] configuration with the given fields replaced with new values.
   ParticleGravity copyWith({
     GravityType? type,
     double? strength,

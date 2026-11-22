@@ -100,30 +100,22 @@ void main() {
     test('Default constructor sets expected defaults', () {
       const gravity = ParticleGravity();
       expect(gravity.type, GravityType.none);
-      expect(gravity.gravityType, GravityType.none);
       expect(gravity.strength, 0.1);
-      expect(gravity.gravityStrength, 0.1);
       expect(gravity.direction, const Offset(0, 1));
-      expect(gravity.gravityDirection, const Offset(0, 1));
       expect(gravity.center, isNull);
-      expect(gravity.gravityCenter, isNull);
     });
 
-    test('Accepts explicit gravityType, gravityStrength, etc. parameters', () {
+    test('Accepts explicit type, strength, direction, center parameters', () {
       const gravity = ParticleGravity(
-        gravityType: GravityType.point,
-        gravityStrength: 0.8,
-        gravityDirection: Offset(1, 0),
-        gravityCenter: Offset(150, 150),
+        type: GravityType.point,
+        strength: 0.8,
+        direction: Offset(1, 0),
+        center: Offset(150, 150),
       );
       expect(gravity.type, GravityType.point);
-      expect(gravity.gravityType, GravityType.point);
       expect(gravity.strength, 0.8);
-      expect(gravity.gravityStrength, 0.8);
       expect(gravity.direction, const Offset(1, 0));
-      expect(gravity.gravityDirection, const Offset(1, 0));
       expect(gravity.center, const Offset(150, 150));
-      expect(gravity.gravityCenter, const Offset(150, 150));
     });
 
     test('Named constructors create proper instances', () {
@@ -229,9 +221,9 @@ void main() {
         direction: Offset(0, 1),
       );
       const g2 = ParticleGravity(
-        gravityType: GravityType.global,
-        gravityStrength: 0.5,
-        gravityDirection: Offset(0, 1),
+        type: GravityType.global,
+        strength: 0.5,
+        direction: Offset(0, 1),
       );
       const g3 = ParticleGravity(
         type: GravityType.point,
