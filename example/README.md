@@ -294,10 +294,10 @@ No additional setup required! The package works out of the box.
 | `particleColor`     | `Color`              | `Colors.white`               | Color of the particles                                                                        |
 | `lineColor`         | `Color`              | `Colors.teal`                | Color of the connections                                                                      |
 | `touchFeatures`     | `TouchFeatures`      | `const TouchFeatures()`      | Fine-grained touch dynamics (force, damping, speed, max speed, color)                         |
-| `performance`       | `NetworkPerformance` | `const NetworkPerformance()` | Comprehensive rendering optimizations, line budgets, frame scaling, and rasterization backend |
-| `gravity`           | `ParticleGravity?`   | `null`                       | Unified gravity configuration (global directional or point attractor/repeller gravity)        |
+| `performance`       | `NetworkFeatures` | `const NetworkFeatures()` | Comprehensive rendering optimizations, line budgets, frame scaling, and rasterization backend |
+| `gravity`           | `GravityFeatures?`   | `null`                       | Unified gravity configuration (global directional or point attractor/repeller gravity)        |
 | `hoverEffect`       | `bool?`              | `false`                      | Enables/Disables mouse hover effects (Web & Desktop)                                          |
-| `isComplex`         | `bool`               | `false`                      | *(Deprecated: use `performance: NetworkPerformance(isComplex: ...)`)* Optimized mode for 500+ particles |
+| `isComplex`         | `bool`               | `false`                      | *(Deprecated: use `performance: NetworkFeatures(isComplex: ...)`)* Optimized mode for 500+ particles |
 | `fill`              | `bool`               | `true`                       | Whether to fill or outline particles                                                          |
 | `drawNetwork`       | `bool`               | `true`                       | Enables/Disables connection lines                                                             |
 
@@ -320,7 +320,7 @@ The `TouchFeatures` class provides granular physics parameters for interactive g
 
 ### Network Performance Configuration
 
-Encapsulates all line budgets, GPU acceleration, and frame rate adaptation into `NetworkPerformance`:
+Encapsulates all line budgets, GPU acceleration, and frame rate adaptation into `NetworkFeatures`:
 
 | Property                    | Type           | Default                | Description                                                                                                                                                   |
 | :-------------------------- | :------------- | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -337,7 +337,7 @@ Encapsulates all line budgets, GPU acceleration, and frame rate adaptation into 
 
 ### Particle Gravity Configuration
 
-Configure directional forces, radial attractors, and repulsion fields with `ParticleGravity`:
+Configure directional forces, radial attractors, and repulsion fields with `GravityFeatures`:
 
 | Property    | Type          | Default              | Description                                                                                     |
 | :---------- | :------------ | :------------------- | :---------------------------------------------------------------------------------------------- |
@@ -347,7 +347,7 @@ Configure directional forces, radial attractors, and repulsion fields with `Part
 | `center`    | `Offset?`     | `null`               | Center point for `GravityType.point` (defaults to canvas center when `null`).                   |
 
 > [!NOTE]
-> - `gravityType`, `gravityStrength`, `gravityDirection`, and `gravityCenter` are deprecated compatibility aliases scheduled for removal in v2.0.0. Use `gravity: ParticleGravity(...)` instead.
+> - `gravityType`, `gravityStrength`, `gravityDirection`, and `gravityCenter` are deprecated compatibility aliases scheduled for removal in v2.0.0. Use `gravity: GravityFeatures(...)` instead.
 > - Particle **mass** is calculated automatically from radius — larger particles naturally have greater inertia and resist velocity changes more than smaller ones.
 
 #### Built-in Presets
@@ -355,7 +355,7 @@ Configure directional forces, radial attractors, and repulsion fields with `Part
 ```dart
 // 1. Global Directional Gravity: uniform downward fall (e.g. falling snow, rain)
 const ParticleNetwork(
-  gravity: ParticleGravity.global(
+  gravity: GravityFeatures.global(
     strength: 0.3,
     direction: Offset(0, 1), // Downward fall
   ),
@@ -363,21 +363,21 @@ const ParticleNetwork(
 
 // 2. Point Gravity Attractor: black hole pulling particles towards center
 const ParticleNetwork(
-  gravity: ParticleGravity.point(
+  gravity: GravityFeatures.point(
     strength: 0.5, // Positive = Attraction
   ),
 )
 
 // 3. Point Gravity Repeller: force field pushing particles away from center
 const ParticleNetwork(
-  gravity: ParticleGravity.point(
+  gravity: GravityFeatures.point(
     strength: -1.2, // Negative = Repulsion
   ),
 )
 
 // 4. Custom Gravity Configuration
 const ParticleNetwork(
-  gravity: ParticleGravity(
+  gravity: GravityFeatures(
     type: GravityType.global,
     strength: 0.2,
     direction: Offset(1, 0), // Horizontal wind drift
@@ -444,18 +444,18 @@ This package combines advanced CPU-side spatial partitioning with **GPU-side ren
 The `AdaptivePerformanceController` actively monitors real-time frame rate to eliminate stutter on lower-end devices or during sudden rendering spikes:
 - Automatically throttles connection density and max connection ranges when frame delivery time exceeds threshold.
 - Automatically restores full quality when performance headroom recovers.
-- Activated by setting `enableAdaptivePerformance: true` in `NetworkPerformance`.
+- Activated by setting `enableAdaptivePerformance: true` in `NetworkFeatures`.
 
 ### Fast Single-Call Line Rendering
 
 Traditional custom painters invoke `canvas.drawLine` repeatedly for every pair of connected particles, resulting in hundreds of CPU-GPU transitions per frame.
-- Enabling `fastLineRendering: true` in `NetworkPerformance` batches connection endpoints into a single flat point buffer.
+- Enabling `fastLineRendering: true` in `NetworkFeatures` batches connection endpoints into a single flat point buffer.
 - Drastically reduces draw-call overhead on both **Impeller** and **CanvasKit/WASM** rendering engines.
 
 ### Bounded $O(N)$ Connection Scaling
 
 In dense networks, pairwise proximity checks can generate up to $\frac{N(N-1)}{2}$ edges ($O(N^2)$), causing frame rates to collapse at 500+ particles.
-- Setting `maxConnectionsPerParticle: 4` in `NetworkPerformance` (or similar) enforces an upper bound on connection degree per particle.
+- Setting `maxConnectionsPerParticle: 4` in `NetworkFeatures` (or similar) enforces an upper bound on connection degree per particle.
 - Limits total line segments to a predictable $O(N)$ upper bound, enabling smooth rendering of 1,000+ particles.
 
 ### GPU-Accelerated Rendering
@@ -632,7 +632,7 @@ ParticleNetwork(
   lineDistance: 120,
   particleColor: Colors.white,
   lineColor: Colors.cyanAccent,
-  performance: const NetworkPerformance(
+  performance: const NetworkFeatures(
     enableAdaptivePerformance: true, // Dynamically maintains 60 FPS
     fastLineRendering: true,          // Batched single-call rendering
     maxConnectionsPerParticle: 4,     // Limits edge complexity to O(N)
@@ -814,7 +814,7 @@ Note: Some properties like `particleCount`, `maxSpeed`, and `maxSize` require a 
 Version 1.9.7 keeps every existing option and default unchanged. It needs Flutter `>=3.27.0` / Dart `>=3.6.0`.
 
 **Changes & Migration Notes:**
-- **Unified Performance Options**: All performance knobs are consolidated under `performance: NetworkPerformance(...)` with convenient presets (`NetworkPerformance.highPerformance()`, `NetworkPerformance.adaptive()`).
+- **Unified Performance Options**: All performance knobs are consolidated under `performance: NetworkFeatures(...)` with convenient presets (`NetworkFeatures.highPerformance()`, `NetworkFeatures.adaptive()`).
 - **Touch Features Cleanup**: `touchColor` in `TouchFeatures` has been replaced by `color`.
 - **Deprecated Aliases**: `pullForce` and `decayRate` in `TouchFeatures` are deprecated in favor of `force` and `speed` (scheduled for removal in v2.0.0).
 - **Triangle Line Renderer**: `lineRenderer: LineRenderer.vertices` draws connections as indexed triangles, 4–10x faster on line-heavy scenes, with square line ends.
@@ -824,7 +824,7 @@ Version 1.9.7 keeps every existing option and default unchanged. It needs Flutte
 ```dart
 ParticleNetwork(
   particleCount: 5000,
-  performance: const NetworkPerformance(
+  performance: const NetworkFeatures(
     lineRenderer: LineRenderer.vertices,
     maxLinesPerFrame: 15000,
     frameRateIndependent: true,
@@ -852,7 +852,7 @@ ParticleNetwork(
   lineColor: Colors.teal,
 
   // Performance architecture:
-  performance: const NetworkPerformance(
+  performance: const NetworkFeatures(
     enableAdaptivePerformance: true,
     fastLineRendering: true,
     maxConnectionsPerParticle: 4,
