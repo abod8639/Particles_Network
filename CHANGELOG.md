@@ -1,11 +1,14 @@
 # CHANGELOG
 
-## [1.9.7] not released yet
+## [1.9.7]
 
 ### Added
-* **Touch Features Hover Support (`TouchFeatures.hoverEffect`)**: Added `hoverEffect` directly into `TouchFeatures` to unify all touch and pointer interactions into a single immutable configuration object. The previous `ParticleNetwork(hoverEffect: ...)` parameter is retained as a deprecated alias for full backward compatibility with v1.9.6.
-* **Network Features Configuration (`NetworkFeatures`)**: Introduced immutable `NetworkFeatures` configuration object encapsulating connection line properties: `drawNetwork`, `lineWidth`, `lineDistance`, `lineColor`, and `lineRenderer`. Replaces flat line parameters (`drawNetwork`, `lineWidth`, `lineDistance`, `lineColor`) on `ParticleNetwork` while preserving 100% backward compatibility for v1.9.6 users with debug deprecation logging, encapsulating `lineRenderer` directly in `NetworkFeatures`.
-* **Particle Features Configuration (`ParticleFeatures`)**: Introduced immutable `ParticleFeatures` value object encapsulating particle count, max speed, max size, color, and fill mode with built-in presets (`subtle`, `dense`, `cosmic`). Replaces flat deprecated parameters (`particleCount`, `maxSpeed`, `maxSize`, `particleColor`, `fill`) on `ParticleNetwork` while retaining 100% backward compatibility and debug deprecation logging.
+* **Touch Physics Interaction Mode (`TouchType`)**: Added `TouchType` enum (`push` and `pull`) to `TouchFeatures`. `TouchType.push` (default) repels and scatters particles away from the touch/mouse pointer, while `TouchType.pull` attracts particles toward it.
+* **Cluster Optimization Configuration (`ComplexConfig`)**: Introduced dedicated `ComplexConfig` class (with `ComplexConfig.auto()` preset) encapsulating cluster throttling options (`enabled`, `ratio`, `maxLines`, `densityFactor`) inside `PerformanceFeatures`.
+* **Network Features Configuration (`NetworkFeatures`)**: Introduced immutable `NetworkFeatures` configuration object encapsulating connection line properties with modernized parameter names (`enabled`, `width`, `distance`, `color`, `renderer`). Replaces flat line parameters on `ParticleNetwork` while preserving 100% backward compatibility for v1.9.6.
+* **Particle Features Configuration (`ParticleFeatures`)**: Introduced immutable `ParticleFeatures` configuration object encapsulating particle count, max speed, max size, color, and fill mode with built-in presets (`subtle`, `dense`, `cosmic`). Replaces flat deprecated parameters on `ParticleNetwork` with full backward compatibility.
+* **Performance Features Configuration (`PerformanceFeatures`)**: Grouped line budgeting, delta-time physics, and cluster throttling into a unified `PerformanceFeatures` configuration object.
+* **Touch Features Hover Support (`TouchFeatures.hover`)**: Added `hover` directly into `TouchFeatures` to unify all touch and pointer interactions into a single immutable configuration object.
 * **Cell-Sorted Neighbor Search (`SortedSpatialGrid`)**: Implemented structure-of-arrays (SoA) counting sort for visible particles into contiguous coordinate buffers, significantly reducing memory hopping and accelerating connection pair queries.
 * **Spatial Grid Sizing & Density Tuning**: Lowered connection budgeting safety floor to 4.0 px and introduced configurable cell density multiplier ($k=4.0$), minimizing distance comparisons in dense and clustered scenes.
 * **Grid Cell Count Protection**: Capped total grid cells (`SortedSpatialGrid.maxTotalCells`) to prevent excessive memory usage on ultra-high-resolution displays.
@@ -17,7 +20,10 @@
 * **Diagnostics & Benchmarking**: Added `OptimizedNetworkPainter.lastFrameScanRadius`, performance benchmark harness in `example/`, and integration test suites.
 
 ### Changed
-* **Default Touch Interaction Mode (`TouchType.pull`)**: Preserved the v1.9.6 default particle attraction behavior (`TouchType.pull`) for 100% backward compatibility, while allowing developers to opt into repulsion/scatter physics via `TouchType.push`.
+* **Default Touch Interaction Mode (`TouchType.push`)**: Defaulted touch interaction mode to `TouchType.push` (repelling/scattering particles away from the cursor), with `TouchType.pull` available for attraction.
+* **Modernized Feature Parameter Names**:
+  - `TouchFeatures`: `hover` (replaces `hoverEffect`), `maxSpeed` (replaces `maxTouchSpeed`), `distance` (replaces `lineDistance`), `force` (replaces `pullForce`), `speed` (replaces `decayRate`), and `enabled` (replaces `touchActivation`).
+  - `NetworkFeatures`: `enabled` (replaces `drawNetwork`), `width` (replaces `lineWidth`), `distance` (replaces `lineDistance`), `color` (replaces `lineColor`), and `renderer` (replaces `lineRenderer`).
 * **Default Line Renderer (`LineRenderer.vertices`)**: Upgraded the default line renderer to `LineRenderer.vertices` (submitting indexed triangle quads) for a 10x–20x GPU raster acceleration and steady 60/120 FPS. Lines render with square ends; developers desiring round-ended strokes can explicitly set `renderer: LineRenderer.stroke`.
 * **100% Backward Compatibility Restoration**: Restored complete backward compatibility with all v1.9.6 APIs with informative debug deprecation logging and `@Deprecated` annotations:
   - Restored constructor parameters and getters on `ParticleNetwork`: `maxConnectionsPerParticle`, `adaptiveDensity`, `fastLineRendering`, `useVerticesRendering`, and `enableAdaptivePerformance`.
@@ -53,4 +59,3 @@
 * Added deterministic trajectory precomputation (`TrajectoryBuffer`).
 * Added global and point gravity simulation.
 * Improved rendering performance using GPU Fragment Shaders.
-
