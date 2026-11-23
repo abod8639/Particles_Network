@@ -19,10 +19,10 @@ import 'package:flutter/foundation.dart';
 ///   Defaults to `0.60` when complex mode is active. Defaults to `null`.
 ///
 /// Presets:
-/// * [ComplexFeatures.auto]: Automatically configures cluster throttling with recommended defaults (`maxLines: 3`, `densityFactor: 0.60`).
-/// * [ComplexFeatures.disabled]: Explicitly disables cluster throttling.
+/// * [ComplexConfig.auto]: Automatically configures cluster throttling with recommended defaults (`maxLines: 3`, `densityFactor: 0.60`).
+/// * [ComplexConfig.disabled]: Explicitly disables cluster throttling.
 @immutable
-class ComplexFeatures {
+class ComplexConfig {
   /// Whether cluster throttling optimization is active.
   ///
   /// Defaults to `false`.
@@ -60,7 +60,7 @@ class ComplexFeatures {
   double? get complexDensityFactor => densityFactor;
 
   /// Default constructor (disabled by default unless parameters are explicitly provided).
-  const ComplexFeatures({
+  const ComplexConfig({
     this.enabled = false,
     this.ratio,
     this.maxLines,
@@ -84,7 +84,7 @@ class ComplexFeatures {
   /// * [enabled]: `true`
   /// * [maxLines]: `3`
   /// * [densityFactor]: `0.60`
-  const ComplexFeatures.auto({
+  const ComplexConfig.auto({
     this.ratio,
     this.maxLines = 3,
     this.densityFactor = 0.60,
@@ -103,14 +103,14 @@ class ComplexFeatures {
         );
 
   /// Disabled preset with all parameters cleared.
-  const ComplexFeatures.disabled()
+  const ComplexConfig.disabled()
       : enabled = false,
         ratio = null,
         maxLines = null,
         densityFactor = null;
 
-  /// Creates a copy of this [ComplexFeatures] with updated parameters.
-  ComplexFeatures copyWith({
+  /// Creates a copy of this [ComplexConfig] with updated parameters.
+  ComplexConfig copyWith({
     bool? enabled,
     double? ratio,
     bool clearRatio = false,
@@ -119,7 +119,7 @@ class ComplexFeatures {
     double? densityFactor,
     bool clearDensityFactor = false,
   }) {
-    return ComplexFeatures(
+    return ComplexConfig(
       enabled: enabled ?? this.enabled,
       ratio: clearRatio ? null : (ratio ?? this.ratio),
       maxLines: clearMaxLines ? null : (maxLines ?? this.maxLines),
@@ -130,7 +130,7 @@ class ComplexFeatures {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is ComplexFeatures &&
+      other is ComplexConfig &&
           runtimeType == other.runtimeType &&
           enabled == other.enabled &&
           ratio == other.ratio &&
@@ -147,6 +147,10 @@ class ComplexFeatures {
 
   @override
   String toString() =>
-      'ComplexFeatures(enabled: $enabled, ratio: $ratio, '
+      'ComplexConfig(enabled: $enabled, ratio: $ratio, '
       'maxLines: $maxLines, densityFactor: $densityFactor)';
 }
+
+/// Compatibility alias for [ComplexConfig].
+typedef ComplexFeatures = ComplexConfig;
+

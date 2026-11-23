@@ -14,7 +14,7 @@ class ParticleUpdater implements ITimeScaledParticleController {
   void updateParticles(
     List<Particle> particles,
     Size bounds, {
-    ParticleGravity gravity = const ParticleGravity(),
+    GravityFeatures gravity = const GravityFeatures(),
   }) {
     updateParticlesScaled(particles, bounds, 1.0, gravity: gravity);
   }
@@ -24,7 +24,7 @@ class ParticleUpdater implements ITimeScaledParticleController {
     List<Particle> particles,
     Size bounds,
     double timeScale, {
-    ParticleGravity gravity = const ParticleGravity(),
+    GravityFeatures gravity = const GravityFeatures(),
   }) {
     final bool hasGlobalGravity =
         gravity.type == GravityType.global && gravity.strength != 0;

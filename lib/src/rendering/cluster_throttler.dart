@@ -16,7 +16,7 @@ class ClusterThrottler {
   @pragma('vm:prefer-inline')
   int computeDenseThreshold({
     required double distance,
-    required NetworkPerformance performance,
+    required PerformanceFeatures performance,
     bool isIndividual = false,
   }) {
     final double? customFactor = performance.complexDensityFactor;
@@ -37,7 +37,7 @@ class ClusterThrottler {
   int resolveComplexTargetLines({
     required int candidateCount,
     required int defaultMaxLines,
-    required NetworkPerformance performance,
+    required PerformanceFeatures performance,
   }) {
     if (performance.complexReductionRatio != null) {
       final double ratio = performance.complexReductionRatio!.clamp(0.0, 1.0);
@@ -63,7 +63,7 @@ class ClusterThrottler {
     required int denseThreshold,
     required int defaultMaxLines,
     required bool isComplexMode,
-    required NetworkPerformance performance,
+    required PerformanceFeatures performance,
   }) {
     int maxAllowed = candidateCount;
     if (isCapped && remainingCap < maxAllowed) {

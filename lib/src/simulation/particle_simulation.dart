@@ -33,17 +33,17 @@ class ParticleSimulation {
   Size currentSize = Size.zero;
 
   /// Cached gravity configuration.
-  ParticleGravity gravityConfig;
+  GravityFeatures gravityConfig;
 
   /// Exposes gravity configuration.
-  ParticleGravity get gravity => gravityConfig;
+  GravityFeatures get gravity => gravityConfig;
 
   /// Creates a [ParticleSimulation].
   ParticleSimulation({
     required this.particleCount,
     IParticleFactory? factory,
     IParticleController? controller,
-    this.gravityConfig = const ParticleGravity(),
+    this.gravityConfig = const GravityFeatures(),
     double maxSpeed = 0.5,
     double maxSize = 1.5,
     Color particleColor = const Color(0xFFFFFFFF),
@@ -117,7 +117,7 @@ class ParticleSimulation {
   }
 
   /// Updates the gravity configuration.
-  void updateGravity(ParticleGravity config) {
+  void updateGravity(GravityFeatures config) {
     gravityConfig = config;
   }
 
