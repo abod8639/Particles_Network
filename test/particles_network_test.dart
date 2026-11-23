@@ -122,6 +122,106 @@ void main() {
     expect(state.touchPoint, equals(Offset.infinite));
   });
 
+  testWidgets('ParticleNetwork handles touch interactions with show: false', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: ParticleNetwork(
+              touch: TouchFeatures(enabled: true, show: false),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final state = tester.state<ParticleNetworkState>(
+      find.byType(ParticleNetwork),
+    );
+
+    expect(state.widget.touch.show, isFalse);
+    expect(state.painter.touchFeatures.show, isFalse);
+    expect(state.painter.touchHandler.show, isFalse);
+    expect(state.touchPoint, equals(Offset.infinite));
+
+    final gesture = await tester.startGesture(const Offset(150, 150));
+    await tester.pump();
+    expect(state.touchPoint, equals(const Offset(150, 150)));
+    expect(state.painter.touchHandler.lastLineCount, equals(0));
+
+    await gesture.up();
+    await tester.pump();
+  });
+
+  testWidgets('ParticleNetwork supports touch: TouchFeatures(show: ...) dynamic widget toggling', (
+    WidgetTester tester,
+  ) async {
+    bool showLines = false;
+    await tester.pumpWidget(
+      StatefulBuilder(
+        builder: (context, setState) {
+          return MaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                width: 300,
+                height: 300,
+                child: ParticleNetwork(
+                  touch: TouchFeatures(show: showLines),
+                  particles: const ParticleFeatures(count: 20),
+                  network: const NetworkFeatures(distance: 200.0),
+                ),
+              ),
+              floatingActionButton: FloatingActionButton(
+                onPressed: () => setState(() => showLines = !showLines),
+                child: const Icon(Icons.refresh),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+
+    final state = tester.state<ParticleNetworkState>(
+      find.byType(ParticleNetwork),
+    );
+
+    // Initialized via touch: TouchFeatures(show: false)
+    expect(state.widget.touch.show, isFalse);
+    expect(state.painter.show, isFalse);
+    expect(state.painter.touchHandler.show, isFalse);
+
+    // Touch down while show is false
+    final gesture = await tester.startGesture(const Offset(150, 150));
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(state.painter.touchHandler.lastLineCount, equals(0));
+
+    // Toggle show to true via setState rebuild
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(state.widget.touch.show, isTrue);
+    expect(state.painter.show, isTrue);
+    expect(state.painter.touchHandler.show, isTrue);
+    expect(state.painter.touchHandler.lastLineCount, greaterThan(0));
+
+    // Toggle show back to false during continuous drag
+    await gesture.moveTo(const Offset(160, 160));
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(state.widget.touch.show, isFalse);
+    expect(state.painter.show, isFalse);
+    expect(state.painter.touchHandler.show, isFalse);
+    expect(state.painter.touchHandler.lastLineCount, equals(0));
+
+    await gesture.up();
+    await tester.pump();
+  });
+
   testWidgets('ParticleNetwork logs error when shader fails to load', (
     WidgetTester tester,
   ) async {

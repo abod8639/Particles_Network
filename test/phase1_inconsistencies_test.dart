@@ -193,7 +193,7 @@ void main() {
 
       // Confirmed rejected: Touch lines intentionally default to LineRenderer.vertices
       // as tested and asserted by touch_interaction_handler_test.dart and optimizednetworkpainter_test.dart.
-      expect(painter.touchHandler.lineRenderer, equals(LineRenderer.vertices));
+      expect(painter.touchHandler.renderer, equals(LineRenderer.vertices));
     });
 
     test(
