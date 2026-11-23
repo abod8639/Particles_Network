@@ -128,9 +128,11 @@ final List<(String, Widget Function())> gate1bScenarios = [
               maxSize: 1.5,
               color: Colors.white,
             ),
-            performance: const NetworkPerformance(
-              lineRenderer: LineRenderer.stroke,
+            performance: const PerformanceFeatures(
               maxLinesPerFrame: 4000,
+            ),
+            network: const NetworkFeatures(
+              renderer: LineRenderer.stroke,
             ),
             touchFeatures: const TouchFeatures(enabled: false),
           ),
@@ -149,9 +151,11 @@ final List<(String, Widget Function())> gate1bScenarios = [
               maxSize: 1.5,
               color: Colors.white,
             ),
-            performance: const NetworkPerformance(
-              lineRenderer: LineRenderer.vertices,
+            performance: const PerformanceFeatures(
               maxLinesPerFrame: 15000,
+            ),
+            network: const NetworkFeatures(
+              renderer: LineRenderer.vertices,
             ),
             touchFeatures: const TouchFeatures(enabled: false),
           ),
@@ -165,13 +169,15 @@ final List<(String, Widget Function())> gate1bScenarios = [
           child: ParticleNetwork(
             particleCount: 5000,
             particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-            gravity: const ParticleGravity(
+            gravity: const GravityFeatures(
               type: GravityType.point,
               strength: 5.0,
             ),
-            performance: const NetworkPerformance(
-              lineRenderer: LineRenderer.stroke,
+            performance: const PerformanceFeatures(
               maxLinesPerFrame: 4000,
+            ),
+            network: const NetworkFeatures(
+              renderer: LineRenderer.stroke,
             ),
             touchFeatures: const TouchFeatures(enabled: false),
           ),
@@ -185,13 +191,15 @@ final List<(String, Widget Function())> gate1bScenarios = [
           child: ParticleNetwork(
             particleCount: 5000,
             particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-            gravity: const ParticleGravity(
+            gravity: const GravityFeatures(
               type: GravityType.point,
               strength: 5.0,
             ),
-            performance: const NetworkPerformance(
-              lineRenderer: LineRenderer.vertices,
+            performance: const PerformanceFeatures(
               maxLinesPerFrame: 15000,
+            ),
+            network: const NetworkFeatures(
+              renderer: LineRenderer.vertices,
             ),
             touchFeatures: const TouchFeatures(enabled: false),
           ),
@@ -212,9 +220,11 @@ final List<(String, Widget Function())> gate1bScenarios = [
               maxSize: 1.5,
               color: Colors.white,
             ),
-            performance: const NetworkPerformance(
-              lineRenderer: LineRenderer.stroke,
+            performance: const PerformanceFeatures(
               maxLinesPerFrame: 4000,
+            ),
+            network: const NetworkFeatures(
+              renderer: LineRenderer.stroke,
             ),
             touchFeatures: const TouchFeatures(enabled: false),
           ),
@@ -233,9 +243,11 @@ final List<(String, Widget Function())> gate1bScenarios = [
               maxSize: 1.5,
               color: Colors.white,
             ),
-            performance: const NetworkPerformance(
-              lineRenderer: LineRenderer.vertices,
+            performance: const PerformanceFeatures(
               maxLinesPerFrame: 15000,
+            ),
+            network: const NetworkFeatures(
+              renderer: LineRenderer.vertices,
             ),
             touchFeatures: const TouchFeatures(enabled: false),
           ),
@@ -249,13 +261,15 @@ final List<(String, Widget Function())> gate1bScenarios = [
           child: ParticleNetwork(
             particleCount: 5000,
             particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-            gravity: const ParticleGravity(
+            gravity: const GravityFeatures(
               type: GravityType.point,
               strength: 5.0,
             ),
-            performance: const NetworkPerformance(
-              lineRenderer: LineRenderer.stroke,
+            performance: const PerformanceFeatures(
               maxLinesPerFrame: 4000,
+            ),
+            network: const NetworkFeatures(
+              renderer: LineRenderer.stroke,
             ),
             touchFeatures: const TouchFeatures(enabled: false),
           ),
@@ -269,13 +283,15 @@ final List<(String, Widget Function())> gate1bScenarios = [
           child: ParticleNetwork(
             particleCount: 5000,
             particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-            gravity: const ParticleGravity(
+            gravity: const GravityFeatures(
               type: GravityType.point,
               strength: 5.0,
             ),
-            performance: const NetworkPerformance(
-              lineRenderer: LineRenderer.vertices,
+            performance: const PerformanceFeatures(
               maxLinesPerFrame: 15000,
+            ),
+            network: const NetworkFeatures(
+              renderer: LineRenderer.vertices,
             ),
             touchFeatures: const TouchFeatures(enabled: false),
           ),
@@ -291,13 +307,15 @@ final List<(String, Widget Function())> gate1bScenarios = [
           child: ParticleNetwork(
             particleCount: 5000,
             particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-            gravity: const ParticleGravity(
+            gravity: const GravityFeatures(
               type: GravityType.point,
               strength: 5.0,
             ),
-            performance: const NetworkPerformance(
-              lineRenderer: LineRenderer.stroke,
+            performance: const PerformanceFeatures(
               maxLinesPerFrame: 4000,
+            ),
+            network: const NetworkFeatures(
+              renderer: LineRenderer.stroke,
             ),
             touchFeatures: const TouchFeatures(enabled: false),
           ),
@@ -311,13 +329,15 @@ final List<(String, Widget Function())> gate1bScenarios = [
           child: ParticleNetwork(
             particleCount: 5000,
             particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-            gravity: const ParticleGravity(
+            gravity: const GravityFeatures(
               type: GravityType.point,
               strength: 5.0,
             ),
-            performance: const NetworkPerformance(
-              lineRenderer: LineRenderer.vertices,
+            performance: const PerformanceFeatures(
               maxLinesPerFrame: 15000,
+            ),
+            network: const NetworkFeatures(
+              renderer: LineRenderer.vertices,
             ),
             touchFeatures: const TouchFeatures(enabled: false),
           ),
@@ -331,13 +351,15 @@ final List<(String, Widget Function())> gate1bScenarios = [
           child: ParticleNetwork(
             particleCount: 5000,
             particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-            gravity: const ParticleGravity(
+            gravity: const GravityFeatures(
               type: GravityType.point,
               strength: 5.0,
             ),
-            performance: const NetworkPerformance(
-              lineRenderer: LineRenderer.stroke,
+            performance: const PerformanceFeatures(
               maxLinesPerFrame: 4000,
+            ),
+            network: const NetworkFeatures(
+              renderer: LineRenderer.stroke,
             ),
             touchFeatures: const TouchFeatures(enabled: false),
           ),
@@ -351,13 +373,15 @@ final List<(String, Widget Function())> gate1bScenarios = [
           child: ParticleNetwork(
             particleCount: 5000,
             particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-            gravity: const ParticleGravity(
+            gravity: const GravityFeatures(
               type: GravityType.point,
               strength: 5.0,
             ),
-            performance: const NetworkPerformance(
-              lineRenderer: LineRenderer.vertices,
+            performance: const PerformanceFeatures(
               maxLinesPerFrame: 15000,
+            ),
+            network: const NetworkFeatures(
+              renderer: LineRenderer.vertices,
             ),
             touchFeatures: const TouchFeatures(enabled: false),
           ),
@@ -371,13 +395,15 @@ final List<(String, Widget Function())> gate1bScenarios = [
           child: ParticleNetwork(
             particleCount: 5000,
             particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-            gravity: const ParticleGravity(
+            gravity: const GravityFeatures(
               type: GravityType.point,
               strength: 5.0,
             ),
-            performance: const NetworkPerformance(
-              lineRenderer: LineRenderer.stroke,
+            performance: const PerformanceFeatures(
               maxLinesPerFrame: 4000,
+            ),
+            network: const NetworkFeatures(
+              renderer: LineRenderer.stroke,
             ),
             touchFeatures: const TouchFeatures(enabled: false),
           ),
@@ -391,13 +417,15 @@ final List<(String, Widget Function())> gate1bScenarios = [
           child: ParticleNetwork(
             particleCount: 5000,
             particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-            gravity: const ParticleGravity(
+            gravity: const GravityFeatures(
               type: GravityType.point,
               strength: 5.0,
             ),
-            performance: const NetworkPerformance(
-              lineRenderer: LineRenderer.vertices,
+            performance: const PerformanceFeatures(
               maxLinesPerFrame: 15000,
+            ),
+            network: const NetworkFeatures(
+              renderer: LineRenderer.vertices,
             ),
             touchFeatures: const TouchFeatures(enabled: false),
           ),
@@ -412,13 +440,15 @@ final List<(String, Widget Function())> gate1bScenarios = [
           child: ParticleNetwork(
             particleCount: 5000,
             particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-            gravity: const ParticleGravity(
+            gravity: const GravityFeatures(
               type: GravityType.point,
               strength: 5.0,
             ),
-            performance: const NetworkPerformance(
-              lineRenderer: LineRenderer.stroke,
+            performance: const PerformanceFeatures(
               maxLinesPerFrame: 4000,
+            ),
+            network: const NetworkFeatures(
+              renderer: LineRenderer.stroke,
             ),
             touchFeatures: const TouchFeatures(enabled: false),
           ),
@@ -433,13 +463,15 @@ final List<(String, Widget Function())> gate1bScenarios = [
           child: ParticleNetwork(
             particleCount: 5000,
             particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-            gravity: const ParticleGravity(
+            gravity: const GravityFeatures(
               type: GravityType.point,
               strength: 5.0,
             ),
-            performance: const NetworkPerformance(
-              lineRenderer: LineRenderer.vertices,
+            performance: const PerformanceFeatures(
               maxLinesPerFrame: 15000,
+            ),
+            network: const NetworkFeatures(
+              renderer: LineRenderer.vertices,
             ),
             touchFeatures: const TouchFeatures(enabled: false),
           ),
@@ -456,8 +488,8 @@ final List<(String, Widget Function())> gate1bScenarios = [
             maxSize: 1.5,
             color: Colors.white,
           ),
-          performance:
-              const NetworkPerformance(lineRenderer: LineRenderer.stroke),
+          network:
+              const NetworkFeatures(renderer: LineRenderer.stroke),
           touchFeatures: const TouchFeatures(enabled: false),
         ),
   ),
@@ -476,9 +508,11 @@ final List<(String, Widget Function())> gate1bScenarios = [
             maxSize: 1.5,
             color: Colors.white,
           ),
-          performance: const NetworkPerformance(
-            lineRenderer: LineRenderer.stroke,
+          performance: const PerformanceFeatures(
             maxLinesPerFrame: 4000,
+          ),
+          network: const NetworkFeatures(
+            renderer: LineRenderer.stroke,
           ),
           touchFeatures: const TouchFeatures(enabled: false),
         ),
@@ -493,9 +527,11 @@ final List<(String, Widget Function())> gate1bScenarios = [
             maxSize: 1.5,
             color: Colors.white,
           ),
-          performance: const NetworkPerformance(
-            lineRenderer: LineRenderer.vertices,
+          performance: const PerformanceFeatures(
             maxLinesPerFrame: 15000,
+          ),
+          network: const NetworkFeatures(
+            renderer: LineRenderer.vertices,
           ),
           touchFeatures: const TouchFeatures(enabled: false),
         ),
@@ -510,9 +546,11 @@ final List<(String, Widget Function())> gate1bScenarios = [
             maxSize: 1.5,
             color: Colors.white,
           ),
-          performance: const NetworkPerformance(
-            lineRenderer: LineRenderer.stroke,
+          performance: const PerformanceFeatures(
             maxLinesPerFrame: 4000,
+          ),
+          network: const NetworkFeatures(
+            renderer: LineRenderer.stroke,
           ),
           touchFeatures: const TouchFeatures(enabled: false),
         ),
@@ -527,9 +565,11 @@ final List<(String, Widget Function())> gate1bScenarios = [
             maxSize: 1.5,
             color: Colors.white,
           ),
-          performance: const NetworkPerformance(
-            lineRenderer: LineRenderer.vertices,
+          performance: const PerformanceFeatures(
             maxLinesPerFrame: 15000,
+          ),
+          network: const NetworkFeatures(
+            renderer: LineRenderer.vertices,
           ),
           touchFeatures: const TouchFeatures(enabled: false),
         ),
@@ -544,9 +584,11 @@ final List<(String, Widget Function())> gate1bScenarios = [
             maxSize: 1.5,
             color: Colors.white,
           ),
-          performance: const NetworkPerformance(
-            lineRenderer: LineRenderer.stroke,
+          performance: const PerformanceFeatures(
             maxLinesPerFrame: 4000,
+          ),
+          network: const NetworkFeatures(
+            renderer: LineRenderer.stroke,
           ),
           touchFeatures: const TouchFeatures(enabled: false),
         ),
@@ -561,9 +603,11 @@ final List<(String, Widget Function())> gate1bScenarios = [
             maxSize: 1.5,
             color: Colors.white,
           ),
-          performance: const NetworkPerformance(
-            lineRenderer: LineRenderer.vertices,
+          performance: const PerformanceFeatures(
             maxLinesPerFrame: 15000,
+          ),
+          network: const NetworkFeatures(
+            renderer: LineRenderer.vertices,
           ),
           touchFeatures: const TouchFeatures(enabled: false),
         ),
@@ -575,13 +619,15 @@ final List<(String, Widget Function())> gate1bScenarios = [
     () => ParticleNetwork(
           particleCount: 500,
           particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-          gravity: const ParticleGravity(
+          gravity: const GravityFeatures(
             type: GravityType.point,
             strength: 5.0,
           ),
-          performance: const NetworkPerformance(
-            lineRenderer: LineRenderer.stroke,
+          performance: const PerformanceFeatures(
             maxLinesPerFrame: 4000,
+          ),
+          network: const NetworkFeatures(
+            renderer: LineRenderer.stroke,
           ),
           touchFeatures: const TouchFeatures(enabled: false),
         ),
@@ -591,13 +637,15 @@ final List<(String, Widget Function())> gate1bScenarios = [
     () => ParticleNetwork(
           particleCount: 500,
           particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-          gravity: const ParticleGravity(
+          gravity: const GravityFeatures(
             type: GravityType.point,
             strength: 5.0,
           ),
-          performance: const NetworkPerformance(
-            lineRenderer: LineRenderer.vertices,
+          performance: const PerformanceFeatures(
             maxLinesPerFrame: 15000,
+          ),
+          network: const NetworkFeatures(
+            renderer: LineRenderer.vertices,
           ),
           touchFeatures: const TouchFeatures(enabled: false),
         ),
@@ -607,13 +655,15 @@ final List<(String, Widget Function())> gate1bScenarios = [
     () => ParticleNetwork(
           particleCount: 5000,
           particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-          gravity: const ParticleGravity(
+          gravity: const GravityFeatures(
             type: GravityType.point,
             strength: 5.0,
           ),
-          performance: const NetworkPerformance(
-            lineRenderer: LineRenderer.stroke,
+          performance: const PerformanceFeatures(
             maxLinesPerFrame: 4000,
+          ),
+          network: const NetworkFeatures(
+            renderer: LineRenderer.stroke,
           ),
           touchFeatures: const TouchFeatures(enabled: false),
         ),
@@ -623,13 +673,15 @@ final List<(String, Widget Function())> gate1bScenarios = [
     () => ParticleNetwork(
           particleCount: 5000,
           particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-          gravity: const ParticleGravity(
+          gravity: const GravityFeatures(
             type: GravityType.point,
             strength: 5.0,
           ),
-          performance: const NetworkPerformance(
-            lineRenderer: LineRenderer.vertices,
+          performance: const PerformanceFeatures(
             maxLinesPerFrame: 15000,
+          ),
+          network: const NetworkFeatures(
+            renderer: LineRenderer.vertices,
           ),
           touchFeatures: const TouchFeatures(enabled: false),
         ),
@@ -639,13 +691,15 @@ final List<(String, Widget Function())> gate1bScenarios = [
     () => ParticleNetwork(
           particleCount: 20000,
           particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-          gravity: const ParticleGravity(
+          gravity: const GravityFeatures(
             type: GravityType.point,
             strength: 5.0,
           ),
-          performance: const NetworkPerformance(
-            lineRenderer: LineRenderer.stroke,
+          performance: const PerformanceFeatures(
             maxLinesPerFrame: 4000,
+          ),
+          network: const NetworkFeatures(
+            renderer: LineRenderer.stroke,
           ),
           touchFeatures: const TouchFeatures(enabled: false),
         ),
@@ -655,13 +709,15 @@ final List<(String, Widget Function())> gate1bScenarios = [
     () => ParticleNetwork(
           particleCount: 20000,
           particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-          gravity: const ParticleGravity(
+          gravity: const GravityFeatures(
             type: GravityType.point,
             strength: 5.0,
           ),
-          performance: const NetworkPerformance(
-            lineRenderer: LineRenderer.vertices,
+          performance: const PerformanceFeatures(
             maxLinesPerFrame: 15000,
+          ),
+          network: const NetworkFeatures(
+            renderer: LineRenderer.vertices,
           ),
           touchFeatures: const TouchFeatures(enabled: false),
         ),
@@ -673,9 +729,11 @@ final List<(String, Widget Function())> gate1bScenarios = [
     () => ParticleNetwork(
           particleCount: 500,
           particleFactory: GaussianParticleFactory(random: math.Random(42)),
-          performance: const NetworkPerformance(
-            lineRenderer: LineRenderer.stroke,
+          performance: const PerformanceFeatures(
             maxLinesPerFrame: 4000,
+          ),
+          network: const NetworkFeatures(
+            renderer: LineRenderer.stroke,
           ),
           touchFeatures: const TouchFeatures(enabled: false),
         ),
@@ -685,9 +743,11 @@ final List<(String, Widget Function())> gate1bScenarios = [
     () => ParticleNetwork(
           particleCount: 500,
           particleFactory: GaussianParticleFactory(random: math.Random(42)),
-          performance: const NetworkPerformance(
-            lineRenderer: LineRenderer.vertices,
+          performance: const PerformanceFeatures(
             maxLinesPerFrame: 15000,
+          ),
+          network: const NetworkFeatures(
+            renderer: LineRenderer.vertices,
           ),
           touchFeatures: const TouchFeatures(enabled: false),
         ),
@@ -697,9 +757,11 @@ final List<(String, Widget Function())> gate1bScenarios = [
     () => ParticleNetwork(
           particleCount: 5000,
           particleFactory: GaussianParticleFactory(random: math.Random(42)),
-          performance: const NetworkPerformance(
-            lineRenderer: LineRenderer.stroke,
+          performance: const PerformanceFeatures(
             maxLinesPerFrame: 4000,
+          ),
+          network: const NetworkFeatures(
+            renderer: LineRenderer.stroke,
           ),
           touchFeatures: const TouchFeatures(enabled: false),
         ),
@@ -709,9 +771,11 @@ final List<(String, Widget Function())> gate1bScenarios = [
     () => ParticleNetwork(
           particleCount: 5000,
           particleFactory: GaussianParticleFactory(random: math.Random(42)),
-          performance: const NetworkPerformance(
-            lineRenderer: LineRenderer.vertices,
+          performance: const PerformanceFeatures(
             maxLinesPerFrame: 15000,
+          ),
+          network: const NetworkFeatures(
+            renderer: LineRenderer.vertices,
           ),
           touchFeatures: const TouchFeatures(enabled: false),
         ),
@@ -721,9 +785,11 @@ final List<(String, Widget Function())> gate1bScenarios = [
     () => ParticleNetwork(
           particleCount: 20000,
           particleFactory: GaussianParticleFactory(random: math.Random(42)),
-          performance: const NetworkPerformance(
-            lineRenderer: LineRenderer.stroke,
+          performance: const PerformanceFeatures(
             maxLinesPerFrame: 4000,
+          ),
+          network: const NetworkFeatures(
+            renderer: LineRenderer.stroke,
           ),
           touchFeatures: const TouchFeatures(enabled: false),
         ),
@@ -733,9 +799,11 @@ final List<(String, Widget Function())> gate1bScenarios = [
     () => ParticleNetwork(
           particleCount: 20000,
           particleFactory: GaussianParticleFactory(random: math.Random(42)),
-          performance: const NetworkPerformance(
-            lineRenderer: LineRenderer.vertices,
+          performance: const PerformanceFeatures(
             maxLinesPerFrame: 15000,
+          ),
+          network: const NetworkFeatures(
+            renderer: LineRenderer.vertices,
           ),
           touchFeatures: const TouchFeatures(enabled: false),
         ),
@@ -747,13 +815,15 @@ final List<(String, Widget Function())> gate1bScenarios = [
     () => ParticleNetwork(
           particleCount: 5000,
           particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-          gravity: const ParticleGravity(
+          gravity: const GravityFeatures(
             type: GravityType.point,
             strength: 5.0,
           ),
-          performance: const NetworkPerformance(
-            lineRenderer: LineRenderer.stroke,
+          performance: const PerformanceFeatures(
             maxLinesPerFrame: 500,
+          ),
+          network: const NetworkFeatures(
+            renderer: LineRenderer.stroke,
           ),
           touchFeatures: const TouchFeatures(enabled: false),
         ),
@@ -763,13 +833,15 @@ final List<(String, Widget Function())> gate1bScenarios = [
     () => ParticleNetwork(
           particleCount: 20000,
           particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-          gravity: const ParticleGravity(
+          gravity: const GravityFeatures(
             type: GravityType.point,
             strength: 5.0,
           ),
-          performance: const NetworkPerformance(
-            lineRenderer: LineRenderer.stroke,
+          performance: const PerformanceFeatures(
             maxLinesPerFrame: 500,
+          ),
+          network: const NetworkFeatures(
+            renderer: LineRenderer.stroke,
           ),
           touchFeatures: const TouchFeatures(enabled: false),
         ),
@@ -779,13 +851,15 @@ final List<(String, Widget Function())> gate1bScenarios = [
     () => ParticleNetwork(
           particleCount: 20000,
           particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-          gravity: const ParticleGravity(
+          gravity: const GravityFeatures(
             type: GravityType.point,
             strength: 5.0,
           ),
-          performance: const NetworkPerformance(
-            lineRenderer: LineRenderer.stroke,
+          performance: const PerformanceFeatures(
             maxLinesPerFrame: 4000,
+          ),
+          network: const NetworkFeatures(
+            renderer: LineRenderer.stroke,
           ),
           touchFeatures: const TouchFeatures(enabled: false),
         ),
@@ -795,9 +869,11 @@ final List<(String, Widget Function())> gate1bScenarios = [
     () => ParticleNetwork(
           particleCount: 5000,
           particleFactory: GaussianParticleFactory(random: math.Random(42)),
-          performance: const NetworkPerformance(
-            lineRenderer: LineRenderer.stroke,
+          performance: const PerformanceFeatures(
             maxLinesPerFrame: 500,
+          ),
+          network: const NetworkFeatures(
+            renderer: LineRenderer.stroke,
           ),
           touchFeatures: const TouchFeatures(enabled: false),
         ),
@@ -807,9 +883,11 @@ final List<(String, Widget Function())> gate1bScenarios = [
     () => ParticleNetwork(
           particleCount: 20000,
           particleFactory: GaussianParticleFactory(random: math.Random(42)),
-          performance: const NetworkPerformance(
-            lineRenderer: LineRenderer.stroke,
+          performance: const PerformanceFeatures(
             maxLinesPerFrame: 500,
+          ),
+          network: const NetworkFeatures(
+            renderer: LineRenderer.stroke,
           ),
           touchFeatures: const TouchFeatures(enabled: false),
         ),

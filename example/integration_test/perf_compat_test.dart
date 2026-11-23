@@ -50,7 +50,7 @@ final scenarios = <(String, ParticleNetwork Function())>[
     'lines_300_complex',
     () => const ParticleNetwork(
           particleCount: 300,
-          performance: NetworkPerformance(isComplex: true),
+          performance: PerformanceFeatures(complex: ComplexConfig.auto()),
           touch: TouchFeatures(enabled: false),
         ),
   ),
@@ -58,7 +58,7 @@ final scenarios = <(String, ParticleNetwork Function())>[
     'lines_1000_maxconn5',
     () => const ParticleNetwork(
           particleCount: 1000,
-          performance: NetworkPerformance(maxConnectionsPerParticle: 5),
+          performance: PerformanceFeatures(maxConnectionsPerParticle: 5),
           touch: TouchFeatures(enabled: false),
         ),
   ),
@@ -66,7 +66,7 @@ final scenarios = <(String, ParticleNetwork Function())>[
     'lines_1000_fast',
     () => const ParticleNetwork(
           particleCount: 1000,
-          performance: NetworkPerformance(lineRenderer: LineRenderer.vertices),
+          network: NetworkFeatures(renderer: LineRenderer.vertices),
           touch: TouchFeatures(enabled: false),
         ),
   ),
@@ -74,7 +74,7 @@ final scenarios = <(String, ParticleNetwork Function())>[
     'lines_500_adaptive',
     () => const ParticleNetwork(
           particleCount: 500,
-          performance: NetworkPerformance(autoBoost: true),
+          performance: PerformanceFeatures(autoBoost: true),
           touch: TouchFeatures(enabled: false),
         ),
   ),
