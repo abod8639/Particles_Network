@@ -214,6 +214,95 @@ void main() {
     expect(state.touchPoint, equals(Offset.infinite));
   });
 
+  testWidgets(
+      'ParticleNetwork handles mouse hover via TouchFeatures(hover: true)',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: ParticleNetwork(
+              touch: TouchFeatures(hover: true),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final state = tester.state<ParticleNetworkState>(
+      find.byType(ParticleNetwork),
+    );
+
+    expect(state.touchPoint, equals(Offset.infinite));
+
+    // Simulate mouse hover
+    final pointer = TestPointer(1, PointerDeviceKind.mouse);
+    await tester.sendEventToBinding(pointer.hover(const Offset(100, 100)));
+    await tester.pump();
+
+    expect(state.touchPoint, equals(const Offset(100, 100)));
+
+    // Move pointer outside to trigger onExit
+    await tester.sendEventToBinding(pointer.hover(const Offset(400, 400)));
+    await tester.pump();
+    expect(state.touchPoint, equals(Offset.infinite));
+  });
+
+  testWidgets(
+      'ParticleNetwork ignores mouse hover via TouchFeatures(hover: false)',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: ParticleNetwork(
+              touch: TouchFeatures(hover: false),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final state = tester.state<ParticleNetworkState>(
+      find.byType(ParticleNetwork),
+    );
+
+    expect(state.touchPoint, equals(Offset.infinite));
+
+    final pointer = TestPointer(1, PointerDeviceKind.mouse);
+    await tester.sendEventToBinding(pointer.hover(const Offset(100, 100)));
+    await tester.pump();
+
+    expect(state.touchPoint, equals(Offset.infinite));
+  });
+
+  testWidgets(
+      'ParticleNetwork backward compatibility merges legacy hoverEffect into effectiveTouchFeatures',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: ParticleNetwork(
+              hoverEffect: true,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final widget = tester.widget<ParticleNetwork>(find.byType(ParticleNetwork));
+    expect(widget.hoverEffect, isTrue);
+    expect(widget.effectiveTouchFeatures.hover, isTrue);
+    expect(widget.usedLegacyHoverEffect, isTrue);
+  });
+
   testWidgets('ParticleNetwork handles pan cancel', (
     WidgetTester tester,
   ) async {
@@ -660,22 +749,22 @@ void main() {
     expect(network.gravityCenter, isNull);
     expect(network.hoverEffect, isFalse);
     expect(network.touchFeatures, const TouchFeatures());
-    expect(network.performance, const NetworkPerformance());
+    expect(network.performance, const PerformanceFeatures());
   });
 
-  test('ParticleNetwork constructor handles NetworkPerformance', () {
+  test('ParticleNetwork constructor handles PerformanceFeatures', () {
     const network1 = ParticleNetwork(
-      performance: NetworkPerformance(isComplex: true),
+      performance: PerformanceFeatures(complex: ComplexConfig(enabled: true)),
     );
     expect(network1.performance.isComplex, isTrue);
 
     const network2 = ParticleNetwork(
-      performance: NetworkPerformance(isComplex: false),
+      performance: PerformanceFeatures(complex: ComplexConfig(enabled: false)),
     );
     expect(network2.performance.isComplex, isFalse);
 
     const network4 = ParticleNetwork(
-      performance: NetworkPerformance(
+      performance: PerformanceFeatures(
         maxConnectionsPerParticle: 4,
         autoBoost: true,
       ),
@@ -780,7 +869,7 @@ void main() {
   );
 
   testWidgets(
-    'ParticleNetwork didUpdateWidget updates simulation gravity using ParticleGravity',
+    'ParticleNetwork didUpdateWidget updates simulation gravity using GravityFeatures',
     (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -789,7 +878,7 @@ void main() {
               width: 300,
               height: 300,
               child: ParticleNetwork(
-                gravity: ParticleGravity.none(),
+                gravity: GravityFeatures.none(),
               ),
             ),
           ),
@@ -808,7 +897,7 @@ void main() {
               width: 300,
               height: 300,
               child: ParticleNetwork(
-                gravity: ParticleGravity(
+                gravity: GravityFeatures(
                   type: GravityType.point,
                   strength: 0.9,
                   direction: Offset(0, -1),
@@ -829,7 +918,7 @@ void main() {
 
   test('ParticleNetwork detects usedLegacyGravity correctly', () {
     const modern = ParticleNetwork(
-      gravity: ParticleGravity(type: GravityType.global),
+      gravity: GravityFeatures(type: GravityType.global),
     );
     expect(modern.usedLegacyGravity, isFalse);
 
@@ -925,9 +1014,11 @@ void main() {
               width: 300,
               height: 300,
               child: ParticleNetwork(
-                performance: NetworkPerformance(
+                performance: PerformanceFeatures(
                   maxConnectionsPerParticle: null,
-                  lineRenderer: LineRenderer.stroke,
+                ),
+                network: NetworkFeatures(
+                  renderer: LineRenderer.stroke,
                 ),
               ),
             ),
@@ -952,9 +1043,11 @@ void main() {
               width: 300,
               height: 300,
               child: ParticleNetwork(
-                performance: NetworkPerformance(
+                performance: PerformanceFeatures(
                   maxConnectionsPerParticle: 3,
-                  lineRenderer: LineRenderer.vertices,
+                ),
+                network: NetworkFeatures(
+                  renderer: LineRenderer.vertices,
                 ),
               ),
             ),
@@ -985,7 +1078,7 @@ void main() {
               height: 300,
               child: ParticleNetwork(
                 lineDistance: 100.0,
-                performance: NetworkPerformance(
+                performance: PerformanceFeatures(
                   maxConnectionsPerParticle: 10,
                   autoBoost: true,
                 ),
@@ -1041,7 +1134,7 @@ void main() {
               height: 300,
               child: ParticleNetwork(
                 lineDistance: 100.0,
-                performance: NetworkPerformance(
+                performance: PerformanceFeatures(
                   maxConnectionsPerParticle: 10,
                   autoBoost: false,
                 ),
@@ -1084,7 +1177,7 @@ void main() {
               height: 300,
               child: ParticleNetwork(
                 lineDistance: 100.0,
-                performance: NetworkPerformance(
+                performance: PerformanceFeatures(
                   maxConnectionsPerParticle: 10,
                   autoBoost: false,
                 ),
@@ -1132,7 +1225,7 @@ void main() {
               height: 300,
               child: ParticleNetwork(
                 lineDistance: 100.0,
-                performance: NetworkPerformance(
+                performance: PerformanceFeatures(
                   maxConnectionsPerParticle: 10,
                   autoBoost: true,
                 ),
@@ -1160,7 +1253,7 @@ void main() {
               height: 300,
               child: ParticleNetwork(
                 lineDistance: 100.0,
-                performance: NetworkPerformance(
+                performance: PerformanceFeatures(
                   maxConnectionsPerParticle: 10,
                   autoBoost: false,
                 ),
@@ -1207,7 +1300,7 @@ void main() {
               height: 300,
               child: ParticleNetwork(
                 lineDistance: 100.0,
-                performance: NetworkPerformance(
+                performance: PerformanceFeatures(
                   autoBoost: true,
                 ),
               ),
@@ -1231,7 +1324,7 @@ void main() {
               height: 300,
               child: ParticleNetwork(
                 lineDistance: 200.0,
-                performance: NetworkPerformance(
+                performance: PerformanceFeatures(
                   autoBoost: true,
                 ),
               ),
@@ -1247,34 +1340,34 @@ void main() {
   );
 
   test(
-    'effectiveDrawNetwork and usedLegacyDrawnetwork reflect legacy and modern parameter (L105-L110)',
+    'effectiveDrawNetwork reflects legacy drawNetwork and modern network.enabled',
     () {
-      // Modern parameter
-      const modern = ParticleNetwork(drawNetwork: false);
-      expect(modern.drawNetwork, isFalse);
-      expect(modern.effectiveDrawNetwork, isFalse);
-      expect(modern.usedLegacyDrawnetwork, isFalse);
-
-      // Legacy parameter (drawnetwork)
-      const legacy = ParticleNetwork(drawnetwork: false);
+      // Legacy parameter (drawNetwork)
+      const legacy = ParticleNetwork(drawNetwork: false);
+      expect(legacy.drawNetwork, isFalse);
       expect(legacy.effectiveDrawNetwork, isFalse);
-      expect(legacy.usedLegacyDrawnetwork, isTrue);
+
+      // Modern parameter
+      const modern = ParticleNetwork(
+        network: NetworkFeatures(enabled: false),
+      );
+      expect(modern.effectiveDrawNetwork, isFalse);
     },
   );
 
   test(
-    'effectiveLineWidth and usedLegacyLinewidth reflect legacy and modern parameter (L114-L119)',
+    'effectiveLineWidth reflects legacy lineWidth and modern network.width',
     () {
-      // Modern parameter
-      const modern = ParticleNetwork(lineWidth: 2.5);
-      expect(modern.lineWidth, equals(2.5));
-      expect(modern.effectiveLineWidth, equals(2.5));
-      expect(modern.usedLegacyLinewidth, isFalse);
+      // Legacy parameter (lineWidth)
+      const legacy = ParticleNetwork(lineWidth: 2.5);
+      expect(legacy.lineWidth, equals(2.5));
+      expect(legacy.effectiveLineWidth, equals(2.5));
 
-      // Legacy parameter (linewidth)
-      const legacy = ParticleNetwork(linewidth: 3.0);
-      expect(legacy.effectiveLineWidth, equals(3.0));
-      expect(legacy.usedLegacyLinewidth, isTrue);
+      // Modern parameter
+      const modern = ParticleNetwork(
+        network: NetworkFeatures(width: 3.0),
+      );
+      expect(modern.effectiveLineWidth, equals(3.0));
     },
   );
 
@@ -1328,7 +1421,7 @@ void main() {
               height: 300,
               child: ParticleNetwork(
                 lineDistance: 100.0,
-                performance: NetworkPerformance(
+                performance: PerformanceFeatures(
                   autoBoost: true,
                   maxConnectionsPerParticle: 10,
                 ),
@@ -1362,10 +1455,10 @@ void main() {
               height: 300,
               child: ParticleNetwork(
                 lineDistance: 100.0,
-                performance: NetworkPerformance(
+                performance: PerformanceFeatures(
                   autoBoost: true,
                   maxConnectionsPerParticle: 10,
-                  isComplex: true,
+                  complex: ComplexConfig(enabled: true),
                 ),
               ),
             ),
@@ -1386,7 +1479,7 @@ void main() {
   );
 
   testWidgets(
-    'ParticleNetwork with NetworkPerformance.auto dynamically adapts connections and lines according to frame performance',
+    'ParticleNetwork with PerformanceFeatures.auto dynamically adapts connections and lines according to frame performance',
     (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -1396,7 +1489,7 @@ void main() {
               height: 300,
               child: ParticleNetwork(
                 lineDistance: 100.0,
-                performance: NetworkPerformance.auto(),
+                performance: PerformanceFeatures.auto(),
               ),
             ),
           ),
@@ -1464,7 +1557,7 @@ void main() {
   );
 
   testWidgets(
-    'ParticleNetwork with NetworkPerformance.auto can scale connections beyond 15 on high performance',
+    'ParticleNetwork with PerformanceFeatures.auto can scale connections beyond 15 on high performance',
     (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -1474,7 +1567,7 @@ void main() {
               height: 300,
               child: ParticleNetwork(
                 lineDistance: 100.0,
-                performance: NetworkPerformance.auto(),
+                performance: PerformanceFeatures.auto(),
               ),
             ),
           ),
@@ -1524,7 +1617,7 @@ void main() {
       expect(widgetLegacy.effectiveIsComplex, isTrue);
 
       const widgetPerformance = ParticleNetwork(
-        performance: NetworkPerformance(isComplex: false),
+        performance: PerformanceFeatures(complex: ComplexConfig(enabled: false)),
       );
       expect(widgetPerformance.effectiveIsComplex, isFalse);
 
@@ -1544,7 +1637,7 @@ void main() {
               child: ParticleNetwork(
                 particleCount: 20,
                 lineDistance: 50.0,
-                performance: NetworkPerformance(
+                performance: PerformanceFeatures(
                   maxConnectionsPerParticle: 5,
                   maxLinesPerFrame: 100,
                 ),

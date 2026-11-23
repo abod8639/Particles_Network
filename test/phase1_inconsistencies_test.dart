@@ -56,7 +56,7 @@ void main() {
                 fill: true,
                 drawNetwork: true,
                 gridTuning: GridTuning(minCellFloor: floor),
-                performance: NetworkPerformance(
+                performance: PerformanceFeatures(
                   maxLinesPerFrame: budget,
                   maxConnectionsPerParticle: cap,
                   cappedDistanceFactor: factor,
@@ -188,9 +188,7 @@ void main() {
         lineWidth: 1.0,
         fill: true,
         drawNetwork: true,
-        performance: const NetworkPerformance(
-          lineRenderer: LineRenderer.stroke,
-        ),
+        lineRenderer: LineRenderer.stroke,
       );
 
       // Confirmed rejected: Touch lines intentionally default to LineRenderer.vertices
@@ -330,10 +328,10 @@ void main() {
         lineWidth: 1.0,
         fill: true,
         drawNetwork: true,
-        performance: const NetworkPerformance(isComplex: false),
+        performance: const PerformanceFeatures(complex: ComplexConfig(enabled: false)),
       );
 
-      painter.updatePerformance(const NetworkPerformance(isComplex: true));
+      painter.updatePerformance(const PerformanceFeatures(complex: ComplexConfig(enabled: true)));
       expect(painter.isComplex, isTrue);
       expect(painter.performance.isComplex, isTrue);
     });

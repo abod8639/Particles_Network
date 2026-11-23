@@ -95,7 +95,7 @@ void main() {
         'updateGravity updates gravityConfig and is exposed via gravity getter',
         () {
       final sim = ParticleSimulation(particleCount: 5);
-      expect(sim.gravity, equals(const ParticleGravity()));
+      expect(sim.gravity, equals(const GravityFeatures()));
 
       const newGravity = GravityConfig(
         type: GravityType.point,

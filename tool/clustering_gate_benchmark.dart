@@ -105,7 +105,7 @@ ScenarioBenchmarkResult runScenarioBenchmark({
 }) {
   final rng = math.Random(1337 + scenarioId * 100 + particleCount);
   final List<Particle> particles;
-  ParticleGravity gravity = const ParticleGravity();
+  GravityFeatures gravity = const GravityFeatures();
   final int? maxLines;
 
   switch (scenarioId) {
@@ -115,7 +115,7 @@ ScenarioBenchmarkResult runScenarioBenchmark({
       break;
     case 2:
       particles = _generateClusteredParticles(particleCount, size, rng);
-      gravity = ParticleGravity(
+      gravity = GravityFeatures(
         type: GravityType.point,
         strength: 5.0,
         center: Offset(size.width / 2, size.height / 2),

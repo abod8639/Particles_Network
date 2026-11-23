@@ -654,7 +654,7 @@ void main() {
         fill: true,
         drawNetwork: true,
         spatialGrid: customGrid,
-        performance: const NetworkPerformance(spatialCellMultiplier: 1.2),
+        performance: const PerformanceFeatures(spatialCellMultiplier: 1.2),
       );
 
       expect(identical(painter.spatialGrid, customGrid), isTrue);
@@ -688,8 +688,8 @@ void main() {
       expect(identical(state.simulation.spatialGrid, customGrid), isTrue);
     });
 
-    test('NetworkPerformance spatialCellMultiplier equality and copyWith', () {
-      const perf = NetworkPerformance(spatialCellMultiplier: 1.3);
+    test('PerformanceFeatures spatialCellMultiplier equality and copyWith', () {
+      const perf = PerformanceFeatures(spatialCellMultiplier: 1.3);
       expect(perf.spatialCellMultiplier, equals(1.3));
 
       final copy1 = perf.copyWith(spatialCellMultiplier: 1.5);

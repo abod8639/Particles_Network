@@ -69,6 +69,7 @@ void main() {
         touchColor: Colors.amber,
         linePaint: Paint(),
         touchFeatures: const TouchFeatures(
+          type: TouchType.pull,
           force: 50.0, // strong force that exceeds terminal velocity
           maxTouchSpeed: maxTouchSpeed,
           damping: 1.0,
@@ -137,6 +138,7 @@ void main() {
         touchColor: Colors.amber,
         linePaint: Paint(),
         touchFeatures: const TouchFeatures(
+          type: TouchType.pull,
           force: forceValue,
           damping: damping,
           maxTouchSpeed: 20.0,
@@ -270,25 +272,35 @@ void main() {
   group('TouchFeatures', () {
     test('default values are set correctly', () {
       const features = TouchFeatures();
+      expect(features.type, equals(TouchType.push));
       expect(features.enabled, isTrue);
       expect(features.speed, equals(0.42));
       expect(features.force, equals(0.42));
+      expect(features.maxSpeed, equals(5.5));
       expect(features.maxTouchSpeed, equals(5.5));
       expect(features.damping, equals(0.985));
+      expect(features.distance, isNull);
+      expect(features.lineDistance, isNull);
     });
 
     test('custom values are supported', () {
       const features = TouchFeatures(
+        type: TouchType.pull,
         enabled: false,
         speed: 0.02,
         force: 0.8,
-        maxTouchSpeed: 10.0,
+        maxSpeed: 10.0,
+        distance: 120.0,
         damping: 0.95,
       );
+      expect(features.type, equals(TouchType.pull));
       expect(features.enabled, isFalse);
       expect(features.speed, equals(0.02));
       expect(features.force, equals(0.8));
+      expect(features.maxSpeed, equals(10.0));
       expect(features.maxTouchSpeed, equals(10.0));
+      expect(features.distance, equals(120.0));
+      expect(features.lineDistance, equals(120.0));
       expect(features.damping, equals(0.95));
     });
 
@@ -367,31 +379,62 @@ void main() {
       expect(f1 == f3, isFalse);
     });
 
+    test('equality differentiates by type', () {
+      const f1 = TouchFeatures(type: TouchType.push);
+      const f2 = TouchFeatures(type: TouchType.push);
+      const f3 = TouchFeatures(type: TouchType.pull);
+
+      expect(f1, equals(f2));
+      expect(f1 == f3, isFalse);
+    });
+
     test('toString returns formatted string representation', () {
       const features = TouchFeatures(
+        type: TouchType.pull,
         speed: 0.05,
         force: 0.8,
-        maxTouchSpeed: 5.0,
+        maxSpeed: 5.0,
         damping: 0.95,
-        lineDistance: 100.0,
+        distance: 100.0,
         color: Color(0xFF123456),
       );
       final str = features.toString();
       expect(str, contains('TouchFeatures'));
+      expect(str, contains('type: TouchType.pull'));
       expect(str, contains('speed: 0.05'));
       expect(str, contains('force: 0.8'));
-      expect(str, contains('maxTouchSpeed: 5.0'));
+      expect(str, contains('maxSpeed: 5.0'));
       expect(str, contains('damping: 0.95'));
-      expect(str, contains('lineDistance: 100.0'));
+      expect(str, contains('distance: 100.0'));
       expect(str, contains('color: ${const Color(0xFF123456)}'));
     });
 
-    test('lineDistance defaults to null and can be configured', () {
+    test('distance defaults to null and can be configured (with legacy lineDistance alias)', () {
       const defaultFeatures = TouchFeatures();
+      expect(defaultFeatures.distance, isNull);
       expect(defaultFeatures.lineDistance, isNull);
 
-      const customFeatures = TouchFeatures(lineDistance: 150.0);
+      const customFeatures = TouchFeatures(distance: 150.0);
+      expect(customFeatures.distance, equals(150.0));
       expect(customFeatures.lineDistance, equals(150.0));
+
+      const legacyFeatures = TouchFeatures(lineDistance: 175.0);
+      expect(legacyFeatures.distance, equals(175.0));
+      expect(legacyFeatures.lineDistance, equals(175.0));
+    });
+
+    test('maxSpeed defaults to 5.5 and can be configured (with legacy maxTouchSpeed alias)', () {
+      const defaultFeatures = TouchFeatures();
+      expect(defaultFeatures.maxSpeed, equals(5.5));
+      expect(defaultFeatures.maxTouchSpeed, equals(5.5));
+
+      const customFeatures = TouchFeatures(maxSpeed: 8.5);
+      expect(customFeatures.maxSpeed, equals(8.5));
+      expect(customFeatures.maxTouchSpeed, equals(8.5));
+
+      const legacyFeatures = TouchFeatures(maxTouchSpeed: 9.5);
+      expect(legacyFeatures.maxSpeed, equals(9.5));
+      expect(legacyFeatures.maxTouchSpeed, equals(9.5));
     });
 
     test('TouchFeatures copyWith and equality work correctly', () {
@@ -419,6 +462,82 @@ void main() {
       expect(copied.force, equals(0.2));
       expect(f1.toString(), contains('speed: 0.5'));
       expect(f1.toString(), contains('force: 0.6'));
+
+      final copiedType = f1.copyWith(type: TouchType.pull);
+      expect(copiedType.type, equals(TouchType.pull));
+      expect(f1.type, equals(TouchType.push));
+    });
+
+    test('TouchFeatures hover defaults to false and can be set to true', () {
+      const defaultFeatures = TouchFeatures();
+      expect(defaultFeatures.hover, isFalse);
+
+      const hoverFeatures = TouchFeatures(hover: true);
+      expect(hoverFeatures.hover, isTrue);
+
+      final copied = defaultFeatures.copyWith(hover: true);
+      expect(copied.hover, isTrue);
+
+      expect(defaultFeatures == hoverFeatures, isFalse);
+      expect(hoverFeatures.toString(), contains('hover: true'));
+    });
+
+    test('TouchType.push repels particles while TouchType.pull attracts them',
+        () {
+      final pPush = Particle(
+        position: const Offset(90, 100),
+        velocity: Offset.zero,
+        color: Colors.white,
+        size: 2,
+      );
+      final handlerPush = TouchInteractionHandler(
+        particles: [pPush],
+        touchPoint: const Offset(100, 100),
+        lineDistance: 50.0,
+        touchColor: Colors.amber,
+        linePaint: Paint(),
+        touchFeatures: const TouchFeatures(
+          type: TouchType.push,
+          force: 1.0,
+          speed: 0.5,
+          maxSpeed: 10.0,
+        ),
+      );
+
+      final tracker1 = AccelerationTracker();
+      handlerPush.applyTouchPhysics([0], tracker1);
+
+      // Particle at (90, 100) with touch at (100, 100).
+      // Push should repel to the left (negative dx velocity).
+      expect(pPush.wasAccelerated, isTrue);
+      expect(pPush.velocity.dx, lessThan(0.0));
+
+      final pPull = Particle(
+        position: const Offset(90, 100),
+        velocity: Offset.zero,
+        color: Colors.white,
+        size: 2,
+      );
+      final handlerPull = TouchInteractionHandler(
+        particles: [pPull],
+        touchPoint: const Offset(100, 100),
+        lineDistance: 50.0,
+        touchColor: Colors.amber,
+        linePaint: Paint(),
+        touchFeatures: const TouchFeatures(
+          type: TouchType.pull,
+          force: 1.0,
+          speed: 0.5,
+          maxSpeed: 10.0,
+        ),
+      );
+
+      final tracker2 = AccelerationTracker();
+      handlerPull.applyTouchPhysics([0], tracker2);
+
+      // Pull should attract to the right (positive dx velocity toward 100).
+      expect(pPull.wasAccelerated, isTrue);
+      expect(pPull.velocity.dx, greaterThan(0.0));
     });
   });
 
@@ -917,6 +1036,7 @@ void main() {
           linePaint: Paint(),
           spatialGrid: grid,
           touchFeatures: const TouchFeatures(
+            type: TouchType.pull,
             force: 50.0,
             maxTouchSpeed: maxTouchSpeed,
             damping: 1.0,
