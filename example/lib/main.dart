@@ -111,6 +111,20 @@ class _ParticleExamplesScreenState extends State<ParticleExamplesScreen> {
   }
 }
 
+
+double? getResponsiveLineDistance([BuildContext? context]) {
+  final effectiveContext = context ;
+  if (effectiveContext == null) return null;
+  final width = MediaQuery.sizeOf(effectiveContext).width;
+  if (width < 600) {
+    return 60.0;
+  } else if (width < 1024.0) {
+    return 80.0;
+  } else {
+    return 100.0;
+  }
+}
+
 /// 1. Cosmic Web: Delicate starlight web drifting slowly in deep space.
 class CosmicWebExample extends StatelessWidget {
   const CosmicWebExample({super.key});
@@ -119,19 +133,19 @@ class CosmicWebExample extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: const Color(0xFF070B14),
-      child: const ParticleNetwork(
+      child: ParticleNetwork(
         network: NetworkFeatures(
           width: 0.8,
-          distance: 80.0,
-          color: Color(0xFF38BDF8),
+          distance: getResponsiveLineDistance(context),
+          color: const Color(0xFF38BDF8),
         ),
-        particles: ParticleFeatures(
+        particles: const ParticleFeatures(
           count: 220,
           maxSpeed: 2.2,
           maxSize: 2.5,
           color: Colors.transparent,
         ),
-        touch: TouchFeatures(
+        touch: const TouchFeatures(
           color: Color(0xFFFBBF24),
           force: 0.35,
           speed: 0.30,
@@ -192,6 +206,7 @@ class BlackHoleExample extends StatelessWidget {
     return Container(
       color: const Color(0xFF030107),
       child: const ParticleNetwork(
+        
         particles: ParticleFeatures(
           fill: false,
           count: 400,
@@ -209,7 +224,7 @@ class BlackHoleExample extends StatelessWidget {
         ),
         touch: TouchFeatures(
           color: Color(0xFF8B5CF6),
-          force: 1.20,
+          force: 1.0,
           speed: 0.65,
           damping: 0.965,
           maxSpeed: 9.0,
@@ -245,10 +260,8 @@ class SupernovaExample extends StatelessWidget {
           color: Color(0xFFF97316),
         ),
         gravity: GravityFeatures(
-          strength: -1.20,
-          center: Offset(200, 300),
-          direction: Offset(0, 1),
-          type: GravityType.global
+          strength:  -0.9,
+          type: GravityType.point
         ),
         touch: TouchFeatures(
           color: Color(0xFFFDE047),
@@ -276,8 +289,8 @@ class NeuralSynapseExample extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: const Color(0xFF080718),
-      child: const ParticleNetwork(
-        particles: ParticleFeatures(
+      child: ParticleNetwork(
+        particles: const ParticleFeatures(
           count: 300,
           maxSpeed: 3.5,
           maxSize: 2.4,
@@ -285,18 +298,17 @@ class NeuralSynapseExample extends StatelessWidget {
         ),
         network: NetworkFeatures(
           width: 1.1,
-          distance: 85.0,
-          color: Color(0xFF38BDF8),
+          distance: getResponsiveLineDistance(context),
+          color: const Color(0xFF38BDF8),
         ),
-        touch: TouchFeatures(
+        touch: const TouchFeatures(
           color: Color(0xFF34D399),
-          force: 0.75,
           speed: 0.40,
           damping: 0.980,
           maxSpeed: 6.0,
           distance: 190.0,
         ),
-        performance: PerformanceFeatures(
+        performance: const PerformanceFeatures(
           frameRateIndependent: true,
         ),
       ),
@@ -326,10 +338,10 @@ class QuantumFoamExample extends StatelessWidget {
         ),
         touch: TouchFeatures(
           color: Color(0xFFE879F9),
-          force: 0.60,
           speed: 0.45,
           maxSpeed: 7.0,
           distance: 150.0,
+          
         ),
         performance: PerformanceFeatures(
           frameRateIndependent: true,

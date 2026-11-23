@@ -25,6 +25,17 @@ class TouchInteractionHandler {
   double get effectiveLineDistance =>
       touchFeatures.distance ?? lineDistance;
 
+  /// Whether touch lines connecting the pointer and nearby particles are rendered.
+  ///
+  /// When `true`, lines are drawn between the touch pointer and nearby particles.
+  /// When `false`, touch line rendering is bypassed while touch physics remain active.
+  ///
+  /// Defaults to `true` (controlled by [touchFeatures.show]).
+  bool get show => touchFeatures.show;
+  set show(bool value) {
+    touchFeatures = touchFeatures.copyWith(show: value);
+  }
+
   // Color to use for touch interactions
   Color get touchColor => _touchColor;
   Color _touchColor;
@@ -44,7 +55,7 @@ class TouchInteractionHandler {
   SortedSpatialGrid? spatialGrid;
 
   /// Line rendering backend (stroke or vertices)
-  LineRenderer lineRenderer;
+  LineRenderer renderer;
 
   /// Whether to batch touch lines into a single draw call
   bool fastLineRendering;
@@ -68,10 +79,10 @@ class TouchInteractionHandler {
     required this.linePaint,
     this.touchFeatures = const TouchFeatures(),
     this.spatialGrid,
-    LineRenderer? lineRenderer,
+    LineRenderer? renderer,
     bool? fastLineRendering,
   })  : _touchColor = touchColor,
-        lineRenderer = lineRenderer ?? LineRenderer.vertices,
+        renderer = renderer ?? LineRenderer.vertices,
         fastLineRendering = fastLineRendering ?? true;
 
   // Test variable (kept for API compatibility)
@@ -244,13 +255,20 @@ class TouchInteractionHandler {
   // [grid] - Optional spatial grid for O(K) neighborhood queries
   // [fastLineRendering] - Optional override for single draw call batching
   // [lineRenderer] - Optional override for line rasterization backend
+  // [show] - Optional override for displaying touch connection lines
   void drawTouchLines(
     Canvas canvas,
     List<int> visibleParticles, {
     SortedSpatialGrid? grid,
     bool? fastLineRendering,
-    LineRenderer? lineRenderer,
+    LineRenderer? renderer,
+    bool? show,
   }) {
+    final bool effectiveShow = show ?? this.show;
+    if (!effectiveShow) {
+      _lastLineCount = 0;
+      return;
+    }
     final Offset? touch = touchPoint;
     if (touch == null || !touch.isFinite) {
       _lastLineCount = 0;
@@ -365,7 +383,7 @@ class TouchInteractionHandler {
     }
 
     // Single unified draw call
-    final LineRenderer effectiveRenderer = lineRenderer ?? this.lineRenderer;
+    final LineRenderer effectiveRenderer = renderer ?? this.renderer;
 
     if (effectiveRenderer == LineRenderer.vertices) {
       final double halfWidth = math.max(0.5, linePaint.strokeWidth * 0.5);

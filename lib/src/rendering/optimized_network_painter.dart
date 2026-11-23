@@ -35,6 +35,14 @@ class OptimizedNetworkPainter extends CustomPainter {
   bool get touchActivation => touchFeatures.enabled;
   set touchActivation(bool v) =>
       updateTouchFeatures(touchFeatures.copyWith(enabled: v));
+
+  /// Whether touch interaction lines are displayed.
+  bool get show => touchFeatures.show;
+  set show(bool v) {
+    if (v != touchFeatures.show) {
+      updateTouchFeatures(touchFeatures.copyWith(show: v));
+    }
+  }
   final int particleCount;
   double lineWidth;
 
@@ -117,7 +125,7 @@ class OptimizedNetworkPainter extends CustomPainter {
   LineRenderer get lineRenderer => _lineRenderer;
   set lineRenderer(LineRenderer v) {
     _lineRenderer = v;
-    _touchHandler.lineRenderer = v;
+    _touchHandler.renderer = v;
   }
 
   double devicePixelRatio;
@@ -234,9 +242,9 @@ class OptimizedNetworkPainter extends CustomPainter {
       lineDistance: lineDistance,
       touchColor: this.touchColor,
       linePaint: linePaint,
-      touchFeatures: touchFeatures,
+      touchFeatures: this.touchFeatures,
       spatialGrid: _sortedGrid,
-      lineRenderer: LineRenderer.vertices,
+      renderer: LineRenderer.vertices,
       fastLineRendering: true,
     );
   }
@@ -313,7 +321,9 @@ class OptimizedNetworkPainter extends CustomPainter {
           baseDistance: lineDistance);
     } else {
       _lastFrameLineCount = 0;
-      if (_isTouchActive && visible.isNotEmpty) {
+      if (_isTouchActive &&
+          visible.isNotEmpty &&
+          (show || simulateTouchInPaint)) {
         final double td = _touchHandler.effectiveLineDistance;
         _sortedGrid.build(
             particles,
@@ -337,7 +347,7 @@ class OptimizedNetworkPainter extends CustomPainter {
   }
 
   void _paintTouch(Canvas canvas, List<int> visible) {
-    final bool useFast = _touchHandler.lineRenderer == LineRenderer.vertices ||
+    final bool useFast = _touchHandler.renderer == LineRenderer.vertices ||
         lineRenderer == LineRenderer.vertices ||
         visible.length >= kBatchThreshold;
     _touchHandler.drawTouchLines(canvas, visible,
@@ -468,7 +478,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     }
     if (lineRenderer != null) {
       this.lineRenderer = lineRenderer;
-      _touchHandler.lineRenderer = lineRenderer;
+      _touchHandler.renderer = lineRenderer;
     }
     updatePerformance(LegacyPainterAdapter.foldPerformanceOptions(
       current: performance,

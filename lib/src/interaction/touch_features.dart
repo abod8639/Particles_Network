@@ -50,6 +50,16 @@ class TouchFeatures {
   /// Defaults to [TouchType.pull].
   final TouchType type;
 
+  /// Whether lines connecting the pointer to nearby particles are displayed.
+  ///
+  /// When `true`, connecting lines are rendered between the touch or hover pointer
+  /// and nearby particles within [distance].
+  /// When `false`, touch interaction physics still influence particles, but
+  /// connecting lines are not rendered.
+  ///
+  /// Defaults to `true`.
+  final bool show;
+
   /// Whether touch interactions and mouse hover effects are enabled.
   ///
   /// When `true`, touching, dragging, or hovering draws nearby particles toward
@@ -193,6 +203,7 @@ class TouchFeatures {
   ///
   /// Parameters:
   /// * [type]: Physics interaction mode ([TouchType.push] or [TouchType.pull]). Defaults to [TouchType.pull].
+  /// * [show]: Whether touch interaction lines are displayed. Defaults to `true`.
   /// * [enabled]: Whether touch interaction is active. Defaults to `true`.
   /// * [speed]: Recovery velocity deceleration rate after release. Defaults to `0.42`.
   /// * [force]: Attraction pull intensity. Defaults to `0.42`.
@@ -206,6 +217,14 @@ class TouchFeatures {
     ///
     /// Defaults to [TouchType.pull].
     this.type = TouchType.pull,
+
+    /// Whether touch interaction lines are displayed.
+    ///
+    /// When `true`, lines connect the pointer and nearby particles within [distance].
+    /// When `false`, touch interaction physics still influence particles, but lines are hidden.
+    ///
+    /// Defaults to `true`.
+    this.show = true,
 
     /// Whether touch interactions and proximity effects are enabled.
     ///
@@ -329,10 +348,11 @@ class TouchFeatures {
     /// Physics interaction mode ([TouchType.push] repels or [TouchType.pull] attracts).
     TouchType? type,
 
+    /// Whether touch interaction lines are displayed.
+    bool? show,
+
     /// Whether touch interactions and proximity effects are enabled.
     bool? enabled,
-
-    /// Compatibility alias for [enabled].
     @Deprecated(
       'touchActivation was renamed to enabled inside TouchFeatures. '
       'Use TouchFeatures.copyWith(enabled: ...) instead. '
@@ -342,8 +362,6 @@ class TouchFeatures {
 
     /// The recovery and settling speed after touch release.
     double? speed,
-
-    /// Compatibility alias for [speed] (decay rate).
     @Deprecated(
       'decayRate was renamed to speed inside TouchFeatures. '
       'Use TouchFeatures.copyWith(speed: ...) instead. '
@@ -353,8 +371,6 @@ class TouchFeatures {
 
     /// Attraction pull force towards the touch point.
     double? force,
-
-    /// Compatibility alias for [force] (pull force).
     @Deprecated(
       'pullForce was renamed to force inside TouchFeatures. '
       'Use TouchFeatures.copyWith(force: ...) instead. '
@@ -364,8 +380,6 @@ class TouchFeatures {
 
     /// Maximum velocity cap for particles during touch interaction.
     double? maxSpeed,
-
-    /// Compatibility alias for [maxSpeed].
     @Deprecated(
       'maxTouchSpeed was renamed to maxSpeed inside TouchFeatures. '
       'Use TouchFeatures.copyWith(maxSpeed: ...) instead. '
@@ -378,8 +392,6 @@ class TouchFeatures {
 
     /// Maximum connection distance for touch interactions.
     double? distance,
-
-    /// Compatibility alias for [distance].
     @Deprecated(
       'lineDistance was renamed to distance inside TouchFeatures. '
       'Use TouchFeatures.copyWith(distance: ...) instead. '
@@ -392,8 +404,6 @@ class TouchFeatures {
 
     /// Whether mouse hover triggers interactive proximity effects on web and desktop.
     bool? hover,
-
-    /// Compatibility alias for [hover].
     @Deprecated(
       'hoverEffect was renamed to hover inside TouchFeatures. '
       'Use TouchFeatures.copyWith(hover: ...) instead. '
@@ -403,6 +413,7 @@ class TouchFeatures {
   }) {
     return TouchFeatures(
       type: type ?? this.type,
+      show: show ?? this.show,
       enabled: enabled ?? touchActivation ?? this.enabled,
       speed: speed ?? decayRate ?? this.speed,
       force: force ?? pullForce ?? this.force,
@@ -420,6 +431,7 @@ class TouchFeatures {
       other is TouchFeatures &&
           runtimeType == other.runtimeType &&
           type == other.type &&
+          show == other.show &&
           enabled == other.enabled &&
           speed == other.speed &&
           force == other.force &&
@@ -432,6 +444,7 @@ class TouchFeatures {
   @override
   int get hashCode => Object.hash(
         type,
+        show,
         enabled,
         speed,
         force,
@@ -444,7 +457,7 @@ class TouchFeatures {
 
   @override
   String toString() =>
-      'TouchFeatures(type: $type, enabled: $enabled, speed: $speed, force: $force, '
+      'TouchFeatures(type: $type, show: $show, enabled: $enabled, speed: $speed, force: $force, '
       'maxSpeed: $maxSpeed, damping: $damping, '
       'distance: $distance, color: $color, hover: $hover)';
 }
