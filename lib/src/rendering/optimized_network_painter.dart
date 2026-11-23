@@ -47,7 +47,7 @@ class OptimizedNetworkPainter extends CustomPainter {
   bool drawNetwork;
 
   TouchFeatures touchFeatures;
-  NetworkPerformance performance;
+  PerformanceFeatures performance;
 
   int? _runtimeMaxLinesOverride;
   int? _runtimeMaxConnectionsOverride;
@@ -113,9 +113,12 @@ class OptimizedNetworkPainter extends CustomPainter {
         maxLinesPerFrame: v, clearMaxLinesPerFrame: v == null));
   }
 
-  LineRenderer get lineRenderer => performance.lineRenderer;
-  set lineRenderer(LineRenderer v) =>
-      updatePerformance(performance.copyWith(lineRenderer: v));
+  LineRenderer _lineRenderer = LineRenderer.vertices;
+  LineRenderer get lineRenderer => _lineRenderer;
+  set lineRenderer(LineRenderer v) {
+    _lineRenderer = v;
+    _touchHandler.lineRenderer = v;
+  }
 
   double devicePixelRatio;
   bool simulateTouchInPaint;
@@ -175,7 +178,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     required this.fill,
     required this.drawNetwork,
     TouchFeatures touchFeatures = const TouchFeatures(),
-    NetworkPerformance performance = const NetworkPerformance(),
+    PerformanceFeatures performance = const PerformanceFeatures(),
     int? maxConnectionsPerParticle,
     int? maxLinesPerFrame,
     this.simulateTouchInPaint = true,
@@ -200,6 +203,7 @@ class OptimizedNetworkPainter extends CustomPainter {
           ),
           color: touchColor ?? touchFeatures.color,
         ),
+        _lineRenderer = lineRenderer ?? LineRenderer.vertices,
         performance = LegacyPainterAdapter.resolvePerformance(
           basePerformance: performance,
           isComplex: isComplex,
@@ -208,7 +212,6 @@ class OptimizedNetworkPainter extends CustomPainter {
           complexDensityFactor: complexDensityFactor,
           maxConnectionsPerParticle: maxConnectionsPerParticle,
           maxLinesPerFrame: maxLinesPerFrame,
-          lineRenderer: lineRenderer,
           antiAlias: antiAlias,
         ) {
     _palette = LineStylePalette(
@@ -430,7 +433,7 @@ class OptimizedNetworkPainter extends CustomPainter {
     _palette.updateAntiAlias(value);
   }
 
-  void updatePerformance(NetworkPerformance newPerformance) {
+  void updatePerformance(PerformanceFeatures newPerformance) {
     resetRuntimeOverrides();
     if (newPerformance == performance) return;
     if (newPerformance.maxLinesPerFrame != performance.maxLinesPerFrame) {
@@ -439,7 +442,6 @@ class OptimizedNetworkPainter extends CustomPainter {
     if (newPerformance.antiAlias != performance.antiAlias) {
       _updateAntiAlias(newPerformance.antiAlias);
     }
-    _touchHandler.lineRenderer = newPerformance.lineRenderer;
     performance = newPerformance;
   }
 
@@ -464,9 +466,12 @@ class OptimizedNetworkPainter extends CustomPainter {
         clearMaxConnectionsPerParticle) {
       resetRuntimeOverrides();
     }
+    if (lineRenderer != null) {
+      this.lineRenderer = lineRenderer;
+      _touchHandler.lineRenderer = lineRenderer;
+    }
     updatePerformance(LegacyPainterAdapter.foldPerformanceOptions(
       current: performance,
-      lineRenderer: lineRenderer,
       isComplex: isComplex,
       complexReductionRatio: complexReductionRatio,
       clearcomplexReductionRatio: clearcomplexReductionRatio,

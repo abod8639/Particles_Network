@@ -5,7 +5,9 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
+import 'package:particles_network/src/core/network_features.dart';
 import 'package:particles_network/src/core/particle.dart';
+import 'package:particles_network/src/core/particle_features.dart';
 import 'package:particles_network/src/factory/particle_factory.dart';
 import 'package:particles_network/src/interaction/touch_features.dart';
 import 'package:particles_network/src/legacy/legacy_deprecation_logger.dart';
@@ -26,91 +28,272 @@ import 'package:particles_network/src/spatial/sorted_spatial_grid.dart';
 /// * **Visual Customization**: Tailor [particleCount], [maxSpeed], [maxSize], [lineWidth],
 ///   [lineDistance], [particleColor], [lineColor], and [fill] mode.
 /// * **Gravitational Fields**: Add directional gravity (falling rain, rising bubbles) or radial
-///   vortexes (black hole, repulsion shield) via [gravity] with [ParticleGravity].
+///   vortexes (black hole, repulsion shield) via [gravity] with [GravityFeatures].
 /// * **Interactive Touch & Hover**: Attract nearby particles with fluid settling and glowing lines
 ///   via [touch] with [TouchFeatures].
 /// * **High-Performance Architecture**: Scalable to 1,000+ particles with $O(N)$ connection clamping,
-///   GPU triangle-batch rendering, dynamic line budgeting, and spatial grid acceleration via [performance] with [NetworkPerformance].
+///   GPU triangle-batch rendering, dynamic line budgeting, and spatial grid acceleration via [performance] with [PerformanceFeatures].
 ///
 /// Example:
 /// ```dart
 /// ParticleNetwork(
-///   particleCount: 80,
-///   maxSpeed: 0.8,
-///   maxSize: 2.0,
+///   particles: const ParticleFeatures(
+///     count: 80,
+///     maxSpeed: 0.8,
+///     maxSize: 2.0,
+///     color: Colors.white,
+///   ),
 ///   lineWidth: 0.8,
 ///   lineDistance: 120.0,
-///   particleColor: Colors.white,
 ///   lineColor: const Color(0xFF00E5FF),
 ///   touch: const TouchFeatures(
 ///     enabled: true,
 ///     color: Colors.amber,
 ///   ),
-///   gravity: const ParticleGravity.global(
+///   gravity: const GravityFeatures.global(
 ///     strength: 0.15,
 ///     direction: Offset(0, 1),
 ///   ),
-///   performance: const NetworkPerformance(
+///   performance: const PerformanceFeatures(
 ///     frameRateIndependent: true,
+///   ),
+///   network: const NetworkFeatures(
 ///     lineRenderer: LineRenderer.vertices,
 ///   ),
 /// )
 /// ```
 class ParticleNetwork extends StatefulWidget {
+  /// Advanced particle visual appearance, count, velocity limits, and styling.
+  ///
+  /// Governs particle density ([ParticleFeatures.count]), velocity limits ([ParticleFeatures.maxSpeed]),
+  /// radius bounds ([ParticleFeatures.maxSize]), base color ([ParticleFeatures.color]), and
+  /// fill/stroke mode ([ParticleFeatures.fill]). See [ParticleFeatures] for configuration options and presets.
+  ///
+  /// Defaults to `const ParticleFeatures()`.
+  final ParticleFeatures particles;
+
+  /// Compatibility alias for [particles].
+  @Deprecated(
+    'Use particles instead. This property will be removed in particles_network 2.0.0.',
+  )
+  ParticleFeatures get particleFeatures => effectiveParticleFeatures;
+
+  /// Explicitly provided legacy particleFeatures alias, if any.
+  final ParticleFeatures? _particleFeatures;
+
+  /// Explicitly provided legacy particle count, if any.
+  final int? _particleCount;
+
+  /// Explicitly provided legacy max speed, if any.
+  final double? _maxSpeed;
+
+  /// Explicitly provided legacy max size, if any.
+  final double? _maxSize;
+
+  /// Explicitly provided legacy particle color, if any.
+  final Color? _particleColor;
+
+  /// Explicitly provided legacy fill mode, if any.
+  final bool? _fill;
+
+  /// Effective particle configuration merging modern and legacy parameters.
+  ParticleFeatures get effectiveParticleFeatures {
+    final base = _particleFeatures ?? particles;
+    if (_particleCount == null &&
+        _maxSpeed == null &&
+        _maxSize == null &&
+        _particleColor == null &&
+        _fill == null) {
+      return base;
+    }
+    return base.copyWith(
+      count: _particleCount,
+      maxSpeed: _maxSpeed,
+      maxSize: _maxSize,
+      color: _particleColor,
+      fill: _fill,
+    );
+  }
+
+  /// Checks whether deprecated individual particle parameters were explicitly configured.
+  bool get usedLegacyParticles =>
+      _particleCount != null ||
+      _maxSpeed != null ||
+      _maxSize != null ||
+      _particleColor != null ||
+      _fill != null;
+
+  /// Checks whether deprecated [particleFeatures] parameter was explicitly configured.
+  bool get usedLegacyParticleFeatures => _particleFeatures != null;
+
+  /// Checks whether deprecated [particleCount] parameter was explicitly configured.
+  bool get usedLegacyParticleCount => _particleCount != null;
+
+  /// Checks whether deprecated [maxSpeed] parameter was explicitly configured.
+  bool get usedLegacyMaxSpeed => _maxSpeed != null;
+
+  /// Checks whether deprecated [maxSize] parameter was explicitly configured.
+  bool get usedLegacyMaxSize => _maxSize != null;
+
+  /// Checks whether deprecated [particleColor] parameter was explicitly configured.
+  bool get usedLegacyParticleColor => _particleColor != null;
+
+  /// Checks whether deprecated [fill] parameter was explicitly configured.
+  bool get usedLegacyFill => _fill != null;
+
   /// Total number of particles simulated and rendered on the canvas.
   ///
-  /// Controls the visual density of the particle cloud. Higher counts (200+) produce
-  /// dense cosmic or plexus effects, while lower counts (30-80) produce clean, subtle
-  /// interactive backgrounds.
-  ///
-  /// Defaults to `60`.
-  final int particleCount;
+  /// Deprecated: Configure particle count via [particles] using [ParticleFeatures.count] instead.
+  /// This property will be removed in particles_network 2.0.0.
+  @Deprecated(
+    'Use particles: ParticleFeatures(count: ...) instead. '
+    'This property will be removed in particles_network 2.0.0.',
+  )
+  int get particleCount => effectiveParticleFeatures.count;
 
   /// Maximum base velocity of particles in pixels per frame.
   ///
-  /// Each particle is initialized with a randomized velocity between `0.0` and [maxSpeed].
-  /// When [NetworkPerformance.frameRateIndependent] is enabled, this speed is interpreted
-  /// as pixels per 1/60 s reference frame.
-  ///
-  /// Defaults to `0.5`.
-  final double maxSpeed;
+  /// Deprecated: Configure particle speed via [particles] using [ParticleFeatures.maxSpeed] instead.
+  /// This property will be removed in particles_network 2.0.0.
+  @Deprecated(
+    'Use particles: ParticleFeatures(maxSpeed: ...) instead. '
+    'This property will be removed in particles_network 2.0.0.',
+  )
+  double get maxSpeed => effectiveParticleFeatures.maxSpeed;
 
   /// Maximum radius of particles in logical pixels.
   ///
-  /// Each particle's radius is randomized between `0.5` and [maxSize] upon initialization.
-  ///
-  /// Defaults to `1.5`.
-  final double maxSize;
-
-  /// Stroke width of connection lines between particles in logical pixels.
-  ///
-  /// Lines thinner than 1 physical pixel are automatically rendered with proportionally
-  /// reduced opacity when using [LineRenderer.vertices] to eliminate visual aliasing dropouts.
-  ///
-  /// Defaults to `0.5`.
-  final double lineWidth;
-
-  /// Maximum connection distance between particles in logical pixels.
-  ///
-  /// Two particles connect with a line if the distance between them is less than [lineDistance].
-  /// Lines fade out smoothly with distance, reaching full transparency at [lineDistance].
-  /// Also serves as the default reach for touch interactions when [TouchFeatures.lineDistance] is `null`.
-  ///
-  /// Defaults to `100.0`.
-  final double lineDistance;
+  /// Deprecated: Configure particle size via [particles] using [ParticleFeatures.maxSize] instead.
+  /// This property will be removed in particles_network 2.0.0.
+  @Deprecated(
+    'Use particles: ParticleFeatures(maxSize: ...) instead. '
+    'This property will be removed in particles_network 2.0.0.',
+  )
+  double get maxSize => effectiveParticleFeatures.maxSize;
 
   /// Base solid color used to render all particles on the canvas.
   ///
-  /// Defaults to `const Color(0xFFFFFFFF)` (white).
-  final Color particleColor;
+  /// Deprecated: Configure particle color via [particles] using [ParticleFeatures.color] instead.
+  /// This property will be removed in particles_network 2.0.0.
+  @Deprecated(
+    'Use particles: ParticleFeatures(color: ...) instead. '
+    'This property will be removed in particles_network 2.0.0.',
+  )
+  Color get particleColor => effectiveParticleFeatures.color;
 
-  /// Base color used to render connecting lines between particles.
+  /// Whether particles are rendered as filled solid circles or hollow stroked outlines.
   ///
-  /// Line opacity scales dynamically with particle proximity, fading from full opacity
-  /// when particles touch to completely transparent at [lineDistance].
+  /// Deprecated: Configure fill mode via [particles] using [ParticleFeatures.fill] instead.
+  /// This property will be removed in particles_network 2.0.0.
+  @Deprecated(
+    'Use particles: ParticleFeatures(fill: ...) instead. '
+    'This property will be removed in particles_network 2.0.0.',
+  )
+  bool get fill => effectiveParticleFeatures.fill;
+
+  /// Advanced connection network visual appearance, connection limits, and styling.
   ///
-  /// Defaults to `const Color.fromARGB(255, 100, 255, 180)` (cyan-green).
-  final Color lineColor;
+  /// Governs whether lines are drawn ([NetworkFeatures.drawNetwork]), line reach distance ([NetworkFeatures.lineDistance]),
+  /// line width ([NetworkFeatures.lineWidth]), line color ([NetworkFeatures.lineColor]), and GPU rendering
+  /// backend ([NetworkFeatures.lineRenderer]). See [NetworkFeatures] for configuration options.
+  ///
+  /// Defaults to `const NetworkFeatures()`.
+  final NetworkFeatures network;
+
+  /// Compatibility alias for [network].
+  @Deprecated(
+    'Use network instead. This property will be removed in particles_network 2.0.0.',
+  )
+  NetworkFeatures get networkFeatures => effectiveNetworkFeatures;
+
+  /// Explicitly provided legacy networkFeatures alias, if any.
+  final NetworkFeatures? _networkFeatures;
+
+  /// Explicitly provided legacy lineWidth, if any.
+  final double? _lineWidth;
+
+  /// Explicitly provided legacy lineDistance, if any.
+  final double? _lineDistance;
+
+  /// Explicitly provided legacy lineColor, if any.
+  final Color? _lineColor;
+
+  /// Explicitly provided legacy drawNetwork, if any.
+  final bool? _drawNetwork;
+
+  /// Effective network configuration merging modern and legacy parameters.
+  NetworkFeatures get effectiveNetworkFeatures {
+    final base = _networkFeatures ?? network;
+    final resolvedLineWidth = _lineWidth;
+    final resolvedDrawNetwork = _drawNetwork;
+
+    if (resolvedLineWidth == null &&
+        _lineDistance == null &&
+        _lineColor == null &&
+        resolvedDrawNetwork == null) {
+      return base;
+    }
+    return base.copyWith(
+      width: resolvedLineWidth,
+      distance: _lineDistance,
+      color: _lineColor,
+      enabled: resolvedDrawNetwork,
+    );
+  }
+
+  /// Stroke width of connection lines between particles in logical pixels (legacy accessor).
+  @Deprecated(
+    'lineWidth has been moved into NetworkFeatures. '
+    'Use network.width or effectiveNetworkFeatures.width instead. '
+    'This property will be removed in particles_network 2.0.0.',
+  )
+  double get lineWidth => effectiveNetworkFeatures.width;
+
+  /// Maximum connection distance between particles in logical pixels (legacy accessor).
+  @Deprecated(
+    'lineDistance has been moved into NetworkFeatures. '
+    'Use network.distance or effectiveNetworkFeatures.distance instead. '
+    'This property will be removed in particles_network 2.0.0.',
+  )
+  double get lineDistance => effectiveNetworkFeatures.distance;
+
+  /// Base color used to render connecting lines between particles (legacy accessor).
+  @Deprecated(
+    'lineColor has been moved into NetworkFeatures. '
+    'Use network.color or effectiveNetworkFeatures.color instead. '
+    'This property will be removed in particles_network 2.0.0.',
+  )
+  Color get lineColor => effectiveNetworkFeatures.color;
+
+  /// Whether to draw connection lines between neighboring particles (legacy accessor).
+  @Deprecated(
+    'drawNetwork has been moved into NetworkFeatures. '
+    'Use network.enabled or effectiveNetworkFeatures.enabled instead. '
+    'This property will be removed in particles_network 2.0.0.',
+  )
+  bool get drawNetwork => effectiveNetworkFeatures.enabled;
+
+  /// Effective connection line width.
+  double get effectiveLineWidth => effectiveNetworkFeatures.width;
+
+  /// Effective connection line distance.
+  double get effectiveLineDistance => effectiveNetworkFeatures.distance;
+
+  /// Effective connection line color.
+  Color get effectiveLineColor => effectiveNetworkFeatures.color;
+
+  /// Effective flag used for drawing connection lines.
+  bool get effectiveDrawNetwork => effectiveNetworkFeatures.enabled;
+
+  /// Checks whether deprecated individual network parameters were explicitly configured.
+  bool get usedLegacyNetworkParams =>
+      _lineWidth != null ||
+      _lineDistance != null ||
+      _lineColor != null ||
+      _drawNetwork != null;
+
+  /// Checks whether deprecated [networkFeatures] parameter was explicitly configured.
+  bool get usedLegacyNetworkFeatures => _networkFeatures != null;
 
   /// Explicitly provided legacy isComplex flag, if any.
   final bool? _isComplex;
@@ -118,9 +301,9 @@ class ParticleNetwork extends StatefulWidget {
   /// Whether the painting logic is complex (default: false).
   ///
   /// Deprecated: Configure complex rendering mode via [performance]
-  /// using [NetworkPerformance.isComplex] instead. This parameter will be removed in particles_network 2.0.0.
+  /// using [PerformanceFeatures.isComplex] instead. This parameter will be removed in particles_network 2.0.0.
   @Deprecated(
-    'Use performance (NetworkPerformance(isComplex: ...)) instead. This parameter will be removed in particles_network 2.0.0.',
+    'Use performance (PerformanceFeatures(isComplex: ...)) instead. This parameter will be removed in particles_network 2.0.0.',
   )
   bool get isComplex => _isComplex ?? performance.isComplex;
 
@@ -139,12 +322,13 @@ class ParticleNetwork extends StatefulWidget {
   /// Effective touch configuration merging legacy and modern parameters.
   TouchFeatures get effectiveTouchFeatures {
     final baseTouch = touch;
-    if (_touchColor == null && _touchActivation == null) {
+    if (_touchColor == null && _touchActivation == null && _hoverEffect == null) {
       return baseTouch;
     }
     return baseTouch.copyWith(
       color: _touchColor,
       enabled: _touchActivation,
+      hover: _hoverEffect,
     );
   }
 
@@ -161,44 +345,9 @@ class ParticleNetwork extends StatefulWidget {
   Color get touchColor => effectiveTouchFeatures.color;
 
   /// Effective performance configuration merging legacy and modern parameters.
-  NetworkPerformance get effectivePerformance => performance.copyWith(
+  PerformanceFeatures get effectivePerformance => performance.copyWith(
         isComplex: _isComplex,
       );
-
-  /// Whether particles are rendered as filled solid circles or hollow stroked outlines.
-  ///
-  /// When `true`, particles are drawn as filled discs (`PaintingStyle.fill`).
-  /// When `false`, particles are drawn as outlined rings (`PaintingStyle.stroke`).
-  ///
-  /// Defaults to `true`.
-  final bool fill;
-
-  /// Whether to draw connection lines between neighboring particles.
-  ///
-  /// When `true`, lines connect neighboring particles within [lineDistance].
-  /// When `false`, line calculations and drawing are completely bypassed, rendering
-  /// only the floating particles (ideal for starfield or floating dust effects).
-  ///
-  /// Defaults to `true`.
-  final bool drawNetwork;
-
-  /// Explicitly provided legacy drawnetwork flag, if any.
-  final bool? _drawnetwork;
-
-  /// Effective flag used for drawing connection lines.
-  bool get effectiveDrawNetwork => _drawnetwork ?? drawNetwork;
-
-  /// Checks whether the deprecated [drawnetwork] parameter was explicitly configured.
-  bool get usedLegacyDrawnetwork => _drawnetwork != null;
-
-  /// Explicitly provided legacy linewidth parameter, if any.
-  final double? _linewidth;
-
-  /// Effective connection line width.
-  double get effectiveLineWidth => _linewidth ?? lineWidth;
-
-  /// Checks whether the deprecated [linewidth] parameter was explicitly configured.
-  bool get usedLegacyLinewidth => _linewidth != null;
 
   /// Custom particle factory (legacy support).
   ///
@@ -220,47 +369,47 @@ class ParticleNetwork extends StatefulWidget {
 
   /// Gravitational physics configuration governing directional or point-based particle acceleration.
   ///
-  /// Configured using [ParticleGravity], supporting:
-  /// * [ParticleGravity.none]: Free-floating particles without external gravity.
-  /// * [ParticleGravity.global]: Uniform directional acceleration (gravity, wind, rain).
-  /// * [ParticleGravity.point]: Radial attraction or repulsion (black hole, vortex, repulsion shield).
+  /// Configured using [GravityFeatures], supporting:
+  /// * [GravityFeatures.none]: Free-floating particles without external gravity.
+  /// * [GravityFeatures.global]: Uniform directional acceleration (gravity, wind, rain).
+  /// * [GravityFeatures.point]: Radial attraction or repulsion (black hole, vortex, repulsion shield).
   ///
   /// Defaults to `null` (which defaults to no gravity).
-  final ParticleGravity? gravity;
+  final GravityFeatures? gravity;
 
   /// The type of gravity effect to apply (default: [GravityType.none]).
   ///
-  /// Deprecated: Use [gravity] with [ParticleGravity.type] instead.
+  /// Deprecated: Use [gravity] with [GravityFeatures.type] instead.
   /// This parameter will be removed in particles_network 2.0.0.
   @Deprecated(
-    'Use gravity (ParticleGravity) instead. This parameter will be removed in particles_network 2.0.0.',
+    'Use gravity (GravityFeatures) instead. This parameter will be removed in particles_network 2.0.0.',
   )
   final GravityType gravityType;
 
   /// The strength of the applied gravity force (default: 0.1).
   ///
-  /// Deprecated: Use [gravity] with [ParticleGravity.strength] instead.
+  /// Deprecated: Use [gravity] with [GravityFeatures.strength] instead.
   /// This parameter will be removed in particles_network 2.0.0.
   @Deprecated(
-    'Use gravity (ParticleGravity) instead. This parameter will be removed in particles_network 2.0.0.',
+    'Use gravity (GravityFeatures) instead. This parameter will be removed in particles_network 2.0.0.',
   )
   final double gravityStrength;
 
   /// The direction vector for global gravity (default: `Offset(0, 1)` - downwards).
   ///
-  /// Deprecated: Use [gravity] with [ParticleGravity.direction] instead.
+  /// Deprecated: Use [gravity] with [GravityFeatures.direction] instead.
   /// This parameter will be removed in particles_network 2.0.0.
   @Deprecated(
-    'Use gravity (ParticleGravity) instead. This parameter will be removed in particles_network 2.0.0.',
+    'Use gravity (GravityFeatures) instead. This parameter will be removed in particles_network 2.0.0.',
   )
   final Offset gravityDirection;
 
   /// The center point for point-based gravity effects.
   ///
-  /// Deprecated: Use [gravity] with [ParticleGravity.center] instead.
+  /// Deprecated: Use [gravity] with [GravityFeatures.center] instead.
   /// This parameter will be removed in particles_network 2.0.0.
   @Deprecated(
-    'Use gravity (ParticleGravity) instead. This parameter will be removed in particles_network 2.0.0.',
+    'Use gravity (GravityFeatures) instead. This parameter will be removed in particles_network 2.0.0.',
   )
   final Offset? gravityCenter;
 
@@ -272,13 +421,27 @@ class ParticleNetwork extends StatefulWidget {
           gravityDirection != const Offset(0, 1) ||
           gravityCenter != null);
 
+  /// Explicitly provided legacy hoverEffect flag on [ParticleNetwork], if any.
+  final bool? _hoverEffect;
+
   /// Whether mouse cursor movement triggers interactive proximity effects on web and desktop.
   ///
   /// When `true`, hovering the mouse over the widget attracts nearby particles without
   /// requiring a mouse button press or drag gesture.
   ///
   /// Defaults to `false`.
-  final bool? hoverEffect;
+  ///
+  /// Deprecated: Configure hover effects inside [touch] using [TouchFeatures.hover] instead.
+  /// This property will be removed in particles_network 2.0.0.
+  @Deprecated(
+    'hoverEffect has been moved into TouchFeatures. '
+    'Use touch.hover or effectiveTouchFeatures.hover instead. '
+    'This property will be removed in particles_network 2.0.0.',
+  )
+  bool get hoverEffect => effectiveTouchFeatures.hover;
+
+  /// Checks whether the deprecated [hoverEffect] parameter was explicitly configured on [ParticleNetwork].
+  bool get usedLegacyHoverEffect => _hoverEffect != null;
 
   /// Advanced touch and pointer interaction configuration.
   ///
@@ -294,11 +457,11 @@ class ParticleNetwork extends StatefulWidget {
   /// Advanced rendering performance and physics optimization configuration.
   ///
   /// Governs connection line limits ($O(N)$ bound), line budgets, GPU vertex batching,
-  /// delta-time scaling, cluster throttling, and dynamic auto-boost. See [NetworkPerformance]
+  /// delta-time scaling, cluster throttling, and dynamic auto-boost. See [PerformanceFeatures]
   /// for configuration options and presets.
   ///
-  /// Defaults to `const NetworkPerformance()`.
-  final NetworkPerformance performance;
+  /// Defaults to `const PerformanceFeatures()`.
+  final PerformanceFeatures performance;
 
   /// Optional custom spatial indexing grid for particle neighbor queries.
   ///
@@ -311,82 +474,124 @@ class ParticleNetwork extends StatefulWidget {
   /// Creates a [ParticleNetwork] widget with customizable visualization and physics parameters.
   ///
   /// Parameters:
-  /// * [particleCount]: Total number of particles on screen. Defaults to `60`.
-  /// * [maxSpeed]: Peak base particle velocity in pixels per frame. Defaults to `0.5`.
-  /// * [maxSize]: Maximum particle radius in pixels. Defaults to `1.5`.
+  /// * [particles]: Advanced particle configuration ([ParticleFeatures]). Defaults to `const ParticleFeatures()`.
   /// * [lineWidth]: Stroke width of connection lines. Defaults to `0.5`.
   /// * [lineDistance]: Max proximity distance for connection lines. Defaults to `100.0`.
-  /// * [particleColor]: Base solid color for particles. Defaults to `const Color(0xFFFFFFFF)` (white).
   /// * [lineColor]: Color for connection lines. Defaults to `const Color.fromARGB(255, 100, 255, 180)`.
-  /// * [fill]: Whether particles are filled discs or stroked rings. Defaults to `true`.
   /// * [drawNetwork]: Whether connection lines are rendered. Defaults to `true`.
-  /// * [gravity]: Gravitational force configuration ([ParticleGravity]). Defaults to `null`.
+  /// * [gravity]: Gravitational force configuration ([GravityFeatures]). Defaults to `null`.
   /// * [hoverEffect]: Whether mouse hover triggers touch interaction. Defaults to `false`.
   /// * [touch]: Interactive touch and pointer physics settings ([TouchFeatures]). Defaults to `const TouchFeatures()`.
-  /// * [performance]: Rendering performance and optimization settings ([NetworkPerformance]). Defaults to `const NetworkPerformance()`.
+  /// * [performance]: Rendering performance and optimization settings ([PerformanceFeatures]). Defaults to `const PerformanceFeatures()`.
   /// * [spatialGrid]: Custom spatial partition grid ([SortedSpatialGrid]). Defaults to `null`.
   const ParticleNetwork({
     super.key,
 
+    /// Advanced particle visual appearance, count, velocity limits, and styling.
+    ///
+    /// Defaults to `const ParticleFeatures()`.
+    this.particles = const ParticleFeatures(),
+
+    /// Compatibility alias for [particles].
+    @Deprecated(
+      'Use particles instead. This parameter will be removed in particles_network 2.0.0.',
+    )
+    ParticleFeatures? particleFeatures,
+
     /// Total number of particles simulated and rendered on the canvas.
     ///
-    /// Defaults to `60`.
-    this.particleCount = 60,
+    /// Deprecated: Use [particles] with [ParticleFeatures.count] instead.
+    /// This parameter will be removed in particles_network 2.0.0.
+    @Deprecated(
+      'Use particles (ParticleFeatures(count: ...)) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    int? particleCount,
 
     /// Maximum base velocity of particles in pixels per frame.
     ///
-    /// Defaults to `0.5`.
-    this.maxSpeed = 0.5,
+    /// Deprecated: Use [particles] with [ParticleFeatures.maxSpeed] instead.
+    /// This parameter will be removed in particles_network 2.0.0.
+    @Deprecated(
+      'Use particles (ParticleFeatures(maxSpeed: ...)) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    double? maxSpeed,
 
     /// Maximum radius of particles in logical pixels.
     ///
-    /// Defaults to `1.5`.
-    this.maxSize = 1.5,
+    /// Deprecated: Use [particles] with [ParticleFeatures.maxSize] instead.
+    /// This parameter will be removed in particles_network 2.0.0.
+    @Deprecated(
+      'Use particles (ParticleFeatures(maxSize: ...)) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    double? maxSize,
 
     /// Stroke width of connection lines between particles in logical pixels.
     ///
     /// Defaults to `0.5`.
-    this.lineWidth = 0.5,
-
     @Deprecated(
-      'Use lineWidth instead. This parameter will be removed in particles_network 2.0.0.',
+      'lineWidth has been moved into NetworkFeatures. '
+      'Use network: NetworkFeatures(width: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
     )
-    double? linewidth,
+    double? lineWidth,
 
     /// Maximum connection distance between particles in logical pixels.
     ///
     /// Defaults to `100.0`.
-    this.lineDistance = 100,
+    @Deprecated(
+      'lineDistance has been moved into NetworkFeatures. '
+      'Use network: NetworkFeatures(distance: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    double? lineDistance,
 
     /// Base solid color used to render all particles on the canvas.
     ///
-    /// Defaults to `const Color(0xFFFFFFFF)` (white).
-    this.particleColor = const Color(0xFFFFFFFF),
+    /// Deprecated: Use [particles] with [ParticleFeatures.color] instead.
+    /// This parameter will be removed in particles_network 2.0.0.
+    @Deprecated(
+      'Use particles (ParticleFeatures(color: ...)) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    Color? particleColor,
 
     /// Base color used to render connecting lines between particles.
     ///
     /// Defaults to `const Color.fromARGB(255, 100, 255, 180)`.
-    this.lineColor = const Color.fromARGB(255, 100, 255, 180),
+    @Deprecated(
+      'lineColor has been moved into NetworkFeatures. '
+      'Use network: NetworkFeatures(color: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    Color? lineColor,
 
     @Deprecated(
-      'Use performance (NetworkPerformance(isComplex: ...)) instead. This parameter will be removed in particles_network 2.0.0.',
+      'Use performance (PerformanceFeatures(isComplex: ...)) instead. This parameter will be removed in particles_network 2.0.0.',
     )
     bool? isComplex,
 
     /// Whether particles are rendered as filled solid circles or hollow stroked outlines.
     ///
-    /// Defaults to `true`.
-    this.fill = true,
+    /// Deprecated: Use [particles] with [ParticleFeatures.fill] instead.
+    /// This parameter will be removed in particles_network 2.0.0.
+    @Deprecated(
+      'Use particles (ParticleFeatures(fill: ...)) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    bool? fill,
 
     /// Whether to draw connection lines between neighboring particles.
     ///
     /// Defaults to `true`.
-    this.drawNetwork = true,
-
     @Deprecated(
-      'Use drawNetwork instead. This parameter will be removed in particles_network 2.0.0.',
+      'drawNetwork has been moved into NetworkFeatures. '
+      'Use network: NetworkFeatures(enabled: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
     )
-    bool? drawnetwork,
+    bool? drawNetwork,
 
     @Deprecated(
       'Use ParticleSimulation for custom particle creation. This parameter will be removed in particles_network 2.0.0.',
@@ -404,22 +609,22 @@ class ParticleNetwork extends StatefulWidget {
     this.gravity,
 
     @Deprecated(
-      'Use gravity (ParticleGravity) instead. This parameter will be removed in particles_network 2.0.0.',
+      'Use gravity (GravityFeatures) instead. This parameter will be removed in particles_network 2.0.0.',
     )
     this.gravityType = GravityType.none,
 
     @Deprecated(
-      'Use gravity (ParticleGravity) instead. This parameter will be removed in particles_network 2.0.0.',
+      'Use gravity (GravityFeatures) instead. This parameter will be removed in particles_network 2.0.0.',
     )
     this.gravityStrength = 0.1,
 
     @Deprecated(
-      'Use gravity (ParticleGravity) instead. This parameter will be removed in particles_network 2.0.0.',
+      'Use gravity (GravityFeatures) instead. This parameter will be removed in particles_network 2.0.0.',
     )
     this.gravityDirection = const Offset(0, 1),
 
     @Deprecated(
-      'Use gravity (ParticleGravity) instead. This parameter will be removed in particles_network 2.0.0.',
+      'Use gravity (GravityFeatures) instead. This parameter will be removed in particles_network 2.0.0.',
     )
     this.gravityCenter,
 
@@ -435,8 +640,14 @@ class ParticleNetwork extends StatefulWidget {
 
     /// Whether mouse cursor movement triggers interactive proximity effects on web and desktop.
     ///
-    /// Defaults to `false`.
-    this.hoverEffect = false,
+    /// Deprecated: Configure hover effects inside [TouchFeatures] using [TouchFeatures(hover: ...)].
+    /// This parameter will be removed in particles_network 2.0.0.
+    @Deprecated(
+      'hoverEffect has been moved into TouchFeatures. '
+      'Use touch: TouchFeatures(hover: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    bool? hoverEffect,
 
     /// Advanced touch interaction features and physics configuration.
     ///
@@ -453,19 +664,40 @@ class ParticleNetwork extends StatefulWidget {
 
     /// Advanced rendering performance and physics optimization configuration.
     ///
-    /// Defaults to `const NetworkPerformance()`.
-    this.performance = const NetworkPerformance(),
+    /// Defaults to `const PerformanceFeatures()`.
+    this.performance = const PerformanceFeatures(),
+
+    /// Advanced connection network visual configuration.
+    ///
+    /// Defaults to `const NetworkFeatures()`.
+    this.network = const NetworkFeatures(),
+
+    /// Compatibility alias for [network].
+    @Deprecated(
+      'Use network instead. This parameter will be removed in particles_network 2.0.0.',
+    )
+    NetworkFeatures? networkFeatures,
 
     /// Optional custom spatial grid for particle queries.
     ///
     /// Defaults to `null`.
     this.spatialGrid,
-  })  : touch = touchFeatures ?? touch,
+  })  : _particleCount = particleCount,
+        _maxSpeed = maxSpeed,
+        _maxSize = maxSize,
+        _particleColor = particleColor,
+        _fill = fill,
+        _particleFeatures = particleFeatures,
+        _networkFeatures = networkFeatures,
+        _lineWidth = lineWidth,
+        _lineDistance = lineDistance,
+        _lineColor = lineColor,
+        _drawNetwork = drawNetwork,
+        touch = touchFeatures ?? touch,
         _touchActivation = touchActivation,
         _touchColor = touchColor,
-        _isComplex = isComplex,
-        _linewidth = linewidth,
-        _drawnetwork = drawnetwork;
+        _hoverEffect = hoverEffect,
+        _isComplex = isComplex;
 
   @override
   State<ParticleNetwork> createState() => ParticleNetworkState();
@@ -524,7 +756,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
 
   late OptimizedNetworkPainter _painter;
 
-  ParticleGravity _buildGravityConfig(Size size) {
+  GravityFeatures _buildGravityConfig(Size size) {
     if (widget.gravity != null) {
       final g = widget.gravity!;
       if (g.center == null && size != Size.zero) {
@@ -532,7 +764,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
       }
       return g;
     }
-    return ParticleGravity(
+    return GravityFeatures(
       type: widget.gravityType,
       strength: widget.gravityStrength,
       direction: widget.gravityDirection,
@@ -543,23 +775,26 @@ class ParticleNetworkState extends State<ParticleNetwork>
   void _initPainter() {
     final effectiveTouch = widget.effectiveTouchFeatures;
     final effectivePerf = widget.effectivePerformance;
+    final particleConfig = widget.effectiveParticleFeatures;
+    final effectiveNetwork = widget.effectiveNetworkFeatures;
 
     _painter = OptimizedNetworkPainter(
-      drawNetwork: widget.effectiveDrawNetwork,
-      fill: widget.fill,
+      drawNetwork: effectiveNetwork.enabled,
+      fill: particleConfig.fill,
       isComplex: effectivePerf.isComplex,
-      lineWidth: widget.effectiveLineWidth,
-      particleCount: widget.particleCount,
+      lineWidth: effectiveNetwork.width,
+      particleCount: particleConfig.count,
       touchActivation: effectiveTouch.enabled,
       particles: simulation.particles,
       spatialGrid: simulation.spatialGrid,
       touchPoint: touchPoint,
-      lineDistance: widget.lineDistance,
-      particleColor: widget.particleColor,
-      lineColor: widget.lineColor,
+      lineDistance: effectiveNetwork.distance,
+      particleColor: particleConfig.color,
+      lineColor: effectiveNetwork.color,
       touchColor: effectiveTouch.color,
       touchFeatures: effectiveTouch,
       performance: effectivePerf,
+      lineRenderer: effectiveNetwork.renderer,
       simulateTouchInPaint: false,
       repaint: frameNotifier,
     );
@@ -622,18 +857,60 @@ class ParticleNetworkState extends State<ParticleNetwork>
     super.initState();
 
     if (kDebugMode) {
+      if (widget.usedLegacyParticles) {
+        LegacyDeprecationLogger.warn(
+          deprecatedApi:
+              'ParticleNetwork(particleCount, maxSpeed, maxSize, particleColor, fill)',
+          replacement: 'ParticleNetwork(particles: ParticleFeatures(...))',
+          message:
+              'Individual particle configuration parameters have been consolidated into ParticleFeatures. Use particles: ParticleFeatures(...) to configure count, maxSpeed, maxSize, color, and fill.',
+        );
+      }
+      if (widget.usedLegacyParticleFeatures) {
+        LegacyDeprecationLogger.warn(
+          deprecatedApi: 'ParticleNetwork(particleFeatures)',
+          replacement: 'ParticleNetwork(particles: ParticleFeatures(...))',
+          message:
+              'The parameter particleFeatures has been renamed to particles for consistency with touch and performance.',
+        );
+      }
       if (widget.usedLegacyGravity) {
         LegacyDeprecationLogger.warn(
           deprecatedApi:
               'ParticleNetwork(gravityType, gravityStrength, gravityDirection, gravityCenter)',
-          replacement: 'ParticleNetwork(gravity: ParticleGravity(...))',
+          replacement: 'ParticleNetwork(gravity: GravityFeatures(...))',
         );
       }
       if (widget.usedLegacyIsComplex) {
         LegacyDeprecationLogger.warn(
           deprecatedApi: 'ParticleNetwork(isComplex)',
           replacement:
-              'ParticleNetwork(performance: NetworkPerformance(isComplex: ...))',
+              'ParticleNetwork(performance: PerformanceFeatures(isComplex: ...))',
+        );
+      }
+      if (widget.usedLegacyHoverEffect) {
+        LegacyDeprecationLogger.warn(
+          deprecatedApi: 'ParticleNetwork(hoverEffect)',
+          replacement: 'ParticleNetwork(touch: TouchFeatures(hover: ...))',
+          message:
+              'The hoverEffect parameter has been consolidated into TouchFeatures. Use touch: TouchFeatures(hover: ...) instead.',
+        );
+      }
+      if (widget.usedLegacyNetworkParams) {
+        LegacyDeprecationLogger.warn(
+          deprecatedApi:
+              'ParticleNetwork(drawNetwork, lineWidth, lineDistance, lineColor)',
+          replacement: 'ParticleNetwork(network: NetworkFeatures(...))',
+          message:
+              'Network line configuration parameters have been consolidated into NetworkFeatures. Use network: NetworkFeatures(...) to configure drawNetwork, lineWidth, lineDistance, lineColor, and lineRenderer.',
+        );
+      }
+      if (widget.usedLegacyNetworkFeatures) {
+        LegacyDeprecationLogger.warn(
+          deprecatedApi: 'ParticleNetwork(networkFeatures)',
+          replacement: 'ParticleNetwork(network: NetworkFeatures(...))',
+          message:
+              'The parameter networkFeatures has been renamed to network for consistency.',
         );
       }
     }
@@ -642,13 +919,14 @@ class ParticleNetworkState extends State<ParticleNetwork>
       targetFrameTimeMs: _displayFrameBudgetMs(),
     );
 
+    final particleConfig = widget.effectiveParticleFeatures;
     simulation = ParticleSimulation(
-      particleCount: widget.particleCount,
+      particleCount: particleConfig.count,
       factory: widget.particleFactory,
       controller: widget.particleController,
-      maxSpeed: widget.maxSpeed,
-      maxSize: widget.maxSize,
-      particleColor: widget.particleColor,
+      maxSpeed: particleConfig.maxSpeed,
+      maxSize: particleConfig.maxSize,
+      particleColor: particleConfig.color,
       gravityConfig: _buildGravityConfig(Size.zero),
       spatialGrid: widget.spatialGrid,
     );
@@ -677,21 +955,66 @@ class ParticleNetworkState extends State<ParticleNetwork>
     super.didUpdateWidget(oldWidget);
 
     if (kDebugMode) {
+      if (widget.usedLegacyParticles) {
+        LegacyDeprecationLogger.warn(
+          deprecatedApi:
+              'ParticleNetwork(particleCount, maxSpeed, maxSize, particleColor, fill)',
+          replacement: 'ParticleNetwork(particles: ParticleFeatures(...))',
+          message:
+              'Individual particle configuration parameters have been consolidated into ParticleFeatures. Use particles: ParticleFeatures(...) to configure count, maxSpeed, maxSize, color, and fill.',
+        );
+      }
+      if (widget.usedLegacyParticleFeatures) {
+        LegacyDeprecationLogger.warn(
+          deprecatedApi: 'ParticleNetwork(particleFeatures)',
+          replacement: 'ParticleNetwork(particles: ParticleFeatures(...))',
+          message:
+              'The parameter particleFeatures has been renamed to particles for consistency with touch and performance.',
+        );
+      }
       if (widget.usedLegacyGravity) {
         LegacyDeprecationLogger.warn(
           deprecatedApi:
               'ParticleNetwork(gravityType, gravityStrength, gravityDirection, gravityCenter)',
-          replacement: 'ParticleNetwork(gravity: ParticleGravity(...))',
+          replacement: 'ParticleNetwork(gravity: GravityFeatures(...))',
         );
       }
       if (widget.usedLegacyIsComplex) {
         LegacyDeprecationLogger.warn(
           deprecatedApi: 'ParticleNetwork(isComplex)',
           replacement:
-              'ParticleNetwork(performance: NetworkPerformance(isComplex: ...))',
+              'ParticleNetwork(performance: PerformanceFeatures(isComplex: ...))',
+        );
+      }
+      if (widget.usedLegacyHoverEffect) {
+        LegacyDeprecationLogger.warn(
+          deprecatedApi: 'ParticleNetwork(hoverEffect)',
+          replacement: 'ParticleNetwork(touch: TouchFeatures(hover: ...))',
+          message:
+              'The hoverEffect parameter has been consolidated into TouchFeatures. Use touch: TouchFeatures(hover: ...) instead.',
+        );
+      }
+      if (widget.usedLegacyNetworkParams) {
+        LegacyDeprecationLogger.warn(
+          deprecatedApi:
+              'ParticleNetwork(drawNetwork, lineWidth, lineDistance, lineColor)',
+          replacement: 'ParticleNetwork(network: NetworkFeatures(...))',
+          message:
+              'Network line configuration parameters have been consolidated into NetworkFeatures. Use network: NetworkFeatures(...) to configure drawNetwork, lineWidth, lineDistance, lineColor, and lineRenderer.',
+        );
+      }
+      if (widget.usedLegacyNetworkFeatures) {
+        LegacyDeprecationLogger.warn(
+          deprecatedApi: 'ParticleNetwork(networkFeatures)',
+          replacement: 'ParticleNetwork(network: NetworkFeatures(...))',
+          message:
+              'The parameter networkFeatures has been renamed to network for consistency.',
         );
       }
     }
+
+    final particleConfig = widget.effectiveParticleFeatures;
+    final oldParticleConfig = oldWidget.effectiveParticleFeatures;
 
     bool factoryChanged = false;
     if (widget.particleFactory != oldWidget.particleFactory) {
@@ -699,19 +1022,19 @@ class ParticleNetworkState extends State<ParticleNetwork>
         simulation.factory = widget.particleFactory!;
       } else {
         simulation.updateFactory(
-          maxSpeed: widget.maxSpeed,
-          maxSize: widget.maxSize,
-          color: widget.particleColor,
+          maxSpeed: particleConfig.maxSpeed,
+          maxSize: particleConfig.maxSize,
+          color: particleConfig.color,
         );
       }
       factoryChanged = true;
-    } else if (widget.maxSpeed != oldWidget.maxSpeed ||
-        widget.maxSize != oldWidget.maxSize ||
-        widget.particleColor != oldWidget.particleColor) {
+    } else if (particleConfig.maxSpeed != oldParticleConfig.maxSpeed ||
+        particleConfig.maxSize != oldParticleConfig.maxSize ||
+        particleConfig.color != oldParticleConfig.color) {
       simulation.updateFactory(
-        maxSpeed: widget.maxSpeed,
-        maxSize: widget.maxSize,
-        color: widget.particleColor,
+        maxSpeed: particleConfig.maxSpeed,
+        maxSize: particleConfig.maxSize,
+        color: particleConfig.color,
       );
       factoryChanged = true;
     }
@@ -721,8 +1044,8 @@ class ParticleNetworkState extends State<ParticleNetwork>
       simulation.controller = widget.particleController!;
     }
 
-    if (widget.particleCount != oldWidget.particleCount || factoryChanged) {
-      simulation.updateParticleCount(widget.particleCount);
+    if (particleConfig.count != oldParticleConfig.count || factoryChanged) {
+      simulation.updateParticleCount(particleConfig.count);
     }
 
     if (widget.gravity != oldWidget.gravity ||
@@ -737,37 +1060,43 @@ class ParticleNetworkState extends State<ParticleNetwork>
     final oldEffectiveTouch = oldWidget.effectiveTouchFeatures;
     final effectivePerf = widget.effectivePerformance;
     final oldEffectivePerf = oldWidget.effectivePerformance;
+    final effectiveNetwork = widget.effectiveNetworkFeatures;
+    final oldEffectiveNetwork = oldWidget.effectiveNetworkFeatures;
 
     // Targeted painter updates
-    if (widget.particleColor != oldWidget.particleColor ||
-        widget.lineColor != oldWidget.lineColor ||
+    if (particleConfig.color != oldParticleConfig.color ||
+        effectiveNetwork.color != oldEffectiveNetwork.color ||
         effectiveTouch.color != oldEffectiveTouch.color) {
       _painter.updateColors(
-        particleColor: widget.particleColor,
-        lineColor: widget.lineColor,
+        particleColor: particleConfig.color,
+        lineColor: effectiveNetwork.color,
         touchColor: effectiveTouch.color,
       );
     }
 
-    if (widget.effectiveLineWidth != oldWidget.effectiveLineWidth) {
-      _painter.updateLineWidth(widget.effectiveLineWidth);
+    if (effectiveNetwork.width != oldEffectiveNetwork.width) {
+      _painter.updateLineWidth(effectiveNetwork.width);
     }
 
-    if (widget.lineDistance != oldWidget.lineDistance ||
-        _painter.lineDistance != widget.lineDistance) {
-      _painter.updateLineDistance(widget.lineDistance);
+    if (effectiveNetwork.distance != oldEffectiveNetwork.distance ||
+        _painter.lineDistance != effectiveNetwork.distance) {
+      _painter.updateLineDistance(effectiveNetwork.distance);
     }
 
-    if (widget.effectiveDrawNetwork != oldWidget.effectiveDrawNetwork ||
-        widget.fill != oldWidget.fill ||
+    if (effectiveNetwork.enabled != oldEffectiveNetwork.enabled ||
+        particleConfig.fill != oldParticleConfig.fill ||
         effectivePerf.isComplex != oldEffectivePerf.isComplex ||
         effectiveTouch.enabled != oldEffectiveTouch.enabled) {
       _painter.updateRenderFlags(
-        drawNetwork: widget.effectiveDrawNetwork,
-        fill: widget.fill,
+        drawNetwork: effectiveNetwork.enabled,
+        fill: particleConfig.fill,
         isComplex: effectivePerf.isComplex,
         touchActivation: effectiveTouch.enabled,
       );
+    }
+
+    if (effectiveNetwork.renderer != oldEffectiveNetwork.renderer) {
+      _painter.lineRenderer = effectiveNetwork.renderer;
     }
 
     if (effectiveTouch != oldEffectiveTouch) {
@@ -802,7 +1131,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
 
   @override
   Widget build(BuildContext context) {
-    final bool hover = widget.hoverEffect ?? false;
+    final bool hover = widget.effectiveTouchFeatures.hover;
     _painter.devicePixelRatio =
         MediaQuery.maybeDevicePixelRatioOf(context) ?? 1.0;
 

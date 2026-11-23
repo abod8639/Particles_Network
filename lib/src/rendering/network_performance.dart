@@ -2,46 +2,43 @@
 library;
 
 import 'package:flutter/foundation.dart';
-import 'package:particles_network/src/rendering/line_vertex_batch.dart';
+import 'package:particles_network/src/rendering/complex_features.dart';
 
 /// Configuration class for network rendering performance and optimization settings.
 ///
 /// Encapsulates all performance-related configurations such as connection line limits,
-/// density adaptation, batched drawing, adaptive frame rate scaling, and line rasterization backend.
+/// density adaptation, batched drawing, adaptive frame rate scaling, and cluster throttling.
 ///
 /// Performance Architecture:
 /// * **$O(N)$ Line Bounds**: By setting [maxConnectionsPerParticle], total connections are
 ///   bounded to $O(N)$ instead of $O(N^2)$, preventing quadratic slowdowns at high particle counts.
 /// * **Dynamic Line Budget**: With [maxLinesPerFrame], connection radius dynamically shrinks
 ///   under heavy load to maintain a flat frame budget (e.g. steady 60/120 FPS).
-/// * **GPU Triangle Batching**: [lineRenderer] set to [LineRenderer.vertices] submits indexed
-///   quads in a single GPU draw call per opacity level, avoiding per-segment stroke overhead.
 /// * **Delta-Time Motion**: Enabling [frameRateIndependent] ensures consistent visual speed
 ///   across 60 Hz, 90 Hz, and 120 Hz displays.
-/// * **Cluster Throttling**: Setting [isComplex] prunes redundant connections in dense particle
+/// * **Cluster Throttling**: Setting [complex] prunes redundant connections in dense particle
 ///   clusters, freeing GPU and CPU fill rate.
 /// * **Dynamic Auto-Boost**: Enabling [autoBoost] actively monitors engine frame times and
 ///   scales connection limits in real time.
 ///
 /// Predefined Presets:
-/// * [NetworkPerformance.highPerformance]: Tuned for 500+ particles with $O(N)$ capping and GPU batching.
-/// * [NetworkPerformance.balanced]: Ideal for general UI with moderate connection budgets.
-/// * [NetworkPerformance.auto]: Self-adjusting preset that dynamically targets optimal frame rate.
-/// * [NetworkPerformance.complex]: Fine-grained control over dense cluster connection pruning.
+/// * [PerformanceFeatures.highPerformance]: Tuned for 500+ particles with $O(N)$ capping and cluster pruning.
+/// * [PerformanceFeatures.balanced]: Ideal for general UI with moderate connection budgets.
+/// * [PerformanceFeatures.auto]: Self-adjusting preset that dynamically targets optimal frame rate.
+/// * [PerformanceFeatures.complex]: Fine-grained control over dense cluster connection pruning.
 ///
 /// Example:
 /// ```dart
 /// // High-performance configuration for large particle counts:
-/// const performance = NetworkPerformance(
+/// const performance = PerformanceFeatures(
 ///   maxConnectionsPerParticle: 4,
 ///   maxLinesPerFrame: 10000,
 ///   frameRateIndependent: true,
-///   lineRenderer: LineRenderer.vertices,
-///   isComplex: true,
+///   complex: ComplexConfig.auto(),
 /// );
 /// ```
 @immutable
-class NetworkPerformance {
+class PerformanceFeatures {
   /// Maximum number of connection lines a single particle can emit.
   ///
   /// Setting this bounds the total connection count to $O(N)$ instead of $O(N^2)$,
@@ -75,15 +72,11 @@ class NetworkPerformance {
   /// Defaults to `false`.
   final bool frameRateIndependent;
 
-  /// The rasterization backend used to render connection lines on the GPU.
+  /// High-density particle cluster throttling and connection pruning configuration.
   ///
-  /// * [LineRenderer.vertices]: Submits lines as indexed triangle quads in batched `drawVertices`
-  ///   calls. Substantially reduces GPU overhead for high line counts (lines render with square ends).
-  /// * [LineRenderer.stroke]: Uses native engine Canvas strokes (`drawLine` / `drawRawPoints`
-  ///   with rounded ends).
-  ///
-  /// Defaults to [LineRenderer.vertices].
-  final LineRenderer lineRenderer;
+  /// Governs connection pruning in dense clusters to prevent visual clutter and frame drops.
+  /// Defaults to `const ComplexConfig()`.
+  final ComplexConfig complex;
 
   /// Whether to use complex (high-density optimized) painting and clustering logic.
   ///
@@ -91,37 +84,32 @@ class NetworkPerformance {
   /// Throttles candidate connections in dense particle clusters, optimizes spatial grid rebuilds,
   /// and prevents visual clutter and frame drops in congested areas.
   ///
-  /// Can be fine-tuned via [complexReductionRatio], [maxComplexLines], and [complexDensityFactor].
-  ///
-  /// Defaults to `false`.
-  final bool isComplex;
+  /// Forwarded from [complex.enabled].
+  bool get isComplex => complex.enabled;
 
   /// Connection reduction ratio for dense clusters when complex mode or density throttling is active.
   ///
   /// Controls the fraction of candidate connections pruned in dense clusters (value between `0.0` and `1.0`).
   /// For example, `0.4` eliminates 40% of cluster lines (keeping 60%), while `0.7` eliminates 70% (keeping 30%).
   ///
-  /// Specifying this automatically enables density throttling even if [isComplex] is `false`.
-  /// When `null`, default internal reduction heuristics are used.
-  ///
-  /// Defaults to `null`.
-  final double? complexReductionRatio;
+  /// Forwarded from [complex.ratio].
+  double? get complexReductionRatio => complex.ratio;
 
   /// Maximum number of connection lines an individual particle can emit when located in a dense cluster.
   ///
   /// When `null`, automatically defaults to 3 lines (in individual mode) or 5 lines (in batched mode)
   /// when [isComplex] is `true`.
   ///
-  /// Defaults to `null`.
-  final int? maxComplexLines;
+  /// Forwarded from [complex.maxLines].
+  int? get maxComplexLines => complex.maxLines;
 
   /// Distance multiplier factor used to identify whether a particle is inside a dense cluster.
   ///
   /// When `null`, defaults to `0.60` (`dist ~/ (1.0 / 0.60)`) when [isComplex] is `true`,
   /// or approximately `0.67` (`dist ~/ 1.5`) otherwise.
   ///
-  /// Defaults to `null`.
-  final double? complexDensityFactor;
+  /// Forwarded from [complex.densityFactor].
+  double? get complexDensityFactor => complex.densityFactor;
 
   /// Proximity distance ratio threshold applied when [maxConnectionsPerParticle] is active.
   ///
@@ -157,30 +145,22 @@ class NetworkPerformance {
   /// Defaults to `false`.
   final bool autoBoost;
 
-  /// Creates a [NetworkPerformance] configuration with customizable optimization settings.
+  /// Creates a [PerformanceFeatures] configuration with customizable optimization settings.
   ///
   /// Parameters:
   /// * [maxConnectionsPerParticle]: Per-particle line emission limit ($O(N)$ bound). Defaults to `null`.
   /// * [maxLinesPerFrame]: Total connection line budget per frame. Defaults to `null`.
   /// * [frameRateIndependent]: Normalizes movement across 60/90/120 Hz displays. Defaults to `false`.
-  /// * [lineRenderer]: GPU rasterization engine backend. Defaults to [LineRenderer.vertices].
-  /// * [isComplex]: Dense cluster throttling optimization. Defaults to `false`.
-  /// * [complexReductionRatio]: Fraction of pruned lines in clusters (0.0 to 1.0). Defaults to `null`.
-  /// * [maxComplexLines]: Max lines per particle in dense clusters. Defaults to `null`.
-  /// * [complexDensityFactor]: Cluster detection threshold multiplier. Defaults to `null`.
+  /// * [complex]: Dense cluster throttling optimization. Defaults to `const ComplexConfig()`.
   /// * [cappedDistanceFactor]: Distance ratio limit for capped lines. Defaults to `0.75`.
   /// * [antiAlias]: Smooth edge anti-aliasing. Defaults to `true`.
   /// * [spatialCellMultiplier]: Custom grid cell size multiplier. Defaults to `null`.
   /// * [autoBoost]: Real-time frame-rate based dynamic optimization. Defaults to `false`.
-  const NetworkPerformance({
+  const PerformanceFeatures({
     this.maxConnectionsPerParticle,
     this.maxLinesPerFrame,
     this.frameRateIndependent = false,
-    this.lineRenderer = LineRenderer.vertices,
-    this.isComplex = false,
-    this.complexReductionRatio,
-    this.maxComplexLines,
-    this.complexDensityFactor,
+    this.complex = const ComplexConfig(),
     this.cappedDistanceFactor = 0.75,
     this.antiAlias = true,
     this.spatialCellMultiplier,
@@ -200,44 +180,26 @@ class NetworkPerformance {
         assert(
           spatialCellMultiplier == null || spatialCellMultiplier > 0.0,
           'spatialCellMultiplier must be greater than 0.0',
-        ),
-        assert(
-          complexReductionRatio == null ||
-              (complexReductionRatio >= 0.0 && complexReductionRatio <= 1.0),
-          'complexReductionRatio must be between 0.0 and 1.0',
-        ),
-        assert(
-          maxComplexLines == null || maxComplexLines > 0,
-          'maxComplexLines must be greater than 0',
-        ),
-        assert(
-          complexDensityFactor == null || complexDensityFactor > 0.0,
-          'complexDensityFactor must be greater than 0.0',
         );
 
   /// High-performance preset tuned for high particle counts (300+ to 1,000+ particles) and rock-solid 60/120 FPS.
   ///
-  /// Combines $O(N)$ connection clamping, line budgeting, GPU triangle-quad batching,
+  /// Combines $O(N)$ connection clamping, line budgeting,
   /// and high-density cluster throttling.
   ///
   /// Preconfigured Settings:
   /// * [maxConnectionsPerParticle]: `4` (clamps each particle to 4 connections maximum).
   /// * [maxLinesPerFrame]: `15000` (caps total frame lines at 15,000).
   /// * [frameRateIndependent]: `true` (normalizes motion across 60/90/120 Hz displays).
-  /// * [lineRenderer]: [LineRenderer.vertices] (GPU triangle batching).
-  /// * [isComplex]: `true` (enables cluster throttling for dense groups).
+  /// * [complex]: `const ComplexConfig.auto()` (enables cluster throttling for dense groups).
   /// * [cappedDistanceFactor]: `0.75` (avoids long flickering lines).
   /// * [antiAlias]: `true` (smooth anti-aliased rendering).
   /// * [autoBoost]: `false`.
-  const NetworkPerformance.highPerformance({
+  const PerformanceFeatures.highPerformance({
     this.maxConnectionsPerParticle = 4,
     this.maxLinesPerFrame = 15000,
     this.frameRateIndependent = true,
-    this.lineRenderer = LineRenderer.vertices,
-    this.isComplex = true,
-    this.complexReductionRatio,
-    this.maxComplexLines,
-    this.complexDensityFactor,
+    this.complex = const ComplexConfig.auto(),
     this.cappedDistanceFactor = 0.75,
     this.antiAlias = true,
     this.spatialCellMultiplier,
@@ -257,19 +219,6 @@ class NetworkPerformance {
         assert(
           spatialCellMultiplier == null || spatialCellMultiplier > 0.0,
           'spatialCellMultiplier must be greater than 0.0',
-        ),
-        assert(
-          complexReductionRatio == null ||
-              (complexReductionRatio >= 0.0 && complexReductionRatio <= 1.0),
-          'complexReductionRatio must be between 0.0 and 1.0',
-        ),
-        assert(
-          maxComplexLines == null || maxComplexLines > 0,
-          'maxComplexLines must be greater than 0',
-        ),
-        assert(
-          complexDensityFactor == null || complexDensityFactor > 0.0,
-          'complexDensityFactor must be greater than 0.0',
         );
 
   /// Flexible complex preset for fine-grained control over dense cluster line reduction.
@@ -278,22 +227,19 @@ class NetworkPerformance {
   /// when large numbers of particles gravitate into tight clusters.
   ///
   /// Preconfigured Settings:
-  /// * [complexReductionRatio]: `0.5` (prunes 50% of redundant candidate lines in clusters).
-  /// * [maxComplexLines]: `3` (caps lines per particle to 3 in dense clusters).
-  /// * [complexDensityFactor]: `0.60` (detects clusters within 60% of connection distance).
-  /// * [isComplex]: `true` (enables high-density cluster mode).
-  /// * [lineRenderer]: [LineRenderer.vertices] (GPU triangle batching).
+  /// * [complex]: `ComplexConfig(enabled: true, ratio: 0.5, maxLines: 3, densityFactor: 0.60)`
   /// * [cappedDistanceFactor]: `0.75`.
   /// * [antiAlias]: `true`.
-  const NetworkPerformance.complex({
-    this.complexReductionRatio = 0.5,
-    this.maxComplexLines = 3,
-    this.complexDensityFactor = 0.60,
+  const PerformanceFeatures.complex({
+    this.complex = const ComplexConfig(
+      enabled: true,
+      ratio: 0.5,
+      maxLines: 3,
+      densityFactor: 0.60,
+    ),
     this.maxConnectionsPerParticle,
     this.maxLinesPerFrame,
     this.frameRateIndependent = false,
-    this.lineRenderer = LineRenderer.vertices,
-    this.isComplex = true,
     this.cappedDistanceFactor = 0.75,
     this.antiAlias = true,
     this.spatialCellMultiplier,
@@ -313,19 +259,6 @@ class NetworkPerformance {
         assert(
           spatialCellMultiplier == null || spatialCellMultiplier > 0.0,
           'spatialCellMultiplier must be greater than 0.0',
-        ),
-        assert(
-          complexReductionRatio == null ||
-              (complexReductionRatio >= 0.0 && complexReductionRatio <= 1.0),
-          'complexReductionRatio must be between 0.0 and 1.0',
-        ),
-        assert(
-          maxComplexLines == null || maxComplexLines > 0,
-          'maxComplexLines must be greater than 0',
-        ),
-        assert(
-          complexDensityFactor == null || complexDensityFactor > 0.0,
-          'complexDensityFactor must be greater than 0.0',
         );
 
   /// Auto-performance preset that dynamically adapts parameters based on device frame rates.
@@ -337,19 +270,14 @@ class NetworkPerformance {
   /// Preconfigured Settings:
   /// * [autoBoost]: `true` (enables real-time dynamic budget adaptation).
   /// * [frameRateIndependent]: `true` (normalizes motion across all refresh rates).
-  /// * [isComplex]: `true` (activates cluster throttling).
-  /// * [lineRenderer]: [LineRenderer.vertices] (GPU triangle batching).
+  /// * [complex]: `const ComplexConfig.auto()` (activates cluster throttling).
   /// * [cappedDistanceFactor]: `0.75`.
   /// * [antiAlias]: `true`.
-  const NetworkPerformance.auto({
+  const PerformanceFeatures.auto({
     this.maxConnectionsPerParticle,
     this.maxLinesPerFrame,
     this.frameRateIndependent = true,
-    this.lineRenderer = LineRenderer.vertices,
-    this.isComplex = true,
-    this.complexReductionRatio,
-    this.maxComplexLines,
-    this.complexDensityFactor,
+    this.complex = const ComplexConfig.auto(),
     this.cappedDistanceFactor = 0.75,
     this.antiAlias = true,
     this.spatialCellMultiplier,
@@ -369,19 +297,6 @@ class NetworkPerformance {
         assert(
           spatialCellMultiplier == null || spatialCellMultiplier > 0.0,
           'spatialCellMultiplier must be greater than 0.0',
-        ),
-        assert(
-          complexReductionRatio == null ||
-              (complexReductionRatio >= 0.0 && complexReductionRatio <= 1.0),
-          'complexReductionRatio must be between 0.0 and 1.0',
-        ),
-        assert(
-          maxComplexLines == null || maxComplexLines > 0,
-          'maxComplexLines must be greater than 0',
-        ),
-        assert(
-          complexDensityFactor == null || complexDensityFactor > 0.0,
-          'complexDensityFactor must be greater than 0.0',
         );
 
   /// Balanced preset that maintains rich visual density with sensible performance limits.
@@ -393,19 +308,14 @@ class NetworkPerformance {
   /// * [maxConnectionsPerParticle]: `6` (allows up to 6 connections per particle).
   /// * [maxLinesPerFrame]: `8000` (caps total frame lines at 8,000).
   /// * [frameRateIndependent]: `true` (normalizes motion across displays).
-  /// * [lineRenderer]: [LineRenderer.vertices] (GPU triangle batching).
-  /// * [isComplex]: `false` (standard unconstrained clustering).
+  /// * [complex]: `const ComplexConfig()` (standard unconstrained clustering).
   /// * [cappedDistanceFactor]: `0.75`.
   /// * [antiAlias]: `true`.
-  const NetworkPerformance.balanced({
+  const PerformanceFeatures.balanced({
     this.maxConnectionsPerParticle = 6,
     this.maxLinesPerFrame = 8000,
     this.frameRateIndependent = true,
-    this.lineRenderer = LineRenderer.vertices,
-    this.isComplex = false,
-    this.complexReductionRatio,
-    this.maxComplexLines,
-    this.complexDensityFactor,
+    this.complex = const ComplexConfig(),
     this.cappedDistanceFactor = 0.75,
     this.antiAlias = true,
     this.spatialCellMultiplier,
@@ -425,33 +335,20 @@ class NetworkPerformance {
         assert(
           spatialCellMultiplier == null || spatialCellMultiplier > 0.0,
           'spatialCellMultiplier must be greater than 0.0',
-        ),
-        assert(
-          complexReductionRatio == null ||
-              (complexReductionRatio >= 0.0 && complexReductionRatio <= 1.0),
-          'complexReductionRatio must be between 0.0 and 1.0',
-        ),
-        assert(
-          maxComplexLines == null || maxComplexLines > 0,
-          'maxComplexLines must be greater than 0',
-        ),
-        assert(
-          complexDensityFactor == null || complexDensityFactor > 0.0,
-          'complexDensityFactor must be greater than 0.0',
         );
 
-  /// Creates a copy of this [NetworkPerformance] configuration with updated parameters.
+  /// Creates a copy of this [PerformanceFeatures] configuration with updated parameters.
   ///
   /// For nullable properties like [maxConnectionsPerParticle], [maxLinesPerFrame],
   /// [complexReductionRatio], [maxComplexLines], [complexDensityFactor], and [spatialCellMultiplier],
   /// passing the corresponding `clear*` flag as `true` explicitly resets the value to `null`.
-  NetworkPerformance copyWith({
+  PerformanceFeatures copyWith({
     int? maxConnectionsPerParticle,
     bool clearMaxConnectionsPerParticle = false,
     int? maxLinesPerFrame,
     bool clearMaxLinesPerFrame = false,
     bool? frameRateIndependent,
-    LineRenderer? lineRenderer,
+    ComplexConfig? complex,
     bool? isComplex,
     double? complexReductionRatio,
     bool clearComplexReductionRatio = false,
@@ -467,12 +364,32 @@ class NetworkPerformance {
     bool clearSpatialCellMultiplier = false,
     bool? autoBoost,
   }) {
+    ComplexConfig resolvedComplex = complex ?? this.complex;
     final bool shouldClearReduction =
         clearComplexReductionRatio || clearcomplexReductionRatio;
     final bool shouldClearDensity =
         clearComplexDensityFactor || clearcomplexDensityFactor;
 
-    return NetworkPerformance(
+    if (complex == null &&
+        (isComplex != null ||
+            complexReductionRatio != null ||
+            shouldClearReduction ||
+            maxComplexLines != null ||
+            clearMaxComplexLines ||
+            complexDensityFactor != null ||
+            shouldClearDensity)) {
+      resolvedComplex = resolvedComplex.copyWith(
+        enabled: isComplex,
+        ratio: complexReductionRatio,
+        clearRatio: shouldClearReduction,
+        maxLines: maxComplexLines,
+        clearMaxLines: clearMaxComplexLines,
+        densityFactor: complexDensityFactor,
+        clearDensityFactor: shouldClearDensity,
+      );
+    }
+
+    return PerformanceFeatures(
       maxConnectionsPerParticle: clearMaxConnectionsPerParticle
           ? null
           : (maxConnectionsPerParticle ?? this.maxConnectionsPerParticle),
@@ -480,17 +397,7 @@ class NetworkPerformance {
           ? null
           : (maxLinesPerFrame ?? this.maxLinesPerFrame),
       frameRateIndependent: frameRateIndependent ?? this.frameRateIndependent,
-      lineRenderer: lineRenderer ?? this.lineRenderer,
-      isComplex: isComplex ?? this.isComplex,
-      complexReductionRatio: shouldClearReduction
-          ? null
-          : (complexReductionRatio ?? this.complexReductionRatio),
-      maxComplexLines: clearMaxComplexLines
-          ? null
-          : (maxComplexLines ?? this.maxComplexLines),
-      complexDensityFactor: shouldClearDensity
-          ? null
-          : (complexDensityFactor ?? this.complexDensityFactor),
+      complex: resolvedComplex,
       cappedDistanceFactor: cappedDistanceFactor ?? this.cappedDistanceFactor,
       antiAlias: antiAlias ?? this.antiAlias,
       spatialCellMultiplier: clearSpatialCellMultiplier
@@ -503,16 +410,12 @@ class NetworkPerformance {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is NetworkPerformance &&
+      other is PerformanceFeatures &&
           runtimeType == other.runtimeType &&
           maxConnectionsPerParticle == other.maxConnectionsPerParticle &&
           maxLinesPerFrame == other.maxLinesPerFrame &&
           frameRateIndependent == other.frameRateIndependent &&
-          lineRenderer == other.lineRenderer &&
-          isComplex == other.isComplex &&
-          complexReductionRatio == other.complexReductionRatio &&
-          maxComplexLines == other.maxComplexLines &&
-          complexDensityFactor == other.complexDensityFactor &&
+          complex == other.complex &&
           cappedDistanceFactor == other.cappedDistanceFactor &&
           antiAlias == other.antiAlias &&
           spatialCellMultiplier == other.spatialCellMultiplier &&
@@ -523,11 +426,7 @@ class NetworkPerformance {
         maxConnectionsPerParticle,
         maxLinesPerFrame,
         frameRateIndependent,
-        lineRenderer,
-        isComplex,
-        complexReductionRatio,
-        maxComplexLines,
-        complexDensityFactor,
+        complex,
         cappedDistanceFactor,
         antiAlias,
         spatialCellMultiplier,
@@ -536,15 +435,11 @@ class NetworkPerformance {
 
   @override
   String toString() {
-    return 'NetworkPerformance('
+    return 'PerformanceFeatures('
         'maxConnectionsPerParticle: $maxConnectionsPerParticle, '
         'maxLinesPerFrame: $maxLinesPerFrame, '
         'frameRateIndependent: $frameRateIndependent, '
-        'lineRenderer: $lineRenderer, '
-        'isComplex: $isComplex, '
-        'complexReductionRatio: $complexReductionRatio, '
-        'maxComplexLines: $maxComplexLines, '
-        'complexDensityFactor: $complexDensityFactor, '
+        'complex: $complex, '
         'cappedDistanceFactor: $cappedDistanceFactor, '
         'antiAlias: $antiAlias, '
         'spatialCellMultiplier: $spatialCellMultiplier, '

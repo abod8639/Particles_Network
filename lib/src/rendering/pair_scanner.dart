@@ -144,7 +144,7 @@ class PairScanner {
     required LineBuckets buckets,
     required CandidateBuffer candidateBuffer,
     required ClusterThrottler throttler,
-    required NetworkPerformance performance,
+    required PerformanceFeatures performance,
     required int? maxConnectionsPerParticle,
     required bool isComplexMode,
   }) {
@@ -316,7 +316,7 @@ class PairScanner {
     required Paint linePaint,
     required CandidateBuffer candidateBuffer,
     required ClusterThrottler throttler,
-    required NetworkPerformance performance,
+    required PerformanceFeatures performance,
     required int? maxConnectionsPerParticle,
     required bool isComplexMode,
   }) {
