@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:particles_network/particles_network.dart';
 import 'package:particles_network/src/legacy/legacy_deprecation_logger.dart';
 
@@ -16,89 +16,76 @@ void main() {
     test('default constructor initializes canonical default values', () {
       const net = NetworkFeatures();
 
-      expect(net.drawNetwork, isTrue);
-      expect(net.drawnetwork, isTrue);
-      expect(net.lineWidth, equals(0.5));
-      expect(net.linewidth, equals(0.5));
-      expect(net.lineDistance, equals(100.0));
-      expect(net.lineColor, equals(const Color.fromARGB(255, 100, 255, 180)));
-      expect(net.lineRenderer, equals(LineRenderer.vertices));
+      expect(net.enabled, isTrue);
+      expect(net.width, equals(0.5));
+      expect(net.distance, equals(100.0));
+      expect(net.color, equals(const Color.fromARGB(255, 100, 255, 180)));
+      expect(net.renderer, equals(LineRenderer.vertices));
     });
 
     test('custom values are correctly assigned', () {
       const net = NetworkFeatures(
-        drawNetwork: false,
-        lineWidth: 1.8,
-        lineDistance: 150.0,
-        lineColor: Colors.deepPurple,
-        lineRenderer: LineRenderer.stroke,
+        enabled: false,
+        width: 1.8,
+        distance: 150.0,
+        color: Colors.deepPurple,
+        renderer: LineRenderer.stroke,
       );
 
-      expect(net.drawNetwork, isFalse);
-      expect(net.lineWidth, equals(1.8));
-      expect(net.lineDistance, equals(150.0));
-      expect(net.lineColor, equals(Colors.deepPurple));
-      expect(net.lineRenderer, equals(LineRenderer.stroke));
-    });
-
-    test('deprecated aliases (drawnetwork, linewidth) correctly populate fields', () {
-      // ignore: deprecated_member_use_from_same_package
-      const net = NetworkFeatures(
-        drawnetwork: false,
-        linewidth: 2.5,
-      );
-
-      expect(net.drawNetwork, isFalse);
-      expect(net.lineWidth, equals(2.5));
+      expect(net.enabled, isFalse);
+      expect(net.width, equals(1.8));
+      expect(net.distance, equals(150.0));
+      expect(net.color, equals(Colors.deepPurple));
+      expect(net.renderer, equals(LineRenderer.stroke));
     });
 
     test('copyWith updates specified properties while retaining others', () {
       const base = NetworkFeatures(
-        lineWidth: 1.0,
-        lineDistance: 80.0,
-        lineColor: Colors.cyan,
+        width: 1.0,
+        distance: 80.0,
+        color: Colors.cyan,
       );
 
       final updated = base.copyWith(
-        lineWidth: 2.0,
-        lineRenderer: LineRenderer.stroke,
+        width: 2.0,
+        renderer: LineRenderer.stroke,
       );
 
-      expect(updated.lineWidth, equals(2.0));
-      expect(updated.lineDistance, equals(80.0));
-      expect(updated.lineColor, equals(Colors.cyan));
-      expect(updated.drawNetwork, isTrue);
-      expect(updated.lineRenderer, equals(LineRenderer.stroke));
+      expect(updated.width, equals(2.0));
+      expect(updated.distance, equals(80.0));
+      expect(updated.color, equals(Colors.cyan));
+      expect(updated.enabled, isTrue);
+      expect(updated.renderer, equals(LineRenderer.stroke));
     });
 
     test('operator == and hashCode differentiate by each property', () {
       const n1 = NetworkFeatures(
-        drawNetwork: true,
-        lineWidth: 1.0,
-        lineDistance: 80.0,
-        lineColor: Colors.blue,
-        lineRenderer: LineRenderer.vertices,
+        enabled: true,
+        width: 1.0,
+        distance: 80.0,
+        color: Colors.blue,
+        renderer: LineRenderer.vertices,
       );
       const n2 = NetworkFeatures(
-        drawNetwork: true,
-        lineWidth: 1.0,
-        lineDistance: 80.0,
-        lineColor: Colors.blue,
-        lineRenderer: LineRenderer.vertices,
+        enabled: true,
+        width: 1.0,
+        distance: 80.0,
+        color: Colors.blue,
+        renderer: LineRenderer.vertices,
       );
       const nDifferentRenderer = NetworkFeatures(
-        drawNetwork: true,
-        lineWidth: 1.0,
-        lineDistance: 80.0,
-        lineColor: Colors.blue,
-        lineRenderer: LineRenderer.stroke,
+        enabled: true,
+        width: 1.0,
+        distance: 80.0,
+        color: Colors.blue,
+        renderer: LineRenderer.stroke,
       );
       const nDifferentWidth = NetworkFeatures(
-        drawNetwork: true,
-        lineWidth: 2.0,
-        lineDistance: 80.0,
-        lineColor: Colors.blue,
-        lineRenderer: LineRenderer.vertices,
+        enabled: true,
+        width: 2.0,
+        distance: 80.0,
+        color: Colors.blue,
+        renderer: LineRenderer.vertices,
       );
 
       expect(n1, equals(n2));
@@ -109,16 +96,16 @@ void main() {
 
     test('toString formats a readable representation including lineRenderer', () {
       const net = NetworkFeatures(
-        lineWidth: 1.2,
-        lineDistance: 90.0,
-        lineRenderer: LineRenderer.stroke,
+        width: 1.2,
+        distance: 90.0,
+        renderer: LineRenderer.stroke,
       );
 
       final str = net.toString();
       expect(str, contains('NetworkFeatures'));
-      expect(str, contains('lineWidth: 1.2'));
-      expect(str, contains('lineDistance: 90.0'));
-      expect(str, contains('lineRenderer: LineRenderer.stroke'));
+      expect(str, contains('width: 1.2'));
+      expect(str, contains('distance: 90.0'));
+      expect(str, contains('renderer: LineRenderer.stroke'));
     });
   });
 
@@ -134,11 +121,11 @@ void main() {
               height: 300,
               child: ParticleNetwork(
                 network: NetworkFeatures(
-                  drawNetwork: true,
-                  lineWidth: 1.5,
-                  lineDistance: 120.0,
-                  lineColor: Colors.amber,
-                  lineRenderer: LineRenderer.stroke,
+                  enabled: true,
+                  width: 1.5,
+                  distance: 120.0,
+                  color: Colors.amber,
+                  renderer: LineRenderer.stroke,
                 ),
               ),
             ),
@@ -211,9 +198,9 @@ void main() {
               height: 300,
               child: ParticleNetwork(
                 network: NetworkFeatures(
-                  lineWidth: 1.0,
-                  lineDistance: 80.0,
-                  lineRenderer: LineRenderer.vertices,
+                  width: 1.0,
+                  distance: 80.0,
+                  renderer: LineRenderer.vertices,
                 ),
               ),
             ),
@@ -234,9 +221,9 @@ void main() {
               height: 300,
               child: ParticleNetwork(
                 network: NetworkFeatures(
-                  lineWidth: 3.0,
-                  lineDistance: 130.0,
-                  lineRenderer: LineRenderer.stroke,
+                  width: 3.0,
+                  distance: 130.0,
+                  renderer: LineRenderer.stroke,
                 ),
               ),
             ),

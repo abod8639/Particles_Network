@@ -23,13 +23,13 @@ class CustomTestController implements IParticleController {
   void updateParticles(
     List<Particle> particles,
     Size size, {
-    ParticleGravity? gravity,
+    GravityFeatures? gravity,
   }) {}
 }
 
 void main() {
-  group('Phase 1 - Item 1: Deprecated linewidth and drawnetwork', () {
-    testWidgets('linewidth and drawnetwork are honored at init',
+  group('Phase 1 - Item 1: Deprecated lineWidth and drawNetwork', () {
+    testWidgets('lineWidth and drawNetwork are honored at init',
         (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -38,8 +38,8 @@ void main() {
               width: 300,
               height: 300,
               child: ParticleNetwork(
-                linewidth: 3.5,
-                drawnetwork: false,
+                lineWidth: 3.5,
+                drawNetwork: false,
               ),
             ),
           ),
@@ -51,12 +51,12 @@ void main() {
       );
 
       expect(state.painter.lineWidth, equals(3.5),
-          reason: 'Legacy linewidth must be passed to painter at init');
+          reason: 'Legacy lineWidth must be passed to painter at init');
       expect(state.painter.drawNetwork, isFalse,
-          reason: 'Legacy drawnetwork must be passed to painter at init');
+          reason: 'Legacy drawNetwork must be passed to painter at init');
     });
 
-    testWidgets('linewidth and drawnetwork are honored on widget update',
+    testWidgets('lineWidth and drawNetwork are honored on widget update',
         (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -79,7 +79,7 @@ void main() {
       expect(state.painter.lineWidth, equals(1.0));
       expect(state.painter.drawNetwork, isTrue);
 
-      // Update with legacy linewidth and drawnetwork
+      // Update with new lineWidth and drawNetwork
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -87,8 +87,8 @@ void main() {
               width: 300,
               height: 300,
               child: ParticleNetwork(
-                linewidth: 4.0,
-                drawnetwork: false,
+                lineWidth: 4.0,
+                drawNetwork: false,
               ),
             ),
           ),
@@ -96,9 +96,9 @@ void main() {
       );
 
       expect(state.painter.lineWidth, equals(4.0),
-          reason: 'Legacy linewidth must update painter');
+          reason: 'Legacy lineWidth must update painter');
       expect(state.painter.drawNetwork, isFalse,
-          reason: 'Legacy drawnetwork must update painter');
+          reason: 'Legacy drawNetwork must update painter');
     });
   });
 
@@ -333,7 +333,7 @@ void main() {
               width: 300,
               height: 300,
               child: ParticleNetwork(
-                performance: NetworkPerformance(isComplex: true),
+                performance: PerformanceFeatures(complex: ComplexConfig(enabled: true)),
               ),
             ),
           ),
@@ -486,22 +486,22 @@ void main() {
   });
 
   group(
-      'Phase 1 - Item 8: ParticleGravity, TouchFeatures, NetworkPerformance == and hashCode',
+      'Phase 1 - Item 8: GravityFeatures, TouchFeatures, PerformanceFeatures == and hashCode',
       () {
-    test('ParticleGravity equality and hashCode', () {
-      const g1 = ParticleGravity(
+    test('GravityFeatures equality and hashCode', () {
+      const g1 = GravityFeatures(
         type: GravityType.global,
         strength: 0.5,
         direction: Offset(0, 1),
         center: Offset(10, 10),
       );
-      const g2 = ParticleGravity(
+      const g2 = GravityFeatures(
         type: GravityType.global,
         strength: 0.5,
         direction: Offset(0, 1),
         center: Offset(10, 10),
       );
-      const g3 = ParticleGravity(
+      const g3 = GravityFeatures(
         type: GravityType.point,
         strength: 0.5,
         direction: Offset(0, 1),
@@ -518,50 +518,61 @@ void main() {
         enabled: true,
         speed: 0.5,
         force: 0.3,
-        maxTouchSpeed: 6.0,
+        maxSpeed: 6.0,
         damping: 0.99,
-        lineDistance: 80.0,
+        distance: 80.0,
         color: Color(0xFF00FF00),
       );
       const t2 = TouchFeatures(
         enabled: true,
         speed: 0.5,
         force: 0.3,
-        maxTouchSpeed: 6.0,
+        maxSpeed: 6.0,
         damping: 0.99,
-        lineDistance: 80.0,
+        distance: 80.0,
         color: Color(0xFF00FF00),
       );
       const t3 = TouchFeatures(
         enabled: false,
         speed: 0.5,
         force: 0.3,
-        maxTouchSpeed: 6.0,
+        maxSpeed: 6.0,
         damping: 0.99,
-        lineDistance: 80.0,
+        distance: 80.0,
         color: Color(0xFF00FF00),
+      );
+      const t4 = TouchFeatures(
+        enabled: true,
+        speed: 0.5,
+        force: 0.3,
+        maxSpeed: 6.0,
+        damping: 0.99,
+        distance: 80.0,
+        color: Color(0xFF00FF00),
+        hover: true,
       );
 
       expect(t1, equals(t2));
       expect(t1.hashCode, equals(t2.hashCode));
       expect(t1, isNot(equals(t3)));
+      expect(t1, isNot(equals(t4)));
     });
 
-    test('NetworkPerformance equality and hashCode', () {
-      const p1 = NetworkPerformance(
+    test('PerformanceFeatures equality and hashCode', () {
+      const p1 = PerformanceFeatures(
         maxConnectionsPerParticle: 5,
         maxLinesPerFrame: 100,
-        isComplex: true,
+        complex: ComplexConfig(enabled: true),
       );
-      const p2 = NetworkPerformance(
+      const p2 = PerformanceFeatures(
         maxConnectionsPerParticle: 5,
         maxLinesPerFrame: 100,
-        isComplex: true,
+        complex: ComplexConfig(enabled: true),
       );
-      const p3 = NetworkPerformance(
+      const p3 = PerformanceFeatures(
         maxConnectionsPerParticle: 10,
         maxLinesPerFrame: 100,
-        isComplex: true,
+        complex: ComplexConfig(enabled: true),
       );
 
       expect(p1, equals(p2));

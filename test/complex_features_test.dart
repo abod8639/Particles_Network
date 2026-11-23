@@ -2,9 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:particles_network/particles_network.dart';
 
 void main() {
-  group('ComplexFeatures', () {
+  group('ComplexConfig', () {
     test('default constructor has correct default values', () {
-      const config = ComplexFeatures();
+      const config = ComplexConfig();
 
       expect(config.enabled, isFalse);
       expect(config.ratio, isNull);
@@ -20,7 +20,7 @@ void main() {
     });
 
     test('auto preset has recommended high-density defaults', () {
-      const config = ComplexFeatures.auto();
+      const config = ComplexConfig.auto();
 
       expect(config.enabled, isTrue);
       expect(config.ratio, isNull);
@@ -33,7 +33,7 @@ void main() {
     });
 
     test('auto preset allows custom ratio and overrides', () {
-      const config = ComplexFeatures.auto(
+      const config = ComplexConfig.auto(
         ratio: 0.4,
         maxLines: 5,
         densityFactor: 0.75,
@@ -46,7 +46,7 @@ void main() {
     });
 
     test('disabled preset clears all settings', () {
-      const config = ComplexFeatures.disabled();
+      const config = ComplexConfig.disabled();
 
       expect(config.enabled, isFalse);
       expect(config.ratio, isNull);
@@ -56,29 +56,29 @@ void main() {
     });
 
     test('asserts ratio bounds between 0.0 and 1.0', () {
-      expect(() => ComplexFeatures(ratio: -0.1), throwsAssertionError);
-      expect(() => ComplexFeatures(ratio: 1.1), throwsAssertionError);
-      expect(() => ComplexFeatures(ratio: 0.0), returnsNormally);
-      expect(() => ComplexFeatures(ratio: 1.0), returnsNormally);
-      expect(() => ComplexFeatures(ratio: 0.5), returnsNormally);
+      expect(() => ComplexConfig(ratio: -0.1), throwsAssertionError);
+      expect(() => ComplexConfig(ratio: 1.1), throwsAssertionError);
+      expect(() => ComplexConfig(ratio: 0.0), returnsNormally);
+      expect(() => ComplexConfig(ratio: 1.0), returnsNormally);
+      expect(() => ComplexConfig(ratio: 0.5), returnsNormally);
     });
 
     test('asserts maxLines is strictly positive', () {
-      expect(() => ComplexFeatures(maxLines: 0), throwsAssertionError);
-      expect(() => ComplexFeatures(maxLines: -1), throwsAssertionError);
-      expect(() => ComplexFeatures(maxLines: 1), returnsNormally);
-      expect(() => ComplexFeatures(maxLines: 5), returnsNormally);
+      expect(() => ComplexConfig(maxLines: 0), throwsAssertionError);
+      expect(() => ComplexConfig(maxLines: -1), throwsAssertionError);
+      expect(() => ComplexConfig(maxLines: 1), returnsNormally);
+      expect(() => ComplexConfig(maxLines: 5), returnsNormally);
     });
 
     test('asserts densityFactor is strictly positive', () {
-      expect(() => ComplexFeatures(densityFactor: 0.0), throwsAssertionError);
-      expect(() => ComplexFeatures(densityFactor: -0.5), throwsAssertionError);
-      expect(() => ComplexFeatures(densityFactor: 0.1), returnsNormally);
-      expect(() => ComplexFeatures(densityFactor: 0.60), returnsNormally);
+      expect(() => ComplexConfig(densityFactor: 0.0), throwsAssertionError);
+      expect(() => ComplexConfig(densityFactor: -0.5), throwsAssertionError);
+      expect(() => ComplexConfig(densityFactor: 0.1), returnsNormally);
+      expect(() => ComplexConfig(densityFactor: 0.60), returnsNormally);
     });
 
     test('copyWith updates specified fields and preserves untouched fields', () {
-      const original = ComplexFeatures(
+      const original = ComplexConfig(
         enabled: false,
         ratio: 0.2,
         maxLines: 4,
@@ -97,7 +97,7 @@ void main() {
     });
 
     test('copyWith allows clearing nullable fields with clear flags', () {
-      const original = ComplexFeatures(
+      const original = ComplexConfig(
         enabled: true,
         ratio: 0.5,
         maxLines: 4,
@@ -117,21 +117,21 @@ void main() {
     });
 
     test('equality and hashCode contract', () {
-      const config1 = ComplexFeatures(
+      const config1 = ComplexConfig(
         enabled: true,
         ratio: 0.4,
         maxLines: 3,
         densityFactor: 0.60,
       );
 
-      const config2 = ComplexFeatures(
+      const config2 = ComplexConfig(
         enabled: true,
         ratio: 0.4,
         maxLines: 3,
         densityFactor: 0.60,
       );
 
-      const config3 = ComplexFeatures(
+      const config3 = ComplexConfig(
         enabled: false,
         ratio: 0.4,
         maxLines: 3,
@@ -145,7 +145,7 @@ void main() {
     });
 
     test('toString contains class name and properties', () {
-      const config = ComplexFeatures(
+      const config = ComplexConfig(
         enabled: true,
         ratio: 0.35,
         maxLines: 4,
@@ -153,7 +153,7 @@ void main() {
       );
 
       final str = config.toString();
-      expect(str, contains('ComplexFeatures('));
+      expect(str, contains('ComplexConfig('));
       expect(str, contains('enabled: true'));
       expect(str, contains('ratio: 0.35'));
       expect(str, contains('maxLines: 4'));

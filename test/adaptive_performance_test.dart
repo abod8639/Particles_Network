@@ -65,13 +65,12 @@ void main() {
 
   group('Invariant 2: Fast-Path Verification', () {
     test(
-        'NetworkPerformance.auto defaults to fast-path (isComplex: false, maxConnections: null)',
+        'PerformanceFeatures.auto defaults to fast-path (isComplex: false, maxConnections: null)',
         () {
-      const perf = NetworkPerformance.auto();
+      const perf = PerformanceFeatures.auto();
       expect(perf.isComplex, isTrue);
       expect(perf.maxConnectionsPerParticle, isNull);
       expect(perf.maxLinesPerFrame, isNull);
-      expect(perf.lineRenderer, equals(LineRenderer.vertices));
       expect(perf.autoBoost, isTrue);
 
       final painter = OptimizedNetworkPainter(
@@ -302,7 +301,7 @@ void main() {
         lineWidth: 1.0,
         fill: true,
         drawNetwork: true,
-        performance: const NetworkPerformance.auto(
+        performance: const PerformanceFeatures.auto(
           maxLinesPerFrame: 2000,
           maxConnectionsPerParticle: 10,
         ),
@@ -348,7 +347,7 @@ void main() {
         lineWidth: 1.0,
         fill: true,
         drawNetwork: true,
-        performance: const NetworkPerformance.auto(),
+        performance: const PerformanceFeatures.auto(),
       );
 
       final pBefore = painter.performance;
@@ -389,7 +388,7 @@ void main() {
         lineWidth: 1.0,
         fill: true,
         drawNetwork: true,
-        performance: const NetworkPerformance.auto(),
+        performance: const PerformanceFeatures.auto(),
       );
 
       painter.setDynamicLineBudget(1500);
@@ -398,19 +397,19 @@ void main() {
       expect(painter.runtimeMaxConnectionsOverride, equals(8));
 
       // Re-apply identical performance configuration
-      painter.updatePerformance(const NetworkPerformance.auto());
+      painter.updatePerformance(const PerformanceFeatures.auto());
       expect(painter.runtimeMaxLinesOverride, isNull);
       expect(painter.runtimeMaxConnectionsOverride, isNull);
     });
 
     testWidgets(
-        'switching from NetworkPerformance.auto() to balanced() immediately clears runtime overrides and resets controller',
+        'switching from PerformanceFeatures.auto() to balanced() immediately clears runtime overrides and resets controller',
         (WidgetTester tester) async {
       await tester.pumpWidget(
         const Directionality(
           textDirection: TextDirection.ltr,
           child: ParticleNetwork(
-            performance: NetworkPerformance.auto(),
+            performance: PerformanceFeatures.auto(),
           ),
         ),
       );
@@ -429,7 +428,7 @@ void main() {
         const Directionality(
           textDirection: TextDirection.ltr,
           child: ParticleNetwork(
-            performance: NetworkPerformance.balanced(),
+            performance: PerformanceFeatures.balanced(),
           ),
         ),
       );

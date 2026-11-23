@@ -132,9 +132,7 @@ void main() {
         lineWidth: 1.5,
         fill: true,
         drawNetwork: true,
-        performance: const NetworkPerformance(
-          lineRenderer: LineRenderer.stroke,
-        ),
+        lineRenderer: LineRenderer.stroke,
       );
 
       painter.paint(canvas, size);
@@ -160,9 +158,7 @@ void main() {
         lineWidth: 1.0,
         fill: true,
         drawNetwork: true,
-        performance: const NetworkPerformance(
-          lineRenderer: LineRenderer.stroke,
-        ),
+        lineRenderer: LineRenderer.stroke,
       );
 
       painter.paint(canvas, size);
@@ -195,9 +191,7 @@ void main() {
         lineWidth: 1.0,
         fill: true,
         drawNetwork: true,
-        performance: const NetworkPerformance(
-          lineRenderer: LineRenderer.vertices,
-        ),
+        lineRenderer: LineRenderer.vertices,
       );
 
       painter.paint(canvas, size);
@@ -222,8 +216,8 @@ void main() {
         lineWidth: 1.0,
         fill: true,
         drawNetwork: true,
-        performance: const NetworkPerformance(
-          lineRenderer: LineRenderer.stroke,
+        lineRenderer: LineRenderer.stroke,
+        performance: const PerformanceFeatures(
           maxConnectionsPerParticle: 3,
         ),
       );
@@ -250,9 +244,9 @@ void main() {
         lineWidth: 1.0,
         fill: true,
         drawNetwork: true,
-        performance: const NetworkPerformance(
-          lineRenderer: LineRenderer.stroke,
-          isComplex: true,
+        lineRenderer: LineRenderer.stroke,
+        performance: const PerformanceFeatures(
+          complex: ComplexConfig(enabled: true),
         ),
       );
 
@@ -275,8 +269,8 @@ void main() {
         lineWidth: 1.0,
         fill: true,
         drawNetwork: true,
-        performance: const NetworkPerformance(
-          lineRenderer: LineRenderer.stroke,
+        lineRenderer: LineRenderer.stroke,
+        performance: const PerformanceFeatures(
           maxLinesPerFrame: 50,
         ),
       );
@@ -351,8 +345,8 @@ void main() {
         lineWidth: 1.0,
         fill: true,
         drawNetwork: true,
-        performance: const NetworkPerformance(
-          lineRenderer: LineRenderer.stroke,
+        lineRenderer: LineRenderer.stroke,
+        performance: const PerformanceFeatures(
           maxConnectionsPerParticle: 4,
         ),
       );

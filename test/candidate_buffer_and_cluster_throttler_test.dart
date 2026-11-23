@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:particles_network/src/rendering/candidate_buffer.dart';
 import 'package:particles_network/src/rendering/cluster_throttler.dart';
+import 'package:particles_network/src/rendering/complex_features.dart';
 import 'package:particles_network/src/rendering/network_performance.dart';
 
 void main() {
@@ -70,13 +71,13 @@ void main() {
     test('computeDenseThreshold calculates correct limits across modes', () {
       final d1 = throttler.computeDenseThreshold(
         distance: 100.0,
-        performance: const NetworkPerformance(isComplex: true),
+        performance: const PerformanceFeatures(complex: ComplexConfig(enabled: true)),
       );
       expect(d1, equals(60)); // 100 * 0.60 (or 100 ~/ (1.0 / 0.60))
 
       final d2 = throttler.computeDenseThreshold(
         distance: 100.0,
-        performance: const NetworkPerformance(isComplex: false),
+        performance: const PerformanceFeatures(complex: ComplexConfig(enabled: false)),
         isIndividual: true,
       );
       expect(d2, equals(66)); // 100 ~/ 1.5
@@ -85,19 +86,19 @@ void main() {
     test('computeDenseThreshold respects complexDensityFactor when specified (L23-L25)', () {
       final resPositive = throttler.computeDenseThreshold(
         distance: 120.0,
-        performance: const NetworkPerformance(complexDensityFactor: 0.5),
+        performance: const PerformanceFeatures(complex: ComplexConfig(densityFactor: 0.5)),
       );
       expect(resPositive, equals(60));
 
       final resZero = throttler.computeDenseThreshold(
         distance: 0.0,
-        performance: const NetworkPerformance(complexDensityFactor: 0.5),
+        performance: const PerformanceFeatures(complex: ComplexConfig(densityFactor: 0.5)),
       );
       expect(resZero, equals(0));
 
       final resNegative = throttler.computeDenseThreshold(
         distance: -10.0,
-        performance: const NetworkPerformance(complexDensityFactor: 0.5),
+        performance: const PerformanceFeatures(complex: ComplexConfig(densityFactor: 0.5)),
       );
       expect(resNegative, equals(0));
     });
@@ -107,9 +108,11 @@ void main() {
       final resWithCap = throttler.resolveComplexTargetLines(
         candidateCount: 20,
         defaultMaxLines: 15,
-        performance: const NetworkPerformance(
-          complexReductionRatio: 0.5,
-          maxComplexLines: 6,
+        performance: const PerformanceFeatures(
+          complex: ComplexConfig(
+            ratio: 0.5,
+            maxLines: 6,
+          ),
         ),
       );
       expect(resWithCap, equals(6)); // min(10, 6) = 6
@@ -118,9 +121,11 @@ void main() {
       final resWithoutCap = throttler.resolveComplexTargetLines(
         candidateCount: 20,
         defaultMaxLines: 15,
-        performance: const NetworkPerformance(
-          complexReductionRatio: 0.5,
-          maxComplexLines: null,
+        performance: const PerformanceFeatures(
+          complex: ComplexConfig(
+            ratio: 0.5,
+            maxLines: null,
+          ),
         ),
       );
       expect(resWithoutCap, equals(10)); // max(1, 10) = 10
@@ -129,9 +134,11 @@ void main() {
       final resClampedToOne = throttler.resolveComplexTargetLines(
         candidateCount: 20,
         defaultMaxLines: 15,
-        performance: const NetworkPerformance(
-          complexReductionRatio: 1.0,
-          maxComplexLines: null,
+        performance: const PerformanceFeatures(
+          complex: ComplexConfig(
+            ratio: 1.0,
+            maxLines: null,
+          ),
         ),
       );
       expect(resClampedToOne, equals(1)); // max(1, 0) = 1
@@ -140,7 +147,7 @@ void main() {
       final resDefault = throttler.resolveComplexTargetLines(
         candidateCount: 20,
         defaultMaxLines: 15,
-        performance: const NetworkPerformance(complexReductionRatio: null),
+        performance: const PerformanceFeatures(complex: ComplexConfig(ratio: null)),
       );
       expect(resDefault, equals(15));
     });
@@ -175,7 +182,7 @@ void main() {
         denseThreshold: 5,
         defaultMaxLines: 5,
         isComplexMode: true,
-        performance: const NetworkPerformance(isComplex: true),
+        performance: const PerformanceFeatures(complex: ComplexConfig(enabled: true)),
       );
 
       expect(filtered, equals(3));

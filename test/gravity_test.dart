@@ -75,8 +75,8 @@ void main() {
       expect(particle.position, const Offset(100, 100));
     });
 
-    test('ParticleGravity applies global force correctly', () {
-      const gravity = ParticleGravity.global(
+    test('GravityFeatures applies global force correctly', () {
+      const gravity = GravityFeatures.global(
         strength: 1.0,
         direction: Offset(0, 1),
       );
@@ -85,8 +85,8 @@ void main() {
       expect(particle.position.dy, closeTo(100.25, 0.001));
     });
 
-    test('ParticleGravity applies point attraction correctly', () {
-      const gravity = ParticleGravity.point(
+    test('GravityFeatures applies point attraction correctly', () {
+      const gravity = GravityFeatures.point(
         strength: 1.0,
         center: Offset(200, 100),
       );
@@ -96,9 +96,9 @@ void main() {
     });
   });
 
-  group('ParticleGravity API Unit Tests', () {
+  group('GravityFeatures API Unit Tests', () {
     test('Default constructor sets expected defaults', () {
-      const gravity = ParticleGravity();
+      const gravity = GravityFeatures();
       expect(gravity.type, GravityType.none);
       expect(gravity.strength, 0.1);
       expect(gravity.direction, const Offset(0, 1));
@@ -106,7 +106,7 @@ void main() {
     });
 
     test('Accepts explicit type, strength, direction, center parameters', () {
-      const gravity = ParticleGravity(
+      const gravity = GravityFeatures(
         type: GravityType.point,
         strength: 0.8,
         direction: Offset(1, 0),
@@ -119,19 +119,19 @@ void main() {
     });
 
     test('Named constructors create proper instances', () {
-      final none = ParticleGravity.none();
+      final none = GravityFeatures.none();
       expect(none.type, GravityType.none);
       expect(none.strength, 0.0);
       expect(none.direction, const Offset(0, 1));
       expect(none.center, isNull);
 
-      final globalDefault = ParticleGravity.global();
+      final globalDefault = GravityFeatures.global();
       expect(globalDefault.type, GravityType.global);
       expect(globalDefault.strength, 0.1);
       expect(globalDefault.direction, const Offset(0, 1));
       expect(globalDefault.center, isNull);
 
-      final global = ParticleGravity.global(
+      final global = GravityFeatures.global(
         strength: 0.5,
         direction: const Offset(0, -1),
       );
@@ -139,13 +139,13 @@ void main() {
       expect(global.strength, 0.5);
       expect(global.direction, const Offset(0, -1));
 
-      final pointDefault = ParticleGravity.point();
+      final pointDefault = GravityFeatures.point();
       expect(pointDefault.type, GravityType.point);
       expect(pointDefault.strength, 0.1);
       expect(pointDefault.direction, const Offset(0, 1));
       expect(pointDefault.center, isNull);
 
-      final point = ParticleGravity.point(
+      final point = GravityFeatures.point(
         strength: 0.7,
         center: const Offset(50, 50),
       );
@@ -155,7 +155,7 @@ void main() {
     });
 
     test('copyWith creates modified copy and preserves existing center', () {
-      const initial = ParticleGravity(type: GravityType.none, strength: 0.2);
+      const initial = GravityFeatures(type: GravityType.none, strength: 0.2);
       final updated = initial.copyWith(
         type: GravityType.global,
         strength: 0.9,
@@ -176,31 +176,31 @@ void main() {
     test(
         'Equality differentiates by strength, direction, and center (L110-L112)',
         () {
-      const base = ParticleGravity(
+      const base = GravityFeatures(
         type: GravityType.point,
         strength: 0.5,
         direction: Offset(0, 1),
         center: Offset(10, 10),
       );
-      const same = ParticleGravity(
+      const same = GravityFeatures(
         type: GravityType.point,
         strength: 0.5,
         direction: Offset(0, 1),
         center: Offset(10, 10),
       );
-      const diffStrength = ParticleGravity(
+      const diffStrength = GravityFeatures(
         type: GravityType.point,
         strength: 0.8,
         direction: Offset(0, 1),
         center: Offset(10, 10),
       );
-      const diffDirection = ParticleGravity(
+      const diffDirection = GravityFeatures(
         type: GravityType.point,
         strength: 0.5,
         direction: Offset(1, 0),
         center: Offset(10, 10),
       );
-      const diffCenter = ParticleGravity(
+      const diffCenter = GravityFeatures(
         type: GravityType.point,
         strength: 0.5,
         direction: Offset(0, 1),
@@ -215,17 +215,17 @@ void main() {
     });
 
     test('Equality, hashCode, and toString work as expected', () {
-      const g1 = ParticleGravity(
+      const g1 = GravityFeatures(
         type: GravityType.global,
         strength: 0.5,
         direction: Offset(0, 1),
       );
-      const g2 = ParticleGravity(
+      const g2 = GravityFeatures(
         type: GravityType.global,
         strength: 0.5,
         direction: Offset(0, 1),
       );
-      const g3 = ParticleGravity(
+      const g3 = GravityFeatures(
         type: GravityType.point,
         strength: 0.5,
       );
@@ -233,7 +233,7 @@ void main() {
       expect(g1, equals(g2));
       expect(g1.hashCode, equals(g2.hashCode));
       expect(g1, isNot(equals(g3)));
-      expect(g1.toString(), contains('ParticleGravity('));
+      expect(g1.toString(), contains('GravityFeatures('));
     });
   });
 }
