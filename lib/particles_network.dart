@@ -18,21 +18,23 @@ export 'package:particles_network/src/factory/default_particle_factory.dart'
 export 'package:particles_network/src/factory/particle_factory.dart'
     show IParticleFactory;
 export 'package:particles_network/src/interaction/touch_features.dart'
-    show TouchFeatures;
+    show TouchFeatures, TouchType;
 export 'package:particles_network/src/interaction/touch_interaction_handler.dart'
     show TouchInteractionHandler;
 export 'package:particles_network/src/physics/legacy/legacy_gravity_config.dart'
     show GravityConfig;
 export 'package:particles_network/src/physics/particle_gravity.dart'
-    show GravityType, ParticleGravity;
+    show GravityType, GravityFeatures;
 export 'package:particles_network/src/physics/particle_controller.dart'
     show IParticleController, ITimeScaledParticleController;
 export 'package:particles_network/src/physics/particle_updater.dart'
     show ParticleUpdater;
 export 'package:particles_network/src/rendering/line_vertex_batch.dart'
     show LineRenderer, LineVertexBatch;
+export 'package:particles_network/src/rendering/complex_features.dart'
+    show ComplexConfig, ComplexFeatures;
 export 'package:particles_network/src/rendering/network_performance.dart'
-    show NetworkPerformance;
+    show PerformanceFeatures;
 export 'package:particles_network/src/rendering/object_pool.dart'
     show
         ObjectPool,

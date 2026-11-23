@@ -2,7 +2,6 @@ import 'dart:ui';
 
 import 'package:flutter/widgets.dart';
 import 'package:particles_network/src/interaction/touch_features.dart';
-import 'package:particles_network/src/rendering/line_vertex_batch.dart';
 import 'package:particles_network/src/rendering/network_performance.dart';
 import 'package:particles_network/src/rendering/optimized_network_painter.dart';
 
@@ -13,16 +12,15 @@ import 'package:particles_network/src/rendering/optimized_network_painter.dart';
 class LegacyPainterAdapter {
   const LegacyPainterAdapter();
 
-  /// Resolves the effective [NetworkPerformance] by folding in legacy parameters.
-  static NetworkPerformance resolvePerformance({
-    required NetworkPerformance basePerformance,
+  /// Resolves the effective [PerformanceFeatures] by folding in legacy parameters.
+  static PerformanceFeatures resolvePerformance({
+    required PerformanceFeatures basePerformance,
     bool? isComplex,
     double? complexReductionRatio,
     int? maxComplexLines,
     double? complexDensityFactor,
     int? maxConnectionsPerParticle,
     int? maxLinesPerFrame,
-    LineRenderer? lineRenderer,
     bool? antiAlias,
   }) {
     return basePerformance.copyWith(
@@ -32,7 +30,6 @@ class LegacyPainterAdapter {
       complexDensityFactor: complexDensityFactor,
       maxConnectionsPerParticle: maxConnectionsPerParticle,
       maxLinesPerFrame: maxLinesPerFrame,
-      lineRenderer: lineRenderer,
       antiAlias: antiAlias,
     );
   }
@@ -53,10 +50,9 @@ class LegacyPainterAdapter {
     return touchColor ?? touchFeatures.color;
   }
 
-  /// Folds multiple performance parameter updates into an updated [NetworkPerformance].
-  static NetworkPerformance foldPerformanceOptions({
-    required NetworkPerformance current,
-    LineRenderer? lineRenderer,
+  /// Folds multiple performance parameter updates into an updated [PerformanceFeatures].
+  static PerformanceFeatures foldPerformanceOptions({
+    required PerformanceFeatures current,
     bool? isComplex,
     double? complexReductionRatio,
     bool clearcomplexReductionRatio = false,
@@ -71,7 +67,6 @@ class LegacyPainterAdapter {
     bool clearMaxConnectionsPerParticle = false,
   }) {
     return current.copyWith(
-      lineRenderer: lineRenderer,
       isComplex: isComplex,
       complexReductionRatio: complexReductionRatio,
       clearcomplexReductionRatio: clearcomplexReductionRatio,
@@ -99,6 +94,7 @@ class LegacyPainterAdapter {
         oldDelegate.particleColor != current.particleColor ||
         oldDelegate.lineColor != current.lineColor ||
         oldDelegate.lineWidth != current.lineWidth ||
+        oldDelegate.lineRenderer != current.lineRenderer ||
         oldDelegate.fill != current.fill ||
         oldDelegate.drawNetwork != current.drawNetwork ||
         oldDelegate.devicePixelRatio != current.devicePixelRatio ||

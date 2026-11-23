@@ -7,6 +7,6 @@
 library;
 
 export 'package:particles_network/src/physics/particle_gravity.dart'
-    show GravityType, ParticleGravity;
+    show GravityType, GravityFeatures;
 export 'package:particles_network/src/physics/legacy/legacy_gravity_config.dart'
     show GravityConfig;

@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: const Color(0xFF070B14),
         colorScheme: const ColorScheme.dark(
-          primary: Color.fromARGB(255, 7, 18, 22),
+          primary: Color.fromARGB(255, 0, 0, 0),
           surface: Color(0xFF111827),
         ),
       ),
@@ -120,20 +120,23 @@ class CosmicWebExample extends StatelessWidget {
     return Container(
       color: const Color(0xFF070B14),
       child: const ParticleNetwork(
-        
-        particleCount: 220,
-        maxSpeed: 2.2,
-        maxSize: 2.5,
-        lineWidth: 0.8,
-        lineDistance: 80.0,
-        particleColor: Colors.transparent,
-        lineColor: Color(0xFF38BDF8),
+        network: NetworkFeatures(
+          width: 0.8,
+          distance: 80.0,
+          color: Color(0xFF38BDF8),
+        ),
+        particles: ParticleFeatures(
+          count: 220,
+          maxSpeed: 2.2,
+          maxSize: 2.5,
+          color: Colors.transparent,
+        ),
         touch: TouchFeatures(
           color: Color(0xFFFBBF24),
           force: 0.35,
           speed: 0.30,
-          maxTouchSpeed: 4.0,
-          lineDistance: 170.0,
+          maxSpeed: 4.0,
+          distance: 170.0,
         ),
       ),
     );
@@ -149,14 +152,18 @@ class CyberpunkMatrixExample extends StatelessWidget {
     return Container(
       color: const Color(0xFF02120A),
       child: const ParticleNetwork(
-        particleCount: 350,
-        maxSpeed: 6.5,
-        maxSize: 2.2,
-        lineWidth: 1.2,
-        lineDistance: 70.0,
-        particleColor: Color(0xFF10B981),
-        lineColor: Color(0xFF06B6D4),
-        gravity: ParticleGravity.global(
+        particles: ParticleFeatures(
+          count: 350,
+          maxSpeed: 6.5,
+          maxSize: 2.2,
+          color: Color(0xFF10B981),
+        ),
+        network: NetworkFeatures(
+          width: 1.2,
+          distance: 70.0,
+          color: Color(0xFF06B6D4),
+        ),
+        gravity: GravityFeatures.global(
           strength: 0.40,
           direction: Offset(0, 1),
         ),
@@ -165,10 +172,10 @@ class CyberpunkMatrixExample extends StatelessWidget {
           force: 0.80,
           speed: 0.50,
           damping: 0.970,
-          maxTouchSpeed: 7.0,
-          lineDistance: 200.0,
+          maxSpeed: 7.0,
+          distance: 200.0,
         ),
-        performance: NetworkPerformance(
+        performance: PerformanceFeatures(
           frameRateIndependent: true,
         ),
       ),
@@ -185,14 +192,19 @@ class BlackHoleExample extends StatelessWidget {
     return Container(
       color: const Color(0xFF030107),
       child: const ParticleNetwork(
-        particleCount: 400,
-        maxSpeed: 4.8,
-        maxSize: 3.0,
-        lineWidth: 1.5,
-        lineDistance: 95.0,
-        particleColor: Color(0xFFF59E0B),
-        lineColor: Color(0xFFEC4899),
-        gravity: ParticleGravity.point(
+        particles: ParticleFeatures(
+          fill: false,
+          count: 400,
+          maxSpeed: 4.8,
+          maxSize: 3.0,
+          color: Color(0xFFF59E0B),
+        ),
+        network: NetworkFeatures(
+          width: 1.5,
+          distance: 95.0,
+          color: Color(0xFFEC4899),
+        ),
+        gravity: GravityFeatures.point(
           strength: 0.85,
         ),
         touch: TouchFeatures(
@@ -200,10 +212,10 @@ class BlackHoleExample extends StatelessWidget {
           force: 1.20,
           speed: 0.65,
           damping: 0.965,
-          maxTouchSpeed: 9.0,
-          lineDistance: 220.0,
+          maxSpeed: 9.0,
+          distance: 220.0,
         ),
-        performance: NetworkPerformance(
+        performance: PerformanceFeatures(
           maxConnectionsPerParticle: 6,
           autoBoost: true,
         ),
@@ -221,14 +233,18 @@ class SupernovaExample extends StatelessWidget {
     return Container(
       color: const Color(0xFF0C0303),
       child: const ParticleNetwork(
-        particleCount: 450,
-        maxSpeed: 8.0,
-        maxSize: 3.2,
-        lineWidth: 1.4,
-        lineDistance: 85.0,
-        particleColor: Color(0xFFEF4444),
-        lineColor: Color(0xFFF97316),
-        gravity: ParticleGravity(
+        particles: ParticleFeatures(
+          count: 450,
+          maxSpeed: 8.0,
+          maxSize: 3.2,
+          color: Color(0xFFEF4444),
+        ),
+        network: NetworkFeatures(
+          width: 1.4,
+          distance: 85.0,
+          color: Color(0xFFF97316),
+        ),
+        gravity: GravityFeatures(
           strength: -1.20,
           center: Offset(200, 300),
           direction: Offset(0, 1),
@@ -239,10 +255,10 @@ class SupernovaExample extends StatelessWidget {
           force: 0.90,
           speed: 0.50,
           damping: 0.975,
-          maxTouchSpeed: 10.0,
-          lineDistance: 230.0,
+          maxSpeed: 10.0,
+          distance: 230.0,
         ),
-        performance: NetworkPerformance(
+        performance: PerformanceFeatures(
           maxConnectionsPerParticle: 5,
           maxLinesPerFrame: 15000,
           autoBoost: true,
@@ -261,22 +277,26 @@ class NeuralSynapseExample extends StatelessWidget {
     return Container(
       color: const Color(0xFF080718),
       child: const ParticleNetwork(
-        particleCount: 300,
-        maxSpeed: 3.5,
-        maxSize: 2.4,
-        lineWidth: 1.1,
-        lineDistance: 85.0,
-        particleColor: Color(0xFFA855F7),
-        lineColor: Color(0xFF38BDF8),
+        particles: ParticleFeatures(
+          count: 300,
+          maxSpeed: 3.5,
+          maxSize: 2.4,
+          color: Color(0xFFA855F7),
+        ),
+        network: NetworkFeatures(
+          width: 1.1,
+          distance: 85.0,
+          color: Color(0xFF38BDF8),
+        ),
         touch: TouchFeatures(
           color: Color(0xFF34D399),
           force: 0.75,
           speed: 0.40,
           damping: 0.980,
-          maxTouchSpeed: 6.0,
-          lineDistance: 190.0,
+          maxSpeed: 6.0,
+          distance: 190.0,
         ),
-        performance: NetworkPerformance(
+        performance: PerformanceFeatures(
           frameRateIndependent: true,
         ),
       ),
@@ -293,21 +313,25 @@ class QuantumFoamExample extends StatelessWidget {
     return Container(
       color: const Color(0xFF050814),
       child: const ParticleNetwork(
-        particleCount: 400,
-        maxSpeed: 5.0,
-        maxSize: 1.8,
-        lineWidth: 0.9,
-        lineDistance: 75.0,
-        particleColor: Color(0xFF22D3EE),
-        lineColor: Color(0xFF818CF8),
+        particles: ParticleFeatures(
+          count: 400,
+          maxSpeed: 5.0,
+          maxSize: 1.8,
+          color: Color(0xFF22D3EE),
+        ),
+        network: NetworkFeatures(
+          width: 0.9,
+          distance: 75.0,
+          color: Color(0xFF818CF8),
+        ),
         touch: TouchFeatures(
           color: Color(0xFFE879F9),
           force: 0.60,
           speed: 0.45,
-          maxTouchSpeed: 7.0,
-          lineDistance: 150.0,
+          maxSpeed: 7.0,
+          distance: 150.0,
         ),
-        performance: NetworkPerformance(
+        performance: PerformanceFeatures(
           frameRateIndependent: true,
         ),
       ),
@@ -324,21 +348,25 @@ class SwarmExample extends StatelessWidget {
     return Container(
       color: const Color(0xFF070B16),
       child: const ParticleNetwork(
-        particleCount: 1000,
-        maxSpeed: 4.5,
-        maxSize: 1.6,
-        lineWidth: 1.3,
-        lineDistance: 65.0,
-        particleColor: Color(0xFF38BDF8),
-        lineColor: Color(0xFF6366F1),
+        particles: ParticleFeatures(
+          count: 1000,
+          maxSpeed: 4.5,
+          maxSize: 1.6,
+          color: Color(0xFF38BDF8),
+        ),
+        network: NetworkFeatures(
+          width: 1.3,
+          distance: 65.0,
+          color: Color(0xFF6366F1),
+        ),
         touch: TouchFeatures(
           color: Color(0xFF10B981),
           force: 0.50,
           speed: 0.45,
-          maxTouchSpeed: 6.0,
-          lineDistance: 140.0,
+          maxSpeed: 6.0,
+          distance: 140.0,
         ),
-        performance: NetworkPerformance(
+        performance: PerformanceFeatures(
           maxConnectionsPerParticle: 4,
           maxLinesPerFrame: 15000,
           autoBoost: true,
