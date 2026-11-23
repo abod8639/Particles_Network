@@ -6,17 +6,17 @@ import 'package:particles_network/src/rendering/line_vertex_batch.dart';
 
 /// Configuration class for particle connection lines, styling, and rendering backend.
 ///
-/// Encapsulates all connection network properties including whether lines are rendered ([drawNetwork]),
-/// connection reach radius ([lineDistance]), stroke width ([lineWidth]), base line color ([lineColor]),
+/// Encapsulates all connection network properties including whether lines are rendered ([enabled]),
+/// connection reach radius ([distance]), stroke width ([width]), base line color ([color]),
 /// and GPU rasterization backend ([lineRenderer]).
 ///
 /// Example:
 /// ```dart
 /// const network = NetworkFeatures(
-///   drawNetwork: true,
-///   lineWidth: 0.8,
-///   lineDistance: 80.0,
-///   lineColor: Color(0xFF38BDF8),
+///   enabled: true,
+///   width: 0.8,
+///   distance: 80.0,
+///   color: Color(0xFF38BDF8),
 ///   lineRenderer: LineRenderer.vertices,
 /// );
 /// ```
@@ -24,23 +24,12 @@ import 'package:particles_network/src/rendering/line_vertex_batch.dart';
 class NetworkFeatures {
   /// Whether connection lines between neighboring particles are calculated and drawn.
   ///
-  /// When `true`, lines connect neighboring particles within [lineDistance].
+  /// When `true`, lines connect neighboring particles within [distance].
   /// When `false`, line calculations and drawing are completely bypassed, rendering
   /// only particle discs and saving substantial CPU/GPU cycles.
   ///
   /// Defaults to `true`.
-  final bool drawNetwork;
-
-  /// Compatibility alias for [drawNetwork].
-  ///
-  /// Deprecated: Renamed to [drawNetwork] inside [NetworkFeatures]. Use [drawNetwork] instead.
-  /// This property will be removed in particles_network 2.0.0.
-  @Deprecated(
-    'drawnetwork was renamed to drawNetwork inside NetworkFeatures. '
-    'Use NetworkFeatures.drawNetwork instead. '
-    'This property will be removed in particles_network 2.0.0.',
-  )
-  bool get drawnetwork => drawNetwork;
+  final bool enabled;
 
   /// Stroke width of connection lines between particles in logical pixels.
   ///
@@ -48,35 +37,24 @@ class NetworkFeatures {
   /// reduced opacity when using [LineRenderer.vertices] to eliminate visual aliasing dropouts.
   ///
   /// Defaults to `0.5`.
-  final double lineWidth;
-
-  /// Compatibility alias for [lineWidth].
-  ///
-  /// Deprecated: Renamed to [lineWidth] inside [NetworkFeatures]. Use [lineWidth] instead.
-  /// This property will be removed in particles_network 2.0.0.
-  @Deprecated(
-    'linewidth was renamed to lineWidth inside NetworkFeatures. '
-    'Use NetworkFeatures.lineWidth instead. '
-    'This property will be removed in particles_network 2.0.0.',
-  )
-  double get linewidth => lineWidth;
+  final double width;
 
   /// Maximum connection distance between particles in logical pixels.
   ///
-  /// Two particles connect with a line if the distance between them is less than [lineDistance].
-  /// Lines fade out smoothly with distance, reaching full transparency at [lineDistance].
-  /// Also serves as the default reach for touch interactions when [TouchFeatures.lineDistance] is `null`.
+  /// Two particles connect with a line if the distance between them is less than [distance].
+  /// Lines fade out smoothly with distance, reaching full transparency at [distance].
+  /// Also serves as the default reach for touch interactions when [TouchFeatures.distance] is `null`.
   ///
   /// Defaults to `100.0`.
-  final double lineDistance;
+  final double distance;
 
   /// Base color used to render connecting lines between particles.
   ///
   /// Line opacity scales dynamically with particle proximity, fading from full opacity
-  /// when particles touch to completely transparent at [lineDistance].
+  /// when particles touch to completely transparent at [distance].
   ///
   /// Defaults to `const Color.fromARGB(255, 100, 255, 180)` (cyan-green).
-  final Color lineColor;
+  final Color color;
 
   /// The rasterization backend used to render connection lines on the GPU.
   ///
@@ -86,63 +64,38 @@ class NetworkFeatures {
   ///   with rounded ends).
   ///
   /// Defaults to [LineRenderer.vertices].
-  final LineRenderer lineRenderer;
+  final LineRenderer renderer;
 
   /// Creates a [NetworkFeatures] configuration with customizable appearance and rendering backend.
   ///
   /// Parameters:
-  /// * [drawNetwork]: Whether connection lines are rendered. Defaults to `true`.
-  /// * [lineWidth]: Stroke width of connection lines. Defaults to `0.5`.
-  /// * [lineDistance]: Max proximity distance for connection lines. Defaults to `100.0`.
-  /// * [lineColor]: Color for connection lines. Defaults to `const Color.fromARGB(255, 100, 255, 180)`.
-  /// * [lineRenderer]: Rasterization backend engine. Defaults to [LineRenderer.vertices].
+  /// * [enabled]: Whether connection lines are rendered. Defaults to `true`.
+  /// * [width]: Stroke width of connection lines. Defaults to `0.5`.
+  /// * [distance]: Max proximity distance for connection lines. Defaults to `100.0`.
+  /// * [color]: Color for connection lines. Defaults to `const Color.fromARGB(255, 100, 255, 180)`.
+  /// * [renderer]: Rasterization backend engine. Defaults to [LineRenderer.vertices].
   const NetworkFeatures({
-    bool? drawNetwork,
-    @Deprecated(
-      'drawnetwork was renamed to drawNetwork inside NetworkFeatures. '
-      'Use NetworkFeatures(drawNetwork: ...) instead. '
-      'This parameter will be removed in particles_network 2.0.0.',
-    )
-    bool? drawnetwork,
-    double? lineWidth,
-    @Deprecated(
-      'linewidth was renamed to lineWidth inside NetworkFeatures. '
-      'Use NetworkFeatures(lineWidth: ...) instead. '
-      'This parameter will be removed in particles_network 2.0.0.',
-    )
-    double? linewidth,
-    this.lineDistance = 100.0,
-    this.lineColor = const Color.fromARGB(255, 100, 255, 180),
-    this.lineRenderer = LineRenderer.vertices,
-  })  : drawNetwork = drawnetwork ?? drawNetwork ?? true,
-        lineWidth = linewidth ?? lineWidth ?? 0.5;
+    this.enabled = true,
+    this.width = 0.5,
+    this.distance = 100.0,
+    this.color = const Color.fromARGB(255, 100, 255, 180),
+    this.renderer = LineRenderer.vertices,
+  });
 
   /// Creates a copy of this [NetworkFeatures] configuration with updated parameters.
   NetworkFeatures copyWith({
-    bool? drawNetwork,
-    @Deprecated(
-      'drawnetwork was renamed to drawNetwork inside NetworkFeatures. '
-      'Use NetworkFeatures.copyWith(drawNetwork: ...) instead. '
-      'This parameter will be removed in particles_network 2.0.0.',
-    )
-    bool? drawnetwork,
-    double? lineWidth,
-    @Deprecated(
-      'linewidth was renamed to lineWidth inside NetworkFeatures. '
-      'Use NetworkFeatures.copyWith(lineWidth: ...) instead. '
-      'This parameter will be removed in particles_network 2.0.0.',
-    )
-    double? linewidth,
-    double? lineDistance,
-    Color? lineColor,
-    LineRenderer? lineRenderer,
+    bool? enabled,
+    double? width,
+    double? distance,
+    Color? color,
+    LineRenderer? renderer,
   }) {
     return NetworkFeatures(
-      drawNetwork: drawnetwork ?? drawNetwork ?? this.drawNetwork,
-      lineWidth: linewidth ?? lineWidth ?? this.lineWidth,
-      lineDistance: lineDistance ?? this.lineDistance,
-      lineColor: lineColor ?? this.lineColor,
-      lineRenderer: lineRenderer ?? this.lineRenderer,
+      enabled: enabled ?? this.enabled,
+      width: width ?? this.width,
+      distance: distance ?? this.distance,
+      color: color ?? this.color,
+      renderer: renderer ?? this.renderer,
     );
   }
 
@@ -151,23 +104,23 @@ class NetworkFeatures {
       identical(this, other) ||
       other is NetworkFeatures &&
           runtimeType == other.runtimeType &&
-          drawNetwork == other.drawNetwork &&
-          lineWidth == other.lineWidth &&
-          lineDistance == other.lineDistance &&
-          lineColor == other.lineColor &&
-          lineRenderer == other.lineRenderer;
+          enabled == other.enabled &&
+          width == other.width &&
+          distance == other.distance &&
+          color == other.color &&
+          renderer == other.renderer;
 
   @override
   int get hashCode => Object.hash(
-        drawNetwork,
-        lineWidth,
-        lineDistance,
-        lineColor,
-        lineRenderer,
+        enabled,
+        width,
+        distance,
+        color,
+        renderer,
       );
 
   @override
   String toString() =>
-      'NetworkFeatures(drawNetwork: $drawNetwork, lineWidth: $lineWidth, '
-      'lineDistance: $lineDistance, lineColor: $lineColor, lineRenderer: $lineRenderer)';
+      'NetworkFeatures(enabled: $enabled, width: $width, '
+      'distance: $distance, color: $color, renderer: $renderer)';
 }

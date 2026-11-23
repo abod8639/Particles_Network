@@ -51,7 +51,7 @@ class TrajectoryBuffer {
     required List<Particle> particles,
     required Size bounds,
     required IParticleController controller,
-    ParticleGravity gravity = const ParticleGravity(),
+    GravityFeatures gravity = const GravityFeatures(),
   }) {
     if (particles.isEmpty || bounds.width <= 0 || bounds.height <= 0) {
       _isValid = false;

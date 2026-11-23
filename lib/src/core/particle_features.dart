@@ -36,17 +36,6 @@ class ParticleFeatures {
   /// Defaults to `60`.
   final int count;
 
-  /// Compatibility alias for [count].
-  ///
-  /// Deprecated: Renamed to [count] inside [ParticleFeatures]. Use [count] instead.
-  /// This property will be removed in particles_network 2.0.0.
-  @Deprecated(
-    'particleCount was renamed to count inside ParticleFeatures. '
-    'Use ParticleFeatures.count instead. '
-    'This property will be removed in particles_network 2.0.0.',
-  )
-  int get particleCount => count;
-
   /// Maximum base velocity of particles in pixels per frame.
   ///
   /// Each particle is initialized with a randomized velocity between `0.0` and [maxSpeed].
@@ -68,17 +57,6 @@ class ParticleFeatures {
   ///
   /// Defaults to `const Color(0xFFFFFFFF)` (white).
   final Color color;
-
-  /// Compatibility alias for [color].
-  ///
-  /// Deprecated: Renamed to [color] inside [ParticleFeatures]. Use [color] instead.
-  /// This property will be removed in particles_network 2.0.0.
-  @Deprecated(
-    'particleColor was renamed to color inside ParticleFeatures. '
-    'Use ParticleFeatures.color instead. '
-    'This property will be removed in particles_network 2.0.0.',
-  )
-  Color get particleColor => color;
 
   /// Whether particles are rendered as filled solid circles or hollow stroked outlines.
   ///
@@ -102,18 +80,7 @@ class ParticleFeatures {
     /// Higher counts create richer networks but require more CPU/GPU calculation.
     ///
     /// Defaults to `60`.
-    int? count,
-
-    /// Compatibility alias for [count].
-    ///
-    /// Deprecated: Renamed to [count] inside [ParticleFeatures]. Use [count] instead.
-    /// This parameter will be removed in particles_network 2.0.0.
-    @Deprecated(
-      'particleCount was renamed to count inside ParticleFeatures. '
-      'Use ParticleFeatures(count: ...) instead. '
-      'This parameter will be removed in particles_network 2.0.0.',
-    )
-    int? particleCount,
+    this.count = 60,
 
     /// The maximum cruising speed ceiling of wandering particles in logical pixels per frame.
     ///
@@ -128,25 +95,14 @@ class ParticleFeatures {
     /// The base color used to render particle discs or circle rings.
     ///
     /// Defaults to `const Color(0xFFFFFFFF)` (white).
-    Color? color,
-
-    /// Compatibility alias for [color].
-    ///
-    /// Deprecated: Renamed to [color] inside [ParticleFeatures]. Use [color] instead.
-    /// This parameter will be removed in particles_network 2.0.0.
-    @Deprecated(
-      'particleColor was renamed to color inside ParticleFeatures. '
-      'Use ParticleFeatures(color: ...) instead. '
-      'This parameter will be removed in particles_network 2.0.0.',
-    )
-    Color? particleColor,
+    this.color = const Color(0xFFFFFFFF),
 
     /// Whether particles are rendered as filled solid discs or stroked circular rings.
     ///
     /// Defaults to `true`.
     this.fill = true,
   })  : assert(
-          (count ?? particleCount ?? 60) >= 0,
+          count >= 0,
           'count must be non-negative',
         ),
         assert(
@@ -156,9 +112,7 @@ class ParticleFeatures {
         assert(
           maxSize > 0.0,
           'maxSize must be positive',
-        ),
-        count = count ?? particleCount ?? 60,
-        color = color ?? particleColor ?? const Color(0xFFFFFFFF);
+        );
 
   /// Subtle preset with reduced particle count and gentle velocity.
   ///
@@ -237,14 +191,6 @@ class ParticleFeatures {
     /// Total particle count.
     int? count,
 
-    /// Compatibility alias for [count].
-    @Deprecated(
-      'particleCount was renamed to count inside ParticleFeatures. '
-      'Use ParticleFeatures.copyWith(count: ...) instead. '
-      'This parameter will be removed in particles_network 2.0.0.',
-    )
-    int? particleCount,
-
     /// Maximum cruising speed ceiling in px/frame.
     double? maxSpeed,
 
@@ -254,22 +200,14 @@ class ParticleFeatures {
     /// Base particle color.
     Color? color,
 
-    /// Compatibility alias for [color].
-    @Deprecated(
-      'particleColor was renamed to color inside ParticleFeatures. '
-      'Use ParticleFeatures.copyWith(color: ...) instead. '
-      'This parameter will be removed in particles_network 2.0.0.',
-    )
-    Color? particleColor,
-
     /// Whether particles are filled solid or stroked rings.
     bool? fill,
   }) {
     return ParticleFeatures(
-      count: count ?? particleCount ?? this.count,
+      count: count ?? this.count,
       maxSpeed: maxSpeed ?? this.maxSpeed,
       maxSize: maxSize ?? this.maxSize,
-      color: color ?? particleColor ?? this.color,
+      color: color ?? this.color,
       fill: fill ?? this.fill,
     );
   }

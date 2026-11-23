@@ -23,7 +23,7 @@ class TouchInteractionHandler {
 
   /// Effective distance for touch interactions
   double get effectiveLineDistance =>
-      touchFeatures.lineDistance ?? lineDistance;
+      touchFeatures.distance ?? lineDistance;
 
   // Color to use for touch interactions
   Color get touchColor => _touchColor;
@@ -149,9 +149,10 @@ class TouchInteractionHandler {
         ? touchFeatures.damping
         : math.pow(touchFeatures.damping, t).toDouble();
     final double frameForce = force * t;
-    final double maxTouchSpeed = touchFeatures.maxTouchSpeed;
+    final double maxTouchSpeed = touchFeatures.maxSpeed;
     final double maxTouchSpeedSq = maxTouchSpeed * maxTouchSpeed;
     final double touchSpeed = touchFeatures.speed;
+    final double dirSign = touchFeatures.type == TouchType.push ? -1.0 : 1.0;
 
     final SortedSpatialGrid? activeGrid = grid ?? spatialGrid;
     final bool useGrid = activeGrid != null &&
@@ -167,8 +168,8 @@ class TouchInteractionHandler {
         final double actualDistSq = dx * dx + dy * dy;
         if (actualDistSq >= maxDistSq) return;
 
-        p.vx += dx * frameForce;
-        p.vy += dy * frameForce;
+        p.vx += dx * frameForce * dirSign;
+        p.vy += dy * frameForce * dirSign;
 
         final double dist = math.sqrt(actualDistSq);
         final double falloff = 1.0 - (dist / maxDist);
@@ -176,7 +177,7 @@ class TouchInteractionHandler {
         final double nx = dx * invDist;
         final double ny = dy * invDist;
 
-        final double pull = pullForce * falloff * t;
+        final double pull = pullForce * falloff * t * dirSign;
         double vx = (p.vx + nx * pull) * touchDamping;
         double vy = (p.vy + ny * pull) * touchDamping;
 
@@ -207,8 +208,8 @@ class TouchInteractionHandler {
         final double distSq = dx * dx + dy * dy;
 
         if (distSq < maxDistSq) {
-          p.vx += dx * frameForce;
-          p.vy += dy * frameForce;
+          p.vx += dx * frameForce * dirSign;
+          p.vy += dy * frameForce * dirSign;
 
           final double dist = math.sqrt(distSq);
           final double falloff = 1.0 - (dist / maxDist);
@@ -216,7 +217,7 @@ class TouchInteractionHandler {
           final double nx = dx * invDist;
           final double ny = dy * invDist;
 
-          final double pull = pullForce * falloff * t;
+          final double pull = pullForce * falloff * t * dirSign;
           double vx = (p.vx + nx * pull) * touchDamping;
           double vy = (p.vy + ny * pull) * touchDamping;
 
