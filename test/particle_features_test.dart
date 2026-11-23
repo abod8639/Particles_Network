@@ -13,12 +13,6 @@ void main() {
       expect(features.maxSize, equals(1.5));
       expect(features.color, equals(const Color(0xFFFFFFFF)));
       expect(features.fill, isTrue);
-
-      // Verify legacy compatibility getters
-      // ignore: deprecated_member_use_from_same_package
-      expect(features.particleCount, equals(60));
-      // ignore: deprecated_member_use_from_same_package
-      expect(features.particleColor, equals(const Color(0xFFFFFFFF)));
     });
 
     test('Accepts explicit custom values', () {
@@ -35,34 +29,6 @@ void main() {
       expect(features.maxSize, equals(4.0));
       expect(features.color, equals(const Color(0xFF10B981)));
       expect(features.fill, isFalse);
-    });
-
-    test('Accepts legacy constructor parameter aliases (particleCount, particleColor)', () {
-      // ignore: deprecated_member_use_from_same_package
-      const features = ParticleFeatures(
-        particleCount: 85,
-        particleColor: Color(0xFFFF5722),
-      );
-
-      expect(features.count, equals(85));
-      expect(features.color, equals(const Color(0xFFFF5722)));
-      // ignore: deprecated_member_use_from_same_package
-      expect(features.particleCount, equals(85));
-      // ignore: deprecated_member_use_from_same_package
-      expect(features.particleColor, equals(const Color(0xFFFF5722)));
-    });
-
-    test('Canonical constructor parameters take precedence over deprecated aliases', () {
-      // ignore: deprecated_member_use_from_same_package
-      const features = ParticleFeatures(
-        count: 100,
-        particleCount: 50,
-        color: Color(0xFF00FF00),
-        particleColor: Color(0xFFFF0000),
-      );
-
-      expect(features.count, equals(100));
-      expect(features.color, equals(const Color(0xFF00FF00)));
     });
 
     test('Presets initialize with well-tuned parameters', () {
@@ -119,26 +85,6 @@ void main() {
 
       final updatedFill = original.copyWith(fill: true);
       expect(updatedFill.fill, isTrue);
-
-      // Legacy parameter aliases in copyWith
-      // ignore: deprecated_member_use_from_same_package
-      final updatedLegacy = original.copyWith(
-        particleCount: 95,
-        particleColor: const Color(0xFFFBBF24),
-      );
-      expect(updatedLegacy.count, equals(95));
-      expect(updatedLegacy.color, equals(const Color(0xFFFBBF24)));
-
-      // Canonical parameter overrides deprecated alias in copyWith
-      // ignore: deprecated_member_use_from_same_package
-      final canonicalOverride = original.copyWith(
-        count: 110,
-        particleCount: 40,
-        color: const Color(0xFF10B981),
-        particleColor: const Color(0xFFEF4444),
-      );
-      expect(canonicalOverride.count, equals(110));
-      expect(canonicalOverride.color, equals(const Color(0xFF10B981)));
     });
 
     test('Equality, hashCode, and toString work as expected', () {

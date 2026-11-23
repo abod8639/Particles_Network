@@ -6,14 +6,13 @@ import 'package:particles_network/particles_network.dart';
 import 'package:particles_network/src/legacy/legacy_deprecation_logger.dart';
 
 void main() {
-  group('NetworkPerformance', () {
+  group('PerformanceFeatures', () {
     test('default constructor has correct default values', () {
-      const perf = NetworkPerformance();
+      const perf = PerformanceFeatures();
 
       expect(perf.maxConnectionsPerParticle, isNull);
       expect(perf.maxLinesPerFrame, isNull);
       expect(perf.frameRateIndependent, isFalse);
-      expect(perf.lineRenderer, equals(LineRenderer.vertices));
       expect(perf.isComplex, isFalse);
       expect(perf.complexDensityFactor, isNull);
       expect(perf.cappedDistanceFactor, equals(0.75));
@@ -21,70 +20,64 @@ void main() {
     });
 
     test('highPerformance preset has optimized values', () {
-      final perf = NetworkPerformance.highPerformance();
+      final perf = PerformanceFeatures.highPerformance();
 
       expect(perf.maxConnectionsPerParticle, equals(4));
       expect(perf.maxLinesPerFrame, equals(15000));
       expect(perf.frameRateIndependent, isTrue);
-      expect(perf.lineRenderer, equals(LineRenderer.vertices));
       expect(perf.isComplex, isTrue);
       expect(perf.cappedDistanceFactor, equals(0.75));
       expect(perf.antiAlias, isTrue);
     });
 
     test('auto preset has smart auto-performance scaling enabled', () {
-      const perf = NetworkPerformance.auto();
+      const perf = PerformanceFeatures.auto();
 
       expect(perf.maxConnectionsPerParticle, isNull);
       expect(perf.maxLinesPerFrame, isNull);
       expect(perf.frameRateIndependent, isTrue);
-      expect(perf.lineRenderer, equals(LineRenderer.vertices));
       expect(perf.autoBoost, isTrue);
     });
 
     test('complex preset has fine-grained dense cluster controls (L181-L182)', () {
-      final perf = NetworkPerformance.complex();
+      final perf = PerformanceFeatures.complex();
 
       expect(perf.isComplex, isTrue);
       expect(perf.complexReductionRatio, equals(0.5));
       expect(perf.maxComplexLines, equals(3));
       expect(perf.complexDensityFactor, equals(0.60));
       expect(perf.cappedDistanceFactor, equals(0.75));
-      expect(perf.lineRenderer, equals(LineRenderer.vertices));
       expect(perf.autoBoost, isFalse);
     });
 
     test('balanced preset has sensible performance and fidelity limits', () {
-      const perf = NetworkPerformance.balanced();
+      const perf = PerformanceFeatures.balanced();
 
       expect(perf.maxConnectionsPerParticle, equals(6));
       expect(perf.maxLinesPerFrame, equals(8000));
       expect(perf.frameRateIndependent, isTrue);
-      expect(perf.lineRenderer, equals(LineRenderer.vertices));
       expect(perf.isComplex, isFalse);
       expect(perf.autoBoost, isFalse);
     });
 
     test('copyWith updates specified fields and preserves others', () {
-      const initial = NetworkPerformance(
+      const initial = PerformanceFeatures(
         maxConnectionsPerParticle: 5,
         frameRateIndependent: false,
       );
 
       final updated = initial.copyWith(
         maxLinesPerFrame: 3000,
-        lineRenderer: LineRenderer.vertices,
         isComplex: true,
       );
 
       expect(updated.maxConnectionsPerParticle, equals(5));
       expect(updated.maxLinesPerFrame, equals(3000));
-      expect(updated.lineRenderer, equals(LineRenderer.vertices));
       expect(updated.isComplex, isTrue);
     });
 
     test('copyWith allows clearing nullable fields', () {
-      const initial = NetworkPerformance(
+      const initial = PerformanceFeatures(
         maxConnectionsPerParticle: 10,
         maxLinesPerFrame: 2000,
       );
@@ -99,28 +92,25 @@ void main() {
     });
 
     test('equality and hashCode contract', () {
-      const perf1 = NetworkPerformance(
+      const perf1 = PerformanceFeatures(
         maxConnectionsPerParticle: 4,
         maxLinesPerFrame: 5000,
         frameRateIndependent: true,
-        lineRenderer: LineRenderer.vertices,
-        isComplex: true,
+        complex: ComplexConfig(enabled: true),
       );
 
-      const perf2 = NetworkPerformance(
+      const perf2 = PerformanceFeatures(
         maxConnectionsPerParticle: 4,
         maxLinesPerFrame: 5000,
         frameRateIndependent: true,
-        lineRenderer: LineRenderer.vertices,
-        isComplex: true,
+        complex: ComplexConfig(enabled: true),
       );
 
-      const perf3 = NetworkPerformance(
+      const perf3 = PerformanceFeatures(
         maxConnectionsPerParticle: 4,
         maxLinesPerFrame: 5000,
         frameRateIndependent: true,
-        lineRenderer: LineRenderer.vertices,
-        isComplex: false,
+        complex: ComplexConfig(enabled: false),
       );
 
       expect(perf1, equals(perf2));
@@ -130,7 +120,7 @@ void main() {
 
     test('complex preset has optimized values for dense cluster throttling',
         () {
-      final perf = const NetworkPerformance.complex();
+      final perf = const PerformanceFeatures.complex();
 
       expect(perf.isComplex, isTrue);
       expect(perf.complexReductionRatio, equals(0.5));
@@ -139,10 +129,13 @@ void main() {
     });
 
     test('complex preset allows overriding throttling parameters', () {
-      const perf = NetworkPerformance.complex(
-        complexReductionRatio: 0.8,
-        maxComplexLines: 4,
-        complexDensityFactor: 0.4,
+      const perf = PerformanceFeatures.complex(
+        complex: ComplexConfig(
+          enabled: true,
+          ratio: 0.8,
+          maxLines: 4,
+          densityFactor: 0.4,
+        ),
       );
 
       expect(perf.isComplex, isTrue);
@@ -152,121 +145,85 @@ void main() {
     });
 
     test(
-        'validates assertion for complexReductionRatio, maxComplexLines, and complexDensityFactor',
+        'validates assertion for ratio, maxLines, and densityFactor in ComplexConfig',
         () {
       expect(
-        () => NetworkPerformance(complexReductionRatio: -0.1),
+        () => ComplexConfig(ratio: -0.1),
         throwsAssertionError,
       );
       expect(
-        () => NetworkPerformance(complexReductionRatio: 1.1),
+        () => ComplexConfig(ratio: 1.1),
         throwsAssertionError,
       );
       expect(
-        () => NetworkPerformance(maxComplexLines: 0),
+        () => ComplexConfig(maxLines: 0),
         throwsAssertionError,
       );
       expect(
-        () => NetworkPerformance(complexDensityFactor: 0.0),
+        () => ComplexConfig(densityFactor: 0.0),
         throwsAssertionError,
       );
     });
 
     test(
-        'validates assertion errors for NetworkPerformance.complex (L195-L221)',
+        'validates assertion errors for PerformanceFeatures.complex (L195-L221)',
         () {
       expect(
-        () => NetworkPerformance.complex(maxConnectionsPerParticle: 0),
+        () => PerformanceFeatures.complex(maxConnectionsPerParticle: 0),
         throwsAssertionError,
       );
       expect(
-        () => NetworkPerformance.complex(maxLinesPerFrame: 0),
+        () => PerformanceFeatures.complex(maxLinesPerFrame: 0),
         throwsAssertionError,
       );
       expect(
-        () => NetworkPerformance.complex(cappedDistanceFactor: 0.0),
+        () => PerformanceFeatures.complex(cappedDistanceFactor: 0.0),
         throwsAssertionError,
       );
       expect(
-        () => NetworkPerformance.complex(spatialCellMultiplier: 0.0),
-        throwsAssertionError,
-      );
-      expect(
-        () => NetworkPerformance.complex(complexReductionRatio: -0.1),
-        throwsAssertionError,
-      );
-      expect(
-        () => NetworkPerformance.complex(maxComplexLines: 0),
-        throwsAssertionError,
-      );
-      expect(
-        () => NetworkPerformance.complex(complexDensityFactor: 0.0),
+        () => PerformanceFeatures.complex(spatialCellMultiplier: 0.0),
         throwsAssertionError,
       );
     });
 
     test(
-        'validates assertion errors for NetworkPerformance.auto (L245-L267)',
+        'validates assertion errors for PerformanceFeatures.auto (L245-L267)',
         () {
       expect(
-        () => NetworkPerformance.auto(maxConnectionsPerParticle: 0),
+        () => PerformanceFeatures.auto(maxConnectionsPerParticle: 0),
         throwsAssertionError,
       );
       expect(
-        () => NetworkPerformance.auto(maxLinesPerFrame: 0),
+        () => PerformanceFeatures.auto(maxLinesPerFrame: 0),
         throwsAssertionError,
       );
       expect(
-        () => NetworkPerformance.auto(cappedDistanceFactor: 0.0),
+        () => PerformanceFeatures.auto(cappedDistanceFactor: 0.0),
         throwsAssertionError,
       );
       expect(
-        () => NetworkPerformance.auto(spatialCellMultiplier: 0.0),
-        throwsAssertionError,
-      );
-      expect(
-        () => NetworkPerformance.auto(complexReductionRatio: -0.1),
-        throwsAssertionError,
-      );
-      expect(
-        () => NetworkPerformance.auto(maxComplexLines: 0),
-        throwsAssertionError,
-      );
-      expect(
-        () => NetworkPerformance.auto(complexDensityFactor: 0.0),
+        () => PerformanceFeatures.auto(spatialCellMultiplier: 0.0),
         throwsAssertionError,
       );
     });
 
     test(
-        'validates assertion errors for NetworkPerformance.balanced (L297-L311)',
+        'validates assertion errors for PerformanceFeatures.balanced (L297-L311)',
         () {
       expect(
-        () => NetworkPerformance.balanced(maxConnectionsPerParticle: 0),
+        () => PerformanceFeatures.balanced(maxConnectionsPerParticle: 0),
         throwsAssertionError,
       );
       expect(
-        () => NetworkPerformance.balanced(maxLinesPerFrame: 0),
+        () => PerformanceFeatures.balanced(maxLinesPerFrame: 0),
         throwsAssertionError,
       );
       expect(
-        () => NetworkPerformance.balanced(cappedDistanceFactor: 0.0),
+        () => PerformanceFeatures.balanced(cappedDistanceFactor: 0.0),
         throwsAssertionError,
       );
       expect(
-        () => NetworkPerformance.balanced(spatialCellMultiplier: 0.0),
-        throwsAssertionError,
-      );
-      expect(
-        () => NetworkPerformance.balanced(complexReductionRatio: -0.1),
-        throwsAssertionError,
-      );
-      expect(
-        () => NetworkPerformance.balanced(maxComplexLines: 0),
-        throwsAssertionError,
-      );
-      expect(
-        () => NetworkPerformance.balanced(complexDensityFactor: 0.0),
+        () => PerformanceFeatures.balanced(spatialCellMultiplier: 0.0),
         throwsAssertionError,
       );
     });
@@ -274,10 +231,12 @@ void main() {
     test(
         'copyWith updates and clears complexReductionRatio, maxComplexLines, and complexDensityFactor',
         () {
-      const initial = NetworkPerformance(
-        complexReductionRatio: 0.5,
-        maxComplexLines: 4,
-        complexDensityFactor: 0.3,
+      const initial = PerformanceFeatures(
+        complex: ComplexConfig(
+          ratio: 0.5,
+          maxLines: 4,
+          densityFactor: 0.3,
+        ),
       );
 
       final updated = initial.copyWith(
@@ -302,22 +261,25 @@ void main() {
     });
 
     test(
-        'toString contains complexReductionRatio, maxComplexLines, and complexDensityFactor',
+        'toString contains ComplexConfig representation',
         () {
-      const perf = NetworkPerformance(
-        complexReductionRatio: 0.6,
-        maxComplexLines: 3,
-        complexDensityFactor: 0.2,
+      const perf = PerformanceFeatures(
+        complex: ComplexConfig(
+          ratio: 0.6,
+          maxLines: 3,
+          densityFactor: 0.2,
+        ),
       );
 
       final str = perf.toString();
-      expect(str, contains('complexReductionRatio: 0.6'));
-      expect(str, contains('maxComplexLines: 3'));
-      expect(str, contains('complexDensityFactor: 0.2'));
+      expect(str, contains('ComplexConfig'));
+      expect(str, contains('ratio: 0.6'));
+      expect(str, contains('maxLines: 3'));
+      expect(str, contains('densityFactor: 0.2'));
     });
   });
 
-  group('ParticleNetwork with NetworkPerformance', () {
+  group('ParticleNetwork with PerformanceFeatures', () {
     testWidgets('passes performance settings to OptimizedNetworkPainter', (
       WidgetTester tester,
     ) async {
@@ -328,11 +290,10 @@ void main() {
               width: 300,
               height: 300,
               child: ParticleNetwork(
-                performance: NetworkPerformance(
+                performance: PerformanceFeatures(
                   maxConnectionsPerParticle: 3,
                   maxLinesPerFrame: 2500,
-                  lineRenderer: LineRenderer.vertices,
-                  isComplex: true,
+                  complex: ComplexConfig(enabled: true),
                 ),
               ),
             ),
@@ -364,9 +325,9 @@ void main() {
               width: 300,
               height: 300,
               child: ParticleNetwork(
-                performance: NetworkPerformance(
+                performance: PerformanceFeatures(
                   maxConnectionsPerParticle: 2,
-                  isComplex: false,
+                  complex: ComplexConfig(enabled: false),
                 ),
               ),
             ),
@@ -391,10 +352,9 @@ void main() {
               width: 300,
               height: 300,
               child: ParticleNetwork(
-                performance: NetworkPerformance(
+                performance: PerformanceFeatures(
                   maxConnectionsPerParticle: 8,
-                  lineRenderer: LineRenderer.vertices,
-                  isComplex: true,
+                  complex: ComplexConfig(enabled: true),
                 ),
               ),
             ),
@@ -502,7 +462,7 @@ void main() {
           particleColor: Colors.white,
           lineColor: Colors.grey,
           lineWidth: 1.0,
-          performance: const NetworkPerformance(isComplex: false),
+          performance: const PerformanceFeatures(complex: ComplexConfig(enabled: false)),
         );
 
         final complexPainter = OptimizedNetworkPainter(
@@ -515,7 +475,7 @@ void main() {
           particleColor: Colors.white,
           lineColor: Colors.grey,
           lineWidth: 1.0,
-          performance: const NetworkPerformance(isComplex: true),
+          performance: const PerformanceFeatures(complex: ComplexConfig(enabled: true)),
         );
 
         final recorder = PictureRecorder();
@@ -556,8 +516,8 @@ void main() {
           particleColor: Colors.white,
           lineColor: Colors.grey,
           lineWidth: 1.0,
-          performance: const NetworkPerformance(
-            isComplex: false,
+          performance: const PerformanceFeatures(
+            complex: ComplexConfig(enabled: false),
           ),
         );
 
@@ -571,8 +531,8 @@ void main() {
           particleColor: Colors.white,
           lineColor: Colors.grey,
           lineWidth: 1.0,
-          performance: const NetworkPerformance(
-            isComplex: true,
+          performance: const PerformanceFeatures(
+            complex: ComplexConfig(enabled: true),
           ),
         );
 
@@ -655,7 +615,7 @@ void main() {
           particleColor: Colors.white,
           lineColor: Colors.grey,
           lineWidth: 1.0,
-          performance: const NetworkPerformance(
+          performance: const PerformanceFeatures(
             maxConnectionsPerParticle: 1,
           ),
         );
@@ -682,9 +642,9 @@ void main() {
           particleColor: Colors.white,
           lineColor: Colors.grey,
           lineWidth: 1.0,
-          performance: const NetworkPerformance(
+          performance: const PerformanceFeatures(
             maxConnectionsPerParticle: 1,
-            isComplex: false,
+            complex: ComplexConfig(enabled: false),
           ),
         );
 
@@ -727,7 +687,7 @@ void main() {
           particleColor: Colors.white,
           lineColor: Colors.grey,
           lineWidth: 1.0,
-          performance: const NetworkPerformance(
+          performance: const PerformanceFeatures(
             maxConnectionsPerParticle: null,
           ),
         );
@@ -743,7 +703,7 @@ void main() {
           particleColor: Colors.white,
           lineColor: Colors.grey,
           lineWidth: 1.0,
-          performance: const NetworkPerformance(
+          performance: const PerformanceFeatures(
             maxConnectionsPerParticle: 2,
             cappedDistanceFactor: 0.75,
           ),
@@ -784,8 +744,8 @@ void main() {
           particleColor: Colors.white,
           lineColor: Colors.grey,
           lineWidth: 1.0,
-          performance: const NetworkPerformance(
-            isComplex: false,
+          performance: const PerformanceFeatures(
+            complex: ComplexConfig(enabled: false),
           ),
         );
 
@@ -799,9 +759,11 @@ void main() {
           particleColor: Colors.white,
           lineColor: Colors.grey,
           lineWidth: 1.0,
-          performance: const NetworkPerformance(
-            isComplex: true,
-            complexReductionRatio: 0.4,
+          performance: const PerformanceFeatures(
+            complex: ComplexConfig(
+              enabled: true,
+              ratio: 0.4,
+            ),
           ),
         );
 
@@ -815,9 +777,11 @@ void main() {
           particleColor: Colors.white,
           lineColor: Colors.grey,
           lineWidth: 1.0,
-          performance: const NetworkPerformance(
-            isComplex: true,
-            complexReductionRatio: 0.8,
+          performance: const PerformanceFeatures(
+            complex: ComplexConfig(
+              enabled: true,
+              ratio: 0.8,
+            ),
           ),
         );
 

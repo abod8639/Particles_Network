@@ -551,7 +551,7 @@ void main() {
           touchColor: Colors.red,
           touchActivation: true,
           lineWidth: 1.0,
-          performance: const NetworkPerformance(autoBoost: true),
+          performance: const PerformanceFeatures(autoBoost: true),
         );
         expect(painterWithAutoBoost.shouldRepaint(defaultPainter), isTrue);
 
@@ -1390,7 +1390,7 @@ void main() {
           lineWidth: 1.0,
           maxLinesPerFrame: 1000,
           maxConnectionsPerParticle: 4,
-          performance: const NetworkPerformance(
+          performance: const PerformanceFeatures(
             maxConnectionsPerParticle: 4,
             cappedDistanceFactor: 0.5,
             maxLinesPerFrame: 1000,
@@ -1412,16 +1412,12 @@ void main() {
     );
 
     testWidgets(
-      'lineRenderer setter updates performance lineRenderer (L126-L128)',
+      'lineRenderer setter updates lineRenderer on painter',
       (tester) async {
         await setUpTest(tester);
         expect(defaultPainter.lineRenderer, equals(LineRenderer.stroke));
         defaultPainter.lineRenderer = LineRenderer.vertices;
         expect(defaultPainter.lineRenderer, equals(LineRenderer.vertices));
-        expect(
-          defaultPainter.performance.lineRenderer,
-          equals(LineRenderer.vertices),
-        );
       },
     );
 
@@ -1483,7 +1479,7 @@ void main() {
           touchActivation: false,
           lineWidth: 1.0,
           maxConnectionsPerParticle: 2,
-          performance: const NetworkPerformance(
+          performance: const PerformanceFeatures(
             maxConnectionsPerParticle: 2,
             cappedDistanceFactor: 0.5,
           ),
@@ -1707,7 +1703,7 @@ void main() {
         particles: [MockParticle(position: const Offset(10, 10))],
         particleCount: 1,
         touchFeatures: const TouchFeatures(enabled: true),
-        performance: const NetworkPerformance.balanced(),
+        performance: const PerformanceFeatures.balanced(),
         drawNetwork: true,
         fill: true,
         lineColor: Colors.grey,

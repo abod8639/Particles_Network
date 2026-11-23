@@ -84,7 +84,7 @@ void main() {
         buckets: buckets,
         candidateBuffer: candidateBuffer,
         throttler: throttler,
-        performance: const NetworkPerformance(maxConnectionsPerParticle: 2),
+        performance: const PerformanceFeatures(maxConnectionsPerParticle: 2),
         maxConnectionsPerParticle: 2,
         isComplexMode: false,
       );
@@ -143,7 +143,7 @@ void main() {
         linePaint: Paint(),
         candidateBuffer: candidateBuffer,
         throttler: throttler,
-        performance: const NetworkPerformance(),
+        performance: const PerformanceFeatures(),
         maxConnectionsPerParticle: null,
         isComplexMode: false,
       );
@@ -204,7 +204,7 @@ void main() {
         linePaint: Paint(),
         candidateBuffer: candidateBuffer,
         throttler: throttler,
-        performance: const NetworkPerformance(maxConnectionsPerParticle: 2),
+        performance: const PerformanceFeatures(maxConnectionsPerParticle: 2),
         maxConnectionsPerParticle: 2,
         isComplexMode: false,
       );
@@ -266,7 +266,7 @@ void main() {
         buckets: buckets,
         candidateBuffer: candidateBuffer,
         throttler: throttler,
-        performance: const NetworkPerformance(),
+        performance: const PerformanceFeatures(),
         maxConnectionsPerParticle: null,
         isComplexMode: false,
       );
@@ -290,7 +290,7 @@ void main() {
         linePaint: Paint(),
         candidateBuffer: candidateBuffer,
         throttler: throttler,
-        performance: const NetworkPerformance(),
+        performance: const PerformanceFeatures(),
         maxConnectionsPerParticle: null,
         isComplexMode: false,
       );
@@ -362,8 +362,8 @@ void main() {
         buckets: complexBuckets,
         candidateBuffer: candidateBuffer,
         throttler: throttler,
-        performance: const NetworkPerformance(
-            maxComplexLines: 2, complexDensityFactor: 0.001),
+        performance: const PerformanceFeatures(
+            complex: ComplexConfig(maxLines: 2, densityFactor: 0.001)),
         maxConnectionsPerParticle: 10,
         isComplexMode: true,
       );
@@ -380,8 +380,8 @@ void main() {
         buckets: complexBuckets,
         candidateBuffer: candidateBufferSouth,
         throttler: throttler,
-        performance: const NetworkPerformance(
-            maxComplexLines: 2, complexDensityFactor: 0.001),
+        performance: const PerformanceFeatures(
+            complex: ComplexConfig(maxLines: 2, densityFactor: 0.001)),
         maxConnectionsPerParticle: 10,
         isComplexMode: true,
       );
@@ -409,8 +409,8 @@ void main() {
         linePaint: Paint(),
         candidateBuffer: indBuffer,
         throttler: throttler,
-        performance: const NetworkPerformance(
-            maxComplexLines: 2, complexDensityFactor: 0.001),
+        performance: const PerformanceFeatures(
+            complex: ComplexConfig(maxLines: 2, densityFactor: 0.001)),
         maxConnectionsPerParticle: 1, // Will cause south neighbor to hit cap and trigger L415
         isComplexMode: true, // Will trigger L462-L465
       );
@@ -429,8 +429,8 @@ void main() {
         linePaint: Paint(),
         candidateBuffer: indBufferSouth,
         throttler: throttler,
-        performance: const NetworkPerformance(
-            maxComplexLines: 2, complexDensityFactor: 0.001),
+        performance: const PerformanceFeatures(
+            complex: ComplexConfig(maxLines: 2, densityFactor: 0.001)),
         maxConnectionsPerParticle: 10,
         isComplexMode: true,
       );

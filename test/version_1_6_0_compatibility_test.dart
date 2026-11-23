@@ -18,7 +18,7 @@ void main() {
           lineDistance: 180,
           particleColor: Colors.white,
           lineColor: Color(0xFF64FFB4),
-          linewidth: 0.5, // 1.6.0 lowercase parameter
+          lineWidth: 0.5,
         );
 
         // Verify property accessors reflect 1.6.0 values
@@ -35,7 +35,6 @@ void main() {
         expect(widget160.touchColor, equals(Colors.amber));
         expect(widget160.effectiveTouchFeatures.color, equals(Colors.amber));
         expect(widget160.effectiveLineWidth, equals(0.5));
-        expect(widget160.usedLegacyLinewidth, isTrue);
 
         await tester.pumpWidget(
           const MaterialApp(
@@ -81,7 +80,7 @@ void main() {
           lineDistance: 120,
           particleColor: Colors.cyan,
           lineColor: Colors.blue,
-          linewidth: 1.2,
+          lineWidth: 1.2,
           particleFactory: customFactory,
           particleController: customController,
         );
@@ -118,11 +117,11 @@ void main() {
 
   group('Deduplication & Deprecation Verification', () {
     // test(
-    //     'NetworkPerformance.auto and NetworkPerformance.boost produce identical configurations',
+    //     'NetworkFeatures.auto and NetworkFeatures.boost produce identical configurations',
     //     () {
-    //   const autoPreset = NetworkPerformance.auto();
+    //   const autoPreset = NetworkFeatures.auto();
     //   // ignore: deprecated_member_use_from_same_package
-    //   const boostPreset = NetworkPerformance.boost();
+    //   const boostPreset = NetworkFeatures.boost();
 
     //   expect(boostPreset.maxConnectionsPerParticle,
     //       equals(autoPreset.maxConnectionsPerParticle));
