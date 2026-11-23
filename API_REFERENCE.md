@@ -224,6 +224,7 @@ An immutable configuration object controlling touch, mouse drag, and desktop hov
 | Parameter  | Type        | Default Value                              | Description                                                                                              |
 | ---------- | ----------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
 | `type`     | `TouchType` | `TouchType.push`                           | Interaction physics mode: `TouchType.push` (repels/scatters, default) or `TouchType.pull` (attracts).     |
+| `show`     | `bool`      | `true`                                     | Enables or disables rendering touch connecting lines while keeping touch physics active.                 |
 | `enabled`  | `bool`      | `true`                                     | Enables touch and gesture interactions.                                                                  |
 | `speed`    | `double`    | `0.42`                                     | Recovery settling speed returning particles to cruising speed after touch release.                       |
 | `force`    | `double`    | `0.42`                                     | Acceleration intensity pulling or pushing particles relative to the pointer location.                    |
@@ -484,6 +485,10 @@ Engine handling pointer proximity physics, repulsion/attraction impulses, connec
 | `lineRenderer`        | `LineRenderer?`        | `LineRenderer.vertices` | Rasterization backend for touch lines.                             |
 | `fastLineRendering`   | `bool?`                | `true`                  | Merges touch lines into a single GPU draw call.                    |
 
+### Properties & Getters
+
+- `bool show`: Getter and setter controlling whether touch connection lines are rendered.
+
 ### Methods
 
 - `void rebuildTouchColorLut(Color newColor)`: Rebuilds the 256-level alpha fade LUT without per-frame heap allocations.
@@ -641,6 +646,7 @@ A specialized `CustomPainter` orchestrating the entire rendering pipeline.
 - `updateLineDistance(double distance)`
 - `updateRenderFlags({required bool drawNetwork, required bool fill, required bool isComplex, required bool touchActivation})`
 - `updateTouchFeatures(TouchFeatures features)`
+- `bool show`: Getter and setter controlling whether touch interaction lines are rendered.
 - `updatePerformance(PerformanceFeatures perf)`
 - `resetRuntimeOverrides()`
 

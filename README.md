@@ -288,6 +288,7 @@ Fine-tune interaction dynamics, cursor hover, and touch styling with `TouchFeatu
 | Property   | Type        | Default          | Description                                                                         |
 | :--------- | :---------- | :--------------- | :---------------------------------------------------------------------------------- |
 | `type`     | `TouchType` | `TouchType.pull` | Interaction physics mode: `TouchType.pull` (attracts, default) or `TouchType.push` (repels/scatters). |
+| `show`     | `bool`      | `true`           | Enables or disables rendering touch connecting lines while keeping touch physics active. |
 | `enabled`  | `bool`      | `true`           | Enables touch and gesture interactions.                                             |
 | `color`    | `Color`     | `Colors.amber`   | Highlight color for particles near touch position.                                  |
 | `force`    | `double`    | `0.42`           | Attraction strength toward the touch point.                                         |
