@@ -47,15 +47,23 @@ export 'package:particles_network/src/rendering/optimized_network_painter.dart'
 export 'package:particles_network/src/rendering/particle_filter.dart'
     show ParticleFilter;
 export 'package:particles_network/src/rendering/performance_utils.dart'
-    show AccelerationTracker, PerformanceMonitor, AdaptivePerformanceController;
+    show
+        AccelerationTracker,
+        PerformanceMonitor,
+        AdaptivePerformanceController,
+        AdaptiveQuadTreeManager;
 export 'package:particles_network/src/simulation/particle_simulation.dart'
     show ParticleSimulation;
 // High-performance canonical spatial partitioning engine
 export 'package:particles_network/src/spatial/grid_tuning.dart' show GridTuning;
 export 'package:particles_network/src/spatial/sorted_spatial_grid.dart'
     show SortedSpatialGrid;
-// Legacy compatibility shim for CompressedQuadTree (deprecated, removed in 2.0.0)
+// Legacy compatibility shims for spatial data structures (deprecated, removed in 2.0.0)
 export 'package:particles_network/src/spatial/compressed_quad_tree.dart'
     show CompressedQuadTree, QuadTreeParticle;
+export 'package:particles_network/src/spatial/compressed_quad_tree_node.dart'
+    show Quadrant, CompressedPath, CompressedQuadTreeNode;
+export 'package:particles_network/src/spatial/spatial_grid.dart'
+    show SpatialGrid;
 export 'package:particles_network/src/widgets/particle_network_widget.dart'
     show ParticleNetwork, ParticleNetworkState;

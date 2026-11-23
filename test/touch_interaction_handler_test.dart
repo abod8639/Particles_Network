@@ -272,7 +272,7 @@ void main() {
   group('TouchFeatures', () {
     test('default values are set correctly', () {
       const features = TouchFeatures();
-      expect(features.type, equals(TouchType.push));
+      expect(features.type, equals(TouchType.pull));
       expect(features.enabled, isTrue);
       expect(features.speed, equals(0.42));
       expect(features.force, equals(0.42));
@@ -463,9 +463,9 @@ void main() {
       expect(f1.toString(), contains('speed: 0.5'));
       expect(f1.toString(), contains('force: 0.6'));
 
-      final copiedType = f1.copyWith(type: TouchType.pull);
-      expect(copiedType.type, equals(TouchType.pull));
-      expect(f1.type, equals(TouchType.push));
+      final copiedType = f1.copyWith(type: TouchType.push);
+      expect(copiedType.type, equals(TouchType.push));
+      expect(f1.type, equals(TouchType.pull));
     });
 
     test('TouchFeatures hover defaults to false and can be set to true', () {

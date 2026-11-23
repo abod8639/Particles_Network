@@ -7,6 +7,7 @@ import 'dart:ui';
 import 'package:particles_network/src/core/particle.dart';
 import 'package:particles_network/src/factory/default_particle_factory.dart';
 import 'package:particles_network/src/factory/particle_factory.dart';
+import 'package:particles_network/src/physics/legacy/legacy_gravity_config.dart';
 import 'package:particles_network/src/physics/particle_controller.dart';
 import 'package:particles_network/src/physics/particle_gravity.dart';
 import 'package:particles_network/src/physics/particle_updater.dart';
@@ -78,10 +79,18 @@ class ParticleSimulation {
         gravity: gravityConfig,
       );
     } else {
+      final effectiveGravity = gravityConfig is GravityConfig
+          ? gravityConfig
+          : GravityConfig(
+              type: gravityConfig.type,
+              strength: gravityConfig.strength,
+              direction: gravityConfig.direction,
+              center: gravityConfig.center ?? Offset.zero,
+            );
       c.updateParticles(
         particles,
         currentSize,
-        gravity: gravityConfig,
+        gravity: effectiveGravity,
       );
     }
   }

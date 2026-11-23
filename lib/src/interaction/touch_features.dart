@@ -47,7 +47,7 @@ class TouchFeatures {
   /// * [TouchType.pull]: Attracts particles toward the pointer location.
   /// * [TouchType.push]: Repels and pushes particles away from the pointer location.
   ///
-  /// Defaults to [TouchType.push].
+  /// Defaults to [TouchType.pull].
   final TouchType type;
 
   /// Whether touch interactions and mouse hover effects are enabled.
@@ -178,10 +178,21 @@ class TouchFeatures {
   /// Defaults to `false`.
   final bool hover;
 
+  /// Compatibility alias for [hover].
+  ///
+  /// Deprecated: Renamed to [hover] inside [TouchFeatures]. Use [hover] instead.
+  /// This property will be removed in particles_network 2.0.0.
+  @Deprecated(
+    'hoverEffect was renamed to hover inside TouchFeatures. '
+    'Use TouchFeatures.hover instead. '
+    'This property will be removed in particles_network 2.0.0.',
+  )
+  bool get hoverEffect => hover;
+
   /// Creates a [TouchFeatures] configuration with customizable physics and styling parameters.
   ///
   /// Parameters:
-  /// * [type]: Physics interaction mode ([TouchType.push] or [TouchType.pull]). Defaults to [TouchType.push].
+  /// * [type]: Physics interaction mode ([TouchType.push] or [TouchType.pull]). Defaults to [TouchType.pull].
   /// * [enabled]: Whether touch interaction is active. Defaults to `true`.
   /// * [speed]: Recovery velocity deceleration rate after release. Defaults to `0.42`.
   /// * [force]: Attraction pull intensity. Defaults to `0.42`.
@@ -193,8 +204,8 @@ class TouchFeatures {
   const TouchFeatures({
     /// Physics interaction mode ([TouchType.push] repels or [TouchType.pull] attracts).
     ///
-    /// Defaults to [TouchType.push].
-    this.type = TouchType.push,
+    /// Defaults to [TouchType.pull].
+    this.type = TouchType.pull,
 
     /// Whether touch interactions and proximity effects are enabled.
     ///
@@ -293,12 +304,23 @@ class TouchFeatures {
     ///
     /// Defaults to `const Color(0xFFFFC107)` (amber).
     this.color = const Color(0xFFFFC107), // Colors.amber
-    this.hover = false,
-  })  : enabled = touchActivation ?? enabled ?? true,
-        speed =  decayRate ?? speed ?? 0.42,
+    bool? hover,
+
+    /// Compatibility alias for [hover].
+    ///
+    /// Defaults to `false`.
+    @Deprecated(
+      'hoverEffect was renamed to hover inside TouchFeatures. '
+      'Use TouchFeatures(hover: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    bool? hoverEffect,
+  })  : enabled = enabled ?? touchActivation ?? true,
+        speed = speed ?? decayRate ?? 0.42,
         force = force ?? pullForce ?? 0.42,
         maxSpeed = maxSpeed ?? maxTouchSpeed ?? 5.5,
-        distance = distance ?? lineDistance;
+        distance = distance ?? lineDistance,
+        hover = hover ?? hoverEffect ?? false;
 
   /// Creates a copy of this [TouchFeatures] configuration with updated parameters.
   ///
@@ -370,17 +392,25 @@ class TouchFeatures {
 
     /// Whether mouse hover triggers interactive proximity effects on web and desktop.
     bool? hover,
+
+    /// Compatibility alias for [hover].
+    @Deprecated(
+      'hoverEffect was renamed to hover inside TouchFeatures. '
+      'Use TouchFeatures.copyWith(hover: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    bool? hoverEffect,
   }) {
     return TouchFeatures(
       type: type ?? this.type,
-      enabled: touchActivation ?? enabled ?? this.enabled,
+      enabled: enabled ?? touchActivation ?? this.enabled,
       speed: speed ?? decayRate ?? this.speed,
       force: force ?? pullForce ?? this.force,
       maxSpeed: maxSpeed ?? maxTouchSpeed ?? this.maxSpeed,
       damping: damping ?? this.damping,
       distance: distance ?? lineDistance ?? this.distance,
       color: color ?? this.color,
-      hover: hover ?? this.hover,
+      hover: hover ?? hoverEffect ?? this.hover,
     );
   }
 

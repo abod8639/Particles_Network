@@ -13,6 +13,8 @@ import 'package:particles_network/src/interaction/touch_features.dart';
 import 'package:particles_network/src/legacy/legacy_deprecation_logger.dart';
 import 'package:particles_network/src/physics/particle_controller.dart';
 import 'package:particles_network/src/physics/particle_gravity.dart';
+import 'package:particles_network/src/rendering/complex_features.dart';
+import 'package:particles_network/src/rendering/line_vertex_batch.dart';
 import 'package:particles_network/src/rendering/network_performance.dart';
 import 'package:particles_network/src/rendering/optimized_network_painter.dart';
 import 'package:particles_network/src/rendering/performance_utils.dart';
@@ -221,16 +223,25 @@ class ParticleNetwork extends StatefulWidget {
   /// Explicitly provided legacy drawNetwork, if any.
   final bool? _drawNetwork;
 
+  /// Explicitly provided legacy fastLineRendering / useVerticesRendering override, if any.
+  final bool? _explicitFastLineRendering;
+
   /// Effective network configuration merging modern and legacy parameters.
   NetworkFeatures get effectiveNetworkFeatures {
     final base = _networkFeatures ?? network;
     final resolvedLineWidth = _lineWidth;
     final resolvedDrawNetwork = _drawNetwork;
+    final resolvedRenderer = _explicitFastLineRendering != null
+        ? (_explicitFastLineRendering
+            ? LineRenderer.vertices
+            : LineRenderer.stroke)
+        : base.renderer;
 
     if (resolvedLineWidth == null &&
         _lineDistance == null &&
         _lineColor == null &&
-        resolvedDrawNetwork == null) {
+        resolvedDrawNetwork == null &&
+        _explicitFastLineRendering == null) {
       return base;
     }
     return base.copyWith(
@@ -238,6 +249,7 @@ class ParticleNetwork extends StatefulWidget {
       distance: _lineDistance,
       color: _lineColor,
       enabled: resolvedDrawNetwork,
+      renderer: resolvedRenderer,
     );
   }
 
@@ -345,9 +357,81 @@ class ParticleNetwork extends StatefulWidget {
   Color get touchColor => effectiveTouchFeatures.color;
 
   /// Effective performance configuration merging legacy and modern parameters.
-  PerformanceFeatures get effectivePerformance => performance.copyWith(
-        isComplex: _isComplex,
+  PerformanceFeatures get effectivePerformance {
+    var resolved = performance;
+    if (_isComplex != null) {
+      resolved = resolved.copyWith(isComplex: _isComplex);
+    }
+    if (maxConnectionsPerParticle != null) {
+      resolved = resolved.copyWith(
+        maxConnectionsPerParticle: maxConnectionsPerParticle,
       );
+    }
+    if (adaptiveDensity) {
+      resolved = resolved.copyWith(
+        complex: const ComplexConfig.auto(),
+      );
+    }
+    if (enableAdaptivePerformance) {
+      resolved = resolved.copyWith(
+        autoBoost: true,
+      );
+    }
+    return resolved;
+  }
+
+  /// Maximum number of connection lines a single particle can emit (legacy accessor).
+  @Deprecated(
+    'maxConnectionsPerParticle has been moved into PerformanceFeatures. '
+    'Use performance: PerformanceFeatures(maxConnectionsPerParticle: ...) instead. '
+    'This property will be removed in particles_network 2.0.0.',
+  )
+  final int? maxConnectionsPerParticle;
+
+  /// Automatically reduces line distance in crowded areas (legacy accessor).
+  @Deprecated(
+    'adaptiveDensity has been replaced by PerformanceFeatures(complex: ComplexConfig.auto()). '
+    'This property will be removed in particles_network 2.0.0.',
+  )
+  final bool adaptiveDensity;
+
+  /// Batched single-call line drawing using vertices (legacy accessor).
+  @Deprecated(
+    'fastLineRendering has been moved into NetworkFeatures. '
+    'Use network: NetworkFeatures(renderer: LineRenderer.vertices) instead. '
+    'This property will be removed in particles_network 2.0.0.',
+  )
+  bool get fastLineRendering =>
+      _explicitFastLineRendering ??
+      (effectiveNetworkFeatures.renderer == LineRenderer.vertices);
+
+  /// Compatibility alias for [fastLineRendering].
+  @Deprecated(
+    'useVerticesRendering has been moved into NetworkFeatures. '
+    'Use network: NetworkFeatures(renderer: LineRenderer.vertices) instead. '
+    'This property will be removed in particles_network 2.0.0.',
+  )
+  bool get useVerticesRendering => fastLineRendering;
+
+  /// Dynamically throttles effects during frame spikes to keep target FPS (legacy accessor).
+  @Deprecated(
+    'enableAdaptivePerformance has been moved into PerformanceFeatures. '
+    'Use performance: PerformanceFeatures(autoBoost: ...) instead. '
+    'This property will be removed in particles_network 2.0.0.',
+  )
+  final bool enableAdaptivePerformance;
+
+  /// Checks whether deprecated [maxConnectionsPerParticle] was explicitly configured.
+  bool get usedLegacyMaxConnections => maxConnectionsPerParticle != null;
+
+  /// Checks whether deprecated [adaptiveDensity] was explicitly configured.
+  bool get usedLegacyAdaptiveDensity => adaptiveDensity;
+
+  /// Checks whether deprecated [fastLineRendering] or [useVerticesRendering] was explicitly configured.
+  bool get usedLegacyFastLineRendering => _explicitFastLineRendering != null;
+
+  /// Checks whether deprecated [enableAdaptivePerformance] was explicitly configured.
+  bool get usedLegacyAdaptivePerformance => enableAdaptivePerformance;
 
   /// Custom particle factory (legacy support).
   ///
@@ -452,7 +536,10 @@ class ParticleNetwork extends StatefulWidget {
   final TouchFeatures touch;
 
   /// Compatibility alias for [touch].
-  TouchFeatures get touchFeatures => touch;
+  @Deprecated(
+    'Use touch or effectiveTouchFeatures instead. This property will be removed in particles_network 2.0.0.',
+  )
+  TouchFeatures get touchFeatures => effectiveTouchFeatures;
 
   /// Advanced rendering performance and physics optimization configuration.
   ///
@@ -682,6 +769,36 @@ class ParticleNetwork extends StatefulWidget {
     ///
     /// Defaults to `null`.
     this.spatialGrid,
+
+    @Deprecated(
+      'Use performance: PerformanceFeatures(maxConnectionsPerParticle: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    this.maxConnectionsPerParticle,
+
+    @Deprecated(
+      'Use performance: PerformanceFeatures(complex: ComplexConfig.auto()) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    this.adaptiveDensity = false,
+
+    @Deprecated(
+      'Use network: NetworkFeatures(renderer: LineRenderer.vertices) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    bool? fastLineRendering,
+
+    @Deprecated(
+      'Use network: NetworkFeatures(renderer: LineRenderer.vertices) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    bool? useVerticesRendering,
+
+    @Deprecated(
+      'Use performance: PerformanceFeatures(autoBoost: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    this.enableAdaptivePerformance = false,
   })  : _particleCount = particleCount,
         _maxSpeed = maxSpeed,
         _maxSize = maxSize,
@@ -697,7 +814,8 @@ class ParticleNetwork extends StatefulWidget {
         _touchActivation = touchActivation,
         _touchColor = touchColor,
         _hoverEffect = hoverEffect,
-        _isComplex = isComplex;
+        _isComplex = isComplex,
+        _explicitFastLineRendering = fastLineRendering ?? useVerticesRendering;
 
   @override
   State<ParticleNetwork> createState() => ParticleNetworkState();
@@ -913,6 +1031,43 @@ class ParticleNetworkState extends State<ParticleNetwork>
               'The parameter networkFeatures has been renamed to network for consistency.',
         );
       }
+      if (widget.usedLegacyMaxConnections) {
+        LegacyDeprecationLogger.warn(
+          deprecatedApi: 'ParticleNetwork(maxConnectionsPerParticle)',
+          replacement:
+              'ParticleNetwork(performance: PerformanceFeatures(maxConnectionsPerParticle: ...))',
+          message:
+              'maxConnectionsPerParticle has been consolidated into PerformanceFeatures. Use performance: PerformanceFeatures(maxConnectionsPerParticle: ...) instead.',
+        );
+      }
+      if (widget.usedLegacyAdaptiveDensity) {
+        LegacyDeprecationLogger.warn(
+          deprecatedApi: 'ParticleNetwork(adaptiveDensity)',
+          replacement:
+              'ParticleNetwork(performance: PerformanceFeatures(complex: ComplexConfig.auto()))',
+          message:
+              'adaptiveDensity has been consolidated into PerformanceFeatures. Use performance: PerformanceFeatures(complex: ComplexConfig.auto()) instead.',
+        );
+      }
+      if (widget.usedLegacyFastLineRendering) {
+        LegacyDeprecationLogger.warn(
+          deprecatedApi:
+              'ParticleNetwork(fastLineRendering, useVerticesRendering)',
+          replacement:
+              'ParticleNetwork(network: NetworkFeatures(renderer: LineRenderer.vertices))',
+          message:
+              'fastLineRendering and useVerticesRendering have been consolidated into NetworkFeatures. Use network: NetworkFeatures(renderer: LineRenderer.vertices) instead.',
+        );
+      }
+      if (widget.usedLegacyAdaptivePerformance) {
+        LegacyDeprecationLogger.warn(
+          deprecatedApi: 'ParticleNetwork(enableAdaptivePerformance)',
+          replacement:
+              'ParticleNetwork(performance: PerformanceFeatures(autoBoost: ...))',
+          message:
+              'enableAdaptivePerformance has been consolidated into PerformanceFeatures. Use performance: PerformanceFeatures(autoBoost: ...) instead.',
+        );
+      }
     }
 
     _adaptiveController = AdaptivePerformanceController(
@@ -1009,6 +1164,43 @@ class ParticleNetworkState extends State<ParticleNetwork>
           replacement: 'ParticleNetwork(network: NetworkFeatures(...))',
           message:
               'The parameter networkFeatures has been renamed to network for consistency.',
+        );
+      }
+      if (widget.usedLegacyMaxConnections) {
+        LegacyDeprecationLogger.warn(
+          deprecatedApi: 'ParticleNetwork(maxConnectionsPerParticle)',
+          replacement:
+              'ParticleNetwork(performance: PerformanceFeatures(maxConnectionsPerParticle: ...))',
+          message:
+              'maxConnectionsPerParticle has been consolidated into PerformanceFeatures. Use performance: PerformanceFeatures(maxConnectionsPerParticle: ...) instead.',
+        );
+      }
+      if (widget.usedLegacyAdaptiveDensity) {
+        LegacyDeprecationLogger.warn(
+          deprecatedApi: 'ParticleNetwork(adaptiveDensity)',
+          replacement:
+              'ParticleNetwork(performance: PerformanceFeatures(complex: ComplexConfig.auto()))',
+          message:
+              'adaptiveDensity has been consolidated into PerformanceFeatures. Use performance: PerformanceFeatures(complex: ComplexConfig.auto()) instead.',
+        );
+      }
+      if (widget.usedLegacyFastLineRendering) {
+        LegacyDeprecationLogger.warn(
+          deprecatedApi:
+              'ParticleNetwork(fastLineRendering, useVerticesRendering)',
+          replacement:
+              'ParticleNetwork(network: NetworkFeatures(renderer: LineRenderer.vertices))',
+          message:
+              'fastLineRendering and useVerticesRendering have been consolidated into NetworkFeatures. Use network: NetworkFeatures(renderer: LineRenderer.vertices) instead.',
+        );
+      }
+      if (widget.usedLegacyAdaptivePerformance) {
+        LegacyDeprecationLogger.warn(
+          deprecatedApi: 'ParticleNetwork(enableAdaptivePerformance)',
+          replacement:
+              'ParticleNetwork(performance: PerformanceFeatures(autoBoost: ...))',
+          message:
+              'enableAdaptivePerformance has been consolidated into PerformanceFeatures. Use performance: PerformanceFeatures(autoBoost: ...) instead.',
         );
       }
     }

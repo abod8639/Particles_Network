@@ -6,6 +6,7 @@ library;
 
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
+import 'package:particles_network/src/legacy/legacy_deprecation_logger.dart';
 
 // Tracks the acceleration state of particles
 class AccelerationTracker {
@@ -28,6 +29,61 @@ class AccelerationTracker {
 
   // Check if there were any accelerated particles
   bool get hadAcceleratedParticles => _lastFrameAcceleratedCount > 0;
+}
+
+/// Manages adaptive QuadTree updates (legacy).
+///
+/// Deprecated: SortedSpatialGrid rebuilds in sub-0.1ms with zero allocations every frame,
+/// making periodic skipping obsolete.
+@Deprecated(
+  'AdaptiveQuadTreeManager is deprecated. SortedSpatialGrid performs full '
+  'zero-allocation rebuilds in sub-0.1ms every frame without needing periodic skipping. '
+  'Scheduled for removal in particles_network 2.0.0.',
+)
+class AdaptiveQuadTreeManager {
+  /// How many frames to skip between mandatory rebuilds
+  int rebuildInterval;
+
+  int _frameSinceLastRebuild;
+  bool _forceNextRebuild = false;
+
+  /// Creates an [AdaptiveQuadTreeManager] with given [rebuildInterval].
+  AdaptiveQuadTreeManager({this.rebuildInterval = 3})
+      : _frameSinceLastRebuild = rebuildInterval {
+    LegacyDeprecationLogger.warn(
+      deprecatedApi: 'AdaptiveQuadTreeManager',
+      replacement: 'SortedSpatialGrid',
+    );
+  }
+
+  /// Check if QuadTree should be rebuilt this frame
+  bool shouldRebuild() {
+    if (_forceNextRebuild) {
+      _frameSinceLastRebuild = 0;
+      _forceNextRebuild = false;
+      return true;
+    }
+    _frameSinceLastRebuild++;
+    if (_frameSinceLastRebuild >= rebuildInterval) {
+      _frameSinceLastRebuild = 0;
+      return true;
+    }
+    return false;
+  }
+
+  /// Force a rebuild on the next frame (e.g., after touch interaction)
+  void forceRebuild() {
+    _forceNextRebuild = true;
+  }
+
+  /// Reset the frame counter
+  void reset() {
+    _frameSinceLastRebuild = rebuildInterval;
+    _forceNextRebuild = false;
+  }
+
+  /// Get the number of frames since last rebuild
+  int get frameSinceLastRebuild => _frameSinceLastRebuild;
 }
 
 // Monitors frame performance and provides adaptive metrics
@@ -116,7 +172,11 @@ class AdaptivePerformanceController {
   double get smoothedDynamicLines => _smoothedDynamicLines;
 
   /// Dynamic scale factor relative to the initial line budget (4000.0).
-  double get scaleFactor => _smoothedDynamicLines / initialDynamicLines;
+  double get scaleFactor =>
+      (_smoothedDynamicLines / initialDynamicLines).clamp(minScale, maxScale);
+
+  /// Compatibility alias for [scaleFactor].
+  double get currentScale => scaleFactor;
 
   /// Current emergency connection cap, or `null` if uncapped (fast-path).
   int? get emergencyMaxConnections =>
@@ -134,15 +194,25 @@ class AdaptivePerformanceController {
   /// Consecutive smooth frames recorded while in emergency recovery.
   int get consecutiveSmooth => _consecutiveSmooth;
 
+  /// Underlying performance monitor tracking frame durations (legacy compatibility).
+  final PerformanceMonitor monitor;
+
+  /// Minimum quality scale allowed.
+  final double minScale;
+
+  /// Maximum quality scale allowed.
+  final double maxScale;
+
   /// Creates an [AdaptivePerformanceController].
   AdaptivePerformanceController({
     double targetFrameTimeMs = 16.67,
     bool autoBoost = false,
-    double? minScale,
-    double? maxScale,
+    this.minScale = 0.4,
+    this.maxScale = 1.0,
     double? emaWeight,
     PerformanceMonitor? monitor,
-  })  : _targetFrameTimeMs =
+  })  : monitor = monitor ?? PerformanceMonitor(),
+        _targetFrameTimeMs =
             (targetFrameTimeMs > 0 && targetFrameTimeMs.isFinite)
                 ? targetFrameTimeMs
                 : 16.67,
@@ -243,14 +313,27 @@ class AdaptivePerformanceController {
 
   /// Compatibility wrapper for recording Duration-based frame times.
   void recordFrameTime(Duration duration, [int visibleCount = 100]) {
+    monitor.recordFrameTime(duration);
     recordFrame(
       frameTimeMs: duration.inMicroseconds / 1000.0,
       visibleCount: visibleCount,
     );
   }
 
+  /// Returns the line distance scaled by the current performance factor.
+  double getAdjustedLineDistance(double baseDistance) {
+    return baseDistance * currentScale;
+  }
+
+  /// Returns the maximum connection count scaled by the current performance factor.
+  int getAdjustedMaxConnections(int baseMaxConnections) {
+    return (baseMaxConnections * currentScale)
+        .round()
+        .clamp(1, baseMaxConnections);
+  }
+
   /// Resets controller state and re-initializes EMA with target frame time.
-  void reset({required double targetFrameTimeMs}) {
+  void reset({double targetFrameTimeMs = 16.67}) {
     final double safeTarget =
         (targetFrameTimeMs > 0 && targetFrameTimeMs.isFinite)
             ? targetFrameTimeMs
@@ -261,6 +344,7 @@ class AdaptivePerformanceController {
     _emergencyTierIndex = 0;
     _consecutiveDrops = 0;
     _consecutiveSmooth = 0;
+    monitor.clear();
   }
 
   @visibleForTesting

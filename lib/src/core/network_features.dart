@@ -66,6 +66,46 @@ class NetworkFeatures {
   /// Defaults to [LineRenderer.vertices].
   final LineRenderer renderer;
 
+  /// Compatibility alias for [width].
+  @Deprecated(
+    'lineWidth was renamed to width inside NetworkFeatures. '
+    'Use NetworkFeatures.width instead. '
+    'This property will be removed in particles_network 2.0.0.',
+  )
+  double get lineWidth => width;
+
+  /// Compatibility alias for [distance].
+  @Deprecated(
+    'lineDistance was renamed to distance inside NetworkFeatures. '
+    'Use NetworkFeatures.distance instead. '
+    'This property will be removed in particles_network 2.0.0.',
+  )
+  double get lineDistance => distance;
+
+  /// Compatibility alias for [color].
+  @Deprecated(
+    'lineColor was renamed to color inside NetworkFeatures. '
+    'Use NetworkFeatures.color instead. '
+    'This property will be removed in particles_network 2.0.0.',
+  )
+  Color get lineColor => color;
+
+  /// Compatibility alias for [enabled].
+  @Deprecated(
+    'drawNetwork was renamed to enabled inside NetworkFeatures. '
+    'Use NetworkFeatures.enabled instead. '
+    'This property will be removed in particles_network 2.0.0.',
+  )
+  bool get drawNetwork => enabled;
+
+  /// Compatibility alias for [renderer].
+  @Deprecated(
+    'lineRenderer was renamed to renderer inside NetworkFeatures. '
+    'Use NetworkFeatures.renderer instead. '
+    'This property will be removed in particles_network 2.0.0.',
+  )
+  LineRenderer get lineRenderer => renderer;
+
   /// Creates a [NetworkFeatures] configuration with customizable appearance and rendering backend.
   ///
   /// Parameters:
@@ -75,27 +115,91 @@ class NetworkFeatures {
   /// * [color]: Color for connection lines. Defaults to `const Color.fromARGB(255, 100, 255, 180)`.
   /// * [renderer]: Rasterization backend engine. Defaults to [LineRenderer.vertices].
   const NetworkFeatures({
-    this.enabled = true,
-    this.width = 0.5,
-    this.distance = 100.0,
-    this.color = const Color.fromARGB(255, 100, 255, 180),
-    this.renderer = LineRenderer.vertices,
-  });
+    bool? enabled,
+    @Deprecated(
+      'drawNetwork was renamed to enabled inside NetworkFeatures. '
+      'Use NetworkFeatures(enabled: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    bool? drawNetwork,
+    double? width,
+    @Deprecated(
+      'lineWidth was renamed to width inside NetworkFeatures. '
+      'Use NetworkFeatures(width: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    double? lineWidth,
+    double? distance,
+    @Deprecated(
+      'lineDistance was renamed to distance inside NetworkFeatures. '
+      'Use NetworkFeatures(distance: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    double? lineDistance,
+    Color? color,
+    @Deprecated(
+      'lineColor was renamed to color inside NetworkFeatures. '
+      'Use NetworkFeatures(color: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    Color? lineColor,
+    LineRenderer? renderer,
+    @Deprecated(
+      'lineRenderer was renamed to renderer inside NetworkFeatures. '
+      'Use NetworkFeatures(renderer: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    LineRenderer? lineRenderer,
+  })  : enabled = enabled ?? drawNetwork ?? true,
+        width = width ?? lineWidth ?? 0.5,
+        distance = distance ?? lineDistance ?? 100.0,
+        color = color ?? lineColor ?? const Color.fromARGB(255, 100, 255, 180),
+        renderer = renderer ?? lineRenderer ?? LineRenderer.vertices;
 
   /// Creates a copy of this [NetworkFeatures] configuration with updated parameters.
   NetworkFeatures copyWith({
     bool? enabled,
+    @Deprecated(
+      'drawNetwork was renamed to enabled inside NetworkFeatures. '
+      'Use NetworkFeatures.copyWith(enabled: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    bool? drawNetwork,
     double? width,
+    @Deprecated(
+      'lineWidth was renamed to width inside NetworkFeatures. '
+      'Use NetworkFeatures.copyWith(width: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    double? lineWidth,
     double? distance,
+    @Deprecated(
+      'lineDistance was renamed to distance inside NetworkFeatures. '
+      'Use NetworkFeatures.copyWith(distance: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    double? lineDistance,
     Color? color,
+    @Deprecated(
+      'lineColor was renamed to color inside NetworkFeatures. '
+      'Use NetworkFeatures.copyWith(color: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    Color? lineColor,
     LineRenderer? renderer,
+    @Deprecated(
+      'lineRenderer was renamed to renderer inside NetworkFeatures. '
+      'Use NetworkFeatures.copyWith(renderer: ...) instead. '
+      'This parameter will be removed in particles_network 2.0.0.',
+    )
+    LineRenderer? lineRenderer,
   }) {
     return NetworkFeatures(
-      enabled: enabled ?? this.enabled,
-      width: width ?? this.width,
-      distance: distance ?? this.distance,
-      color: color ?? this.color,
-      renderer: renderer ?? this.renderer,
+      enabled: enabled ?? drawNetwork ?? this.enabled,
+      width: width ?? lineWidth ?? this.width,
+      distance: distance ?? lineDistance ?? this.distance,
+      color: color ?? lineColor ?? this.color,
+      renderer: renderer ?? lineRenderer ?? this.renderer,
     );
   }
 

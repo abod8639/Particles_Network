@@ -6,6 +6,7 @@ library;
 
 import 'package:flutter/foundation.dart';
 import 'package:particles_network/src/core/rectangle.dart';
+import 'package:particles_network/src/spatial/compressed_quad_tree_node.dart';
 
 /// Legacy particle representation used by [CompressedQuadTree].
 @Deprecated(
@@ -36,10 +37,16 @@ class QuadTreeParticle {
   'Use SortedSpatialGrid instead for zero-allocation spatial partitioning.',
 )
 class CompressedQuadTree {
+  late CompressedQuadTreeNode _root;
+
+  /// The rectangular boundary within which the tree partitions particles.
   Rectangle _boundary;
 
   /// Current rectangular boundary.
   Rectangle get boundary => _boundary;
+
+  /// Public accessor for root node (for debugging/inspection).
+  CompressedQuadTreeNode get root => _root;
 
   final List<QuadTreeParticle> _particles = [];
   static bool _warned = false;
@@ -65,16 +72,24 @@ class CompressedQuadTree {
   /// Creates a [CompressedQuadTree] with the given [boundary].
   CompressedQuadTree(Rectangle boundary) : _boundary = boundary {
     _emitRedWarning();
+    _root = CompressedQuadTreeNode(_boundary);
   }
 
   /// Updates tree boundary.
   void updateBoundary(Rectangle newBoundary) {
-    _boundary = newBoundary;
+    if (_boundary.x != newBoundary.x ||
+        _boundary.y != newBoundary.y ||
+        _boundary.width != newBoundary.width ||
+        _boundary.height != newBoundary.height) {
+      _boundary = newBoundary;
+      _root = CompressedQuadTreeNode(_boundary);
+    }
   }
 
   /// Inserts a particle into the tree.
   bool insert(QuadTreeParticle particle) {
     _particles.add(particle);
+    _root.insert(particle);
     return true;
   }
 
@@ -143,6 +158,7 @@ class CompressedQuadTree {
   /// Clears all particles.
   void clear() {
     _particles.clear();
+    _root.clear();
   }
 
   /// Returns legacy performance and node statistics.
