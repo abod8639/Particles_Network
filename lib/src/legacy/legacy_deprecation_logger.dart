@@ -34,6 +34,7 @@ class LegacyDeprecationLogger {
   static void warn({
     required String deprecatedApi,
     required String replacement,
+    String? message,
   }) {
     if (!isDebugMode) return;
     if (_warnedApis.contains(deprecatedApi)) return;
@@ -48,6 +49,9 @@ class LegacyDeprecationLogger {
     );
     buffer.writeln('$_yellow• Deprecated API : $deprecatedApi$_reset');
     buffer.writeln('$_yellow• Recommended    : $replacement$_reset');
+    if (message != null && message.isNotEmpty) {
+      buffer.writeln('$_yellow• Notice         : $message$_reset');
+    }
     buffer.writeln(
       '$_boldYellow════════════════════════════════════════════════════════════════════════════════$_reset',
     );

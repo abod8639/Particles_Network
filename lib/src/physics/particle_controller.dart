@@ -19,7 +19,7 @@ abstract class IParticleController {
   void updateParticles(
     List<Particle> particles,
     Size bounds, {
-    ParticleGravity gravity = const ParticleGravity(),
+    GravityFeatures gravity = const GravityFeatures(),
   });
 }
 
@@ -36,6 +36,6 @@ abstract class ITimeScaledParticleController implements IParticleController {
     List<Particle> particles,
     Size bounds,
     double timeScale, {
-    ParticleGravity gravity = const ParticleGravity(),
+    GravityFeatures gravity = const GravityFeatures(),
   });
 }

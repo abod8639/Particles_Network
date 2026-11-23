@@ -13,13 +13,13 @@ enum GravityType {
 
   /// Applies a constant, uniform directional gravitational force across the entire canvas.
   ///
-  /// All particles accelerate along the vector specified by [ParticleGravity.direction]
+  /// All particles accelerate along the vector specified by [GravityFeatures.direction]
   /// (e.g., simulating natural downward gravity, snowfall, or horizontal wind drift).
   global,
 
   /// Applies a radial, distance-dependent gravitational force centered on a specific point.
   ///
-  /// Forces emanate from or pull toward [ParticleGravity.center] (e.g., simulating
+  /// Forces emanate from or pull toward [GravityFeatures.center] (e.g., simulating
   /// black holes, orbital vortexes, magnets, or radial explosive repulsion).
   point,
 }
@@ -38,17 +38,17 @@ enum GravityType {
 /// Example:
 /// ```dart
 /// // Directional gravity (falling downward like rain):
-/// const gravity = ParticleGravity.global(
+/// const gravity = GravityFeatures.global(
 ///   strength: 0.15,
 ///   direction: Offset(0, 1),
 /// );
 ///
 /// // Point-based vortex (pulling inward toward the center):
-/// const blackHole = ParticleGravity.point(
+/// const blackHole = GravityFeatures.point(
 ///   strength: 0.50,
 /// );
 /// ```
-class ParticleGravity {
+class GravityFeatures {
   /// The gravitational physics model to apply.
   ///
   /// * [GravityType.none]: Disables gravity entirely.
@@ -94,14 +94,14 @@ class ParticleGravity {
   /// Defaults to `null` (canvas center).
   final Offset? center;
 
-  /// Creates a [ParticleGravity] configuration with customizable parameters.
+  /// Creates a [GravityFeatures] configuration with customizable parameters.
   ///
   /// Parameters:
   /// * [type]: Gravitational model to apply. Defaults to [GravityType.none].
   /// * [strength]: Intensity of acceleration. Defaults to `0.1`.
   /// * [direction]: Directional vector for global gravity. Defaults to `const Offset(0, 1)`.
   /// * [center]: Focal coordinates for point gravity. Defaults to `null` (canvas center).
-  const ParticleGravity({
+  const GravityFeatures({
     this.type = GravityType.none,
     this.strength = 0.1,
     this.direction = const Offset(0, 1),
@@ -115,7 +115,7 @@ class ParticleGravity {
   /// * Sets [strength] to `0.0`.
   /// * Sets [direction] to `const Offset(0, 1)`.
   /// * Sets [center] to `null`.
-  const ParticleGravity.none()
+  const GravityFeatures.none()
       : type = GravityType.none,
         strength = 0.0,
         direction = const Offset(0, 1),
@@ -131,12 +131,12 @@ class ParticleGravity {
   ///
   /// Example:
   /// ```dart
-  /// const rainGravity = ParticleGravity.global(
+  /// const rainGravity = GravityFeatures.global(
   ///   strength: 0.25,
   ///   direction: Offset(0, 1),
   /// );
   /// ```
-  const ParticleGravity.global({
+  const GravityFeatures.global({
     this.strength = 0.1,
     this.direction = const Offset(0, 1),
   })  : type = GravityType.global,
@@ -154,30 +154,30 @@ class ParticleGravity {
   /// Example:
   /// ```dart
   /// // Black hole pulling particles toward screen center:
-  /// const blackHole = ParticleGravity.point(
+  /// const blackHole = GravityFeatures.point(
   ///   strength: 0.60,
   /// );
   ///
   /// // Repulsive force pushing particles away from a focal point:
-  /// const repulsor = ParticleGravity.point(
+  /// const repulsor = GravityFeatures.point(
   ///   strength: -0.40,
   ///   center: Offset(150, 150),
   /// );
   /// ```
-  const ParticleGravity.point({
+  const GravityFeatures.point({
     this.strength = 0.1,
     this.center,
   })  : type = GravityType.point,
         direction = const Offset(0, 1);
 
-  /// Creates a copy of this [ParticleGravity] configuration with the given fields replaced with new values.
-  ParticleGravity copyWith({
+  /// Creates a copy of this [GravityFeatures] configuration with the given fields replaced with new values.
+  GravityFeatures copyWith({
     GravityType? type,
     double? strength,
     Offset? direction,
     Offset? center,
   }) {
-    return ParticleGravity(
+    return GravityFeatures(
       type: type ?? this.type,
       strength: strength ?? this.strength,
       direction: direction ?? this.direction,
@@ -188,7 +188,7 @@ class ParticleGravity {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is ParticleGravity &&
+      other is GravityFeatures &&
           runtimeType == other.runtimeType &&
           type == other.type &&
           strength == other.strength &&
@@ -200,5 +200,5 @@ class ParticleGravity {
 
   @override
   String toString() =>
-      'ParticleGravity(type: $type, strength: $strength, direction: $direction, center: $center)';
+      'GravityFeatures(type: $type, strength: $strength, direction: $direction, center: $center)';
 }
