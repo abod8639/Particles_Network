@@ -110,24 +110,28 @@
 <p align="center">
   <table align="center">
     <tr align="center">
+      <td><b>Down Gravity</b></td>
       <td><b>Default Network</b></td>
-      <td><b>Bold Connections</b></td>
-      <td><b>Global Gravity</b></td>
+      <td><b>anti gravity</b></td>
+      <td><b>2 Stroke Mode</b></td>
     </tr>
     <tr>
-      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang.gif" width="220" alt="Default"></td>
-      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang1.gif" width="220" alt="Bold Lines"></td>
-      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang2.gif" width="220" alt="Gravity"></td>
+      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/V1.9.7/Screenshot_20261124_170448.jpg" width="220" alt="Gravity"></td>
+      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/V1.9.7/Screenshot_20261124_170433.jpg" width="220" alt="Gravity"></td>
+      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/V1.9.7/Screenshot_20261124-174231.jpg" width="220" alt="Bold Lines"></td>
+      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/V1.9.7/Screenshot_20261124_174320.jpg" width="220" alt="Bold Lines"></td>
     </tr>
     <tr align="center">
-      <td><b>Mass-based Gravity</b></td>
-      <!-- <td><b>Optimized Density</b></td> -->
-      <td><b>Stroke Mode</b></td>
+      <td><b>Black hole</b></td>
+      <td><b>Default Network</b></td>
+      <td><b>anti gravity</b></td>
+      <td><b>small stroke</b></td>
     </tr>
     <tr>
-      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang3.gif" width="220" alt="Mass Gravity"></td>
-      <!-- <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang4.gif" width="220" alt="Complex"></td> -->
-      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/demo_boomerang5.gif" width="220" alt="No Stroke"></td>
+      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/V1.9.7/Screen_Recording_20261124_170639.gif" width="220" alt="Mass Gravity"></td>
+      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/V1.9.7/Screen_Recording_20261124_170420.gif" width="220" alt="No Stroke"></td>
+      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/V1.9.7/Screen_Recording_20261124_165718.gif" width="220" alt="Complex"></td>
+      <td><img src="https://raw.githubusercontent.com/abod8639/media/main/particles_network_media/V1.9.7/Screen_Recording_20261124_170034.gif" width="220" alt="Complex"></td>
     </tr>
   </table>
 </p>
