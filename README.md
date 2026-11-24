@@ -166,7 +166,7 @@ flutter pub get
 ## Quick Start
 
 ```dart
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:particles_network/particles_network.dart';
 
 void main() => runApp(const MyApp());
@@ -209,8 +209,8 @@ class MyApp extends StatelessWidget {
 
 **Requirements:**
 
-- Flutter SDK `>=3.27.0`
-- Dart SDK `>=3.6.0 <4.0.0`
+- Flutter SDK `>=3.50.0`
+- Dart SDK `>=3.12.0 <4.0.0`
 
 ---
 
@@ -575,7 +575,7 @@ const ParticleNetwork(
 ### 1. Background Visual for Landing Pages
 
 ```dart
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:particles_network/particles_network.dart';
 
 class LandingBackgroundPage extends StatelessWidget {

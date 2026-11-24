@@ -772,7 +772,7 @@ All entries below are tagged with `@Deprecated` and will be permanently removed 
 The code snippet below demonstrates instantiating `ParticleNetwork` with all modular configuration objects (`ParticleFeatures`, `NetworkFeatures`, `TouchFeatures`, `PerformanceFeatures`, `GravityFeatures`, and `SortedSpatialGrid`), displaying every available canonical option with its default value:
 
 ```dart
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:particles_network/particles_network.dart';
 
 class CompleteParticleNetworkScreen extends StatelessWidget {

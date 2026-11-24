@@ -7,8 +7,8 @@ repository: https://github.com/abod8639/Particles_Network.git
 homepage: https://github.com/abod8639/Particles_Network
 
 environment:
-  sdk: '>=3.6.0 <4.0.0'
-  flutter: '>=3.27.0'
+  sdk: '>=3.12.0 <4.0.0'
+  flutter: '>=3.50.0'
 
 dependencies:
   flutter:
@@ -22,7 +22,6 @@ dev_dependencies:
   test: ^1.16.0
   build_runner: ^2.4.0
   material_ui: ^1.11.1
-
 flutter:
   # shaders:
     # - shaders/particles.frag
