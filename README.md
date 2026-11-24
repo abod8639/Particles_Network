@@ -52,13 +52,13 @@
 - [Platform Support](#platform-support)
 - [Configuration Options](#configuration-options)
   - [Core Widget API (`ParticleNetwork`)](#core-widget-api-particlenetwork)
-  - [Backward Compatibility (1.9.6 Parameters)](#backward-compatibility-196-parameters)
-  - [Particle Features Configuration (`ParticleFeatures`)](#particle-features-configuration)
-  - [Network Features Configuration (`NetworkFeatures`)](#network-features-configuration)
-  - [Touch Features Configuration (`TouchFeatures`)](#touch-features-configuration)
-  - [Network Performance Configuration (`PerformanceFeatures`)](#network-performance-configuration)
+  - [Particle Features Configuration (`ParticleFeatures`)](#particle-features-configuration-particlefeatures)
+  - [Network Features Configuration (`NetworkFeatures`)](#network-features-configuration-networkfeatures)
+  - [Touch Features Configuration (`TouchFeatures`)](#touch-features-configuration-touchfeatures)
+  - [Network Performance Configuration (`PerformanceFeatures`)](#network-performance-configuration-performancefeatures)
   - [Complex Cluster Optimization (`ComplexConfig`)](#complex-cluster-optimization-complexconfig)
-  - [Particle Gravity Configuration (`GravityFeatures`)](#particle-gravity-configuration)
+  - [Particle Gravity Configuration (`GravityFeatures`)](#particle-gravity-configuration-gravityfeatures)
+  - [Backward Compatibility (1.9.6 Parameters)](#backward-compatibility-196-parameters)
 - [Examples](#examples)
 - [Architecture & Performance Engineering](#architecture--performance-engineering)
 - [Performance Benchmarks](#performance-benchmarks)
@@ -166,7 +166,7 @@ flutter pub get
 ## Quick Start
 
 ```dart
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:particles_network/particles_network.dart';
 
 void main() => runApp(const MyApp());
@@ -218,26 +218,58 @@ class MyApp extends StatelessWidget {
 
 ### Core Widget API (`ParticleNetwork`)
 
-| Property                  | Type                 | Default                      | Description                                                                                                                                                 |
-| :------------------------ | :------------------- | :--------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `particles`               | `ParticleFeatures`   | `const ParticleFeatures()`   | Encapsulated particle appearance, count, velocity limits, radius bounds, and fill/stroke mode.                                                              |
-| `network`                 | `NetworkFeatures`    | `const NetworkFeatures()`    | Encapsulated network line settings: drawing toggle, line width, line distance, line color, and GPU rasterization backend.                                  |
-| `touch` / `touchFeatures` | `TouchFeatures`      | `const TouchFeatures()`      | Fine-grained touch physics, highlight color, cursor hover, and gesture configuration.                                                                       |
-| `performance`             | `PerformanceFeatures` | `const PerformanceFeatures()` | Comprehensive rendering optimizations, line budgets, frame scaling, and cluster throttling.                                                                |
-| `gravity`                 | `GravityFeatures?`   | `GravityFeatures.none() /null`                       | Unified gravity configuration (global directional or point attractor/repeller gravity).                                                                     |
-| `spatialGrid`             | `SortedSpatialGrid?` | `null`                       | Optional custom spatial partitioning grid instance for neighbor indexing (defaults to internally managed instance).                                         |
+The top-level `ParticleNetwork` widget orchestrates simulation physics, spatial indexing, touch interactions, line budgets, and GPU-accelerated rendering:
 
-### Particle Features Configuration
+| Property                  | Type                  | Default                       | Description                                                                                                                 |
+| :------------------------ | :-------------------- | :---------------------------- | :-------------------------------------------------------------------------------------------------------------------------- |
+| `particles`               | `ParticleFeatures`    | `const ParticleFeatures()`    | Encapsulated particle appearance, count, velocity limits, radius bounds, and fill/stroke mode.                              |
+| `network`                 | `NetworkFeatures`     | `const NetworkFeatures()`     | Encapsulated network line settings: drawing toggle, line width, line distance, line color, and GPU rasterization backend.  |
+| `touch` / `touchFeatures` | `TouchFeatures`       | `const TouchFeatures()`       | Fine-grained touch physics, highlight color, cursor hover, and gesture configuration.                                       |
+| `performance`             | `PerformanceFeatures` | `const PerformanceFeatures()` | Comprehensive rendering optimizations, line budgets, frame scaling, and cluster throttling.                                |
+| `gravity`                 | `GravityFeatures?`    | `null`                        | Unified gravity configuration (global directional or point attractor/repeller gravity).                                     |
+| `spatialGrid`             | `SortedSpatialGrid?`  | `null`                        | Optional custom spatial partitioning grid instance for neighbor indexing (defaults to internally managed instance).         |
+
+```dart
+ParticleNetwork(
+  particles: const ParticleFeatures(
+    count: 80,
+    maxSpeed: 0.8,
+    color: Colors.white,
+  ),
+  network: const NetworkFeatures(
+    width: 0.8,
+    distance: 120.0,
+    color: Color(0xFF00E5FF),
+    renderer: LineRenderer.vertices,
+  ),
+  touch: const TouchFeatures(
+    enabled: true,
+    hover: true,
+  ),
+  performance: const PerformanceFeatures(
+    maxLinesPerFrame: 15000,
+    frameRateIndependent: true,
+  ),
+  gravity: const GravityFeatures.global(
+    strength: 0.15,
+    direction: Offset(0, 1),
+  ),
+)
+```
+
+---
+
+### Particle Features Configuration (`ParticleFeatures`)
 
 Encapsulate particle cloud density, speed ceilings, radius limits, colors, and fill styles with `ParticleFeatures`:
 
-| Property   | Type     | Default             | Description                                                                                 |
-| :--------- | :------- | :------------------ | :------------------------------------------------------------------------------------------ |
-| `count`    | `int`    | `60`                | Number of particles simulated and rendered on screen.                                       |
-| `maxSpeed` | `double` | `0.5`               | Maximum base wandering velocity ceiling (pixels per 60Hz reference frame).                  |
-| `maxSize`  | `double` | `1.5`               | Maximum particle radius in logical pixels.                                                  |
-| `color`    | `Color`  | `Color(0xFFFFFFFF)` | Solid particle disc or stroked ring color.                                                  |
-| `fill`     | `bool`   | `true`              | `true` for solid filled discs, `false` for stroked rings.                                   |
+| Property   | Type     | Default             | Description                                                                 |
+| :--------- | :------- | :------------------ | :-------------------------------------------------------------------------- |
+| `count`    | `int`    | `60`                | Number of particles simulated and rendered on screen.                       |
+| `maxSpeed` | `double` | `0.5`               | Maximum base wandering velocity ceiling (pixels per 60Hz reference frame).  |
+| `maxSize`  | `double` | `1.5`               | Maximum particle radius in logical pixels.                                  |
+| `color`    | `Color`  | `Color(0xFFFFFFFF)` | Solid particle disc or stroked ring color.                                  |
+| `fill`     | `bool`   | `true`              | `true` for solid filled discs, `false` for stroked rings.                   |
 
 #### Built-in Presets:
 - `ParticleFeatures.subtle()`: 35 particles, 0.3 maxSpeed, 1.2 maxSize — gentle background.
@@ -245,6 +277,7 @@ Encapsulate particle cloud density, speed ceilings, radius limits, colors, and f
 - `ParticleFeatures.cosmic()`: 90 particles, 1.2 maxSpeed, 2.5 maxSize — high-velocity hero section.
 
 ```dart
+// 1. Custom particle styling
 ParticleNetwork(
   particles: const ParticleFeatures(
     count: 80,
@@ -253,50 +286,61 @@ ParticleNetwork(
     color: Colors.white,
     fill: true,
   ),
+)
+
+// 2. Or using built-in presets:
+// particles: ParticleFeatures.subtle() // Gentle quiet background
+// particles: ParticleFeatures.dense()  // Rich energetic plexus
+// particles: ParticleFeatures.cosmic() // Dynamic hero section
+```
+
+---
+
+### Network Features Configuration (`NetworkFeatures`)
+
+Encapsulate connection line visibility, stroke dimensions, distance thresholds, colors, and GPU rasterization backend with `NetworkFeatures`:
+
+| Property   | Type           | Default                 | Description                                                                                     |
+| :--------- | :------------- | :---------------------- | :---------------------------------------------------------------------------------------------- |
+| `enabled`  | `bool`         | `true`                  | Whether to draw connection lines between particles in proximity.                                |
+| `width`    | `double`       | `0.5`                   | Stroke width of connection lines in logical pixels.                                             |
+| `distance` | `double`       | `100.0`                 | Connection radius threshold between particles.                                                  |
+| `color`    | `Color`        | `Color(0xFF64FFB4)`     | Base color of connection lines.                                                                 |
+| `renderer` | `LineRenderer` | `LineRenderer.vertices` | GPU rasterization backend (`LineRenderer.vertices` for GPU batching or `LineRenderer.stroke`). |
+
+> [!NOTE]
+> For backward compatibility, `drawNetwork`, `lineWidth`, `lineDistance`, `lineColor`, and `lineRenderer` remain supported as direct parameter aliases.
+
+```dart
+ParticleNetwork(
   network: const NetworkFeatures(
+    enabled: true,
     width: 0.8,
     distance: 120.0,
-    color: Color(0xFF00E5FF),
-    renderer: LineRenderer.vertices,
+    color: Color(0xFF64FFB4),
+    renderer: LineRenderer.vertices, // 10x–20x GPU raster acceleration with indexed triangle quads
   ),
 )
 ```
 
 ---
 
-### Network Features Configuration
-
-Encapsulate connection line visibility, stroke dimensions, distance thresholds, colors, and GPU rasterization backend with `NetworkFeatures`:
-
-| Property   | Type           | Default                 | Description                                                                                 |
-| :--------- | :------------- | :---------------------- | :------------------------------------------------------------------------------------------ |
-| `enabled`  | `bool`         | `true`                  | Whether to draw connection lines between particles in proximity.                            |
-| `width`    | `double`       | `0.5`                   | Stroke width of connection lines in logical pixels.                                         |
-| `distance` | `double`       | `100.0`                 | Connection radius threshold between particles.                                              |
-| `color`    | `Color`        | `Color(0xFF64FFB4)`     | Base color of connection lines.                                                             |
-| `renderer` | `LineRenderer` | `LineRenderer.vertices` | GPU rasterization backend (`LineRenderer.vertices` for GPU batching or `LineRenderer.stroke`). |
-
-> [!NOTE]
-> For backward compatibility, `drawNetwork`, `lineWidth`, `lineDistance`, `lineColor`, and `lineRenderer` remain supported as direct parameter aliases.
-
----
-
-### Touch Features Configuration
+### Touch Features Configuration (`TouchFeatures`)
 
 Fine-tune interaction dynamics, cursor hover, and touch styling with `TouchFeatures`:
 
-| Property   | Type        | Default          | Description                                                                         |
-| :--------- | :---------- | :--------------- | :---------------------------------------------------------------------------------- |
+| Property   | Type        | Default          | Description                                                                                            |
+| :--------- | :---------- | :--------------- | :----------------------------------------------------------------------------------------------------- |
 | `type`     | `TouchType` | `TouchType.pull` | Interaction physics mode: `TouchType.pull` (attracts, default) or `TouchType.push` (repels/scatters). |
-| `show`     | `bool`      | `true`           | Enables or disables rendering touch connecting lines while keeping touch physics active. |
-| `enabled`  | `bool`      | `true`           | Enables touch and gesture interactions.                                             |
-| `color`    | `Color`     | `Colors.amber`   | Highlight color for particles near touch position.                                  |
-| `force`    | `double`    | `0.42`           | Attraction strength toward the touch point.                                         |
-| `speed`    | `double`    | `0.42`           | Recovery rate back to cruising speed after touch release.                           |
-| `damping`  | `double`    | `0.985`          | Drag coefficient within the touch field.                                            |
-| `maxSpeed` | `double`    | `5.5`            | Strict speed ceiling during touch attraction.                                       |
-| `distance` | `double?`   | `null`           | Touch interaction radius (defaults to widget/network `distance`).                   |
-| `hover`    | `bool`      | `false`          | Enables cursor tracking on desktop and web without requiring a touch/click gesture. |
+| `show`     | `bool`      | `true`           | Enables or disables rendering touch connecting lines while keeping touch physics active.               |
+| `enabled`  | `bool`      | `true`           | Enables touch and gesture interactions.                                                                |
+| `color`    | `Color`     | `Colors.amber`   | Highlight color for particles near touch position.                                                     |
+| `force`    | `double`    | `0.42`           | Attraction or repulsion strength toward the touch point.                                               |
+| `speed`    | `double`    | `0.42`           | Recovery rate back to cruising speed after touch release.                                              |
+| `damping`  | `double`    | `0.985`          | Drag coefficient within the touch field.                                                               |
+| `maxSpeed` | `double`    | `5.5`            | Strict speed ceiling during touch attraction.                                                          |
+| `distance` | `double?`   | `null`           | Touch interaction radius (defaults to widget/network `distance`).                                      |
+| `hover`    | `bool`      | `false`          | Enables cursor tracking on desktop and web without requiring a touch/click gesture.                    |
 
 > [!NOTE]
 > - `type` accepts `TouchType.pull` (default - attracts particles towards the cursor, preserving 100% 1.9.6 compatibility) or `TouchType.push` (repels particles away from the cursor).
@@ -307,9 +351,9 @@ Fine-tune interaction dynamics, cursor hover, and touch styling with `TouchFeatu
 ```dart
 ParticleNetwork(
   touch: const TouchFeatures(
-    type: TouchType.push,
+    type: TouchType.push, // TouchType.push (repels) or TouchType.pull (attracts)
     enabled: true,
-    hover: true,
+    hover: true, // Enables cursor tracking on desktop and web
     color: Colors.amber,
     force: 0.5,
     damping: 0.98,
@@ -321,40 +365,22 @@ ParticleNetwork(
 
 ---
 
-### Network Performance Configuration
+### Network Performance Configuration (`PerformanceFeatures`)
 
 Encapsulates all line budgets, GPU acceleration, frame rate adaptation, and cluster throttling into `PerformanceFeatures`:
 
-| Property                    | Type            | Default                 | Description                                                                                                                                                   |
-| :-------------------------- | :-------------- | :---------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `maxConnectionsPerParticle` | `int?`          | `null`                  | Limits lines per particle, bounding edge complexity to $O(N)$ instead of $O(N^2)$.                                                                          |
-| `maxLinesPerFrame`          | `int?`          | `null`                  | Dynamic line budget: automatically contracts connection radius so line count stays flat at heavy density (~2,000 for strokes, ~15,000 for vertices).         |
-| `frameRateIndependent`      | `bool`          | `false`                 | Integrates motion over elapsed delta-time so particle speed is identical at 60/90/120 Hz displays and smooth through dropped frames.                         |
-| `complex`                   | `ComplexConfig` | `const ComplexConfig()` | Encapsulates cluster density pruning and candidate line throttling to eliminate clutter in congested areas.                                                   |
-| `cappedDistanceFactor`      | `double`        | `0.75`                  | Proximity threshold ratio applied when `maxConnectionsPerParticle` is active, avoiding edge flickering and distant lines.                                     |
-| `antiAlias`                 | `bool`          | `true`                  | Smooth anti-aliased edge rendering for particle circles and connection lines.                                                                                |
-| `spatialCellMultiplier`     | `double?`       | `null`                  | Optional custom grid cell size multiplier for spatial partitioning calculations.                                                                             |
-| `autoBoost`                 | `bool`          | `false`                 | Real-time dynamic performance auto-boosting that measures engine `FrameTiming` to scale connection limits on the fly.                                         |
+| Property                    | Type            | Default                 | Description                                                                                                                    |
+| :-------------------------- | :-------------- | :---------------------- | :----------------------------------------------------------------------------------------------------------------------------- |
+| `maxConnectionsPerParticle` | `int?`          | `null`                  | Limits lines per particle, bounding edge complexity to $O(N)$ instead of $O(N^2)$.                                            |
+| `maxLinesPerFrame`          | `int?`          | `null`                  | Dynamic line budget: automatically contracts connection radius so line count stays flat at heavy density (~2,000 for strokes, ~15,000 for vertices). |
+| `frameRateIndependent`      | `bool`          | `false`                 | Integrates motion over elapsed delta-time so particle speed is identical at 60/90/120 Hz displays and smooth through dropped frames. |
+| `complex`                   | `ComplexConfig` | `const ComplexConfig()` | Encapsulates cluster density pruning and candidate line throttling to eliminate clutter in congested areas.                    |
+| `cappedDistanceFactor`      | `double`        | `0.75`                  | Proximity threshold ratio applied when `maxConnectionsPerParticle` is active, avoiding edge flickering and distant lines.      |
+| `antiAlias`                 | `bool`          | `true`                  | Smooth anti-aliased edge rendering for particle circles and connection lines.                                                 |
+| `spatialCellMultiplier`     | `double?`       | `null`                  | Optional custom grid cell size multiplier for spatial partitioning calculations.                                               |
+| `autoBoost`                 | `bool`          | `false`                 | Real-time dynamic performance auto-boosting that measures engine `FrameTiming` to scale connection limits on the fly.          |
 
----
-
-### Complex Cluster Optimization (`ComplexConfig`)
-
-The `ComplexConfig` (or `ComplexFeatures`) class fine-tunes cluster throttling and connection pruning in dense particle groupings, preventing visual clutter and GPU fill-rate degradation:
-
-| Property        | Type      | Default | Description                                                                                                   |
-| :-------------- | :-------- | :------ | :------------------------------------------------------------------------------------------------------------ |
-| `enabled`       | `bool`    | `false` | Whether cluster throttling optimization is active.                                                            |
-| `ratio`         | `double?` | `null`  | Fraction of candidate connection lines pruned in dense clusters (`0.0` to `1.0`, e.g. `0.4` eliminates 40%).    |
-| `maxLines`      | `int?`    | `null`  | Maximum connection lines allowed per particle in a dense cluster (e.g. `3` lines).                            |
-| `densityFactor` | `double?` | `null`  | Proximity distance multiplier factor used to detect whether a particle is inside a dense cluster (e.g. `0.60`). |
-
-#### Built-in Presets
-- `ComplexConfig()`: Disabled by default.
-- `ComplexConfig.auto()`: Automatically enables cluster throttling with recommended bounds (`maxLines: 3`, `densityFactor: 0.60`).
-- `ComplexConfig.disabled()`: Explicitly disables cluster throttling with all overrides cleared.
-
-#### Performance Presets
+#### Performance Presets & Usage:
 
 ```dart
 // 1. High-Performance Preset: tuned for extreme particle counts (1,000+ to 20,000)
@@ -375,22 +401,52 @@ const ParticleNetwork(
   performance: PerformanceFeatures.balanced(),
 )
 
-// 4. Complex Cluster Preset: fine-grained dense cluster pruning
+// 4. Custom Performance Configuration
 const ParticleNetwork(
-  particles: ParticleFeatures(count: 600),
-  performance: PerformanceFeatures.complex(),
-)
-
-// 5. Custom Performance Configuration
-const ParticleNetwork(
-  particles: ParticleFeatures(count: 5000),
-  network: NetworkFeatures(
-    renderer: LineRenderer.vertices,
-  ),
+  particles: ParticleFeatures(count: 1000),
   performance: PerformanceFeatures(
     maxConnectionsPerParticle: 4,
     maxLinesPerFrame: 15000,
     frameRateIndependent: true,
+    autoBoost: true,
+  ),
+)
+```
+
+---
+
+### Complex Cluster Optimization (`ComplexConfig`)
+
+The `ComplexConfig` (or `ComplexFeatures`) class fine-tunes cluster throttling and connection pruning in dense particle groupings, preventing visual clutter and GPU fill-rate degradation:
+
+| Property        | Type      | Default | Description                                                                                                    |
+| :-------------- | :-------- | :------ | :------------------------------------------------------------------------------------------------------------- |
+| `enabled`       | `bool`    | `false` | Whether cluster throttling optimization is active.                                                             |
+| `ratio`         | `double?` | `null`  | Fraction of candidate connection lines pruned in dense clusters (`0.0` to `1.0`, e.g. `0.4` eliminates 40%).     |
+| `maxLines`      | `int?`    | `null`  | Maximum connection lines allowed per particle in a dense cluster (e.g. `3` lines).                             |
+| `densityFactor` | `double?` | `null`  | Proximity distance multiplier factor used to detect whether a particle is inside a dense cluster (e.g. `0.60`). |
+
+#### Built-in Presets:
+- `ComplexConfig()`: Disabled by default.
+- `ComplexConfig.auto()`: Automatically enables cluster throttling with recommended bounds (`maxLines: 3`, `densityFactor: 0.60`).
+- `ComplexConfig.disabled()`: Explicitly disables cluster throttling with all overrides cleared.
+
+```dart
+// 1. Custom cluster optimization
+const ParticleNetwork(
+  performance: PerformanceFeatures(
+    complex: ComplexConfig(
+      enabled: true,
+      ratio: 0.4, // Prune 40% of candidate lines in congested clusters
+      maxLines: 3, // Max lines per particle inside dense areas
+      densityFactor: 0.60, // Proximity factor for cluster detection
+    ),
+  ),
+)
+
+// 2. Or using auto cluster preset
+const ParticleNetwork(
+  performance: PerformanceFeatures(
     complex: ComplexConfig.auto(),
   ),
 )
@@ -398,22 +454,22 @@ const ParticleNetwork(
 
 ---
 
-### Particle Gravity Configuration
+### Particle Gravity Configuration (`GravityFeatures`)
 
 Configure directional forces, radial attractors, and repulsion fields with `GravityFeatures`:
 
-| Property    | Type          | Default              | Description                                                                                     |
-| :---------- | :------------ | :------------------- | :---------------------------------------------------------------------------------------------- |
-| `type`      | `GravityType` | `GravityType.none`   | Gravity behavior mode: `GravityType.none`, `GravityType.global`, or `GravityType.point`.         |
-| `strength`  | `double`      | `0.1`                | Force intensity. For point gravity: positive values attract, negative values repel.            |
-| `direction` | `Offset`      | `const Offset(0, 1)` | Direction vector for `GravityType.global` (e.g. `Offset(0, 1)` for downward fall).              |
-| `center`    | `Offset?`     | `null`               | Center point for `GravityType.point` (defaults to canvas center when `null`).                   |
+| Property    | Type          | Default              | Description                                                                              |
+| :---------- | :------------ | :------------------- | :--------------------------------------------------------------------------------------- |
+| `type`      | `GravityType` | `GravityType.none`   | Gravity behavior mode: `GravityType.none`, `GravityType.global`, or `GravityType.point`. |
+| `strength`  | `double`      | `0.1`                | Force intensity. For point gravity: positive values attract, negative values repel.     |
+| `direction` | `Offset`      | `const Offset(0, 1)` | Direction vector for `GravityType.global` (e.g. `Offset(0, 1)` for downward fall).       |
+| `center`    | `Offset?`     | `null`               | Center point for `GravityType.point` (defaults to canvas center when `null`).            |
 
 > [!NOTE]
 > - `gravityType`, `gravityStrength`, `gravityDirection`, and `gravityCenter` are deprecated compatibility aliases scheduled for removal in v2.0.0. Use `gravity: GravityFeatures(...)` instead.
 > - Particle **mass** is calculated automatically from radius — larger particles naturally have greater inertia and resist velocity changes more than smaller ones.
 
-#### Built-in Presets
+#### Built-in Presets & Usage:
 
 ```dart
 // 1. Global Directional Gravity: uniform downward fall (e.g. falling snow, rain)
@@ -450,36 +506,67 @@ const ParticleNetwork(
 
 ---
 
-
 ### Backward Compatibility (1.9.6 Parameters)
 
 All parameters from Version 1.9.6 remain **100% backward compatible** and continue to function seamlessly without breaking changes:
 
-| Legacy Property             | Modern Replacement Mapping                                        | Status in 1.9.7   |
-| :-------------------------- | :---------------------------------------------------------------- | :---------------- |
-| `particleCount`             | `particles: ParticleFeatures(count: ...)`                         | Deprecated (v2.0) |
-| `maxSpeed`                  | `particles: ParticleFeatures(maxSpeed: ...)`                      | Deprecated (v2.0) |
-| `maxSize`                   | `particles: ParticleFeatures(maxSize: ...)`                       | Deprecated (v2.0) |
-| `particleColor`             | `particles: ParticleFeatures(color: ...)`                         | Deprecated (v2.0) |
-| `fill`                      | `particles: ParticleFeatures(fill: ...)`                          | Deprecated (v2.0) |
-| `drawNetwork`               | `network: NetworkFeatures(enabled: ...)`                          | Deprecated (v2.0) |
-| `lineWidth`                 | `network: NetworkFeatures(width: ...)`                            | Deprecated (v2.0) |
-| `lineDistance`              | `network: NetworkFeatures(distance: ...)`                         | Deprecated (v2.0) |
-| `lineColor`                 | `network: NetworkFeatures(color: ...)`                            | Deprecated (v2.0) |
-| `networkFeatures`           | `network: NetworkFeatures(...)`                                   | Deprecated (v2.0) |
-| `touchActivation`           | `touch: TouchFeatures(enabled: ...)`                              | Deprecated (v2.0) |
-| `touchColor`                | `touch: TouchFeatures(color: ...)`                                | Deprecated (v2.0) |
-| `hoverEffect`               | `touch: TouchFeatures(hover: ...)`                                | Deprecated (v2.0) |
-| `isComplex`                 | `performance: PerformanceFeatures(complex: ComplexConfig.auto())` | Deprecated (v2.0) |
-| `maxConnectionsPerParticle` | `performance: PerformanceFeatures(maxConnectionsPerParticle: ...)`| Deprecated (v2.0) |
-| `adaptiveDensity`           | `performance: PerformanceFeatures(complex: ComplexConfig.auto())` | Deprecated (v2.0) |
-| `fastLineRendering`         | `network: NetworkFeatures(renderer: LineRenderer.vertices)`       | Deprecated (v2.0) |
-| `useVerticesRendering`      | `network: NetworkFeatures(renderer: LineRenderer.vertices)`       | Deprecated (v2.0) |
-| `enableAdaptivePerformance` | `performance: PerformanceFeatures(autoBoost: ...)`                 | Deprecated (v2.0) |
-| `gravityType`               | `gravity: GravityFeatures(type: ...)`                             | Deprecated (v2.0) |
-| `gravityStrength`           | `gravity: GravityFeatures(strength: ...)`                         | Deprecated (v2.0) |
-| `gravityDirection`          | `gravity: GravityFeatures(direction: ...)`                        | Deprecated (v2.0) |
-| `gravityCenter`             | `gravity: GravityFeatures(center: ...)`                           | Deprecated (v2.0) |
+| Legacy Property             | Modern Replacement Mapping                                         | Status in 1.9.7   |
+| :-------------------------- | :----------------------------------------------------------------- | :---------------- |
+| `particleCount`             | `particles: ParticleFeatures(count: ...)`                          | Deprecated (v2.0) |
+| `maxSpeed`                  | `particles: ParticleFeatures(maxSpeed: ...)`                       | Deprecated (v2.0) |
+| `maxSize`                   | `particles: ParticleFeatures(maxSize: ...)`                        | Deprecated (v2.0) |
+| `particleColor`             | `particles: ParticleFeatures(color: ...)`                          | Deprecated (v2.0) |
+| `fill`                      | `particles: ParticleFeatures(fill: ...)`                           | Deprecated (v2.0) |
+| `drawNetwork`               | `network: NetworkFeatures(enabled: ...)`                           | Deprecated (v2.0) |
+| `lineWidth`                 | `network: NetworkFeatures(width: ...)`                             | Deprecated (v2.0) |
+| `lineDistance`              | `network: NetworkFeatures(distance: ...)`                          | Deprecated (v2.0) |
+| `lineColor`                 | `network: NetworkFeatures(color: ...)`                             | Deprecated (v2.0) |
+| `networkFeatures`           | `network: NetworkFeatures(...)`                                    | Deprecated (v2.0) |
+| `touchActivation`           | `touch: TouchFeatures(enabled: ...)`                               | Deprecated (v2.0) |
+| `touchColor`                | `touch: TouchFeatures(color: ...)`                                 | Deprecated (v2.0) |
+| `hoverEffect`               | `touch: TouchFeatures(hover: ...)`                                 | Deprecated (v2.0) |
+| `isComplex`                 | `performance: PerformanceFeatures(complex: ComplexConfig.auto())`  | Deprecated (v2.0) |
+| `maxConnectionsPerParticle` | `performance: PerformanceFeatures(maxConnectionsPerParticle: ...)` | Deprecated (v2.0) |
+| `adaptiveDensity`           | `performance: PerformanceFeatures(complex: ComplexConfig.auto())`  | Deprecated (v2.0) |
+| `fastLineRendering`         | `network: NetworkFeatures(renderer: LineRenderer.vertices)`        | Deprecated (v2.0) |
+| `useVerticesRendering`      | `network: NetworkFeatures(renderer: LineRenderer.vertices)`        | Deprecated (v2.0) |
+| `enableAdaptivePerformance` | `performance: PerformanceFeatures(autoBoost: ...)`                  | Deprecated (v2.0) |
+| `gravityType`               | `gravity: GravityFeatures(type: ...)`                              | Deprecated (v2.0) |
+| `gravityStrength`           | `gravity: GravityFeatures(strength: ...)`                          | Deprecated (v2.0) |
+| `gravityDirection`          | `gravity: GravityFeatures(direction: ...)`                         | Deprecated (v2.0) |
+| `gravityCenter`             | `gravity: GravityFeatures(center: ...)`                            | Deprecated (v2.0) |
+
+```dart
+// Legacy 1.9.6 Syntax (still 100% supported):
+const ParticleNetwork(
+  particleCount: 150,
+  maxSpeed: 0.8,
+  lineDistance: 100.0,
+  lineWidth: 0.8,
+  particleColor: Colors.white,
+  lineColor: Color(0xFF64FFB4),
+  touchActivation: true,
+  hoverEffect: true,
+)
+
+// Recommended 1.9.7 Modern Equivalent:
+const ParticleNetwork(
+  particles: ParticleFeatures(
+    count: 150,
+    maxSpeed: 0.8,
+    color: Colors.white,
+  ),
+  network: NetworkFeatures(
+    distance: 100.0,
+    width: 0.8,
+    color: Color(0xFF64FFB4),
+  ),
+  touch: TouchFeatures(
+    enabled: true,
+    hover: true,
+  ),
+)
+```
 
 ---
 
@@ -488,7 +575,7 @@ All parameters from Version 1.9.6 remain **100% backward compatible** and contin
 ### 1. Background Visual for Landing Pages
 
 ```dart
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:particles_network/particles_network.dart';
 
 class LandingBackgroundPage extends StatelessWidget {

@@ -60,7 +60,7 @@ import 'package:particles_network/src/spatial/sorted_spatial_grid.dart';
 ///     frameRateIndependent: true,
 ///   ),
 ///   network: const NetworkFeatures(
-///     lineRenderer: LineRenderer.vertices,
+///     renderer: LineRenderer.vertices,
 ///   ),
 /// )
 /// ```
