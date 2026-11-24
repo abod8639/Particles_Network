@@ -116,10 +116,10 @@ class GravityFeatures {
   /// * Sets [direction] to `const Offset(0, 1)`.
   /// * Sets [center] to `null`.
   const GravityFeatures.none()
-      : type = GravityType.none,
-        strength = 0.0,
-        direction = const Offset(0, 1),
-        center = null;
+    : type = GravityType.none,
+      strength = 0.0,
+      direction = const Offset(0, 1),
+      center = null;
 
   /// Creates a global directional gravity configuration.
   ///
@@ -139,8 +139,8 @@ class GravityFeatures {
   const GravityFeatures.global({
     this.strength = 0.1,
     this.direction = const Offset(0, 1),
-  })  : type = GravityType.global,
-        center = null;
+  }) : type = GravityType.global,
+       center = null;
 
   /// Creates a point-based radial gravity configuration (attraction or repulsion).
   ///
@@ -164,11 +164,9 @@ class GravityFeatures {
   ///   center: Offset(150, 150),
   /// );
   /// ```
-  const GravityFeatures.point({
-    this.strength = 0.1,
-    this.center,
-  })  : type = GravityType.point,
-        direction = const Offset(0, 1);
+  const GravityFeatures.point({this.strength = 0.1, this.center})
+    : type = GravityType.point,
+      direction = const Offset(0, 1);
 
   /// Creates a copy of this [GravityFeatures] configuration with the given fields replaced with new values.
   GravityFeatures copyWith({

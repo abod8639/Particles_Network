@@ -21,78 +21,78 @@ final scenarios = <(String, ParticleNetwork Function())>[
   (
     'lines_100',
     () => const ParticleNetwork(
-          particleCount: 100,
-          touch: TouchFeatures(enabled: false),
-        ),
+      particleCount: 100,
+      touch: TouchFeatures(enabled: false),
+    ),
   ),
   (
     'lines_300',
     () => const ParticleNetwork(
-          particleCount: 300,
-          touch: TouchFeatures(enabled: false),
-        ),
+      particleCount: 300,
+      touch: TouchFeatures(enabled: false),
+    ),
   ),
   (
     'lines_500',
     () => const ParticleNetwork(
-          particleCount: 500,
-          touch: TouchFeatures(enabled: false),
-        ),
+      particleCount: 500,
+      touch: TouchFeatures(enabled: false),
+    ),
   ),
   (
     'lines_1000',
     () => const ParticleNetwork(
-          particleCount: 1000,
-          touch: TouchFeatures(enabled: false),
-        ),
+      particleCount: 1000,
+      touch: TouchFeatures(enabled: false),
+    ),
   ),
   (
     'lines_300_complex',
     () => const ParticleNetwork(
-          particleCount: 300,
-          performance: PerformanceFeatures(complex: ComplexConfig.auto()),
-          touch: TouchFeatures(enabled: false),
-        ),
+      particleCount: 300,
+      performance: PerformanceFeatures(complex: ComplexConfig.auto()),
+      touch: TouchFeatures(enabled: false),
+    ),
   ),
   (
     'lines_1000_maxconn5',
     () => const ParticleNetwork(
-          particleCount: 1000,
-          performance: PerformanceFeatures(maxConnectionsPerParticle: 5),
-          touch: TouchFeatures(enabled: false),
-        ),
+      particleCount: 1000,
+      performance: PerformanceFeatures(maxConnectionsPerParticle: 5),
+      touch: TouchFeatures(enabled: false),
+    ),
   ),
   (
     'lines_1000_fast',
     () => const ParticleNetwork(
-          particleCount: 1000,
-          network: NetworkFeatures(renderer: LineRenderer.vertices),
-          touch: TouchFeatures(enabled: false),
-        ),
+      particleCount: 1000,
+      network: NetworkFeatures(renderer: LineRenderer.vertices),
+      touch: TouchFeatures(enabled: false),
+    ),
   ),
   (
     'lines_500_adaptive',
     () => const ParticleNetwork(
-          particleCount: 500,
-          performance: PerformanceFeatures(autoBoost: true),
-          touch: TouchFeatures(enabled: false),
-        ),
+      particleCount: 500,
+      performance: PerformanceFeatures(autoBoost: true),
+      touch: TouchFeatures(enabled: false),
+    ),
   ),
   (
     'points_5000',
     () => const ParticleNetwork(
-          particleCount: 5000,
-          drawNetwork: false,
-          touch: TouchFeatures(enabled: false),
-        ),
+      particleCount: 5000,
+      drawNetwork: false,
+      touch: TouchFeatures(enabled: false),
+    ),
   ),
   (
     'points_20000',
     () => const ParticleNetwork(
-          particleCount: 20000,
-          drawNetwork: false,
-          touch: TouchFeatures(enabled: false),
-        ),
+      particleCount: 20000,
+      drawNetwork: false,
+      touch: TouchFeatures(enabled: false),
+    ),
   ),
 ];
 

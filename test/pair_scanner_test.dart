@@ -21,8 +21,10 @@ void main() {
       final random = math.Random(42);
       final particles = List.generate(50, (i) {
         return Particle(
-          position:
-              Offset(random.nextDouble() * 500, random.nextDouble() * 500),
+          position: Offset(
+            random.nextDouble() * 500,
+            random.nextDouble() * 500,
+          ),
           velocity: Offset.zero,
           size: 1.0,
           color: const Color(0xFFFFFFFF),
@@ -59,8 +61,10 @@ void main() {
       final random = math.Random(42);
       final particles = List.generate(50, (i) {
         return Particle(
-          position:
-              Offset(random.nextDouble() * 500, random.nextDouble() * 500),
+          position: Offset(
+            random.nextDouble() * 500,
+            random.nextDouble() * 500,
+          ),
           velocity: Offset.zero,
           size: 1.0,
           color: const Color(0xFFFFFFFF),
@@ -101,342 +105,369 @@ void main() {
       expect(count, lessThanOrEqualTo(50 * 2));
     });
 
-    test('scanIndividual renders direct lines onto canvas for small counts',
-        () {
-      final particles = [
-        Particle(
+    test(
+      'scanIndividual renders direct lines onto canvas for small counts',
+      () {
+        final particles = [
+          Particle(
             position: const Offset(10, 10),
             velocity: Offset.zero,
             size: 1.0,
-            color: const Color(0xFFFFFFFF)),
-        Particle(
+            color: const Color(0xFFFFFFFF),
+          ),
+          Particle(
             position: const Offset(20, 20),
             velocity: Offset.zero,
             size: 1.0,
-            color: const Color(0xFFFFFFFF)),
-        Particle(
+            color: const Color(0xFFFFFFFF),
+          ),
+          Particle(
             position: const Offset(30, 30),
             velocity: Offset.zero,
             size: 1.0,
-            color: const Color(0xFFFFFFFF)),
-      ];
+            color: const Color(0xFFFFFFFF),
+          ),
+        ];
 
-      final grid = SortedSpatialGrid();
-      final visible = [0, 1, 2];
-      grid.build(particles, visible, 100, 100, 50.0, 1.0);
+        final grid = SortedSpatialGrid();
+        final visible = [0, 1, 2];
+        grid.build(particles, visible, 100, 100, 50.0, 1.0);
 
-      final canvas = RecordingCanvas();
-      final candidateBuffer = CandidateBuffer();
-      final palette = LineStylePalette(
-        lineColor: const Color(0x80FFFFFF),
-        lineWidth: 1.0,
-        antiAlias: true,
-      );
+        final canvas = RecordingCanvas();
+        final candidateBuffer = CandidateBuffer();
+        final palette = LineStylePalette(
+          lineColor: const Color(0x80FFFFFF),
+          lineWidth: 1.0,
+          antiAlias: true,
+        );
 
-      final lineCount = scanner.scanIndividual(
-        canvas: canvas,
-        grid: grid,
-        scanDistance: 50.0,
-        maxDistSq: 2500.0,
-        alphaDistance: 50.0,
-        lineColorLut: palette.lineColorLut,
-        linePaint: Paint(),
-        candidateBuffer: candidateBuffer,
-        throttler: throttler,
-        performance: const PerformanceFeatures(),
-        maxConnectionsPerParticle: null,
-        isComplexMode: false,
-      );
+        final lineCount = scanner.scanIndividual(
+          canvas: canvas,
+          grid: grid,
+          scanDistance: 50.0,
+          maxDistSq: 2500.0,
+          alphaDistance: 50.0,
+          lineColorLut: palette.lineColorLut,
+          linePaint: Paint(),
+          candidateBuffer: candidateBuffer,
+          throttler: throttler,
+          performance: const PerformanceFeatures(),
+          maxConnectionsPerParticle: null,
+          isComplexMode: false,
+        );
 
-      expect(lineCount, equals(3));
-      expect(canvas.lineCalls.length, equals(3));
-    });
+        expect(lineCount, equals(3));
+        expect(canvas.lineCalls.length, equals(3));
+      },
+    );
 
     test(
-        'scanIndividual does not apply complex rankFade when isComplexMode is false',
-        () {
-      // 4 particles: p0 is at (10, 10). Neighbors p1, p2, p3 are at distances 10, 20, 30.
-      final particles = [
-        Particle(
+      'scanIndividual does not apply complex rankFade when isComplexMode is false',
+      () {
+        // 4 particles: p0 is at (10, 10). Neighbors p1, p2, p3 are at distances 10, 20, 30.
+        final particles = [
+          Particle(
             position: const Offset(10, 10),
             velocity: Offset.zero,
             size: 1.0,
-            color: const Color(0xFFFFFFFF)),
-        Particle(
+            color: const Color(0xFFFFFFFF),
+          ),
+          Particle(
             position: const Offset(20, 10), // dist = 10
             velocity: Offset.zero,
             size: 1.0,
-            color: const Color(0xFFFFFFFF)),
-        Particle(
+            color: const Color(0xFFFFFFFF),
+          ),
+          Particle(
             position: const Offset(30, 10), // dist = 20
             velocity: Offset.zero,
             size: 1.0,
-            color: const Color(0xFFFFFFFF)),
-        Particle(
+            color: const Color(0xFFFFFFFF),
+          ),
+          Particle(
             position: const Offset(40, 10), // dist = 30
             velocity: Offset.zero,
             size: 1.0,
-            color: const Color(0xFFFFFFFF)),
-      ];
+            color: const Color(0xFFFFFFFF),
+          ),
+        ];
 
-      final grid = SortedSpatialGrid();
-      final visible = [0, 1, 2, 3];
-      grid.build(particles, visible, 200, 200, 100.0, 1.0);
+        final grid = SortedSpatialGrid();
+        final visible = [0, 1, 2, 3];
+        grid.build(particles, visible, 200, 200, 100.0, 1.0);
 
-      final canvas = RecordingCanvas();
-      final candidateBuffer = CandidateBuffer();
-      final palette = LineStylePalette(
-        lineColor: const Color(0xFFFFFFFF),
-        lineWidth: 1.0,
-        antiAlias: true,
-      );
+        final canvas = RecordingCanvas();
+        final candidateBuffer = CandidateBuffer();
+        final palette = LineStylePalette(
+          lineColor: const Color(0xFFFFFFFF),
+          lineWidth: 1.0,
+          antiAlias: true,
+        );
 
-      // maxConnectionsPerParticle = 2, candidateCount = 3 for p0.
-      // isComplexMode = false.
-      // Expected: line 2 (distance 20) should NOT have complex rank fade applied!
-      scanner.scanIndividual(
-        canvas: canvas,
-        grid: grid,
-        scanDistance: 100.0,
-        maxDistSq: 10000.0,
-        alphaDistance: 100.0,
-        lineColorLut: palette.lineColorLut,
-        linePaint: Paint(),
-        candidateBuffer: candidateBuffer,
-        throttler: throttler,
-        performance: const PerformanceFeatures(maxConnectionsPerParticle: 2),
-        maxConnectionsPerParticle: 2,
-        isComplexMode: false,
-      );
+        // maxConnectionsPerParticle = 2, candidateCount = 3 for p0.
+        // isComplexMode = false.
+        // Expected: line 2 (distance 20) should NOT have complex rank fade applied!
+        scanner.scanIndividual(
+          canvas: canvas,
+          grid: grid,
+          scanDistance: 100.0,
+          maxDistSq: 10000.0,
+          alphaDistance: 100.0,
+          lineColorLut: palette.lineColorLut,
+          linePaint: Paint(),
+          candidateBuffer: candidateBuffer,
+          throttler: throttler,
+          performance: const PerformanceFeatures(maxConnectionsPerParticle: 2),
+          maxConnectionsPerParticle: 2,
+          isComplexMode: false,
+        );
 
-      // Find the line between p0 and p2 (dist = 20)
-      final lineP0P2 = canvas.lineCalls.firstWhere(
-        (c) =>
-            (c.p1 == const Offset(10, 10) && c.p2 == const Offset(30, 10)) ||
-            (c.p2 == const Offset(10, 10) && c.p1 == const Offset(30, 10)),
-      );
+        // Find the line between p0 and p2 (dist = 20)
+        final lineP0P2 = canvas.lineCalls.firstWhere(
+          (c) =>
+              (c.p1 == const Offset(10, 10) && c.p2 == const Offset(30, 10)) ||
+              (c.p2 == const Offset(10, 10) && c.p1 == const Offset(30, 10)),
+        );
 
-      // With distance 20 and alphaDistance 100:
-      // expected alpha without complex rank fade = (255 - 20 * 2.55) = 204 (0xCC)
-      // With buggy complex rank fade (0.5) = (204 * 0.5) = 102 (0x66)
-      final int expectedAlphaWithoutFade =
-          (255 - (20 * 255.0 / 100.0)).toInt().clamp(0, 255);
-      final expectedColor = palette.lineColorLut[expectedAlphaWithoutFade];
+        // With distance 20 and alphaDistance 100:
+        // expected alpha without complex rank fade = (255 - 20 * 2.55) = 204 (0xCC)
+        // With buggy complex rank fade (0.5) = (204 * 0.5) = 102 (0x66)
+        final int expectedAlphaWithoutFade = (255 - (20 * 255.0 / 100.0))
+            .toInt()
+            .clamp(0, 255);
+        final expectedColor = palette.lineColorLut[expectedAlphaWithoutFade];
 
-      expect(lineP0P2.color.toARGB32(), equals(expectedColor.toARGB32()));
-      expect(lineP0P2.color.toARGB32(), equals(0xCCFFFFFF));
-    });
+        expect(lineP0P2.color.toARGB32(), equals(expectedColor.toARGB32()));
+        expect(lineP0P2.color.toARGB32(), equals(0xCCFFFFFF));
+      },
+    );
 
     test(
-        'scanner methods return early and emit 0 lines when maxDistSq <= 0 or non-finite',
-        () {
-      final particles = [
-        Particle(
+      'scanner methods return early and emit 0 lines when maxDistSq <= 0 or non-finite',
+      () {
+        final particles = [
+          Particle(
             position: const Offset(10, 10),
             velocity: Offset.zero,
             size: 1.0,
-            color: const Color(0xFFFFFFFF)),
-        Particle(
+            color: const Color(0xFFFFFFFF),
+          ),
+          Particle(
             position: const Offset(10, 10),
             velocity: Offset.zero,
             size: 1.0,
-            color: const Color(0xFFFFFFFF)),
-      ];
+            color: const Color(0xFFFFFFFF),
+          ),
+        ];
 
-      final grid = SortedSpatialGrid();
-      final visible = [0, 1];
-      grid.build(particles, visible, 100, 100, 50.0, 1.0);
+        final grid = SortedSpatialGrid();
+        final visible = [0, 1];
+        grid.build(particles, visible, 100, 100, 50.0, 1.0);
 
-      final buckets = LineBuckets();
-      scanner.scanBatchedFast(
-        grid: grid,
-        maxDistSq: 0.0,
-        invMaxDistSq: double.infinity,
-        buckets: buckets,
-      );
+        final buckets = LineBuckets();
+        scanner.scanBatchedFast(
+          grid: grid,
+          maxDistSq: 0.0,
+          invMaxDistSq: double.infinity,
+          buckets: buckets,
+        );
 
-      expect(buckets.rawOffsets.every((o) => o == 0), isTrue);
+        expect(buckets.rawOffsets.every((o) => o == 0), isTrue);
 
-      final candidateBuffer = CandidateBuffer();
-      scanner.scanBatchedComplex(
-        grid: grid,
-        maxDistSq: 0.0,
-        invMaxDistSq: double.infinity,
-        scanDistance: 0.0,
-        buckets: buckets,
-        candidateBuffer: candidateBuffer,
-        throttler: throttler,
-        performance: const PerformanceFeatures(),
-        maxConnectionsPerParticle: null,
-        isComplexMode: false,
-      );
+        final candidateBuffer = CandidateBuffer();
+        scanner.scanBatchedComplex(
+          grid: grid,
+          maxDistSq: 0.0,
+          invMaxDistSq: double.infinity,
+          scanDistance: 0.0,
+          buckets: buckets,
+          candidateBuffer: candidateBuffer,
+          throttler: throttler,
+          performance: const PerformanceFeatures(),
+          maxConnectionsPerParticle: null,
+          isComplexMode: false,
+        );
 
-      expect(buckets.rawOffsets.every((o) => o == 0), isTrue);
+        expect(buckets.rawOffsets.every((o) => o == 0), isTrue);
 
-      final canvas = RecordingCanvas();
-      final palette = LineStylePalette(
-        lineColor: const Color(0xFFFFFFFF),
-        lineWidth: 1.0,
-        antiAlias: true,
-      );
+        final canvas = RecordingCanvas();
+        final palette = LineStylePalette(
+          lineColor: const Color(0xFFFFFFFF),
+          lineWidth: 1.0,
+          antiAlias: true,
+        );
 
-      final count = scanner.scanIndividual(
-        canvas: canvas,
-        grid: grid,
-        scanDistance: 0.0,
-        maxDistSq: 0.0,
-        alphaDistance: 0.0,
-        lineColorLut: palette.lineColorLut,
-        linePaint: Paint(),
-        candidateBuffer: candidateBuffer,
-        throttler: throttler,
-        performance: const PerformanceFeatures(),
-        maxConnectionsPerParticle: null,
-        isComplexMode: false,
-      );
+        final count = scanner.scanIndividual(
+          canvas: canvas,
+          grid: grid,
+          scanDistance: 0.0,
+          maxDistSq: 0.0,
+          alphaDistance: 0.0,
+          lineColorLut: palette.lineColorLut,
+          linePaint: Paint(),
+          candidateBuffer: candidateBuffer,
+          throttler: throttler,
+          performance: const PerformanceFeatures(),
+          maxConnectionsPerParticle: null,
+          isComplexMode: false,
+        );
 
-      expect(count, equals(0));
-      expect(canvas.lineCalls, isEmpty);
-    });
+        expect(count, equals(0));
+        expect(canvas.lineCalls, isEmpty);
+      },
+    );
 
     test(
-        'profiling metrics, candidate buffer growth, complex rankFade, and capping in PairScanner',
-        () {
-      PairScanner.debugEnableProfiling = true;
-      ScanStats.instance.reset();
+      'profiling metrics, candidate buffer growth, complex rankFade, and capping in PairScanner',
+      () {
+        PairScanner.debugEnableProfiling = true;
+        ScanStats.instance.reset();
 
-      final particles = [
-        Particle(
+        final particles = [
+          Particle(
             position: const Offset(10, 10), // Cell (0,0) - index 0
             velocity: Offset.zero,
             size: 1.0,
-            color: const Color(0xFFFFFFFF)),
-        Particle(
+            color: const Color(0xFFFFFFFF),
+          ),
+          Particle(
             position: const Offset(20, 10), // Cell (0,0) - index 1
             velocity: Offset.zero,
             size: 1.0,
-            color: const Color(0xFFFFFFFF)),
-        Particle(
+            color: const Color(0xFFFFFFFF),
+          ),
+          Particle(
             position: const Offset(30, 10), // Cell (0,0) - index 2
             velocity: Offset.zero,
             size: 1.0,
-            color: const Color(0xFFFFFFFF)),
-        Particle(
-            position: const Offset(10, 60), // Cell (0,1) - south neighbor - index 3
+            color: const Color(0xFFFFFFFF),
+          ),
+          Particle(
+            position: const Offset(
+              10,
+              60,
+            ), // Cell (0,1) - south neighbor - index 3
             velocity: Offset.zero,
             size: 1.0,
-            color: const Color(0xFFFFFFFF)),
-      ];
+            color: const Color(0xFFFFFFFF),
+          ),
+        ];
 
-      final grid = SortedSpatialGrid();
-      final visible = [0, 1, 2, 3];
-      grid.build(particles, visible, 200, 200, 50.0, 1.0);
+        final grid = SortedSpatialGrid();
+        final visible = [0, 1, 2, 3];
+        grid.build(particles, visible, 200, 200, 50.0, 1.0);
 
-      final double maxDistSq = 100.0 * 100.0;
-      final double invMaxDistSq = 1.0 / maxDistSq;
+        final double maxDistSq = 100.0 * 100.0;
+        final double invMaxDistSq = 1.0 / maxDistSq;
 
-      // 1. scanBatchedFast profiling (L74-L77, L84-L86, L99-L102, L109-L111)
-      final buckets = LineBuckets();
-      scanner.scanBatchedFast(
-        grid: grid,
-        maxDistSq: maxDistSq,
-        invMaxDistSq: invMaxDistSq,
-        buckets: buckets,
-      );
+        // 1. scanBatchedFast profiling (L74-L77, L84-L86, L99-L102, L109-L111)
+        final buckets = LineBuckets();
+        scanner.scanBatchedFast(
+          grid: grid,
+          maxDistSq: maxDistSq,
+          invMaxDistSq: invMaxDistSq,
+          buckets: buckets,
+        );
 
-      expect(ScanStats.instance.candidateChecks, greaterThan(0));
-      expect(ScanStats.instance.loopIterations, greaterThan(0));
-      expect(ScanStats.instance.acceptedPairs, greaterThan(0));
+        expect(ScanStats.instance.candidateChecks, greaterThan(0));
+        expect(ScanStats.instance.loopIterations, greaterThan(0));
+        expect(ScanStats.instance.acceptedPairs, greaterThan(0));
 
-      // 2. scanBatchedComplex: intra growth (L219-L222), south growth (L246-L250), complex rankFade (L279-L280)
-      ScanStats.instance.reset();
-      final candidateBuffer = CandidateBuffer();
-      // First run with capacity 0: triggers intra growth (L219-L222) and complex rankFade (L279-L280)
-      candidateBuffer.setCapacityForTesting(0);
-      final complexBuckets = LineBuckets();
-      scanner.scanBatchedComplex(
-        grid: grid,
-        maxDistSq: maxDistSq,
-        invMaxDistSq: invMaxDistSq,
-        scanDistance: 100.0,
-        buckets: complexBuckets,
-        candidateBuffer: candidateBuffer,
-        throttler: throttler,
-        performance: const PerformanceFeatures(
-            complex: ComplexConfig(maxLines: 2, densityFactor: 0.001)),
-        maxConnectionsPerParticle: 10,
-        isComplexMode: true,
-      );
-      expect(candidateBuffer.indices.length, greaterThan(0));
+        // 2. scanBatchedComplex: intra growth (L219-L222), south growth (L246-L250), complex rankFade (L279-L280)
+        ScanStats.instance.reset();
+        final candidateBuffer = CandidateBuffer();
+        // First run with capacity 0: triggers intra growth (L219-L222) and complex rankFade (L279-L280)
+        candidateBuffer.setCapacityForTesting(0);
+        final complexBuckets = LineBuckets();
+        scanner.scanBatchedComplex(
+          grid: grid,
+          maxDistSq: maxDistSq,
+          invMaxDistSq: invMaxDistSq,
+          scanDistance: 100.0,
+          buckets: complexBuckets,
+          candidateBuffer: candidateBuffer,
+          throttler: throttler,
+          performance: const PerformanceFeatures(
+            complex: ComplexConfig(maxLines: 2, densityFactor: 0.001),
+          ),
+          maxConnectionsPerParticle: 10,
+          isComplexMode: true,
+        );
+        expect(candidateBuffer.indices.length, greaterThan(0));
 
-      // Second run with capacity 1: triggers south growth (L246-L250)
-      final candidateBufferSouth = CandidateBuffer();
-      candidateBufferSouth.setCapacityForTesting(1);
-      scanner.scanBatchedComplex(
-        grid: grid,
-        maxDistSq: maxDistSq,
-        invMaxDistSq: invMaxDistSq,
-        scanDistance: 100.0,
-        buckets: complexBuckets,
-        candidateBuffer: candidateBufferSouth,
-        throttler: throttler,
-        performance: const PerformanceFeatures(
-            complex: ComplexConfig(maxLines: 2, densityFactor: 0.001)),
-        maxConnectionsPerParticle: 10,
-        isComplexMode: true,
-      );
-      expect(candidateBufferSouth.indices.length, greaterThan(1));
+        // Second run with capacity 1: triggers south growth (L246-L250)
+        final candidateBufferSouth = CandidateBuffer();
+        candidateBufferSouth.setCapacityForTesting(1);
+        scanner.scanBatchedComplex(
+          grid: grid,
+          maxDistSq: maxDistSq,
+          invMaxDistSq: invMaxDistSq,
+          scanDistance: 100.0,
+          buckets: complexBuckets,
+          candidateBuffer: candidateBufferSouth,
+          throttler: throttler,
+          performance: const PerformanceFeatures(
+            complex: ComplexConfig(maxLines: 2, densityFactor: 0.001),
+          ),
+          maxConnectionsPerParticle: 10,
+          isComplexMode: true,
+        );
+        expect(candidateBufferSouth.indices.length, greaterThan(1));
 
-      // 3. scanIndividual: intra growth (L399-L402), south cap continue (L415), south growth (L426-L429), complex rankFade (L462-L465)
-      ScanStats.instance.reset();
-      final canvas = RecordingCanvas();
-      final palette = LineStylePalette(
-        lineColor: const Color(0xFFFFFFFF),
-        lineWidth: 1.0,
-        antiAlias: true,
-      );
+        // 3. scanIndividual: intra growth (L399-L402), south cap continue (L415), south growth (L426-L429), complex rankFade (L462-L465)
+        ScanStats.instance.reset();
+        final canvas = RecordingCanvas();
+        final palette = LineStylePalette(
+          lineColor: const Color(0xFFFFFFFF),
+          lineWidth: 1.0,
+          antiAlias: true,
+        );
 
-      // Run with capacity 0 to trigger intra growth and complex rankFade
-      final indBuffer = CandidateBuffer();
-      indBuffer.setCapacityForTesting(0);
-      final lineCount = scanner.scanIndividual(
-        canvas: canvas,
-        grid: grid,
-        scanDistance: 100.0,
-        maxDistSq: maxDistSq,
-        alphaDistance: 100.0,
-        lineColorLut: palette.lineColorLut,
-        linePaint: Paint(),
-        candidateBuffer: indBuffer,
-        throttler: throttler,
-        performance: const PerformanceFeatures(
-            complex: ComplexConfig(maxLines: 2, densityFactor: 0.001)),
-        maxConnectionsPerParticle: 1, // Will cause south neighbor to hit cap and trigger L415
-        isComplexMode: true, // Will trigger L462-L465
-      );
-      expect(lineCount, greaterThan(0));
+        // Run with capacity 0 to trigger intra growth and complex rankFade
+        final indBuffer = CandidateBuffer();
+        indBuffer.setCapacityForTesting(0);
+        final lineCount = scanner.scanIndividual(
+          canvas: canvas,
+          grid: grid,
+          scanDistance: 100.0,
+          maxDistSq: maxDistSq,
+          alphaDistance: 100.0,
+          lineColorLut: palette.lineColorLut,
+          linePaint: Paint(),
+          candidateBuffer: indBuffer,
+          throttler: throttler,
+          performance: const PerformanceFeatures(
+            complex: ComplexConfig(maxLines: 2, densityFactor: 0.001),
+          ),
+          maxConnectionsPerParticle:
+              1, // Will cause south neighbor to hit cap and trigger L415
+          isComplexMode: true, // Will trigger L462-L465
+        );
+        expect(lineCount, greaterThan(0));
 
-      // Run with capacity 1 to trigger south growth and complex rankFade in scanIndividual
-      final indBufferSouth = CandidateBuffer();
-      indBufferSouth.setCapacityForTesting(1);
-      scanner.scanIndividual(
-        canvas: canvas,
-        grid: grid,
-        scanDistance: 100.0,
-        maxDistSq: maxDistSq,
-        alphaDistance: 100.0,
-        lineColorLut: palette.lineColorLut,
-        linePaint: Paint(),
-        candidateBuffer: indBufferSouth,
-        throttler: throttler,
-        performance: const PerformanceFeatures(
-            complex: ComplexConfig(maxLines: 2, densityFactor: 0.001)),
-        maxConnectionsPerParticle: 10,
-        isComplexMode: true,
-      );
+        // Run with capacity 1 to trigger south growth and complex rankFade in scanIndividual
+        final indBufferSouth = CandidateBuffer();
+        indBufferSouth.setCapacityForTesting(1);
+        scanner.scanIndividual(
+          canvas: canvas,
+          grid: grid,
+          scanDistance: 100.0,
+          maxDistSq: maxDistSq,
+          alphaDistance: 100.0,
+          lineColorLut: palette.lineColorLut,
+          linePaint: Paint(),
+          candidateBuffer: indBufferSouth,
+          throttler: throttler,
+          performance: const PerformanceFeatures(
+            complex: ComplexConfig(maxLines: 2, densityFactor: 0.001),
+          ),
+          maxConnectionsPerParticle: 10,
+          isComplexMode: true,
+        );
 
-      PairScanner.debugEnableProfiling = false;
-      ScanStats.instance.reset();
-    });
+        PairScanner.debugEnableProfiling = false;
+        ScanStats.instance.reset();
+      },
+    );
   });
 }

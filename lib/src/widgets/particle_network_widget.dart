@@ -1,3 +1,4 @@
+// ignore_for_file: prefer_initializing_formals
 /// ParticleNetwork widget and state implementation.
 library;
 
@@ -233,8 +234,8 @@ class ParticleNetwork extends StatefulWidget {
     final resolvedDrawNetwork = _drawNetwork;
     final resolvedRenderer = _explicitFastLineRendering != null
         ? (_explicitFastLineRendering
-            ? LineRenderer.vertices
-            : LineRenderer.stroke)
+              ? LineRenderer.vertices
+              : LineRenderer.stroke)
         : base.renderer;
 
     if (resolvedLineWidth == null &&
@@ -334,7 +335,9 @@ class ParticleNetwork extends StatefulWidget {
   /// Effective touch configuration merging legacy and modern parameters.
   TouchFeatures get effectiveTouchFeatures {
     final baseTouch = touch;
-    if (_touchColor == null && _touchActivation == null && _hoverEffect == null) {
+    if (_touchColor == null &&
+        _touchActivation == null &&
+        _hoverEffect == null) {
       return baseTouch;
     }
     return baseTouch.copyWith(
@@ -368,14 +371,10 @@ class ParticleNetwork extends StatefulWidget {
       );
     }
     if (adaptiveDensity) {
-      resolved = resolved.copyWith(
-        complex: const ComplexConfig.auto(),
-      );
+      resolved = resolved.copyWith(complex: const ComplexConfig.auto());
     }
     if (enableAdaptivePerformance) {
-      resolved = resolved.copyWith(
-        autoBoost: true,
-      );
+      resolved = resolved.copyWith(autoBoost: true);
     }
     return resolved;
   }
@@ -799,23 +798,23 @@ class ParticleNetwork extends StatefulWidget {
       'This parameter will be removed in particles_network 2.0.0.',
     )
     this.enableAdaptivePerformance = false,
-  })  : _particleCount = particleCount,
-        _maxSpeed = maxSpeed,
-        _maxSize = maxSize,
-        _particleColor = particleColor,
-        _fill = fill,
-        _particleFeatures = particleFeatures,
-        _networkFeatures = networkFeatures,
-        _lineWidth = lineWidth,
-        _lineDistance = lineDistance,
-        _lineColor = lineColor,
-        _drawNetwork = drawNetwork,
-        touch = touchFeatures ?? touch,
-        _touchActivation = touchActivation,
-        _touchColor = touchColor,
-        _hoverEffect = hoverEffect,
-        _isComplex = isComplex,
-        _explicitFastLineRendering = fastLineRendering ?? useVerticesRendering;
+  }) : _particleCount = particleCount,
+       _maxSpeed = maxSpeed,
+       _maxSize = maxSize,
+       _particleColor = particleColor,
+       _fill = fill,
+       _particleFeatures = particleFeatures,
+       _networkFeatures = networkFeatures,
+       _lineWidth = lineWidth,
+       _lineDistance = lineDistance,
+       _lineColor = lineColor,
+       _drawNetwork = drawNetwork,
+       touch = touchFeatures ?? touch,
+       _touchActivation = touchActivation,
+       _touchColor = touchColor,
+       _hoverEffect = hoverEffect,
+       _isComplex = isComplex,
+       _explicitFastLineRendering = fastLineRendering ?? useVerticesRendering;
 
   @override
   State<ParticleNetwork> createState() => ParticleNetworkState();
@@ -936,7 +935,8 @@ class ParticleNetworkState extends State<ParticleNetwork>
   void _onFrameTimings(List<FrameTiming> timings) {
     if (!mounted) return;
     for (final FrameTiming t in timings) {
-      final double durationMs = math.max(
+      final double durationMs =
+          math.max(
             t.buildDuration.inMicroseconds,
             t.rasterDuration.inMicroseconds,
           ) /
@@ -957,11 +957,17 @@ class ParticleNetworkState extends State<ParticleNetwork>
   }
 
   double _displayFrameBudgetMs() {
-    final double rawRate = WidgetsBinding
-            .instance.platformDispatcher.implicitView?.display.refreshRate ??
+    final double rawRate =
+        WidgetsBinding
+            .instance
+            .platformDispatcher
+            .implicitView
+            ?.display
+            .refreshRate ??
         60.0;
-    final double safeRate =
-        (rawRate >= 30.0 && rawRate <= 240.0) ? rawRate : 60.0;
+    final double safeRate = (rawRate >= 30.0 && rawRate <= 240.0)
+        ? rawRate
+        : 60.0;
     return 1000.0 / safeRate;
   }
 
@@ -1101,8 +1107,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
       simulation.step(timeScale);
       _painter.stepTouchPhysics(timeScale);
       frameNotifier.value = now;
-    })
-      ..start();
+    })..start();
   }
 
   @override
@@ -1349,10 +1354,7 @@ class ParticleNetworkState extends State<ParticleNetwork>
             willChange: true,
             child: (hasBoundedWidth && hasBoundedHeight)
                 ? const SizedBox.expand()
-                : SizedBox(
-                    width: safeSize.width,
-                    height: safeSize.height,
-                  ),
+                : SizedBox(width: safeSize.width, height: safeSize.height),
           ),
         );
 

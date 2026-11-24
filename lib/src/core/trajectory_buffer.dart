@@ -68,8 +68,11 @@ class TrajectoryBuffer {
     final int stateLen = _particleCount * 6;
     if (_simState.length < stateLen) _simState = Float64List(stateLen);
     if (_simAccelerated.length < _particleCount) {
-      _simAccelerated =
-          List<bool>.filled(_particleCount, false, growable: true);
+      _simAccelerated = List<bool>.filled(
+        _particleCount,
+        false,
+        growable: true,
+      );
     }
     for (int i = 0, o = 0; i < _particleCount; i++, o += 6) {
       final Particle p = particles[i];
@@ -113,12 +116,12 @@ class TrajectoryBuffer {
       _cachedSimParticles = List<Particle>.generate(n, (i) {
         final Particle src = source[i];
         return Particle(
-          position: Offset(src.x, src.y),
-          velocity: Offset(src.vx, src.vy),
-          color: src.color,
-          size: src.size,
-          isVisible: src.isVisible,
-        )
+            position: Offset(src.x, src.y),
+            velocity: Offset(src.vx, src.vy),
+            color: src.color,
+            size: src.size,
+            isVisible: src.isVisible,
+          )
           ..defaultVx = src.defaultVx
           ..defaultVy = src.defaultVy
           ..wasAccelerated = src.wasAccelerated;

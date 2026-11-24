@@ -86,8 +86,10 @@ void main() {
         lineRenderer: LineRenderer.stroke,
       );
 
-      expect(() => painter.paint(mockCanvas, const Size(200, 200)),
-          returnsNormally);
+      expect(
+        () => painter.paint(mockCanvas, const Size(200, 200)),
+        returnsNormally,
+      );
     });
 
     test('maxLinesPerFrame scales line budget for dense particle sets', () {
@@ -117,8 +119,10 @@ void main() {
         maxLinesPerFrame: 50,
       );
 
-      expect(() => painter.paint(mockCanvas, const Size(100, 100)),
-          returnsNormally);
+      expect(
+        () => painter.paint(mockCanvas, const Size(100, 100)),
+        returnsNormally,
+      );
     });
 
     test('updatePerformanceOptions updates painter flags dynamically', () {
@@ -133,7 +137,7 @@ void main() {
             velocity: Offset.zero,
             color: Colors.white,
             size: 1.0,
-          )
+          ),
         ],
         touchPoint: null,
         lineDistance: 100.0,

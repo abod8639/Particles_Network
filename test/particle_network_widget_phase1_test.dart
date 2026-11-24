@@ -29,18 +29,16 @@ class CustomTestController implements IParticleController {
 
 void main() {
   group('Phase 1 - Item 1: Deprecated lineWidth and drawNetwork', () {
-    testWidgets('lineWidth and drawNetwork are honored at init',
-        (tester) async {
+    testWidgets('lineWidth and drawNetwork are honored at init', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
             body: SizedBox(
               width: 300,
               height: 300,
-              child: ParticleNetwork(
-                lineWidth: 3.5,
-                drawNetwork: false,
-              ),
+              child: ParticleNetwork(lineWidth: 3.5, drawNetwork: false),
             ),
           ),
         ),
@@ -50,24 +48,28 @@ void main() {
         find.byType(ParticleNetwork),
       );
 
-      expect(state.painter.lineWidth, equals(3.5),
-          reason: 'Legacy lineWidth must be passed to painter at init');
-      expect(state.painter.drawNetwork, isFalse,
-          reason: 'Legacy drawNetwork must be passed to painter at init');
+      expect(
+        state.painter.lineWidth,
+        equals(3.5),
+        reason: 'Legacy lineWidth must be passed to painter at init',
+      );
+      expect(
+        state.painter.drawNetwork,
+        isFalse,
+        reason: 'Legacy drawNetwork must be passed to painter at init',
+      );
     });
 
-    testWidgets('lineWidth and drawNetwork are honored on widget update',
-        (tester) async {
+    testWidgets('lineWidth and drawNetwork are honored on widget update', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
             body: SizedBox(
               width: 300,
               height: 300,
-              child: ParticleNetwork(
-                lineWidth: 1.0,
-                drawNetwork: true,
-              ),
+              child: ParticleNetwork(lineWidth: 1.0, drawNetwork: true),
             ),
           ),
         ),
@@ -86,107 +88,128 @@ void main() {
             body: SizedBox(
               width: 300,
               height: 300,
-              child: ParticleNetwork(
-                lineWidth: 4.0,
-                drawNetwork: false,
-              ),
+              child: ParticleNetwork(lineWidth: 4.0, drawNetwork: false),
             ),
           ),
         ),
       );
 
-      expect(state.painter.lineWidth, equals(4.0),
-          reason: 'Legacy lineWidth must update painter');
-      expect(state.painter.drawNetwork, isFalse,
-          reason: 'Legacy drawNetwork must update painter');
+      expect(
+        state.painter.lineWidth,
+        equals(4.0),
+        reason: 'Legacy lineWidth must update painter',
+      );
+      expect(
+        state.painter.drawNetwork,
+        isFalse,
+        reason: 'Legacy drawNetwork must update painter',
+      );
     });
   });
 
-  group('Phase 1 - Item 2: Deprecated particleFactory and particleController',
-      () {
-    testWidgets('particleFactory and particleController are wired at init',
-        (tester) async {
-      final customFactory = CustomTestFactory();
-      final customController = CustomTestController();
+  group(
+    'Phase 1 - Item 2: Deprecated particleFactory and particleController',
+    () {
+      testWidgets('particleFactory and particleController are wired at init', (
+        tester,
+      ) async {
+        final customFactory = CustomTestFactory();
+        final customController = CustomTestController();
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 300,
-              height: 300,
-              child: ParticleNetwork(
-                particleFactory: customFactory,
-                particleController: customController,
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                width: 300,
+                height: 300,
+                child: ParticleNetwork(
+                  particleFactory: customFactory,
+                  particleController: customController,
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      final state = tester.state<ParticleNetworkState>(
-        find.byType(ParticleNetwork),
-      );
+        final state = tester.state<ParticleNetworkState>(
+          find.byType(ParticleNetwork),
+        );
 
-      expect(state.simulation.factory, same(customFactory),
-          reason: 'custom particleFactory must be wired to simulation at init');
-      expect(state.simulation.controller, same(customController),
+        expect(
+          state.simulation.factory,
+          same(customFactory),
+          reason: 'custom particleFactory must be wired to simulation at init',
+        );
+        expect(
+          state.simulation.controller,
+          same(customController),
           reason:
-              'custom particleController must be wired to simulation at init');
-    });
+              'custom particleController must be wired to simulation at init',
+        );
+      });
 
-    testWidgets('particleFactory and particleController are wired on update',
+      testWidgets(
+        'particleFactory and particleController are wired on update',
         (tester) async {
-      final initialFactory = CustomTestFactory();
-      final initialController = CustomTestController();
-      final updatedFactory = CustomTestFactory();
-      final updatedController = CustomTestController();
+          final initialFactory = CustomTestFactory();
+          final initialController = CustomTestController();
+          final updatedFactory = CustomTestFactory();
+          final updatedController = CustomTestController();
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 300,
-              height: 300,
-              child: ParticleNetwork(
-                particleFactory: initialFactory,
-                particleController: initialController,
+          await tester.pumpWidget(
+            MaterialApp(
+              home: Scaffold(
+                body: SizedBox(
+                  width: 300,
+                  height: 300,
+                  child: ParticleNetwork(
+                    particleFactory: initialFactory,
+                    particleController: initialController,
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
-      );
+          );
 
-      final state = tester.state<ParticleNetworkState>(
-        find.byType(ParticleNetwork),
-      );
+          final state = tester.state<ParticleNetworkState>(
+            find.byType(ParticleNetwork),
+          );
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 300,
-              height: 300,
-              child: ParticleNetwork(
-                particleFactory: updatedFactory,
-                particleController: updatedController,
+          await tester.pumpWidget(
+            MaterialApp(
+              home: Scaffold(
+                body: SizedBox(
+                  width: 300,
+                  height: 300,
+                  child: ParticleNetwork(
+                    particleFactory: updatedFactory,
+                    particleController: updatedController,
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
-      );
+          );
 
-      expect(state.simulation.factory, same(updatedFactory),
-          reason: 'updated particleFactory must be passed on didUpdateWidget');
-      expect(state.simulation.controller, same(updatedController),
-          reason:
-              'updated particleController must be passed on didUpdateWidget');
-    });
-  });
+          expect(
+            state.simulation.factory,
+            same(updatedFactory),
+            reason: 'updated particleFactory must be passed on didUpdateWidget',
+          );
+          expect(
+            state.simulation.controller,
+            same(updatedController),
+            reason:
+                'updated particleController must be passed on didUpdateWidget',
+          );
+        },
+      );
+    },
+  );
 
   group('Phase 1 - Item 3: Unified touch configuration', () {
-    testWidgets('touch parameter configures painter touchFeatures cleanly',
-        (tester) async {
+    testWidgets('touch parameter configures painter touchFeatures cleanly', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -213,35 +236,38 @@ void main() {
       expect(state.painter.touchActivation, isFalse);
     });
 
-    testWidgets('touchFeatures alias configures painter touchFeatures cleanly',
-        (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 300,
-              height: 300,
-              child: ParticleNetwork(
-                touchFeatures: TouchFeatures(
-                  color: Color(0xFF00BCD4), // Cyan
-                  enabled: false,
+    testWidgets(
+      'touchFeatures alias configures painter touchFeatures cleanly',
+      (tester) async {
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                width: 300,
+                height: 300,
+                child: ParticleNetwork(
+                  touchFeatures: TouchFeatures(
+                    color: Color(0xFF00BCD4), // Cyan
+                    enabled: false,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      final state = tester.state<ParticleNetworkState>(
-        find.byType(ParticleNetwork),
-      );
+        final state = tester.state<ParticleNetworkState>(
+          find.byType(ParticleNetwork),
+        );
 
-      expect(state.painter.touchFeatures.color, const Color(0xFF00BCD4));
-      expect(state.painter.touchFeatures.enabled, isFalse);
-    });
+        expect(state.painter.touchFeatures.color, const Color(0xFF00BCD4));
+        expect(state.painter.touchFeatures.enabled, isFalse);
+      },
+    );
 
-    testWidgets('changing touchFeatures at runtime updates painter',
-        (tester) async {
+    testWidgets('changing touchFeatures at runtime updates painter', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -291,41 +317,36 @@ void main() {
     testWidgets('renders inside Column without throwing', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: Column(
-              children: [
-                ParticleNetwork(),
-              ],
-            ),
-          ),
+          home: Scaffold(body: Column(children: [ParticleNetwork()])),
         ),
       );
 
-      expect(tester.takeException(), isNull,
-          reason: 'ParticleNetwork must not throw inside Column');
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: 'ParticleNetwork must not throw inside Column',
+      );
     });
 
     testWidgets('renders inside ListView without throwing', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: ListView(
-              children: const [
-                ParticleNetwork(),
-              ],
-            ),
-          ),
+          home: Scaffold(body: ListView(children: const [ParticleNetwork()])),
         ),
       );
 
-      expect(tester.takeException(), isNull,
-          reason: 'ParticleNetwork must not throw inside ListView');
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: 'ParticleNetwork must not throw inside ListView',
+      );
     });
   });
 
   group('Phase 1 - Item 5: CustomPaint isComplex hint', () {
-    testWidgets('CustomPaint does not pass raster cache isComplex hint',
-        (tester) async {
+    testWidgets('CustomPaint does not pass raster cache isComplex hint', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -333,7 +354,9 @@ void main() {
               width: 300,
               height: 300,
               child: ParticleNetwork(
-                performance: PerformanceFeatures(complex: ComplexConfig(enabled: true)),
+                performance: PerformanceFeatures(
+                  complex: ComplexConfig(enabled: true),
+                ),
               ),
             ),
           ),
@@ -343,21 +366,26 @@ void main() {
       final customPaintFinder = find.byType(CustomPaint);
       expect(customPaintFinder, findsWidgets);
 
-      final customPaints =
-          tester.widgetList<CustomPaint>(customPaintFinder).toList();
+      final customPaints = tester
+          .widgetList<CustomPaint>(customPaintFinder)
+          .toList();
       final networkPaint = customPaints.firstWhere(
         (cp) => cp.painter is OptimizedNetworkPainter,
       );
 
-      expect(networkPaint.isComplex, isFalse,
-          reason: 'CustomPaint should not enable isComplex raster cache hint');
+      expect(
+        networkPaint.isComplex,
+        isFalse,
+        reason: 'CustomPaint should not enable isComplex raster cache hint',
+      );
       expect(networkPaint.willChange, isTrue);
     });
   });
 
   group('Phase 1 - Item 6: Input handling with Listener and multi-touch', () {
-    testWidgets('vertical drag in ListView scrolls while particle touch reacts',
-        (tester) async {
+    testWidgets('vertical drag in ListView scrolls while particle touch reacts', (
+      tester,
+    ) async {
       final scrollController = ScrollController();
 
       await tester.pumpWidget(
@@ -374,10 +402,7 @@ void main() {
                       touchFeatures: TouchFeatures(enabled: true),
                     ),
                   ),
-                  SizedBox(
-                    height: 600,
-                    child: Text('Scroll Content'),
-                  ),
+                  SizedBox(height: 600, child: Text('Scroll Content')),
                 ],
               ),
             ),
@@ -395,11 +420,17 @@ void main() {
       await gesture.moveBy(const Offset(0, -100));
       await tester.pump();
 
-      expect(state.touchPoint, isNot(equals(Offset.infinite)),
-          reason: 'Touch point should track pointer during drag');
-      expect(scrollController.offset, greaterThan(0),
-          reason:
-              'ListView must be able to scroll despite drag over ParticleNetwork');
+      expect(
+        state.touchPoint,
+        isNot(equals(Offset.infinite)),
+        reason: 'Touch point should track pointer during drag',
+      );
+      expect(
+        scrollController.offset,
+        greaterThan(0),
+        reason:
+            'ListView must be able to scroll despite drag over ParticleNetwork',
+      );
 
       await gesture.up();
       await tester.pump();
@@ -407,60 +438,66 @@ void main() {
     });
 
     testWidgets(
-        'multi-touch: lifting second pointer does not clear active touch',
-        (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 400,
-              height: 400,
-              child: ParticleNetwork(),
+      'multi-touch: lifting second pointer does not clear active touch',
+      (tester) async {
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: SizedBox(width: 400, height: 400, child: ParticleNetwork()),
             ),
           ),
-        ),
-      );
+        );
 
-      final state = tester.state<ParticleNetworkState>(
-        find.byType(ParticleNetwork),
-      );
+        final state = tester.state<ParticleNetworkState>(
+          find.byType(ParticleNetwork),
+        );
 
-      final pointer1 =
-          await tester.startGesture(const Offset(100, 100), pointer: 1);
-      await tester.pump();
-      expect(state.touchPoint, equals(const Offset(100, 100)));
+        final pointer1 = await tester.startGesture(
+          const Offset(100, 100),
+          pointer: 1,
+        );
+        await tester.pump();
+        expect(state.touchPoint, equals(const Offset(100, 100)));
 
-      // Second pointer touches down
-      final pointer2 =
-          await tester.startGesture(const Offset(200, 200), pointer: 2);
-      await tester.pump();
-      expect(state.touchPoint, equals(const Offset(100, 100)),
-          reason: 'Active pointer 1 should retain primary tracking');
+        // Second pointer touches down
+        final pointer2 = await tester.startGesture(
+          const Offset(200, 200),
+          pointer: 2,
+        );
+        await tester.pump();
+        expect(
+          state.touchPoint,
+          equals(const Offset(100, 100)),
+          reason: 'Active pointer 1 should retain primary tracking',
+        );
 
-      // Second pointer lifts up
-      await pointer2.up();
-      await tester.pump();
-      expect(state.touchPoint, equals(const Offset(100, 100)),
+        // Second pointer lifts up
+        await pointer2.up();
+        await tester.pump();
+        expect(
+          state.touchPoint,
+          equals(const Offset(100, 100)),
           reason:
-              'Lifting pointer 2 must not reset touchPoint while pointer 1 is still down');
+              'Lifting pointer 2 must not reset touchPoint while pointer 1 is still down',
+        );
 
-      // Primary pointer lifts up
-      await pointer1.up();
-      await tester.pump();
-      expect(state.touchPoint, equals(Offset.infinite));
-    });
+        // Primary pointer lifts up
+        await pointer1.up();
+        await tester.pump();
+        expect(state.touchPoint, equals(Offset.infinite));
+      },
+    );
 
-    testWidgets('hover updates touchPoint when hoverEffect is true',
-        (tester) async {
+    testWidgets('hover updates touchPoint when hoverEffect is true', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
             body: SizedBox(
               width: 400,
               height: 400,
-              child: ParticleNetwork(
-                hoverEffect: true,
-              ),
+              child: ParticleNetwork(hoverEffect: true),
             ),
           ),
         ),
@@ -486,100 +523,101 @@ void main() {
   });
 
   group(
-      'Phase 1 - Item 8: GravityFeatures, TouchFeatures, PerformanceFeatures == and hashCode',
-      () {
-    test('GravityFeatures equality and hashCode', () {
-      const g1 = GravityFeatures(
-        type: GravityType.global,
-        strength: 0.5,
-        direction: Offset(0, 1),
-        center: Offset(10, 10),
-      );
-      const g2 = GravityFeatures(
-        type: GravityType.global,
-        strength: 0.5,
-        direction: Offset(0, 1),
-        center: Offset(10, 10),
-      );
-      const g3 = GravityFeatures(
-        type: GravityType.point,
-        strength: 0.5,
-        direction: Offset(0, 1),
-        center: Offset(10, 10),
-      );
+    'Phase 1 - Item 8: GravityFeatures, TouchFeatures, PerformanceFeatures == and hashCode',
+    () {
+      test('GravityFeatures equality and hashCode', () {
+        const g1 = GravityFeatures(
+          type: GravityType.global,
+          strength: 0.5,
+          direction: Offset(0, 1),
+          center: Offset(10, 10),
+        );
+        const g2 = GravityFeatures(
+          type: GravityType.global,
+          strength: 0.5,
+          direction: Offset(0, 1),
+          center: Offset(10, 10),
+        );
+        const g3 = GravityFeatures(
+          type: GravityType.point,
+          strength: 0.5,
+          direction: Offset(0, 1),
+          center: Offset(10, 10),
+        );
 
-      expect(g1, equals(g2));
-      expect(g1.hashCode, equals(g2.hashCode));
-      expect(g1, isNot(equals(g3)));
-    });
+        expect(g1, equals(g2));
+        expect(g1.hashCode, equals(g2.hashCode));
+        expect(g1, isNot(equals(g3)));
+      });
 
-    test('TouchFeatures equality and hashCode', () {
-      const t1 = TouchFeatures(
-        enabled: true,
-        speed: 0.5,
-        force: 0.3,
-        maxSpeed: 6.0,
-        damping: 0.99,
-        distance: 80.0,
-        color: Color(0xFF00FF00),
-      );
-      const t2 = TouchFeatures(
-        enabled: true,
-        speed: 0.5,
-        force: 0.3,
-        maxSpeed: 6.0,
-        damping: 0.99,
-        distance: 80.0,
-        color: Color(0xFF00FF00),
-      );
-      const t3 = TouchFeatures(
-        enabled: false,
-        speed: 0.5,
-        force: 0.3,
-        maxSpeed: 6.0,
-        damping: 0.99,
-        distance: 80.0,
-        color: Color(0xFF00FF00),
-      );
-      const t4 = TouchFeatures(
-        enabled: true,
-        speed: 0.5,
-        force: 0.3,
-        maxSpeed: 6.0,
-        damping: 0.99,
-        distance: 80.0,
-        color: Color(0xFF00FF00),
-        hover: true,
-      );
+      test('TouchFeatures equality and hashCode', () {
+        const t1 = TouchFeatures(
+          enabled: true,
+          speed: 0.5,
+          force: 0.3,
+          maxSpeed: 6.0,
+          damping: 0.99,
+          distance: 80.0,
+          color: Color(0xFF00FF00),
+        );
+        const t2 = TouchFeatures(
+          enabled: true,
+          speed: 0.5,
+          force: 0.3,
+          maxSpeed: 6.0,
+          damping: 0.99,
+          distance: 80.0,
+          color: Color(0xFF00FF00),
+        );
+        const t3 = TouchFeatures(
+          enabled: false,
+          speed: 0.5,
+          force: 0.3,
+          maxSpeed: 6.0,
+          damping: 0.99,
+          distance: 80.0,
+          color: Color(0xFF00FF00),
+        );
+        const t4 = TouchFeatures(
+          enabled: true,
+          speed: 0.5,
+          force: 0.3,
+          maxSpeed: 6.0,
+          damping: 0.99,
+          distance: 80.0,
+          color: Color(0xFF00FF00),
+          hover: true,
+        );
 
-      expect(t1, equals(t2));
-      expect(t1.hashCode, equals(t2.hashCode));
-      expect(t1, isNot(equals(t3)));
-      expect(t1, isNot(equals(t4)));
-    });
+        expect(t1, equals(t2));
+        expect(t1.hashCode, equals(t2.hashCode));
+        expect(t1, isNot(equals(t3)));
+        expect(t1, isNot(equals(t4)));
+      });
 
-    test('PerformanceFeatures equality and hashCode', () {
-      const p1 = PerformanceFeatures(
-        maxConnectionsPerParticle: 5,
-        maxLinesPerFrame: 100,
-        complex: ComplexConfig(enabled: true),
-      );
-      const p2 = PerformanceFeatures(
-        maxConnectionsPerParticle: 5,
-        maxLinesPerFrame: 100,
-        complex: ComplexConfig(enabled: true),
-      );
-      const p3 = PerformanceFeatures(
-        maxConnectionsPerParticle: 10,
-        maxLinesPerFrame: 100,
-        complex: ComplexConfig(enabled: true),
-      );
+      test('PerformanceFeatures equality and hashCode', () {
+        const p1 = PerformanceFeatures(
+          maxConnectionsPerParticle: 5,
+          maxLinesPerFrame: 100,
+          complex: ComplexConfig(enabled: true),
+        );
+        const p2 = PerformanceFeatures(
+          maxConnectionsPerParticle: 5,
+          maxLinesPerFrame: 100,
+          complex: ComplexConfig(enabled: true),
+        );
+        const p3 = PerformanceFeatures(
+          maxConnectionsPerParticle: 10,
+          maxLinesPerFrame: 100,
+          complex: ComplexConfig(enabled: true),
+        );
 
-      expect(p1, equals(p2));
-      expect(p1.hashCode, equals(p2.hashCode));
-      expect(p1, isNot(equals(p3)));
-    });
-  });
+        expect(p1, equals(p2));
+        expect(p1.hashCode, equals(p2.hashCode));
+        expect(p1, isNot(equals(p3)));
+      });
+    },
+  );
 
   group('Phase 1 - Item 9: Zero dependencies beyond Flutter SDK', () {
     test('lib/ contains no imports of package:material_ui', () {

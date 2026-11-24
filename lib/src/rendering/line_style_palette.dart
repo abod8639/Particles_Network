@@ -19,9 +19,10 @@ class LineStylePalette {
     final table = Int32List(kDistBucketTableSize + 1);
     for (int i = 0; i <= kDistBucketTableSize; i++) {
       final double ratio = math.sqrt(i / kDistBucketTableSize);
-      table[i] = ((1.0 - ratio) * (numLineBuckets - 1))
-          .round()
-          .clamp(0, numLineBuckets - 1);
+      table[i] = ((1.0 - ratio) * (numLineBuckets - 1)).round().clamp(
+        0,
+        numLineBuckets - 1,
+      );
     }
     return table;
   }
@@ -44,9 +45,9 @@ class LineStylePalette {
     required Color lineColor,
     required double lineWidth,
     required bool antiAlias,
-  })  : _lineColor = lineColor,
-        _lineWidth = lineWidth,
-        _antiAlias = antiAlias {
+  }) : _lineColor = lineColor,
+       _lineWidth = lineWidth,
+       _antiAlias = antiAlias {
     lineColorLut = List<Color>.filled(256, lineColor);
     lineBucketPaints = List.generate(
       numLineBuckets,

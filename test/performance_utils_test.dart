@@ -272,28 +272,31 @@ void main() {
       expect(manager.frameSinceLastRebuild, equals(0));
     });
 
-    test('forceRebuild triggers immediate rebuild on next shouldRebuild call', () {
-      final manager = AdaptiveQuadTreeManager(rebuildInterval: 5);
+    test(
+      'forceRebuild triggers immediate rebuild on next shouldRebuild call',
+      () {
+        final manager = AdaptiveQuadTreeManager(rebuildInterval: 5);
 
-      // Consume initial rebuild
-      expect(manager.shouldRebuild(), isTrue);
-      expect(manager.frameSinceLastRebuild, equals(0));
+        // Consume initial rebuild
+        expect(manager.shouldRebuild(), isTrue);
+        expect(manager.frameSinceLastRebuild, equals(0));
 
-      // Advance one frame
-      expect(manager.shouldRebuild(), isFalse);
-      expect(manager.frameSinceLastRebuild, equals(1));
+        // Advance one frame
+        expect(manager.shouldRebuild(), isFalse);
+        expect(manager.frameSinceLastRebuild, equals(1));
 
-      // Force rebuild
-      manager.forceRebuild();
+        // Force rebuild
+        manager.forceRebuild();
 
-      // Next call must rebuild immediately regardless of interval
-      expect(manager.shouldRebuild(), isTrue);
-      expect(manager.frameSinceLastRebuild, equals(0));
+        // Next call must rebuild immediately regardless of interval
+        expect(manager.shouldRebuild(), isTrue);
+        expect(manager.frameSinceLastRebuild, equals(0));
 
-      // Subsequent frame resumes normal counting
-      expect(manager.shouldRebuild(), isFalse);
-      expect(manager.frameSinceLastRebuild, equals(1));
-    });
+        // Subsequent frame resumes normal counting
+        expect(manager.shouldRebuild(), isFalse);
+        expect(manager.frameSinceLastRebuild, equals(1));
+      },
+    );
 
     test('reset restores frameSinceLastRebuild and clears force flag', () {
       final manager = AdaptiveQuadTreeManager(rebuildInterval: 4);
@@ -314,26 +317,32 @@ void main() {
   });
 
   group('AdaptivePerformanceController scaling and adjustment tests', () {
-    test('currentScale reflects scaleFactor initially and under degradation', () {
-      final controller = AdaptivePerformanceController(
-        targetFrameTimeMs: 16.67,
-        minScale: 0.4,
-        maxScale: 1.0,
-      );
+    test(
+      'currentScale reflects scaleFactor initially and under degradation',
+      () {
+        final controller = AdaptivePerformanceController(
+          targetFrameTimeMs: 16.67,
+          minScale: 0.4,
+          maxScale: 1.0,
+        );
 
-      // Initial scale is 1.0
-      expect(controller.currentScale, equals(1.0));
-      expect(controller.currentScale, equals(controller.scaleFactor));
+        // Initial scale is 1.0
+        expect(controller.currentScale, equals(1.0));
+        expect(controller.currentScale, equals(controller.scaleFactor));
 
-      // Simulate heavy load to degrade performance
-      for (int i = 0; i < 20; i++) {
-        controller.recordFrame(frameTimeMs: 40.0, visibleCount: 100);
-      }
+        // Simulate heavy load to degrade performance
+        for (int i = 0; i < 20; i++) {
+          controller.recordFrame(frameTimeMs: 40.0, visibleCount: 100);
+        }
 
-      expect(controller.currentScale, lessThan(1.0));
-      expect(controller.currentScale, equals(controller.scaleFactor));
-      expect(controller.currentScale, greaterThanOrEqualTo(controller.minScale));
-    });
+        expect(controller.currentScale, lessThan(1.0));
+        expect(controller.currentScale, equals(controller.scaleFactor));
+        expect(
+          controller.currentScale,
+          greaterThanOrEqualTo(controller.minScale),
+        );
+      },
+    );
 
     test('getAdjustedLineDistance scales base distance by currentScale', () {
       final controller = AdaptivePerformanceController(
@@ -352,7 +361,10 @@ void main() {
       }
 
       final expected = 100.0 * controller.currentScale;
-      expect(controller.getAdjustedLineDistance(100.0), closeTo(expected, 0.001));
+      expect(
+        controller.getAdjustedLineDistance(100.0),
+        closeTo(expected, 0.001),
+      );
     });
 
     test('getAdjustedMaxConnections scales and clamps properly', () {

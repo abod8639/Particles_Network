@@ -43,6 +43,7 @@ class OptimizedNetworkPainter extends CustomPainter {
       updateTouchFeatures(touchFeatures.copyWith(show: v));
     }
   }
+
   final int particleCount;
   double lineWidth;
 
@@ -108,17 +109,24 @@ class OptimizedNetworkPainter extends CustomPainter {
   int? get maxConnectionsPerParticle => performance.maxConnectionsPerParticle;
   set maxConnectionsPerParticle(int? v) {
     resetRuntimeOverrides();
-    updatePerformance(performance.copyWith(
+    updatePerformance(
+      performance.copyWith(
         maxConnectionsPerParticle: v,
-        clearMaxConnectionsPerParticle: v == null));
+        clearMaxConnectionsPerParticle: v == null,
+      ),
+    );
   }
 
   int? get maxLinesPerFrame => performance.maxLinesPerFrame;
   set maxLinesPerFrame(int? v) {
     resetRuntimeOverrides();
     if (v != performance.maxLinesPerFrame) _budgetController.resetFeedback();
-    updatePerformance(performance.copyWith(
-        maxLinesPerFrame: v, clearMaxLinesPerFrame: v == null));
+    updatePerformance(
+      performance.copyWith(
+        maxLinesPerFrame: v,
+        clearMaxLinesPerFrame: v == null,
+      ),
+    );
   }
 
   LineRenderer _lineRenderer = LineRenderer.vertices;
@@ -199,33 +207,37 @@ class OptimizedNetworkPainter extends CustomPainter {
     GridTuning? gridTuning,
     SortedSpatialGrid? spatialGrid,
     super.repaint,
-  })  : gridTuning = gridTuning ?? const GridTuning(),
-        _sortedGrid = spatialGrid ??
-            SortedSpatialGrid(tuning: gridTuning ?? const GridTuning()),
-        touchColor = LegacyPainterAdapter.resolveTouchColor(
-            touchColor: touchColor, touchFeatures: touchFeatures),
-        touchFeatures = touchFeatures.copyWith(
-          enabled: LegacyPainterAdapter.resolveTouchActivation(
-            touchActivation: touchActivation,
-            touchFeatures: touchFeatures,
-          ),
-          color: touchColor ?? touchFeatures.color,
-        ),
-        _lineRenderer = lineRenderer ?? LineRenderer.vertices,
-        performance = LegacyPainterAdapter.resolvePerformance(
-          basePerformance: performance,
-          isComplex: isComplex,
-          complexReductionRatio: complexReductionRatio,
-          maxComplexLines: maxComplexLines,
-          complexDensityFactor: complexDensityFactor,
-          maxConnectionsPerParticle: maxConnectionsPerParticle,
-          maxLinesPerFrame: maxLinesPerFrame,
-          antiAlias: antiAlias,
-        ) {
+  }) : gridTuning = gridTuning ?? const GridTuning(),
+       _sortedGrid =
+           spatialGrid ??
+           SortedSpatialGrid(tuning: gridTuning ?? const GridTuning()),
+       touchColor = LegacyPainterAdapter.resolveTouchColor(
+         touchColor: touchColor,
+         touchFeatures: touchFeatures,
+       ),
+       touchFeatures = touchFeatures.copyWith(
+         enabled: LegacyPainterAdapter.resolveTouchActivation(
+           touchActivation: touchActivation,
+           touchFeatures: touchFeatures,
+         ),
+         color: touchColor ?? touchFeatures.color,
+       ),
+       _lineRenderer = lineRenderer ?? LineRenderer.vertices,
+       performance = LegacyPainterAdapter.resolvePerformance(
+         basePerformance: performance,
+         isComplex: isComplex,
+         complexReductionRatio: complexReductionRatio,
+         maxComplexLines: maxComplexLines,
+         complexDensityFactor: complexDensityFactor,
+         maxConnectionsPerParticle: maxConnectionsPerParticle,
+         maxLinesPerFrame: maxLinesPerFrame,
+         antiAlias: antiAlias,
+       ) {
     _palette = LineStylePalette(
-        lineColor: lineColor,
-        lineWidth: lineWidth,
-        antiAlias: this.performance.antiAlias);
+      lineColor: lineColor,
+      lineWidth: lineWidth,
+      antiAlias: this.performance.antiAlias,
+    );
     particlePaint = Paint()
       ..style = fill ? PaintingStyle.fill : PaintingStyle.stroke
       ..isAntiAlias = this.performance.antiAlias
@@ -271,15 +283,20 @@ class OptimizedNetworkPainter extends CustomPainter {
         _visibleParticles.isNotEmpty) {
       final double td = _touchHandler.effectiveLineDistance;
       _sortedGrid.build(
-          particles,
-          _visibleParticles,
-          sz.width,
-          sz.height,
-          td > 0 ? td : kFallbackLineDistance,
-          performance.spatialCellMultiplier);
+        particles,
+        _visibleParticles,
+        sz.width,
+        sz.height,
+        td > 0 ? td : kFallbackLineDistance,
+        performance.spatialCellMultiplier,
+      );
     }
     _touchHandler.applyTouchPhysicsScaled(
-        _visibleParticles, _accelerationTracker, timeScale, _sortedGrid);
+      _visibleParticles,
+      _accelerationTracker,
+      timeScale,
+      _sortedGrid,
+    );
   }
 
   @override
@@ -306,19 +323,26 @@ class OptimizedNetworkPainter extends CustomPainter {
       final double alphaSq = r.alphaRadius * r.alphaRadius;
       final double invMaxDistSq = alphaSq > 0 ? 1.0 / alphaSq : 0.0;
       _sortedGrid.build(
-          particles,
-          visible,
-          size.width,
-          size.height,
-          r.gridRadius > 0 ? r.gridRadius : kFallbackLineDistance,
-          performance.spatialCellMultiplier);
+        particles,
+        visible,
+        size.width,
+        size.height,
+        r.gridRadius > 0 ? r.gridRadius : kFallbackLineDistance,
+        performance.spatialCellMultiplier,
+      );
       _drawConnections(
-          canvas, visible, r.scanRadius, r.alphaRadius, invMaxDistSq);
+        canvas,
+        visible,
+        r.scanRadius,
+        r.alphaRadius,
+        invMaxDistSq,
+      );
       _budgetController.updateFeedback(
-          maxLinesPerFrame: effectiveMaxLines,
-          lastFrameLineCount: _lastFrameLineCount,
-          usedDistance: r.gridRadius,
-          baseDistance: lineDistance);
+        maxLinesPerFrame: effectiveMaxLines,
+        lastFrameLineCount: _lastFrameLineCount,
+        usedDistance: r.gridRadius,
+        baseDistance: lineDistance,
+      );
     } else {
       _lastFrameLineCount = 0;
       if (_isTouchActive &&
@@ -326,40 +350,55 @@ class OptimizedNetworkPainter extends CustomPainter {
           (show || simulateTouchInPaint)) {
         final double td = _touchHandler.effectiveLineDistance;
         _sortedGrid.build(
-            particles,
-            visible,
-            size.width,
-            size.height,
-            td > 0 ? td : kFallbackLineDistance,
-            performance.spatialCellMultiplier);
+          particles,
+          visible,
+          size.width,
+          size.height,
+          td > 0 ? td : kFallbackLineDistance,
+          performance.spatialCellMultiplier,
+        );
       }
     }
 
     if (_isTouchActive) _paintTouch(canvas, visible);
     _particleRenderer.draw(
-        canvas: canvas,
-        particles: particles,
-        visibleParticles: visible,
-        particlePaint: particlePaint,
-        fill: fill,
-        antiAlias: performance.antiAlias,
-        particleColor: particleColor);
+      canvas: canvas,
+      particles: particles,
+      visibleParticles: visible,
+      particlePaint: particlePaint,
+      fill: fill,
+      antiAlias: performance.antiAlias,
+      particleColor: particleColor,
+    );
   }
 
   void _paintTouch(Canvas canvas, List<int> visible) {
-    final bool useFast = _touchHandler.renderer == LineRenderer.vertices ||
+    final bool useFast =
+        _touchHandler.renderer == LineRenderer.vertices ||
         lineRenderer == LineRenderer.vertices ||
         visible.length >= kBatchThreshold;
-    _touchHandler.drawTouchLines(canvas, visible,
-        grid: _sortedGrid, fastLineRendering: useFast);
+    _touchHandler.drawTouchLines(
+      canvas,
+      visible,
+      grid: _sortedGrid,
+      fastLineRendering: useFast,
+    );
     if (simulateTouchInPaint) {
       _touchHandler.applyTouchPhysics(
-          visible, _accelerationTracker, _sortedGrid);
+        visible,
+        _accelerationTracker,
+        _sortedGrid,
+      );
     }
   }
 
-  void _drawConnections(Canvas canvas, List<int> visible, double scanDist,
-      double alphaDist, double invMaxDistSq) {
+  void _drawConnections(
+    Canvas canvas,
+    List<int> visible,
+    double scanDist,
+    double alphaDist,
+    double invMaxDistSq,
+  ) {
     final double maxDistSq = scanDist * scanDist;
     final bool complex = _isComplexThrottlingActive;
     final bool capped = effectiveMaxConnections != null;
@@ -385,10 +424,11 @@ class OptimizedNetworkPainter extends CustomPainter {
     _lineBuckets.clear();
     if (!complex && !capped) {
       _scanner.scanBatchedFast(
-          grid: _sortedGrid,
-          maxDistSq: maxDistSq,
-          invMaxDistSq: invMaxDistSq,
-          buckets: _lineBuckets);
+        grid: _sortedGrid,
+        maxDistSq: maxDistSq,
+        invMaxDistSq: invMaxDistSq,
+        buckets: _lineBuckets,
+      );
     } else {
       _scanner.scanBatchedComplex(
         grid: _sortedGrid,
@@ -411,7 +451,8 @@ class OptimizedNetworkPainter extends CustomPainter {
             vertexPaint: _vertexPaint,
             lineBucketPaints: _palette.lineBucketPaints,
             lineWidth: lineWidth,
-            devicePixelRatio: devicePixelRatio)
+            devicePixelRatio: devicePixelRatio,
+          )
         : _lineBuckets.renderStroke(canvas, _palette.lineBucketPaints);
   }
 
@@ -420,8 +461,11 @@ class OptimizedNetworkPainter extends CustomPainter {
       performance.complexReductionRatio != null ||
       performance.maxComplexLines != null;
 
-  void updateColors(
-      {Color? particleColor, Color? lineColor, Color? touchColor}) {
+  void updateColors({
+    Color? particleColor,
+    Color? lineColor,
+    Color? touchColor,
+  }) {
     if (particleColor != null && particleColor != this.particleColor) {
       this.particleColor = particleColor;
       particlePaint.color = particleColor;
@@ -480,21 +524,23 @@ class OptimizedNetworkPainter extends CustomPainter {
       this.lineRenderer = lineRenderer;
       _touchHandler.renderer = lineRenderer;
     }
-    updatePerformance(LegacyPainterAdapter.foldPerformanceOptions(
-      current: performance,
-      isComplex: isComplex,
-      complexReductionRatio: complexReductionRatio,
-      clearcomplexReductionRatio: clearcomplexReductionRatio,
-      maxComplexLines: maxComplexLines,
-      clearMaxComplexLines: clearMaxComplexLines,
-      complexDensityFactor: complexDensityFactor,
-      clearcomplexDensityFactor: clearcomplexDensityFactor,
-      antiAlias: antiAlias,
-      maxLinesPerFrame: maxLinesPerFrame,
-      clearMaxLinesPerFrame: clearMaxLinesPerFrame,
-      maxConnectionsPerParticle: maxConnectionsPerParticle,
-      clearMaxConnectionsPerParticle: clearMaxConnectionsPerParticle,
-    ));
+    updatePerformance(
+      LegacyPainterAdapter.foldPerformanceOptions(
+        current: performance,
+        isComplex: isComplex,
+        complexReductionRatio: complexReductionRatio,
+        clearcomplexReductionRatio: clearcomplexReductionRatio,
+        maxComplexLines: maxComplexLines,
+        clearMaxComplexLines: clearMaxComplexLines,
+        complexDensityFactor: complexDensityFactor,
+        clearcomplexDensityFactor: clearcomplexDensityFactor,
+        antiAlias: antiAlias,
+        maxLinesPerFrame: maxLinesPerFrame,
+        clearMaxLinesPerFrame: clearMaxLinesPerFrame,
+        maxConnectionsPerParticle: maxConnectionsPerParticle,
+        clearMaxConnectionsPerParticle: clearMaxConnectionsPerParticle,
+      ),
+    );
   }
 
   void updateLineWidth(double width) {
@@ -527,7 +573,8 @@ class OptimizedNetworkPainter extends CustomPainter {
     }
     if (isComplex != null || antiAlias != null) {
       updatePerformance(
-          performance.copyWith(isComplex: isComplex, antiAlias: antiAlias));
+        performance.copyWith(isComplex: isComplex, antiAlias: antiAlias),
+      );
     }
   }
 
@@ -543,7 +590,10 @@ class OptimizedNetworkPainter extends CustomPainter {
   @override
   bool shouldRepaint(OptimizedNetworkPainter oldDelegate) =>
       LegacyPainterAdapter.shouldRepaint(
-          this, oldDelegate, _accelerationTracker.hadAcceleratedParticles);
+        this,
+        oldDelegate,
+        _accelerationTracker.hadAcceleratedParticles,
+      );
 
   @visibleForTesting
   void setCandidateBufferCapacityForTesting(int cap) =>
@@ -560,8 +610,11 @@ class OptimizedNetworkPainter extends CustomPainter {
   }
 
   @visibleForTesting
-  void drawIndividualConnectionsForTesting(Canvas c, List<int> v,
-      [double? dist]) {
+  void drawIndividualConnectionsForTesting(
+    Canvas c,
+    List<int> v, [
+    double? dist,
+  ]) {
     final d = dist ?? lineDistance;
     final dSq = d * d;
     _lastFrameLineCount = _scanner.scanIndividual(
@@ -581,18 +634,24 @@ class OptimizedNetworkPainter extends CustomPainter {
   }
 
   @visibleForTesting
-  void drawBatchedConnectionsForTesting(Canvas c, List<int> v,
-          [double? dist]) =>
-      drawConnectionsForTesting(c, v, dist);
+  void drawBatchedConnectionsForTesting(
+    Canvas c,
+    List<int> v, [
+    double? dist,
+  ]) => drawConnectionsForTesting(c, v, dist);
 
   @visibleForTesting
-  void collectSortedConnectionsForTesting(double maxDistSq, bool unified,
-      [double? dist]) {
+  void collectSortedConnectionsForTesting(
+    double maxDistSq,
+    bool unified, [
+    double? dist,
+  ]) {
     _lineBuckets.clear();
     _scanner.scanBatchedFast(
-        grid: _sortedGrid,
-        maxDistSq: maxDistSq,
-        invMaxDistSq: maxDistSq > 0 ? 1.0 / maxDistSq : 0.0,
-        buckets: _lineBuckets);
+      grid: _sortedGrid,
+      maxDistSq: maxDistSq,
+      invMaxDistSq: maxDistSq > 0 ? 1.0 / maxDistSq : 0.0,
+      buckets: _lineBuckets,
+    );
   }
 }

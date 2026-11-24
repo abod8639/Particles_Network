@@ -101,18 +101,9 @@ class ParticleFeatures {
     ///
     /// Defaults to `true`.
     this.fill = true,
-  })  : assert(
-          count >= 0,
-          'count must be non-negative',
-        ),
-        assert(
-          maxSpeed >= 0.0,
-          'maxSpeed must be non-negative',
-        ),
-        assert(
-          maxSize > 0.0,
-          'maxSize must be positive',
-        );
+  }) : assert(count >= 0, 'count must be non-negative'),
+       assert(maxSpeed >= 0.0, 'maxSpeed must be non-negative'),
+       assert(maxSize > 0.0, 'maxSize must be positive');
 
   /// Subtle preset with reduced particle count and gentle velocity.
   ///
@@ -131,12 +122,12 @@ class ParticleFeatures {
     Color color = const Color(0xFFFFFFFF),
     bool fill = true,
   }) : this(
-          count: count,
-          maxSpeed: maxSpeed,
-          maxSize: maxSize,
-          color: color,
-          fill: fill,
-        );
+         count: count,
+         maxSpeed: maxSpeed,
+         maxSize: maxSize,
+         color: color,
+         fill: fill,
+       );
 
   /// Dense preset with elevated particle count and energetic velocity.
   ///
@@ -155,12 +146,12 @@ class ParticleFeatures {
     Color color = const Color(0xFFFFFFFF),
     bool fill = true,
   }) : this(
-          count: count,
-          maxSpeed: maxSpeed,
-          maxSize: maxSize,
-          color: color,
-          fill: fill,
-        );
+         count: count,
+         maxSpeed: maxSpeed,
+         maxSize: maxSize,
+         color: color,
+         fill: fill,
+       );
 
   /// Cosmic preset featuring fast-moving, larger particles for dramatic hero effects.
   ///
@@ -177,12 +168,12 @@ class ParticleFeatures {
     Color color = const Color(0xFFFFFFFF),
     bool fill = true,
   }) : this(
-          count: count,
-          maxSpeed: maxSpeed,
-          maxSize: maxSize,
-          color: color,
-          fill: fill,
-        );
+         count: count,
+         maxSpeed: maxSpeed,
+         maxSize: maxSize,
+         color: color,
+         fill: fill,
+       );
 
   /// Creates a copy of this [ParticleFeatures] configuration with updated parameters.
   ///
@@ -224,13 +215,7 @@ class ParticleFeatures {
           fill == other.fill;
 
   @override
-  int get hashCode => Object.hash(
-        count,
-        maxSpeed,
-        maxSize,
-        color,
-        fill,
-      );
+  int get hashCode => Object.hash(count, maxSpeed, maxSize, color, fill);
 
   @override
   String toString() =>

@@ -167,8 +167,9 @@ class PairScanner {
 
     final bool capped = maxConnectionsPerParticle != null;
     final int cap = maxConnectionsPerParticle ?? 0;
-    final Int32List counts =
-        candidateBuffer.getClearedConnectionCounts(grid.count);
+    final Int32List counts = candidateBuffer.getClearedConnectionCounts(
+      grid.count,
+    );
 
     Int32List candIndices = candidateBuffer.indices;
     Float64List candDistSq = candidateBuffer.distSq;
@@ -331,8 +332,9 @@ class PairScanner {
     final Float64List ys = grid.ys;
 
     // Phase 1 Item 2: Fade relative to alphaDistance (preserves 1.9.7 floor semantics)
-    final double invAlphaDistance =
-        alphaDistance > 0 ? 255.0 / alphaDistance : 0.0;
+    final double invAlphaDistance = alphaDistance > 0
+        ? 255.0 / alphaDistance
+        : 0.0;
     final int defaultMaxLines =
         performance.maxComplexLines ?? kDefaultMaxComplexLinesIndividual;
     final int denseThreshold = throttler.computeDenseThreshold(
@@ -343,8 +345,9 @@ class PairScanner {
 
     final bool capped = maxConnectionsPerParticle != null;
     final int cap = maxConnectionsPerParticle ?? 0;
-    final Int32List counts =
-        candidateBuffer.getClearedConnectionCounts(grid.count);
+    final Int32List counts = candidateBuffer.getClearedConnectionCounts(
+      grid.count,
+    );
 
     Int32List candIndices = candidateBuffer.indices;
     Float64List candDistSq = candidateBuffer.distSq;
@@ -436,8 +439,9 @@ class PairScanner {
 
             if (candidateCount == 0) continue;
 
-            final int remainingCap =
-                capped ? (cap - counts[i]) : candidateCount;
+            final int remainingCap = capped
+                ? (cap - counts[i])
+                : candidateCount;
             final int drawCount = throttler.filterCandidates(
               buffer: candidateBuffer,
               candidateCount: candidateCount,
@@ -457,11 +461,15 @@ class PairScanner {
             for (int candIdx = 0; candIdx < drawCount; candIdx++) {
               final int j = candIndices[candIdx];
               final double distance = math.sqrt(candDistSq[candIdx]);
-              int alpha =
-                  (255 - (distance * invAlphaDistance)).toInt().clamp(0, 255);
+              int alpha = (255 - (distance * invAlphaDistance)).toInt().clamp(
+                0,
+                255,
+              );
               if (isComplexMode && isThrottled && drawCount > 1) {
-                final double rankFade =
-                    throttler.calculateComplexLineFade(candIdx, drawCount);
+                final double rankFade = throttler.calculateComplexLineFade(
+                  candIdx,
+                  drawCount,
+                );
                 alpha = (alpha * rankFade).toInt().clamp(0, 255);
               }
               linePaint.color = lineColorLut[alpha];

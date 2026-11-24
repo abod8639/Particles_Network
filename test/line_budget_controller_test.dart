@@ -7,11 +7,31 @@ import 'package:particles_network/src/rendering/line_budget_controller.dart';
 void main() {
   group('FrameRadii Unit Tests', () {
     test('equality, hashCode and toString work as expected (L23-L37)', () {
-      const r1 = FrameRadii(gridRadius: 100.0, scanRadius: 80.0, alphaRadius: 60.0);
-      const r2 = FrameRadii(gridRadius: 100.0, scanRadius: 80.0, alphaRadius: 60.0);
-      const diffGrid = FrameRadii(gridRadius: 90.0, scanRadius: 80.0, alphaRadius: 60.0);
-      const diffScan = FrameRadii(gridRadius: 100.0, scanRadius: 70.0, alphaRadius: 60.0);
-      const diffAlpha = FrameRadii(gridRadius: 100.0, scanRadius: 80.0, alphaRadius: 50.0);
+      const r1 = FrameRadii(
+        gridRadius: 100.0,
+        scanRadius: 80.0,
+        alphaRadius: 60.0,
+      );
+      const r2 = FrameRadii(
+        gridRadius: 100.0,
+        scanRadius: 80.0,
+        alphaRadius: 60.0,
+      );
+      const diffGrid = FrameRadii(
+        gridRadius: 90.0,
+        scanRadius: 80.0,
+        alphaRadius: 60.0,
+      );
+      const diffScan = FrameRadii(
+        gridRadius: 100.0,
+        scanRadius: 70.0,
+        alphaRadius: 60.0,
+      );
+      const diffAlpha = FrameRadii(
+        gridRadius: 100.0,
+        scanRadius: 80.0,
+        alphaRadius: 50.0,
+      );
 
       // Identical & value equality
       expect(r1 == r1, isTrue);
@@ -27,7 +47,9 @@ void main() {
       // toString
       expect(
         r1.toString(),
-        equals('FrameRadii(gridRadius: 100.0, scanRadius: 80.0, alphaRadius: 60.0)'),
+        equals(
+          'FrameRadii(gridRadius: 100.0, scanRadius: 80.0, alphaRadius: 60.0)',
+        ),
       );
     });
   });
@@ -70,20 +92,21 @@ void main() {
     });
 
     test(
-        'Capped factor scales active distance when maxConnectionsPerParticle is set',
-        () {
-      final radii = controller.computeFrameRadii(
-        baseDistance: 100.0,
-        size: const Size(800, 600),
-        visibleCount: 50,
-        maxLinesPerFrame: null,
-        maxConnectionsPerParticle: 3,
-        cappedDistanceFactor: 0.6,
-      );
+      'Capped factor scales active distance when maxConnectionsPerParticle is set',
+      () {
+        final radii = controller.computeFrameRadii(
+          baseDistance: 100.0,
+          size: const Size(800, 600),
+          visibleCount: 50,
+          maxLinesPerFrame: null,
+          maxConnectionsPerParticle: 3,
+          cappedDistanceFactor: 0.6,
+        );
 
-      expect(radii.gridRadius, equals(60.0));
-      expect(radii.scanRadius, equals(60.0));
-    });
+        expect(radii.gridRadius, equals(60.0));
+        expect(radii.scanRadius, equals(60.0));
+      },
+    );
 
     test('Feedback correction converges without oscillation', () {
       controller.updateFeedback(

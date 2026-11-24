@@ -39,11 +39,7 @@ void main() {
         await tester.pumpWidget(
           const MaterialApp(
             home: Scaffold(
-              body: SizedBox(
-                width: 300,
-                height: 300,
-                child: widget160,
-              ),
+              body: SizedBox(width: 300, height: 300, child: widget160),
             ),
           ),
         );
@@ -86,15 +82,19 @@ void main() {
         );
 
         expect(widgetWithDependencies.particleFactory, equals(customFactory));
-        expect(widgetWithDependencies.particleController,
-            equals(customController));
+        expect(
+          widgetWithDependencies.particleController,
+          equals(customController),
+        );
         // ignore: deprecated_member_use_from_same_package
         expect(widgetWithDependencies.touchActivation, isFalse);
         expect(widgetWithDependencies.effectiveTouchFeatures.enabled, isFalse);
         // ignore: deprecated_member_use_from_same_package
         expect(widgetWithDependencies.touchColor, equals(Colors.red));
-        expect(widgetWithDependencies.effectiveTouchFeatures.color,
-            equals(Colors.red));
+        expect(
+          widgetWithDependencies.effectiveTouchFeatures.color,
+          equals(Colors.red),
+        );
         expect(widgetWithDependencies.effectiveLineWidth, equals(1.2));
 
         await tester.pumpWidget(

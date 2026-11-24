@@ -168,12 +168,7 @@ class CompressedQuadTreeNode {
       bool allFollow = true;
 
       for (int i = 0; i < particles.length; i++) {
-        if (_getQuadrantForBounds(
-              particles[i].x,
-              particles[i].y,
-              midX,
-              midY,
-            ) !=
+        if (_getQuadrantForBounds(particles[i].x, particles[i].y, midX, midY) !=
             nextQuad) {
           allFollow = false;
           break;

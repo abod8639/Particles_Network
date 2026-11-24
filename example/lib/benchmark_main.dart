@@ -80,9 +80,7 @@ class _BenchmarkScreenState extends State<BenchmarkScreen> {
       BenchmarkScenarioType.clusteringWorstCase,
     ];
 
-    final algorithms = [
-      SpatialAlgorithmType.sortedSpatialGrid,
-    ];
+    final algorithms = [SpatialAlgorithmType.sortedSpatialGrid];
 
     final int totalRuns = scenarios.length * algorithms.length;
     int currentRunIndex = 0;
@@ -131,7 +129,8 @@ class _BenchmarkScreenState extends State<BenchmarkScreen> {
 
         // Print immediate frame result
         print(
-            '  [${algorithm.displayName.padRight(19)}] Avg: ${result.avgTotalMs.toStringAsFixed(3).padLeft(7)} ms | P99: ${result.p99TotalMs.toStringAsFixed(3).padLeft(7)} ms | FPS: ${result.effectiveFps.toStringAsFixed(1).padLeft(6)} | Build: ${result.avgBuildMs.toStringAsFixed(3).padLeft(6)} ms (${result.buildPercent.toStringAsFixed(1)}%) | Query: ${result.avgQueryMs.toStringAsFixed(3).padLeft(6)} ms (${result.queryPercent.toStringAsFixed(1)}%) | RSS: ${(result.rssAfterBytes / (1024 * 1024)).toStringAsFixed(1)} MB');
+          '  [${algorithm.displayName.padRight(19)}] Avg: ${result.avgTotalMs.toStringAsFixed(3).padLeft(7)} ms | P99: ${result.p99TotalMs.toStringAsFixed(3).padLeft(7)} ms | FPS: ${result.effectiveFps.toStringAsFixed(1).padLeft(6)} | Build: ${result.avgBuildMs.toStringAsFixed(3).padLeft(6)} ms (${result.buildPercent.toStringAsFixed(1)}%) | Query: ${result.avgQueryMs.toStringAsFixed(3).padLeft(6)} ms (${result.queryPercent.toStringAsFixed(1)}%) | RSS: ${(result.rssAfterBytes / (1024 * 1024)).toStringAsFixed(1)} MB',
+        );
       }
     }
 
@@ -139,9 +138,11 @@ class _BenchmarkScreenState extends State<BenchmarkScreen> {
     print('              FINAL BENCHMARK COMPARISON TABLE               ');
     print('=============================================================');
     print(
-        '| Scenario                 | Algorithm           | Avg Frame (ms) | P99 (ms) | FPS     | Build (ms) | Query (ms) | RSS (MB) |');
+      '| Scenario                 | Algorithm           | Avg Frame (ms) | P99 (ms) | FPS     | Build (ms) | Query (ms) | RSS (MB) |',
+    );
     print(
-        '|--------------------------|---------------------|----------------|----------|---------|------------|------------|----------|');
+      '|--------------------------|---------------------|----------------|----------|---------|------------|------------|----------|',
+    );
     for (final r in _results) {
       final scenName = r.scenario.name.padRight(24);
       final algName = r.algorithm.displayName.padRight(19);
@@ -150,10 +151,12 @@ class _BenchmarkScreenState extends State<BenchmarkScreen> {
       final fps = r.effectiveFps.toStringAsFixed(1).padLeft(7);
       final bld = r.avgBuildMs.toStringAsFixed(3).padLeft(10);
       final qry = r.avgQueryMs.toStringAsFixed(3).padLeft(10);
-      final rss =
-          (r.rssAfterBytes / (1024 * 1024)).toStringAsFixed(1).padLeft(8);
+      final rss = (r.rssAfterBytes / (1024 * 1024))
+          .toStringAsFixed(1)
+          .padLeft(8);
       print(
-          '| $scenName | $algName | $avg | $p99 | $fps | $bld | $qry | $rss |');
+        '| $scenName | $algName | $avg | $p99 | $fps | $bld | $qry | $rss |',
+      );
     }
     print('=============================================================\n');
 
@@ -211,9 +214,10 @@ class _BenchmarkScreenState extends State<BenchmarkScreen> {
                     Text(
                       'Target Device: Samsung Galaxy S10 (SM-G973U)',
                       style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          color: Color(0xFF38BDF8)),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Color(0xFF38BDF8),
+                      ),
                     ),
                     SizedBox(height: 4),
                     Text(
@@ -263,8 +267,9 @@ class _BenchmarkScreenState extends State<BenchmarkScreen> {
                         Text(
                           '${(_progress * 100).toInt()}%',
                           style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF38BDF8)),
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF38BDF8),
+                          ),
                         ),
                       ],
                     ),
@@ -296,7 +301,8 @@ class _BenchmarkScreenState extends State<BenchmarkScreen> {
                         itemCount: _results.length,
                         itemBuilder: (context, index) {
                           final r = _results[index];
-                          final isGrid = r.algorithm ==
+                          final isGrid =
+                              r.algorithm ==
                               SpatialAlgorithmType.sortedSpatialGrid;
                           return Card(
                             margin: const EdgeInsets.only(bottom: 8),
@@ -344,22 +350,34 @@ class _BenchmarkScreenState extends State<BenchmarkScreen> {
                                   Text(
                                     r.scenario.title,
                                     style: const TextStyle(
-                                        fontSize: 12, color: Color(0xFF94A3B8)),
+                                      fontSize: 12,
+                                      color: Color(0xFF94A3B8),
+                                    ),
                                   ),
                                   const Divider(
-                                      height: 16, color: Color(0xFF334155)),
+                                    height: 16,
+                                    color: Color(0xFF334155),
+                                  ),
                                   Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                     children: [
-                                      _MetricItem('Avg Frame',
-                                          '${r.avgTotalMs.toStringAsFixed(2)} ms'),
-                                      _MetricItem('P99 Frame',
-                                          '${r.p99TotalMs.toStringAsFixed(2)} ms'),
-                                      _MetricItem('Build Phase',
-                                          '${r.avgBuildMs.toStringAsFixed(2)} ms (${r.buildPercent.toStringAsFixed(0)}%)'),
-                                      _MetricItem('Query Phase',
-                                          '${r.avgQueryMs.toStringAsFixed(2)} ms (${r.queryPercent.toStringAsFixed(0)}%)'),
+                                      _MetricItem(
+                                        'Avg Frame',
+                                        '${r.avgTotalMs.toStringAsFixed(2)} ms',
+                                      ),
+                                      _MetricItem(
+                                        'P99 Frame',
+                                        '${r.p99TotalMs.toStringAsFixed(2)} ms',
+                                      ),
+                                      _MetricItem(
+                                        'Build Phase',
+                                        '${r.avgBuildMs.toStringAsFixed(2)} ms (${r.buildPercent.toStringAsFixed(0)}%)',
+                                      ),
+                                      _MetricItem(
+                                        'Query Phase',
+                                        '${r.avgQueryMs.toStringAsFixed(2)} ms (${r.queryPercent.toStringAsFixed(0)}%)',
+                                      ),
                                     ],
                                   ),
                                 ],
@@ -388,14 +406,19 @@ class _MetricItem extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: const TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+        ),
         const SizedBox(height: 2),
-        Text(value,
-            style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Colors.white)),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
       ],
     );
   }

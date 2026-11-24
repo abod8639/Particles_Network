@@ -157,70 +157,71 @@ void main() {
     await tester.pump();
   });
 
-  testWidgets('ParticleNetwork supports touch: TouchFeatures(show: ...) dynamic widget toggling', (
-    WidgetTester tester,
-  ) async {
-    bool showLines = false;
-    await tester.pumpWidget(
-      StatefulBuilder(
-        builder: (context, setState) {
-          return MaterialApp(
-            home: Scaffold(
-              body: SizedBox(
-                width: 300,
-                height: 300,
-                child: ParticleNetwork(
-                  touch: TouchFeatures(show: showLines),
-                  particles: const ParticleFeatures(count: 20),
-                  network: const NetworkFeatures(distance: 200.0),
+  testWidgets(
+    'ParticleNetwork supports touch: TouchFeatures(show: ...) dynamic widget toggling',
+    (WidgetTester tester) async {
+      bool showLines = false;
+      await tester.pumpWidget(
+        StatefulBuilder(
+          builder: (context, setState) {
+            return MaterialApp(
+              home: Scaffold(
+                body: SizedBox(
+                  width: 300,
+                  height: 300,
+                  child: ParticleNetwork(
+                    touch: TouchFeatures(show: showLines),
+                    particles: const ParticleFeatures(count: 20),
+                    network: const NetworkFeatures(distance: 200.0),
+                  ),
+                ),
+                floatingActionButton: FloatingActionButton(
+                  onPressed: () => setState(() => showLines = !showLines),
+                  child: const Icon(Icons.refresh),
                 ),
               ),
-              floatingActionButton: FloatingActionButton(
-                onPressed: () => setState(() => showLines = !showLines),
-                child: const Icon(Icons.refresh),
-              ),
-            ),
-          );
-        },
-      ),
-    );
+            );
+          },
+        ),
+      );
 
-    final state = tester.state<ParticleNetworkState>(
-      find.byType(ParticleNetwork),
-    );
+      final state = tester.state<ParticleNetworkState>(
+        find.byType(ParticleNetwork),
+      );
 
-    // Initialized via touch: TouchFeatures(show: false)
-    expect(state.widget.touch.show, isFalse);
-    expect(state.painter.show, isFalse);
-    expect(state.painter.touchHandler.show, isFalse);
+      // Initialized via touch: TouchFeatures(show: false)
+      expect(state.widget.touch.show, isFalse);
+      expect(state.painter.show, isFalse);
+      expect(state.painter.touchHandler.show, isFalse);
 
-    // Touch down while show is false
-    final gesture = await tester.startGesture(const Offset(150, 150));
-    await tester.pump(const Duration(milliseconds: 50));
-    expect(state.painter.touchHandler.lastLineCount, equals(0));
+      // Touch down while show is false
+      final gesture = await tester.startGesture(const Offset(150, 150));
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(state.painter.touchHandler.lastLineCount, equals(0));
 
-    // Toggle show to true via setState rebuild
-    await tester.tap(find.byType(FloatingActionButton));
-    await tester.pump(const Duration(milliseconds: 50));
+      // Toggle show to true via setState rebuild
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pump(const Duration(milliseconds: 50));
 
-    expect(state.widget.touch.show, isTrue);
-    expect(state.painter.show, isTrue);
-    expect(state.painter.touchHandler.show, isTrue);
-    expect(state.painter.touchHandler.lastLineCount, greaterThan(0));
+      expect(state.widget.touch.show, isTrue);
+      expect(state.painter.show, isTrue);
+      expect(state.painter.touchHandler.show, isTrue);
+      expect(state.painter.touchHandler.lastLineCount, greaterThan(0));
 
-    // Toggle show back to false during continuous drag
-    await gesture.moveTo(const Offset(160, 160));
-    await tester.tap(find.byType(FloatingActionButton));
-    await tester.pump(const Duration(milliseconds: 50));
+      // Toggle show back to false during continuous drag
+      await gesture.moveTo(const Offset(160, 160));
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pump(const Duration(milliseconds: 50));
 
-    expect(state.widget.touch.show, isFalse);
-    expect(state.painter.show, isFalse);
-    expect(state.painter.touchHandler.show, isFalse);
-    expect(state.painter.touchHandler.lastLineCount, equals(0));
+      expect(state.widget.touch.show, isFalse);
+      expect(state.painter.show, isFalse);
+      expect(state.painter.touchHandler.show, isFalse);
+      expect(state.painter.touchHandler.lastLineCount, equals(0));
 
-    await gesture.up();
-    await tester.pump();
-  });
+      await gesture.up();
+      await tester.pump();
+    },
+  );
 
   testWidgets('ParticleNetwork logs error when shader fails to load', (
     WidgetTester tester,
@@ -315,93 +316,92 @@ void main() {
   });
 
   testWidgets(
-      'ParticleNetwork handles mouse hover via TouchFeatures(hover: true)',
-      (WidgetTester tester) async {
-    await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(
-          body: SizedBox(
-            width: 300,
-            height: 300,
-            child: ParticleNetwork(
-              touch: TouchFeatures(hover: true),
+    'ParticleNetwork handles mouse hover via TouchFeatures(hover: true)',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleNetwork(touch: TouchFeatures(hover: true)),
             ),
           ),
         ),
-      ),
-    );
+      );
 
-    final state = tester.state<ParticleNetworkState>(
-      find.byType(ParticleNetwork),
-    );
+      final state = tester.state<ParticleNetworkState>(
+        find.byType(ParticleNetwork),
+      );
 
-    expect(state.touchPoint, equals(Offset.infinite));
+      expect(state.touchPoint, equals(Offset.infinite));
 
-    // Simulate mouse hover
-    final pointer = TestPointer(1, PointerDeviceKind.mouse);
-    await tester.sendEventToBinding(pointer.hover(const Offset(100, 100)));
-    await tester.pump();
+      // Simulate mouse hover
+      final pointer = TestPointer(1, PointerDeviceKind.mouse);
+      await tester.sendEventToBinding(pointer.hover(const Offset(100, 100)));
+      await tester.pump();
 
-    expect(state.touchPoint, equals(const Offset(100, 100)));
+      expect(state.touchPoint, equals(const Offset(100, 100)));
 
-    // Move pointer outside to trigger onExit
-    await tester.sendEventToBinding(pointer.hover(const Offset(400, 400)));
-    await tester.pump();
-    expect(state.touchPoint, equals(Offset.infinite));
-  });
+      // Move pointer outside to trigger onExit
+      await tester.sendEventToBinding(pointer.hover(const Offset(400, 400)));
+      await tester.pump();
+      expect(state.touchPoint, equals(Offset.infinite));
+    },
+  );
 
   testWidgets(
-      'ParticleNetwork ignores mouse hover via TouchFeatures(hover: false)',
-      (WidgetTester tester) async {
-    await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(
-          body: SizedBox(
-            width: 300,
-            height: 300,
-            child: ParticleNetwork(
-              touch: TouchFeatures(hover: false),
+    'ParticleNetwork ignores mouse hover via TouchFeatures(hover: false)',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleNetwork(touch: TouchFeatures(hover: false)),
             ),
           ),
         ),
-      ),
-    );
+      );
 
-    final state = tester.state<ParticleNetworkState>(
-      find.byType(ParticleNetwork),
-    );
+      final state = tester.state<ParticleNetworkState>(
+        find.byType(ParticleNetwork),
+      );
 
-    expect(state.touchPoint, equals(Offset.infinite));
+      expect(state.touchPoint, equals(Offset.infinite));
 
-    final pointer = TestPointer(1, PointerDeviceKind.mouse);
-    await tester.sendEventToBinding(pointer.hover(const Offset(100, 100)));
-    await tester.pump();
+      final pointer = TestPointer(1, PointerDeviceKind.mouse);
+      await tester.sendEventToBinding(pointer.hover(const Offset(100, 100)));
+      await tester.pump();
 
-    expect(state.touchPoint, equals(Offset.infinite));
-  });
+      expect(state.touchPoint, equals(Offset.infinite));
+    },
+  );
 
   testWidgets(
-      'ParticleNetwork backward compatibility merges legacy hoverEffect into effectiveTouchFeatures',
-      (WidgetTester tester) async {
-    await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(
-          body: SizedBox(
-            width: 300,
-            height: 300,
-            child: ParticleNetwork(
-              hoverEffect: true,
+    'ParticleNetwork backward compatibility merges legacy hoverEffect into effectiveTouchFeatures',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleNetwork(hoverEffect: true),
             ),
           ),
         ),
-      ),
-    );
+      );
 
-    final widget = tester.widget<ParticleNetwork>(find.byType(ParticleNetwork));
-    expect(widget.hoverEffect, isTrue);
-    expect(widget.effectiveTouchFeatures.hover, isTrue);
-    expect(widget.usedLegacyHoverEffect, isTrue);
-  });
+      final widget = tester.widget<ParticleNetwork>(
+        find.byType(ParticleNetwork),
+      );
+      expect(widget.hoverEffect, isTrue);
+      expect(widget.effectiveTouchFeatures.hover, isTrue);
+      expect(widget.usedLegacyHoverEffect, isTrue);
+    },
+  );
 
   testWidgets('ParticleNetwork handles pan cancel', (
     WidgetTester tester,
@@ -409,11 +409,7 @@ void main() {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
-          body: SizedBox(
-            width: 300,
-            height: 300,
-            child: ParticleNetwork(),
-          ),
+          body: SizedBox(width: 300, height: 300, child: ParticleNetwork()),
         ),
       ),
     );
@@ -919,54 +915,53 @@ void main() {
     expect(state.controller, isA<IParticleController>());
   });
 
-  testWidgets(
-    'ParticleNetwork didUpdateWidget updates simulation gravity',
-    (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 300,
-              height: 300,
-              child: ParticleNetwork(
-                gravityType: GravityType.none,
-                gravityStrength: 0.1,
-                gravityDirection: Offset(0, 1),
-              ),
+  testWidgets('ParticleNetwork didUpdateWidget updates simulation gravity', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: ParticleNetwork(
+              gravityType: GravityType.none,
+              gravityStrength: 0.1,
+              gravityDirection: Offset(0, 1),
             ),
           ),
         ),
-      );
+      ),
+    );
 
-      final state = tester.state<ParticleNetworkState>(
-        find.byType(ParticleNetwork),
-      );
-      expect(state.simulation.gravityConfig.type, GravityType.none);
-      expect(state.simulation.gravityConfig.strength, 0.1);
+    final state = tester.state<ParticleNetworkState>(
+      find.byType(ParticleNetwork),
+    );
+    expect(state.simulation.gravityConfig.type, GravityType.none);
+    expect(state.simulation.gravityConfig.strength, 0.1);
 
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 300,
-              height: 300,
-              child: ParticleNetwork(
-                gravityType: GravityType.point,
-                gravityStrength: 0.8,
-                gravityDirection: Offset(1, 0),
-                gravityCenter: Offset(150, 150),
-              ),
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: ParticleNetwork(
+              gravityType: GravityType.point,
+              gravityStrength: 0.8,
+              gravityDirection: Offset(1, 0),
+              gravityCenter: Offset(150, 150),
             ),
           ),
         ),
-      );
+      ),
+    );
 
-      expect(state.simulation.gravityConfig.type, GravityType.point);
-      expect(state.simulation.gravityConfig.strength, 0.8);
-      expect(state.simulation.gravityConfig.direction, const Offset(1, 0));
-      expect(state.simulation.gravityConfig.center, const Offset(150, 150));
-    },
-  );
+    expect(state.simulation.gravityConfig.type, GravityType.point);
+    expect(state.simulation.gravityConfig.strength, 0.8);
+    expect(state.simulation.gravityConfig.direction, const Offset(1, 0));
+    expect(state.simulation.gravityConfig.center, const Offset(150, 150));
+  });
 
   testWidgets(
     'ParticleNetwork didUpdateWidget updates simulation gravity using GravityFeatures',
@@ -977,9 +972,7 @@ void main() {
             body: SizedBox(
               width: 300,
               height: 300,
-              child: ParticleNetwork(
-                gravity: GravityFeatures.none(),
-              ),
+              child: ParticleNetwork(gravity: GravityFeatures.none()),
             ),
           ),
         ),
@@ -1033,9 +1026,7 @@ void main() {
   });
 
   test('ParticleNetwork touch and touchFeatures properties work correctly', () {
-    const modern = ParticleNetwork(
-      touch: TouchFeatures(color: Colors.blue),
-    );
+    const modern = ParticleNetwork(touch: TouchFeatures(color: Colors.blue));
     expect(modern.touch.color, Colors.blue);
     expect(modern.touchFeatures.color, Colors.blue);
 
@@ -1117,9 +1108,7 @@ void main() {
                 performance: PerformanceFeatures(
                   maxConnectionsPerParticle: null,
                 ),
-                network: NetworkFeatures(
-                  renderer: LineRenderer.stroke,
-                ),
+                network: NetworkFeatures(renderer: LineRenderer.stroke),
               ),
             ),
           ),
@@ -1143,12 +1132,8 @@ void main() {
               width: 300,
               height: 300,
               child: ParticleNetwork(
-                performance: PerformanceFeatures(
-                  maxConnectionsPerParticle: 3,
-                ),
-                network: NetworkFeatures(
-                  renderer: LineRenderer.vertices,
-                ),
+                performance: PerformanceFeatures(maxConnectionsPerParticle: 3),
+                network: NetworkFeatures(renderer: LineRenderer.vertices),
               ),
             ),
           ),
@@ -1266,111 +1251,110 @@ void main() {
     },
   );
 
-  testWidgets(
-    'ParticleNetwork didUpdateWidget updates autoBoost (L392)',
-    (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 300,
-              height: 300,
-              child: ParticleNetwork(
-                lineDistance: 100.0,
-                performance: PerformanceFeatures(
-                  maxConnectionsPerParticle: 10,
-                  autoBoost: false,
-                ),
+  testWidgets('ParticleNetwork didUpdateWidget updates autoBoost (L392)', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: ParticleNetwork(
+              lineDistance: 100.0,
+              performance: PerformanceFeatures(
+                maxConnectionsPerParticle: 10,
+                autoBoost: false,
               ),
             ),
           ),
         ),
+      ),
+    );
+
+    final customPaintFinder = find.descendant(
+      of: find.byType(ParticleNetwork),
+      matching: find.byType(CustomPaint),
+    );
+
+    var customPaint = tester.widget<CustomPaint>(customPaintFinder);
+    var painter = customPaint.painter as OptimizedNetworkPainter;
+    expect(painter.lineDistance, equals(100.0));
+
+    final timings = List<FrameTiming>.generate(5, (int i) {
+      final int start = i * 40000;
+      return FrameTiming(
+        vsyncStart: start,
+        buildStart: start,
+        buildFinish: start + 4000,
+        rasterStart: start + 4000,
+        rasterFinish: start + 34000,
+        rasterFinishWallTime: start + 34000,
       );
+    });
 
-      final customPaintFinder = find.descendant(
-        of: find.byType(ParticleNetwork),
-        matching: find.byType(CustomPaint),
-      );
+    // While false, reporting slow timings does not throttle line distance
+    tester.binding.platformDispatcher.onReportTimings!(timings);
+    await tester.pump(const Duration(milliseconds: 16));
 
-      var customPaint = tester.widget<CustomPaint>(customPaintFinder);
-      var painter = customPaint.painter as OptimizedNetworkPainter;
-      expect(painter.lineDistance, equals(100.0));
+    customPaint = tester.widget<CustomPaint>(customPaintFinder);
+    painter = customPaint.painter as OptimizedNetworkPainter;
+    expect(painter.lineDistance, equals(100.0));
 
-      final timings = List<FrameTiming>.generate(5, (int i) {
-        final int start = i * 40000;
-        return FrameTiming(
-          vsyncStart: start,
-          buildStart: start,
-          buildFinish: start + 4000,
-          rasterStart: start + 4000,
-          rasterFinish: start + 34000,
-          rasterFinishWallTime: start + 34000,
-        );
-      });
-
-      // While false, reporting slow timings does not throttle line distance
-      tester.binding.platformDispatcher.onReportTimings!(timings);
-      await tester.pump(const Duration(milliseconds: 16));
-
-      customPaint = tester.widget<CustomPaint>(customPaintFinder);
-      painter = customPaint.painter as OptimizedNetworkPainter;
-      expect(painter.lineDistance, equals(100.0));
-
-      // Toggle autoBoost from false to true via didUpdateWidget
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 300,
-              height: 300,
-              child: ParticleNetwork(
-                lineDistance: 100.0,
-                performance: PerformanceFeatures(
-                  maxConnectionsPerParticle: 10,
-                  autoBoost: true,
-                ),
+    // Toggle autoBoost from false to true via didUpdateWidget
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: ParticleNetwork(
+              lineDistance: 100.0,
+              performance: PerformanceFeatures(
+                maxConnectionsPerParticle: 10,
+                autoBoost: true,
               ),
             ),
           ),
         ),
-      );
+      ),
+    );
 
-      // Now reporting slow timings throttles line budget
-      tester.binding.platformDispatcher.onReportTimings!(timings);
-      await tester.pump(const Duration(milliseconds: 16));
+    // Now reporting slow timings throttles line budget
+    tester.binding.platformDispatcher.onReportTimings!(timings);
+    await tester.pump(const Duration(milliseconds: 16));
 
-      customPaint = tester.widget<CustomPaint>(customPaintFinder);
-      painter = customPaint.painter as OptimizedNetworkPainter;
-      expect(painter.lineDistance, equals(100.0));
-      expect(painter.runtimeMaxLinesOverride, isNotNull);
+    customPaint = tester.widget<CustomPaint>(customPaintFinder);
+    painter = customPaint.painter as OptimizedNetworkPainter;
+    expect(painter.lineDistance, equals(100.0));
+    expect(painter.runtimeMaxLinesOverride, isNotNull);
 
-      // Toggle autoBoost back to false via didUpdateWidget
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 300,
-              height: 300,
-              child: ParticleNetwork(
-                lineDistance: 100.0,
-                performance: PerformanceFeatures(
-                  maxConnectionsPerParticle: 10,
-                  autoBoost: false,
-                ),
+    // Toggle autoBoost back to false via didUpdateWidget
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 300,
+            height: 300,
+            child: ParticleNetwork(
+              lineDistance: 100.0,
+              performance: PerformanceFeatures(
+                maxConnectionsPerParticle: 10,
+                autoBoost: false,
               ),
             ),
           ),
         ),
-      );
+      ),
+    );
 
-      customPaint = tester.widget<CustomPaint>(customPaintFinder);
-      painter = customPaint.painter as OptimizedNetworkPainter;
-      expect(painter.lineDistance, equals(100.0));
-      expect(painter.runtimeMaxLinesOverride, isNull);
-      expect(painter.runtimeMaxConnectionsOverride, isNull);
-      expect(painter.maxConnectionsPerParticle, equals(10));
-    },
-  );
+    customPaint = tester.widget<CustomPaint>(customPaintFinder);
+    painter = customPaint.painter as OptimizedNetworkPainter;
+    expect(painter.lineDistance, equals(100.0));
+    expect(painter.runtimeMaxLinesOverride, isNull);
+    expect(painter.runtimeMaxConnectionsOverride, isNull);
+    expect(painter.maxConnectionsPerParticle, equals(10));
+  });
 
   testWidgets(
     'didUpdateWidget preserves lineDistance when lineDistance changes',
@@ -1400,9 +1384,7 @@ void main() {
               height: 300,
               child: ParticleNetwork(
                 lineDistance: 100.0,
-                performance: PerformanceFeatures(
-                  autoBoost: true,
-                ),
+                performance: PerformanceFeatures(autoBoost: true),
               ),
             ),
           ),
@@ -1424,9 +1406,7 @@ void main() {
               height: 300,
               child: ParticleNetwork(
                 lineDistance: 200.0,
-                performance: PerformanceFeatures(
-                  autoBoost: true,
-                ),
+                performance: PerformanceFeatures(autoBoost: true),
               ),
             ),
           ),
@@ -1448,9 +1428,7 @@ void main() {
       expect(legacy.effectiveDrawNetwork, isFalse);
 
       // Modern parameter
-      const modern = ParticleNetwork(
-        network: NetworkFeatures(enabled: false),
-      );
+      const modern = ParticleNetwork(network: NetworkFeatures(enabled: false));
       expect(modern.effectiveDrawNetwork, isFalse);
     },
   );
@@ -1464,9 +1442,7 @@ void main() {
       expect(legacy.effectiveLineWidth, equals(2.5));
 
       // Modern parameter
-      const modern = ParticleNetwork(
-        network: NetworkFeatures(width: 3.0),
-      );
+      const modern = ParticleNetwork(network: NetworkFeatures(width: 3.0));
       expect(modern.effectiveLineWidth, equals(3.0));
     },
   );
@@ -1481,9 +1457,7 @@ void main() {
             body: SizedBox(
               width: 300,
               height: 300,
-              child: ParticleNetwork(
-                gravityStrength: 0.5,
-              ),
+              child: ParticleNetwork(gravityStrength: 0.5),
             ),
           ),
         ),
@@ -1711,225 +1685,292 @@ void main() {
     },
   );
 
-  group('ParticleNetwork widget getters & factory update (L56-L57, L296-L306, L503-L509)', () {
-    test('effectiveIsComplex returns correct value based on isComplex and performance (L56-L57)', () {
-      const widgetLegacy = ParticleNetwork(isComplex: true);
-      expect(widgetLegacy.effectiveIsComplex, isTrue);
+  group(
+    'ParticleNetwork widget getters & factory update (L56-L57, L296-L306, L503-L509)',
+    () {
+      test(
+        'effectiveIsComplex returns correct value based on isComplex and performance (L56-L57)',
+        () {
+          const widgetLegacy = ParticleNetwork(isComplex: true);
+          expect(widgetLegacy.effectiveIsComplex, isTrue);
 
-      const widgetPerformance = ParticleNetwork(
-        performance: PerformanceFeatures(complex: ComplexConfig(enabled: false)),
+          const widgetPerformance = ParticleNetwork(
+            performance: PerformanceFeatures(
+              complex: ComplexConfig(enabled: false),
+            ),
+          );
+          expect(widgetPerformance.effectiveIsComplex, isFalse);
+
+          const widgetDefault = ParticleNetwork();
+          expect(
+            widgetDefault.effectiveIsComplex,
+            equals(widgetDefault.performance.isComplex),
+          );
+        },
       );
-      expect(widgetPerformance.effectiveIsComplex, isFalse);
 
-      const widgetDefault = ParticleNetwork();
-      expect(widgetDefault.effectiveIsComplex, equals(widgetDefault.performance.isComplex));
-    });
-
-    testWidgets(
+      testWidgets(
         'ParticleNetworkState exposes painter frame statistics and limits getters (L296-L306)',
         (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 300,
-              height: 300,
-              child: ParticleNetwork(
-                particleCount: 20,
-                lineDistance: 50.0,
-                performance: PerformanceFeatures(
-                  maxConnectionsPerParticle: 5,
-                  maxLinesPerFrame: 100,
+          await tester.pumpWidget(
+            const MaterialApp(
+              home: Scaffold(
+                body: SizedBox(
+                  width: 300,
+                  height: 300,
+                  child: ParticleNetwork(
+                    particleCount: 20,
+                    lineDistance: 50.0,
+                    performance: PerformanceFeatures(
+                      maxConnectionsPerParticle: 5,
+                      maxLinesPerFrame: 100,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+
+          await tester.pump(const Duration(milliseconds: 16));
+
+          final state = tester.state<ParticleNetworkState>(
+            find.byType(ParticleNetwork),
+          );
+
+          expect(state.lastFrameLineCount, isA<int>());
+          expect(
+            state.lastFrameLineCount,
+            equals(state.painter.lastFrameLineCount),
+          );
+          expect(state.lastFrameLineDistance, isA<double>());
+          expect(
+            state.lastFrameLineDistance,
+            equals(state.painter.lastFrameLineDistance),
+          );
+          expect(state.effectiveMaxConnections, equals(5));
+          expect(state.effectiveMaxLines, equals(100));
+        },
+      );
+
+      testWidgets(
+        'didUpdateWidget resets to default factory when particleFactory is set to null (L503-L509)',
+        (WidgetTester tester) async {
+          final customFactory = DefaultParticleFactory(
+            random: Random(42),
+            maxSpeed: 10.0,
+            maxSize: 10.0,
+            color: Colors.blue,
+          );
+
+          await tester.pumpWidget(
+            MaterialApp(
+              home: Scaffold(
+                body: SizedBox(
+                  width: 300,
+                  height: 300,
+                  child: ParticleNetwork(
+                    particleFactory: customFactory,
+                    maxSpeed: 2.0,
+                    maxSize: 3.0,
+                    particleColor: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          );
+
+          final state = tester.state<ParticleNetworkState>(
+            find.byType(ParticleNetwork),
+          );
+          expect(state.simulation.factory, equals(customFactory));
+
+          // Update widget: remove custom factory (set to null)
+          await tester.pumpWidget(
+            const MaterialApp(
+              home: Scaffold(
+                body: SizedBox(
+                  width: 300,
+                  height: 300,
+                  child: ParticleNetwork(
+                    particleFactory: null,
+                    maxSpeed: 4.5,
+                    maxSize: 6.5,
+                    particleColor: Colors.green,
+                  ),
+                ),
+              ),
+            ),
+          );
+
+          // Verify that simulation factory was updated with the new parameters
+          expect(state.simulation.factory, isNot(equals(customFactory)));
+          expect(state.simulation.factory, isA<DefaultParticleFactory>());
+          final defaultFactory =
+              state.simulation.factory as DefaultParticleFactory;
+          expect(defaultFactory.maxSpeed, equals(4.5));
+          expect(defaultFactory.maxSize, equals(6.5));
+          expect(defaultFactory.color, equals(Colors.green));
+        },
+      );
+    },
+  );
+
+  group('ParticleNetwork Compatibility Getters and Deprecation Warnings', () {
+    test(
+      'particleFeatures and networkFeatures getters return effective features',
+      () {
+        const widget = ParticleNetwork(
+          particles: ParticleFeatures(count: 77),
+          network: NetworkFeatures(width: 2.2),
+        );
+
+        // ignore: deprecated_member_use_from_same_package
+        expect(
+          widget.particleFeatures,
+          equals(widget.effectiveParticleFeatures),
+        );
+        // ignore: deprecated_member_use_from_same_package
+        expect(widget.particleFeatures.count, equals(77));
+
+        // ignore: deprecated_member_use_from_same_package
+        expect(widget.networkFeatures, equals(widget.effectiveNetworkFeatures));
+        // ignore: deprecated_member_use_from_same_package
+        expect(widget.networkFeatures.width, equals(2.2));
+      },
+    );
+
+    test(
+      'fastLineRendering infers from effectiveNetworkFeatures.renderer when not explicitly set',
+      () {
+        const widgetVertices = ParticleNetwork(
+          network: NetworkFeatures(renderer: LineRenderer.vertices),
+        );
+        // ignore: deprecated_member_use_from_same_package
+        expect(widgetVertices.fastLineRendering, isTrue);
+
+        const widgetStroke = ParticleNetwork(
+          network: NetworkFeatures(renderer: LineRenderer.stroke),
+        );
+        // ignore: deprecated_member_use_from_same_package
+        expect(widgetStroke.fastLineRendering, isFalse);
+      },
+    );
+
+    testWidgets(
+      'initState logs deprecation warnings for networkFeatures, adaptiveDensity, enableAdaptivePerformance',
+      (WidgetTester tester) async {
+        LegacyDeprecationLogger.resetWarned();
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                width: 300,
+                height: 300,
+                // ignore: deprecated_member_use_from_same_package
+                child: ParticleNetwork(
+                  networkFeatures: NetworkFeatures(width: 1.5),
+                  adaptiveDensity: true,
+                  enableAdaptivePerformance: true,
                 ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      await tester.pump(const Duration(milliseconds: 16));
-
-      final state = tester.state<ParticleNetworkState>(
-        find.byType(ParticleNetwork),
-      );
-
-      expect(state.lastFrameLineCount, isA<int>());
-      expect(state.lastFrameLineCount, equals(state.painter.lastFrameLineCount));
-      expect(state.lastFrameLineDistance, isA<double>());
-      expect(state.lastFrameLineDistance, equals(state.painter.lastFrameLineDistance));
-      expect(state.effectiveMaxConnections, equals(5));
-      expect(state.effectiveMaxLines, equals(100));
-    });
+        expect(
+          LegacyDeprecationLogger.hasWarned('ParticleNetwork(networkFeatures)'),
+          isTrue,
+        );
+        expect(
+          LegacyDeprecationLogger.hasWarned('ParticleNetwork(adaptiveDensity)'),
+          isTrue,
+        );
+        expect(
+          LegacyDeprecationLogger.hasWarned(
+            'ParticleNetwork(enableAdaptivePerformance)',
+          ),
+          isTrue,
+        );
+      },
+    );
 
     testWidgets(
-        'didUpdateWidget resets to default factory when particleFactory is set to null (L503-L509)',
-        (WidgetTester tester) async {
-      final customFactory = DefaultParticleFactory(
-        random: Random(42),
-        maxSpeed: 10.0,
-        maxSize: 10.0,
-        color: Colors.blue,
-      );
+      'didUpdateWidget logs deprecation warnings for updated legacy parameters',
+      (WidgetTester tester) async {
+        LegacyDeprecationLogger.resetWarned();
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 300,
-              height: 300,
-              child: ParticleNetwork(
-                particleFactory: customFactory,
-                maxSpeed: 2.0,
-                maxSize: 3.0,
-                particleColor: Colors.white,
+        // Step 1: mount clean widget
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: SizedBox(width: 300, height: 300, child: ParticleNetwork()),
+            ),
+          ),
+        );
+
+        // Reset so we only record didUpdateWidget warnings
+        LegacyDeprecationLogger.resetWarned();
+
+        // Step 2: update with legacy parameters
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                width: 300,
+                height: 300,
+                // ignore: deprecated_member_use_from_same_package
+                child: ParticleNetwork(
+                  particleFeatures: ParticleFeatures(count: 30),
+                  hoverEffect: true,
+                  networkFeatures: NetworkFeatures(width: 1.2),
+                  maxConnectionsPerParticle: 8,
+                  adaptiveDensity: true,
+                  fastLineRendering: true,
+                  enableAdaptivePerformance: true,
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      final state = tester.state<ParticleNetworkState>(
-        find.byType(ParticleNetwork),
-      );
-      expect(state.simulation.factory, equals(customFactory));
-
-      // Update widget: remove custom factory (set to null)
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 300,
-              height: 300,
-              child: ParticleNetwork(
-                particleFactory: null,
-                maxSpeed: 4.5,
-                maxSize: 6.5,
-                particleColor: Colors.green,
-              ),
-            ),
+        expect(
+          LegacyDeprecationLogger.hasWarned(
+            'ParticleNetwork(particleFeatures)',
           ),
-        ),
-      );
-
-      // Verify that simulation factory was updated with the new parameters
-      expect(state.simulation.factory, isNot(equals(customFactory)));
-      expect(state.simulation.factory, isA<DefaultParticleFactory>());
-      final defaultFactory = state.simulation.factory as DefaultParticleFactory;
-      expect(defaultFactory.maxSpeed, equals(4.5));
-      expect(defaultFactory.maxSize, equals(6.5));
-      expect(defaultFactory.color, equals(Colors.green));
-    });
-  });
-
-  group('ParticleNetwork Compatibility Getters and Deprecation Warnings', () {
-    test('particleFeatures and networkFeatures getters return effective features', () {
-      const widget = ParticleNetwork(
-        particles: ParticleFeatures(count: 77),
-        network: NetworkFeatures(width: 2.2),
-      );
-
-      // ignore: deprecated_member_use_from_same_package
-      expect(widget.particleFeatures, equals(widget.effectiveParticleFeatures));
-      // ignore: deprecated_member_use_from_same_package
-      expect(widget.particleFeatures.count, equals(77));
-
-      // ignore: deprecated_member_use_from_same_package
-      expect(widget.networkFeatures, equals(widget.effectiveNetworkFeatures));
-      // ignore: deprecated_member_use_from_same_package
-      expect(widget.networkFeatures.width, equals(2.2));
-    });
-
-    test('fastLineRendering infers from effectiveNetworkFeatures.renderer when not explicitly set', () {
-      const widgetVertices = ParticleNetwork(
-        network: NetworkFeatures(renderer: LineRenderer.vertices),
-      );
-      // ignore: deprecated_member_use_from_same_package
-      expect(widgetVertices.fastLineRendering, isTrue);
-
-      const widgetStroke = ParticleNetwork(
-        network: NetworkFeatures(renderer: LineRenderer.stroke),
-      );
-      // ignore: deprecated_member_use_from_same_package
-      expect(widgetStroke.fastLineRendering, isFalse);
-    });
-
-    testWidgets('initState logs deprecation warnings for networkFeatures, adaptiveDensity, enableAdaptivePerformance', (
-      WidgetTester tester,
-    ) async {
-      LegacyDeprecationLogger.resetWarned();
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 300,
-              height: 300,
-              // ignore: deprecated_member_use_from_same_package
-              child: ParticleNetwork(
-                networkFeatures: NetworkFeatures(width: 1.5),
-                adaptiveDensity: true,
-                enableAdaptivePerformance: true,
-              ),
-            ),
+          isTrue,
+        );
+        expect(
+          LegacyDeprecationLogger.hasWarned('ParticleNetwork(hoverEffect)'),
+          isTrue,
+        );
+        expect(
+          LegacyDeprecationLogger.hasWarned('ParticleNetwork(networkFeatures)'),
+          isTrue,
+        );
+        expect(
+          LegacyDeprecationLogger.hasWarned(
+            'ParticleNetwork(maxConnectionsPerParticle)',
           ),
-        ),
-      );
-
-      expect(LegacyDeprecationLogger.hasWarned('ParticleNetwork(networkFeatures)'), isTrue);
-      expect(LegacyDeprecationLogger.hasWarned('ParticleNetwork(adaptiveDensity)'), isTrue);
-      expect(LegacyDeprecationLogger.hasWarned('ParticleNetwork(enableAdaptivePerformance)'), isTrue);
-    });
-
-    testWidgets('didUpdateWidget logs deprecation warnings for updated legacy parameters', (
-      WidgetTester tester,
-    ) async {
-      LegacyDeprecationLogger.resetWarned();
-
-      // Step 1: mount clean widget
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 300,
-              height: 300,
-              child: ParticleNetwork(),
-            ),
+          isTrue,
+        );
+        expect(
+          LegacyDeprecationLogger.hasWarned('ParticleNetwork(adaptiveDensity)'),
+          isTrue,
+        );
+        expect(
+          LegacyDeprecationLogger.hasWarned(
+            'ParticleNetwork(fastLineRendering, useVerticesRendering)',
           ),
-        ),
-      );
-
-      // Reset so we only record didUpdateWidget warnings
-      LegacyDeprecationLogger.resetWarned();
-
-      // Step 2: update with legacy parameters
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 300,
-              height: 300,
-              // ignore: deprecated_member_use_from_same_package
-              child: ParticleNetwork(
-                particleFeatures: ParticleFeatures(count: 30),
-                hoverEffect: true,
-                networkFeatures: NetworkFeatures(width: 1.2),
-                maxConnectionsPerParticle: 8,
-                adaptiveDensity: true,
-                fastLineRendering: true,
-                enableAdaptivePerformance: true,
-              ),
-            ),
+          isTrue,
+        );
+        expect(
+          LegacyDeprecationLogger.hasWarned(
+            'ParticleNetwork(enableAdaptivePerformance)',
           ),
-        ),
-      );
-
-      expect(LegacyDeprecationLogger.hasWarned('ParticleNetwork(particleFeatures)'), isTrue);
-      expect(LegacyDeprecationLogger.hasWarned('ParticleNetwork(hoverEffect)'), isTrue);
-      expect(LegacyDeprecationLogger.hasWarned('ParticleNetwork(networkFeatures)'), isTrue);
-      expect(LegacyDeprecationLogger.hasWarned('ParticleNetwork(maxConnectionsPerParticle)'), isTrue);
-      expect(LegacyDeprecationLogger.hasWarned('ParticleNetwork(adaptiveDensity)'), isTrue);
-      expect(LegacyDeprecationLogger.hasWarned('ParticleNetwork(fastLineRendering, useVerticesRendering)'), isTrue);
-      expect(LegacyDeprecationLogger.hasWarned('ParticleNetwork(enableAdaptivePerformance)'), isTrue);
-    });
+          isTrue,
+        );
+      },
+    );
   });
 }

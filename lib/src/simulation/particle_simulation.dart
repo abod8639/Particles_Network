@@ -49,15 +49,16 @@ class ParticleSimulation {
     double maxSize = 1.5,
     Color particleColor = const Color(0xFFFFFFFF),
     SortedSpatialGrid? spatialGrid,
-  })  : spatialGrid = spatialGrid ?? SortedSpatialGrid(),
-        factory = factory ??
-            DefaultParticleFactory(
-              random: Random(),
-              maxSpeed: maxSpeed,
-              maxSize: maxSize,
-              color: particleColor,
-            ),
-        controller = controller ?? ParticleUpdater();
+  }) : spatialGrid = spatialGrid ?? SortedSpatialGrid(),
+       factory =
+           factory ??
+           DefaultParticleFactory(
+             random: Random(),
+             maxSpeed: maxSpeed,
+             maxSize: maxSize,
+             color: particleColor,
+           ),
+       controller = controller ?? ParticleUpdater();
 
   /// Advances the simulation with zero allocations.
   ///
@@ -87,11 +88,7 @@ class ParticleSimulation {
               direction: gravityConfig.direction,
               center: gravityConfig.center ?? Offset.zero,
             );
-      c.updateParticles(
-        particles,
-        currentSize,
-        gravity: effectiveGravity,
-      );
+      c.updateParticles(particles, currentSize, gravity: effectiveGravity);
     }
   }
 
@@ -177,7 +174,7 @@ class ParticleSimulation {
     double y,
     double radius,
     void Function(int particleIndex, double px, double py, double distSq)
-        visitor,
+    visitor,
   ) {
     spatialGrid.queryRadius(x, y, radius, visitor);
   }

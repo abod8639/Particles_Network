@@ -32,8 +32,10 @@ void main(List<String> args) {
 
   for (final metric in _metrics) {
     print('\n$metric');
-    print('${'scenario'.padRight(26)}${'before'.padLeft(8)}'
-        '${'after'.padLeft(8)}${'delta'.padLeft(9)}');
+    print(
+      '${'scenario'.padRight(26)}${'before'.padLeft(8)}'
+      '${'after'.padLeft(8)}${'delta'.padLeft(9)}',
+    );
     for (final name in names) {
       final num? b = (before[name] as Map?)?[metric] as num?;
       final num? a = (after[name] as Map?)?[metric] as num?;

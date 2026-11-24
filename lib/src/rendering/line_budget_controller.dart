@@ -57,8 +57,9 @@ class LineBudgetController {
     required double cappedDistanceFactor,
     double safetyFloor = defaultSafetyFloor,
   }) {
-    final double effectiveSafetyFloor =
-        baseDistance > 0 ? math.min(baseDistance, safetyFloor) : 0.0;
+    final double effectiveSafetyFloor = baseDistance > 0
+        ? math.min(baseDistance, safetyFloor)
+        : 0.0;
 
     final double distance = computeBudgetedDistance(
       baseDistance: baseDistance,
@@ -67,7 +68,8 @@ class LineBudgetController {
       maxLinesPerFrame: maxLinesPerFrame,
     );
 
-    double activeDist = (maxConnectionsPerParticle != null &&
+    double activeDist =
+        (maxConnectionsPerParticle != null &&
             cappedDistanceFactor < 1.0 &&
             cappedDistanceFactor > 0.0)
         ? distance * cappedDistanceFactor
@@ -77,8 +79,9 @@ class LineBudgetController {
 
     // Phase 1 Item 2: Compute alphaRadius using 1.9.7 legacy floor semantics (20.0 px)
     // to preserve the authentic line fade look without harsh clipping at 4.0 px.
-    final double legacySafetyFloor =
-        baseDistance > 0 ? math.min(baseDistance, legacyAlphaFloor) : 0.0;
+    final double legacySafetyFloor = baseDistance > 0
+        ? math.min(baseDistance, legacyAlphaFloor)
+        : 0.0;
     final double alphaDist = math.max(legacySafetyFloor, activeDist);
 
     return FrameRadii(
@@ -106,7 +109,9 @@ class LineBudgetController {
     if (ratio > 0.9 && ratio < 1.1) return;
 
     _budgetCorrection =
-        (_budgetCorrection * math.pow(ratio, kBudgetCorrectionExponent))
-            .clamp(kMinBudgetCorrection, kMaxBudgetCorrection);
+        (_budgetCorrection * math.pow(ratio, kBudgetCorrectionExponent)).clamp(
+          kMinBudgetCorrection,
+          kMaxBudgetCorrection,
+        );
   }
 }

@@ -75,8 +75,9 @@ Future<Uint8List> _render(OptimizedNetworkPainter painter, Size size) async {
   final png = await image.toByteData(format: ui.ImageByteFormat.png);
   final String? dir = Platform.environment['LINE_RENDER_PNG_DIR'];
   if (dir != null && png != null) {
-    File('$dir/${painter.lineRenderer.name}_w${painter.lineWidth}.png')
-        .writeAsBytesSync(png.buffer.asUint8List());
+    File(
+      '$dir/${painter.lineRenderer.name}_w${painter.lineWidth}.png',
+    ).writeAsBytesSync(png.buffer.asUint8List());
   }
   image.dispose();
   picture.dispose();
@@ -102,8 +103,20 @@ void main() {
       // A(0,1) B(0,-1) C(10,1) D(10,-1)
       expect(batch.positions, [0, 1, 0, -1, 10, 1, 10, -1]);
       // Triangles A,B,C and C,B,D; the next quad starts at vertex 4.
-      expect(
-          LineVertexBatch.indicesFor(2), [0, 1, 2, 2, 1, 3, 4, 5, 6, 6, 5, 7]);
+      expect(LineVertexBatch.indicesFor(2), [
+        0,
+        1,
+        2,
+        2,
+        1,
+        3,
+        4,
+        5,
+        6,
+        6,
+        5,
+        7,
+      ]);
     });
 
     test('splits draws so 16-bit indices never overflow', () {
@@ -156,99 +169,94 @@ void main() {
       expect(batch.hasColors, isFalse);
     });
 
-    test('supports per-vertex and per-segment colors in addSegments and draw',
-        () {
-      final batch = LineVertexBatch();
+    test(
+      'supports per-vertex and per-segment colors in addSegments and draw',
+      () {
+        final batch = LineVertexBatch();
 
-      // 1. Single color parameter
-      batch.addSegments(
-        Float32List.fromList([0, 0, 10, 0]),
-        4,
-        1.0,
-        null,
-        0xFF112233,
-      );
-      expect(batch.hasColors, isTrue);
-      expect(batch.colors.length, 4);
-      final int c1 = 0xFF112233.toSigned(32);
-      expect(batch.colors, [c1, c1, c1, c1]);
+        // 1. Single color parameter
+        batch.addSegments(
+          Float32List.fromList([0, 0, 10, 0]),
+          4,
+          1.0,
+          null,
+          0xFF112233,
+        );
+        expect(batch.hasColors, isTrue);
+        expect(batch.colors.length, 4);
+        final int c1 = 0xFF112233.toSigned(32);
+        expect(batch.colors, [c1, c1, c1, c1]);
 
-      // 2. Per-segment color array (1 int per segment)
-      final int c2 = 0xFF445566.toSigned(32);
-      batch.addSegments(
-        Float32List.fromList([10, 0, 20, 0]),
-        4,
-        1.0,
-        Int32List.fromList([c2]),
-      );
-      expect(batch.colors.length, 8);
-      expect(batch.colors.sublist(4, 8), [c2, c2, c2, c2]);
+        // 2. Per-segment color array (1 int per segment)
+        final int c2 = 0xFF445566.toSigned(32);
+        batch.addSegments(
+          Float32List.fromList([10, 0, 20, 0]),
+          4,
+          1.0,
+          Int32List.fromList([c2]),
+        );
+        expect(batch.colors.length, 8);
+        expect(batch.colors.sublist(4, 8), [c2, c2, c2, c2]);
 
-      // 3. Per-vertex color array (4 ints per segment quad)
-      final int cv1 = 0xFFAAAAAA.toSigned(32);
-      final int cv2 = 0xFFBBBBBB.toSigned(32);
-      final int cv3 = 0xFFCCCCCC.toSigned(32);
-      final int cv4 = 0xFFDDDDDD.toSigned(32);
-      batch.addSegments(
-        Float32List.fromList([20, 0, 30, 0]),
-        4,
-        1.0,
-        Int32List.fromList([cv1, cv2, cv3, cv4]),
-      );
-      expect(batch.colors.length, 12);
-      expect(batch.colors.sublist(8, 12), [cv1, cv2, cv3, cv4]);
+        // 3. Per-vertex color array (4 ints per segment quad)
+        final int cv1 = 0xFFAAAAAA.toSigned(32);
+        final int cv2 = 0xFFBBBBBB.toSigned(32);
+        final int cv3 = 0xFFCCCCCC.toSigned(32);
+        final int cv4 = 0xFFDDDDDD.toSigned(32);
+        batch.addSegments(
+          Float32List.fromList([20, 0, 30, 0]),
+          4,
+          1.0,
+          Int32List.fromList([cv1, cv2, cv3, cv4]),
+        );
+        expect(batch.colors.length, 12);
+        expect(batch.colors.sublist(8, 12), [cv1, cv2, cv3, cv4]);
 
-      // 4. Verify draw works with vertex colors
-      final canvas = _CountingCanvas();
-      // Test drawing with canvas
-      batch.draw(canvas, Paint());
-      expect(canvas.vertexCalls, 1);
+        // 4. Verify draw works with vertex colors
+        final canvas = _CountingCanvas();
+        // Test drawing with canvas
+        batch.draw(canvas, Paint());
+        expect(canvas.vertexCalls, 1);
 
-      // 5. Clear resets hasColors
-      batch.clear();
-      expect(batch.hasColors, isFalse);
-      expect(batch.colors, isEmpty);
-    });
+        // 5. Clear resets hasColors
+        batch.clear();
+        expect(batch.hasColors, isFalse);
+        expect(batch.colors, isEmpty);
+      },
+    );
 
     test(
-        'mixed uncolored and colored segment additions safely backfill default colors',
-        () {
-      final batch = LineVertexBatch();
+      'mixed uncolored and colored segment additions safely backfill default colors',
+      () {
+        final batch = LineVertexBatch();
 
-      // 1. Add uncolored segment first
-      batch.addSegments(
-        Float32List.fromList([0, 0, 10, 0]),
-        4,
-        1.0,
-      );
-      expect(batch.hasColors, isFalse);
-      expect(batch.colors, isEmpty);
+        // 1. Add uncolored segment first
+        batch.addSegments(Float32List.fromList([0, 0, 10, 0]), 4, 1.0);
+        expect(batch.hasColors, isFalse);
+        expect(batch.colors, isEmpty);
 
-      // 2. Add colored segment second
-      final int c = 0xFF556677.toSigned(32);
-      batch.addSegments(
-        Float32List.fromList([10, 0, 20, 0]),
-        4,
-        1.0,
-        null,
-        c,
-      );
-      expect(batch.hasColors, isTrue);
-      expect(batch.colors.length, 8);
-      // Segment 0 was backfilled with opaque white, not left as transparent 0
-      final int white = 0xFFFFFFFF.toSigned(32);
-      expect(batch.colors.sublist(0, 4), [white, white, white, white]);
-      expect(batch.colors.sublist(4, 8), [c, c, c, c]);
+        // 2. Add colored segment second
+        final int c = 0xFF556677.toSigned(32);
+        batch.addSegments(
+          Float32List.fromList([10, 0, 20, 0]),
+          4,
+          1.0,
+          null,
+          c,
+        );
+        expect(batch.hasColors, isTrue);
+        expect(batch.colors.length, 8);
+        // Segment 0 was backfilled with opaque white, not left as transparent 0
+        final int white = 0xFFFFFFFF.toSigned(32);
+        expect(batch.colors.sublist(0, 4), [white, white, white, white]);
+        expect(batch.colors.sublist(4, 8), [c, c, c, c]);
 
-      // 3. Add uncolored segment after colored segments
-      batch.addSegments(
-        Float32List.fromList([20, 0, 30, 0]),
-        4,
-        1.0,
-      );
-      expect(batch.colors.length, 12);
-      expect(batch.colors.sublist(8, 12), [white, white, white, white]);
-    });
+        // 3. Add uncolored segment after colored segments
+        batch.addSegments(Float32List.fromList([20, 0, 30, 0]), 4, 1.0);
+        expect(batch.colors.length, 12);
+        expect(batch.colors.sublist(8, 12), [white, white, white, white]);
+      },
+    );
   });
 
   group('OptimizedNetworkPainter with LineRenderer.vertices', () {
@@ -304,9 +312,11 @@ void main() {
     test('renders comparable coverage to stroked lines', () async {
       final particles = _particles(400, size);
       final double stroke = _greenEnergy(
-          await _render(_painter(particles, LineRenderer.stroke), size));
+        await _render(_painter(particles, LineRenderer.stroke), size),
+      );
       final double vertices = _greenEnergy(
-          await _render(_painter(particles, LineRenderer.vertices), size));
+        await _render(_painter(particles, LineRenderer.vertices), size),
+      );
 
       expect(stroke, greaterThan(0));
       expect(vertices / stroke, inInclusiveRange(0.8, 1.25));
@@ -314,10 +324,18 @@ void main() {
 
     test('sub-pixel widths fade instead of disappearing', () async {
       final particles = _particles(400, size);
-      final double full = _greenEnergy(await _render(
-          _painter(particles, LineRenderer.vertices, lineWidth: 1.0), size));
-      final double thin = _greenEnergy(await _render(
-          _painter(particles, LineRenderer.vertices, lineWidth: 0.25), size));
+      final double full = _greenEnergy(
+        await _render(
+          _painter(particles, LineRenderer.vertices, lineWidth: 1.0),
+          size,
+        ),
+      );
+      final double thin = _greenEnergy(
+        await _render(
+          _painter(particles, LineRenderer.vertices, lineWidth: 0.25),
+          size,
+        ),
+      );
 
       // Drawn at 1 px with 25% alpha: roughly a quarter of the energy.
       expect(thin / full, inInclusiveRange(0.15, 0.4));

@@ -127,43 +127,44 @@ void main() {
     });
 
     test(
-        'findNearbyParticlesToOutput finds neighbor particles across adjacent cells',
-        () {
-      final grid = SpatialGrid(cellSize: 50.0);
-      final particles = [
-        Particle(
-          position: const Offset(45, 45),
-          velocity: Offset.zero,
-          color: const Color(0xFFFFFFFF),
-          size: 1.0,
-        ), // Cell (0, 0)
-        Particle(
-          position: const Offset(55, 45),
-          velocity: Offset.zero,
-          color: const Color(0xFFFFFFFF),
-          size: 1.0,
-        ), // Cell (1, 0)
-        Particle(
-          position: const Offset(180, 180),
-          velocity: Offset.zero,
-          color: const Color(0xFFFFFFFF),
-          size: 1.0,
-        ), // Far away
-      ];
+      'findNearbyParticlesToOutput finds neighbor particles across adjacent cells',
+      () {
+        final grid = SpatialGrid(cellSize: 50.0);
+        final particles = [
+          Particle(
+            position: const Offset(45, 45),
+            velocity: Offset.zero,
+            color: const Color(0xFFFFFFFF),
+            size: 1.0,
+          ), // Cell (0, 0)
+          Particle(
+            position: const Offset(55, 45),
+            velocity: Offset.zero,
+            color: const Color(0xFFFFFFFF),
+            size: 1.0,
+          ), // Cell (1, 0)
+          Particle(
+            position: const Offset(180, 180),
+            velocity: Offset.zero,
+            color: const Color(0xFFFFFFFF),
+            size: 1.0,
+          ), // Far away
+        ];
 
-      grid.build(particles, [0, 1, 2], 200, 200);
+        grid.build(particles, [0, 1, 2], 200, 200);
 
-      final output = <int>[];
-      // Query point at (50, 45) with radius 20 covers (0, 0) and (1, 0)
-      grid.findNearbyParticlesToOutput(50, 45, 20, output);
-      expect(output, containsAll([0, 1]));
-      expect(output, isNot(contains(2)));
+        final output = <int>[];
+        // Query point at (50, 45) with radius 20 covers (0, 0) and (1, 0)
+        grid.findNearbyParticlesToOutput(50, 45, 20, output);
+        expect(output, containsAll([0, 1]));
+        expect(output, isNot(contains(2)));
 
-      // Query with uninitialized or empty grid
-      final emptyGrid = SpatialGrid(cellSize: 50.0);
-      emptyGrid.findNearbyParticlesToOutput(50, 50, 20, output);
-      expect(output, isEmpty);
-    });
+        // Query with uninitialized or empty grid
+        final emptyGrid = SpatialGrid(cellSize: 50.0);
+        emptyGrid.findNearbyParticlesToOutput(50, 50, 20, output);
+        expect(output, isEmpty);
+      },
+    );
 
     test('clear resets grid state and buffers', () {
       final grid = SpatialGrid(cellSize: 50.0);

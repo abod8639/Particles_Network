@@ -166,11 +166,11 @@ class NetworkFeatures {
       'This parameter will be removed in particles_network 2.0.0.',
     )
     LineRenderer? lineRenderer,
-  })  : enabled = enabled ?? drawNetwork ?? true,
-        width = width ?? lineWidth ?? 0.5,
-        distance = distance ?? lineDistance ?? 100.0,
-        color = color ?? lineColor ?? const Color.fromARGB(255, 100, 255, 180),
-        renderer = renderer ?? lineRenderer ?? LineRenderer.vertices;
+  }) : enabled = enabled ?? drawNetwork ?? true,
+       width = width ?? lineWidth ?? 0.5,
+       distance = distance ?? lineDistance ?? 100.0,
+       color = color ?? lineColor ?? const Color.fromARGB(255, 100, 255, 180),
+       renderer = renderer ?? lineRenderer ?? LineRenderer.vertices;
 
   /// Creates a copy of this [NetworkFeatures] configuration with updated parameters.
   NetworkFeatures copyWith({
@@ -231,13 +231,7 @@ class NetworkFeatures {
           renderer == other.renderer;
 
   @override
-  int get hashCode => Object.hash(
-        enabled,
-        width,
-        distance,
-        color,
-        renderer,
-      );
+  int get hashCode => Object.hash(enabled, width, distance, color, renderer);
 
   @override
   String toString() =>

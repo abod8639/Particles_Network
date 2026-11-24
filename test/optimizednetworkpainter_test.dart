@@ -290,10 +290,9 @@ void main() {
 
       final central = MockParticle(position: const Offset(100, 100));
       final neighbors = List.generate(
-          10,
-          (i) => MockParticle(
-                position: Offset(100 + (i + 1) * 0.4, 100),
-              ));
+        10,
+        (i) => MockParticle(position: Offset(100 + (i + 1) * 0.4, 100)),
+      );
       final particles = [central, ...neighbors];
 
       final painter = OptimizedNetworkPainter(
@@ -589,10 +588,14 @@ void main() {
       expect(defaultPainter.particleColor, equals(Colors.purple));
       expect(defaultPainter.lineColor, equals(Colors.yellow));
       expect(defaultPainter.touchColor, equals(Colors.cyan));
-      expect(defaultPainter.particlePaint.color.toARGB32(),
-          equals(Colors.purple.toARGB32()));
-      expect(defaultPainter.linePaint.color.toARGB32(),
-          equals(Colors.yellow.toARGB32()));
+      expect(
+        defaultPainter.particlePaint.color.toARGB32(),
+        equals(Colors.purple.toARGB32()),
+      );
+      expect(
+        defaultPainter.linePaint.color.toARGB32(),
+        equals(Colors.yellow.toARGB32()),
+      );
     });
 
     testWidgets('updateLineWidth updates line width and bucket paints', (
@@ -663,27 +666,24 @@ void main() {
       expect(defaultPainter.touchPoint, equals(const Offset(40, 40)));
     });
 
-    testWidgets(
-      'updatePerformanceOptions updates options',
-      (tester) async {
-        await setUpTest(tester);
+    testWidgets('updatePerformanceOptions updates options', (tester) async {
+      await setUpTest(tester);
 
-        expect(defaultPainter.maxConnectionsPerParticle, isNull);
+      expect(defaultPainter.maxConnectionsPerParticle, isNull);
 
-        defaultPainter.updatePerformanceOptions(
-          maxConnectionsPerParticle: 4,
-          maxLinesPerFrame: 2000,
-        );
+      defaultPainter.updatePerformanceOptions(
+        maxConnectionsPerParticle: 4,
+        maxLinesPerFrame: 2000,
+      );
 
-        expect(defaultPainter.maxConnectionsPerParticle, equals(4));
-        expect(defaultPainter.maxLinesPerFrame, equals(2000));
+      expect(defaultPainter.maxConnectionsPerParticle, equals(4));
+      expect(defaultPainter.maxLinesPerFrame, equals(2000));
 
-        defaultPainter.updatePerformanceOptions(
-          clearMaxConnectionsPerParticle: true,
-        );
-        expect(defaultPainter.maxConnectionsPerParticle, isNull);
-      },
-    );
+      defaultPainter.updatePerformanceOptions(
+        clearMaxConnectionsPerParticle: true,
+      );
+      expect(defaultPainter.maxConnectionsPerParticle, isNull);
+    });
 
     testWidgets(
       'updatePerformanceOptions updates maxLinesPerFrame and resets budget correction (L1003-L1006)',
@@ -741,9 +741,9 @@ void main() {
       );
 
       batchedPainter.paint(mockCanvas, testScreenSize);
-      verify(mockCanvas.drawRawPoints(PointMode.points, any, any)).called(
-        greaterThan(0),
-      );
+      verify(
+        mockCanvas.drawRawPoints(PointMode.points, any, any),
+      ).called(greaterThan(0));
     });
 
     testWidgets('paints in stroke mode when fill is false', (tester) async {
@@ -806,85 +806,90 @@ void main() {
       );
 
       complexPainter.paint(mockCanvas, testScreenSize);
-      verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(
-        greaterThan(0),
-      );
+      verify(
+        mockCanvas.drawRawPoints(PointMode.lines, any, any),
+      ).called(greaterThan(0));
     });
 
     testWidgets(
-        'clamps particle size bucket to _maxParticleSizeBuckets - 1 (L277)', (
-      tester,
-    ) async {
-      await setUpTest(tester);
+      'clamps particle size bucket to _maxParticleSizeBuckets - 1 (L277)',
+      (tester) async {
+        await setUpTest(tester);
 
-      final particles = List.generate(
-        6,
-        (i) => MockParticle(
-          position: Offset(50.0 + i * 10, 50.0),
-          size: i == 0
-              ? 100.0
-              : 2.0, // size 100 -> bucket 200 >= 64, capped to 63
-        ),
-      );
-      final painter = OptimizedNetworkPainter(
-        drawNetwork: false,
-        fill: true,
-        isComplex: false,
-        particleCount: 6,
-        particles: particles,
-        touchPoint: null,
-        lineDistance: 100,
-        particleColor: Colors.white,
-        lineColor: Colors.grey,
-        touchColor: Colors.red,
-        touchActivation: false,
-        lineWidth: 1.0,
-      );
+        final particles = List.generate(
+          6,
+          (i) => MockParticle(
+            position: Offset(50.0 + i * 10, 50.0),
+            size: i == 0
+                ? 100.0
+                : 2.0, // size 100 -> bucket 200 >= 64, capped to 63
+          ),
+        );
+        final painter = OptimizedNetworkPainter(
+          drawNetwork: false,
+          fill: true,
+          isComplex: false,
+          particleCount: 6,
+          particles: particles,
+          touchPoint: null,
+          lineDistance: 100,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          touchColor: Colors.red,
+          touchActivation: false,
+          lineWidth: 1.0,
+        );
 
-      expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
-      verify(mockCanvas.drawRawPoints(PointMode.points, any, any)).called(
-        greaterThan(0),
-      );
-    });
+        expect(
+          () => painter.paint(mockCanvas, testScreenSize),
+          returnsNormally,
+        );
+        verify(
+          mockCanvas.drawRawPoints(PointMode.points, any, any),
+        ).called(greaterThan(0));
+      },
+    );
 
     testWidgets(
-        '_growCandidateBuffers grows buffer when candidates exceed initial capacity of 128 (L312-L321, L610)',
-        (
-      tester,
-    ) async {
-      await setUpTest(tester);
+      '_growCandidateBuffers grows buffer when candidates exceed initial capacity of 128 (L312-L321, L610)',
+      (tester) async {
+        await setUpTest(tester);
 
-      // Create 140 particles clustered within lineDistance (200)
-      // Particle 0 will have 139 candidates, exceeding the initial buffer size of 128
-      final particles = List.generate(
-        140,
-        (i) => MockParticle(
-          position: Offset(100.0 + (i % 10) * 2.0, 100.0 + (i ~/ 10) * 2.0),
-          size: 2.0,
-        ),
-      );
+        // Create 140 particles clustered within lineDistance (200)
+        // Particle 0 will have 139 candidates, exceeding the initial buffer size of 128
+        final particles = List.generate(
+          140,
+          (i) => MockParticle(
+            position: Offset(100.0 + (i % 10) * 2.0, 100.0 + (i ~/ 10) * 2.0),
+            size: 2.0,
+          ),
+        );
 
-      final painter = OptimizedNetworkPainter(
-        drawNetwork: true,
-        fill: false,
-        isComplex: true, // triggers _drawBatchedConnectionsComplex
-        particleCount: 140,
-        particles: particles,
-        touchPoint: null,
-        lineDistance: 200.0,
-        particleColor: Colors.white,
-        lineColor: Colors.grey,
-        touchColor: Colors.red,
-        touchActivation: false,
-        lineWidth: 1.0,
-        lineRenderer: LineRenderer.stroke,
-      );
+        final painter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: false,
+          isComplex: true, // triggers _drawBatchedConnectionsComplex
+          particleCount: 140,
+          particles: particles,
+          touchPoint: null,
+          lineDistance: 200.0,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          touchColor: Colors.red,
+          touchActivation: false,
+          lineWidth: 1.0,
+          lineRenderer: LineRenderer.stroke,
+        );
 
-      expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
-      verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(
-        greaterThan(0),
-      );
-    });
+        expect(
+          () => painter.paint(mockCanvas, testScreenSize),
+          returnsNormally,
+        );
+        verify(
+          mockCanvas.drawRawPoints(PointMode.lines, any, any),
+        ).called(greaterThan(0));
+      },
+    );
 
     testWidgets(
       '_drawBatchedConnectionsComplex respects maxConnectionsPerParticle when isComplex is true',
@@ -937,10 +942,8 @@ void main() {
         // With cap = 2, total lines must be <= 10.
         final particles = List.generate(
           10,
-          (i) => MockParticle(
-            position: Offset(100.0 + i * 4.0, 100.0),
-            size: 2.0,
-          ),
+          (i) =>
+              MockParticle(position: Offset(100.0 + i * 4.0, 100.0), size: 2.0),
         );
 
         final painter = OptimizedNetworkPainter(
@@ -968,402 +971,420 @@ void main() {
     );
 
     testWidgets(
-        '_growBucket expands raw line buckets in same cell during normal batched connections (L345-L350, L505)',
-        (
-      tester,
-    ) async {
-      await setUpTest(tester);
+      '_growBucket expands raw line buckets in same cell during normal batched connections (L345-L350, L505)',
+      (tester) async {
+        await setUpTest(tester);
 
-      // Initial bucket holds 2048 / 4 = 512 lines.
-      // 40 particles in the same cell produce 40 * 39 / 2 = 780 lines.
-      // All at the exact same location (distSq = 0), so all map to bucket 31.
-      final particles = List.generate(
-        40,
-        (i) => MockParticle(
-          position: const Offset(100.0, 100.0),
-          size: 2.0,
-        ),
-      );
+        // Initial bucket holds 2048 / 4 = 512 lines.
+        // 40 particles in the same cell produce 40 * 39 / 2 = 780 lines.
+        // All at the exact same location (distSq = 0), so all map to bucket 31.
+        final particles = List.generate(
+          40,
+          (i) => MockParticle(position: const Offset(100.0, 100.0), size: 2.0),
+        );
 
-      final painter = OptimizedNetworkPainter(
-        drawNetwork: true,
-        fill: false,
-        isComplex: false, // normal batched connections
-        particleCount: 40,
-        particles: particles,
-        touchPoint: null,
-        lineDistance: 100.0,
-        particleColor: Colors.white,
-        lineColor: Colors.grey,
-        touchColor: Colors.red,
-        touchActivation: false,
-        lineWidth: 1.0,
-        lineRenderer: LineRenderer.stroke,
-      );
+        final painter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: false,
+          isComplex: false, // normal batched connections
+          particleCount: 40,
+          particles: particles,
+          touchPoint: null,
+          lineDistance: 100.0,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          touchColor: Colors.red,
+          touchActivation: false,
+          lineWidth: 1.0,
+          lineRenderer: LineRenderer.stroke,
+        );
 
-      expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
-      verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(
-        greaterThan(0),
-      );
-    });
-
-    testWidgets(
-        '_growBucket expands raw line buckets in neighboring cells via _connectWithCell (L345-L350, L560)',
-        (
-      tester,
-    ) async {
-      await setUpTest(tester);
-
-      // lineDistance = 100, cellSize = 100.
-      // 25 particles in cell (0, 0) at (40, 40)
-      // 25 particles in cell (1, 0) at (110, 40) -> distance = 70 < 100
-      // Cross connections between the two cells = 25 * 25 = 625 lines > 512 lines (2048 floats)
-      final particles = <MockParticle>[
-        ...List.generate(
-          25,
-          (_) => MockParticle(position: const Offset(40.0, 40.0)),
-        ),
-        ...List.generate(
-          25,
-          (_) => MockParticle(position: const Offset(110.0, 40.0)),
-        ),
-      ];
-
-      final painter = OptimizedNetworkPainter(
-        drawNetwork: true,
-        fill: false,
-        isComplex: false,
-        particleCount: 50,
-        particles: particles,
-        touchPoint: null,
-        lineDistance: 100.0,
-        particleColor: Colors.white,
-        lineColor: Colors.grey,
-        touchColor: Colors.red,
-        touchActivation: false,
-        lineWidth: 1.0,
-        lineRenderer: LineRenderer.stroke,
-      );
-
-      expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
-      verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(
-        greaterThan(0),
-      );
-    });
+        expect(
+          () => painter.paint(mockCanvas, testScreenSize),
+          returnsNormally,
+        );
+        verify(
+          mockCanvas.drawRawPoints(PointMode.lines, any, any),
+        ).called(greaterThan(0));
+      },
+    );
 
     testWidgets(
-        '_growBucket expands raw line buckets in complex batched connections (L345-L350, L636)',
-        (
-      tester,
-    ) async {
-      await setUpTest(tester);
+      '_growBucket expands raw line buckets in neighboring cells via _connectWithCell (L345-L350, L560)',
+      (tester) async {
+        await setUpTest(tester);
 
-      // In complex batched mode with high lineDistance (800.0), denseThreshold = 800 ~/ 4 = 200.
-      // 40 particles at identical position will have candidateCount = 39 <= denseThreshold (200),
-      // so lines are not clamped to maxLines (3).
-      // Total lines = 40 * 39 / 2 = 780 lines > 512, all in the same bucket.
-      final particles = List.generate(
-        40,
-        (_) => MockParticle(position: const Offset(200.0, 200.0)),
-      );
+        // lineDistance = 100, cellSize = 100.
+        // 25 particles in cell (0, 0) at (40, 40)
+        // 25 particles in cell (1, 0) at (110, 40) -> distance = 70 < 100
+        // Cross connections between the two cells = 25 * 25 = 625 lines > 512 lines (2048 floats)
+        final particles = <MockParticle>[
+          ...List.generate(
+            25,
+            (_) => MockParticle(position: const Offset(40.0, 40.0)),
+          ),
+          ...List.generate(
+            25,
+            (_) => MockParticle(position: const Offset(110.0, 40.0)),
+          ),
+        ];
 
-      final painter = OptimizedNetworkPainter(
-        drawNetwork: true,
-        fill: false,
-        isComplex: true,
-        particleCount: 40,
-        particles: particles,
-        touchPoint: null,
-        lineDistance: 800.0,
-        particleColor: Colors.white,
-        lineColor: Colors.grey,
-        touchColor: Colors.red,
-        touchActivation: false,
-        lineWidth: 1.0,
-        lineRenderer: LineRenderer.stroke,
-      );
+        final painter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: false,
+          isComplex: false,
+          particleCount: 50,
+          particles: particles,
+          touchPoint: null,
+          lineDistance: 100.0,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          touchColor: Colors.red,
+          touchActivation: false,
+          lineWidth: 1.0,
+          lineRenderer: LineRenderer.stroke,
+        );
 
-      expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
-      verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(
-        greaterThan(0),
-      );
-    });
-
-    testWidgets(
-        '_drawFastUnifiedConnections with intra-cell and neighbor-cell buffer growth, grid neighbor traversal, and max connections capping (L395-L400, L414-L440, L494, L505, L538)',
-        (
-      tester,
-    ) async {
-      await setUpTest(tester);
-
-      // Cell size = 100 on 500x500 screen.
-      // 1) 3 particles in Cell (0, 0) to trigger intra-cell line buffer growth (L505, L395-L400)
-      // 2) Neighbor particles to trigger east, south, southEast, and southWest (L538)
-      final particles = <MockParticle>[
-        // Cell (0, 0): [0..100, 0..100]
-        MockParticle(position: const Offset(40.0, 40.0)),
-        MockParticle(position: const Offset(42.0, 40.0)),
-        MockParticle(position: const Offset(44.0, 40.0)),
-        // Cell (1, 0): [100..200, 0..100] -> east of (0,0), southWest neighbor of (1,0) is (0,1)
-        MockParticle(position: const Offset(110.0, 50.0)),
-        // Cell (0, 1): [0..100, 100..200] -> south of (0,0), southWest of (1,0) (L538)
-        MockParticle(position: const Offset(50.0, 110.0)),
-        // Cell (1, 1): [100..200, 100..200] -> southEast of (0,0)
-        MockParticle(position: const Offset(110.0, 110.0)),
-      ];
-
-      final painter = OptimizedNetworkPainter(
-        drawNetwork: true,
-        fill: false,
-        isComplex: false,
-        particleCount: particles.length,
-        particles: particles,
-        touchPoint: null,
-        lineDistance: 100.0,
-        particleColor: Colors.white,
-        lineColor: Colors.grey,
-        touchColor: Colors.red,
-        touchActivation: false,
-        lineWidth: 1.0,
-        lineRenderer: LineRenderer.stroke,
-      );
-
-      expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
-      verify(mockCanvas.drawLine(any, any, any)).called(
-        greaterThan(0),
-      );
-    });
+        expect(
+          () => painter.paint(mockCanvas, testScreenSize),
+          returnsNormally,
+        );
+        verify(
+          mockCanvas.drawRawPoints(PointMode.lines, any, any),
+        ).called(greaterThan(0));
+      },
+    );
 
     testWidgets(
-        '_drawBatchedConnectionsFast skips particles when maxConnectionsPerParticle is exceeded (L763)',
-        (
-      tester,
-    ) async {
-      await setUpTest(tester);
+      '_growBucket expands raw line buckets in complex batched connections (L345-L350, L636)',
+      (tester) async {
+        await setUpTest(tester);
 
-      // Same geometry with >= 30 particles to trigger _drawBatchedConnectionsFast:
-      // In Cell (1, 0), p_head visits p_target with count >= maxConn, triggering L763-L766.
-      final particles = <MockParticle>[
-        MockParticle(position: const Offset(20.0, 10.0)), // p0 in (0, 0)
-        MockParticle(position: const Offset(95.0, 95.0)), // p1 in (0, 0)
-        MockParticle(position: const Offset(101.0, 50.0)), // p_target in (1, 0)
-        MockParticle(position: const Offset(195.0, 50.0)), // p_head in (1, 0)
-        // 30 dummy particles far away
-        ...List.generate(
-          30,
-          (i) => MockParticle(position: Offset(400.0 + i * 2, 400.0)),
-        ),
-      ];
+        // In complex batched mode with high lineDistance (800.0), denseThreshold = 800 ~/ 4 = 200.
+        // 40 particles at identical position will have candidateCount = 39 <= denseThreshold (200),
+        // so lines are not clamped to maxLines (3).
+        // Total lines = 40 * 39 / 2 = 780 lines > 512, all in the same bucket.
+        final particles = List.generate(
+          40,
+          (_) => MockParticle(position: const Offset(200.0, 200.0)),
+        );
 
-      final painter = OptimizedNetworkPainter(
-        drawNetwork: true,
-        fill: false,
-        isComplex: false,
-        particleCount: particles.length,
-        particles: particles,
-        touchPoint: null,
-        lineDistance: 100.0,
-        particleColor: Colors.white,
-        lineColor: Colors.grey,
-        touchColor: Colors.red,
-        touchActivation: false,
-        lineWidth: 1.0,
-        maxConnectionsPerParticle: 1,
-        lineRenderer: LineRenderer.stroke,
-      );
+        final painter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: false,
+          isComplex: true,
+          particleCount: 40,
+          particles: particles,
+          touchPoint: null,
+          lineDistance: 800.0,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          touchColor: Colors.red,
+          touchActivation: false,
+          lineWidth: 1.0,
+          lineRenderer: LineRenderer.stroke,
+        );
 
-      expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
-      verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(
-        greaterThan(0),
-      );
-    });
+        expect(
+          () => painter.paint(mockCanvas, testScreenSize),
+          returnsNormally,
+        );
+        verify(
+          mockCanvas.drawRawPoints(PointMode.lines, any, any),
+        ).called(greaterThan(0));
+      },
+    );
 
     testWidgets(
-        '_drawIndividualConnections triggers candidate buffer growth and covers effectiveDistance fallback (L597, L612, L651)',
-        (
-      tester,
-    ) async {
-      await setUpTest(tester);
+      '_drawFastUnifiedConnections with intra-cell and neighbor-cell buffer growth, grid neighbor traversal, and max connections capping (L395-L400, L414-L440, L494, L505, L538)',
+      (tester) async {
+        await setUpTest(tester);
 
-      // Individual connections are used when visibleParticles.length < 30.
-      // 1) Test candidate buffer growth (L651):
-      final particles = List.generate(
-        6,
-        (i) => MockParticle(position: Offset(100.0 + i * 2.0, 100.0)),
-      );
+        // Cell size = 100 on 500x500 screen.
+        // 1) 3 particles in Cell (0, 0) to trigger intra-cell line buffer growth (L505, L395-L400)
+        // 2) Neighbor particles to trigger east, south, southEast, and southWest (L538)
+        final particles = <MockParticle>[
+          // Cell (0, 0): [0..100, 0..100]
+          MockParticle(position: const Offset(40.0, 40.0)),
+          MockParticle(position: const Offset(42.0, 40.0)),
+          MockParticle(position: const Offset(44.0, 40.0)),
+          // Cell (1, 0): [100..200, 0..100] -> east of (0,0), southWest neighbor of (1,0) is (0,1)
+          MockParticle(position: const Offset(110.0, 50.0)),
+          // Cell (0, 1): [0..100, 100..200] -> south of (0,0), southWest of (1,0) (L538)
+          MockParticle(position: const Offset(50.0, 110.0)),
+          // Cell (1, 1): [100..200, 100..200] -> southEast of (0,0)
+          MockParticle(position: const Offset(110.0, 110.0)),
+        ];
 
-      final painter = OptimizedNetworkPainter(
-        drawNetwork: true,
-        fill: false,
-        isComplex: false,
-        particleCount: particles.length,
-        particles: particles,
-        touchPoint: null,
-        lineDistance: 100.0,
-        particleColor: Colors.white,
-        lineColor: Colors.grey,
-        touchColor: Colors.red,
-        touchActivation: false,
-        lineWidth: 1.0,
-      );
+        final painter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: false,
+          isComplex: false,
+          particleCount: particles.length,
+          particles: particles,
+          touchPoint: null,
+          lineDistance: 100.0,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          touchColor: Colors.red,
+          touchActivation: false,
+          lineWidth: 1.0,
+          lineRenderer: LineRenderer.stroke,
+        );
 
-      // Force candidate buffer to be smaller than the number of neighbor candidates
-      painter.setCandidateBufferCapacityForTesting(2);
-
-      expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
-      verify(mockCanvas.drawLine(any, any, any)).called(greaterThan(0));
-
-      // 2) Also test with maxLinesPerFrame: 10 to verify effectiveDistance is non-null
-      final budgetedPainter = OptimizedNetworkPainter(
-        drawNetwork: true,
-        fill: false,
-        isComplex: false,
-        particleCount: particles.length,
-        particles: particles,
-        touchPoint: null,
-        lineDistance: 100.0,
-        particleColor: Colors.white,
-        lineColor: Colors.grey,
-        touchColor: Colors.red,
-        touchActivation: false,
-        lineWidth: 1.0,
-        maxLinesPerFrame: 10,
-      );
-
-      expect(() => budgetedPainter.paint(mockCanvas, testScreenSize),
-          returnsNormally);
-    });
+        expect(
+          () => painter.paint(mockCanvas, testScreenSize),
+          returnsNormally,
+        );
+        verify(mockCanvas.drawLine(any, any, any)).called(greaterThan(0));
+      },
+    );
 
     testWidgets(
-        '_drawBatchedConnections covers effectiveDistance fallback (L694)', (
-      tester,
-    ) async {
-      await setUpTest(tester);
+      '_drawBatchedConnectionsFast skips particles when maxConnectionsPerParticle is exceeded (L763)',
+      (tester) async {
+        await setUpTest(tester);
 
-      // Batched connections require visibleParticles.length >= 30
-      final particles = List.generate(
-        35,
-        (i) => MockParticle(
-            position: Offset(50.0 + (i % 6) * 10, 50.0 + (i ~/ 6) * 10)),
-      );
+        // Same geometry with >= 30 particles to trigger _drawBatchedConnectionsFast:
+        // In Cell (1, 0), p_head visits p_target with count >= maxConn, triggering L763-L766.
+        final particles = <MockParticle>[
+          MockParticle(position: const Offset(20.0, 10.0)), // p0 in (0, 0)
+          MockParticle(position: const Offset(95.0, 95.0)), // p1 in (0, 0)
+          MockParticle(
+            position: const Offset(101.0, 50.0),
+          ), // p_target in (1, 0)
+          MockParticle(position: const Offset(195.0, 50.0)), // p_head in (1, 0)
+          // 30 dummy particles far away
+          ...List.generate(
+            30,
+            (i) => MockParticle(position: Offset(400.0 + i * 2, 400.0)),
+          ),
+        ];
 
-      final painter = OptimizedNetworkPainter(
-        drawNetwork: true,
-        fill: false,
-        isComplex: false,
-        particleCount: particles.length,
-        particles: particles,
-        touchPoint: null,
-        lineDistance: 100.0,
-        particleColor: Colors.white,
-        lineColor: Colors.grey,
-        touchColor: Colors.red,
-        touchActivation: false,
-        lineWidth: 1.0,
-        lineRenderer: LineRenderer.stroke,
-      );
+        final painter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: false,
+          isComplex: false,
+          particleCount: particles.length,
+          particles: particles,
+          touchPoint: null,
+          lineDistance: 100.0,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          touchColor: Colors.red,
+          touchActivation: false,
+          lineWidth: 1.0,
+          maxConnectionsPerParticle: 1,
+          lineRenderer: LineRenderer.stroke,
+        );
 
-      expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
-      verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(
-        greaterThan(0),
-      );
-
-      // 2) With maxLinesPerFrame: 50 -> effectiveDistance is non-null
-      final budgetedPainter = OptimizedNetworkPainter(
-        drawNetwork: true,
-        fill: false,
-        isComplex: false,
-        particleCount: particles.length,
-        particles: particles,
-        touchPoint: null,
-        lineDistance: 100.0,
-        particleColor: Colors.white,
-        lineColor: Colors.grey,
-        touchColor: Colors.red,
-        touchActivation: false,
-        lineWidth: 1.0,
-        maxLinesPerFrame: 50,
-        lineRenderer: LineRenderer.stroke,
-      );
-
-      expect(() => budgetedPainter.paint(mockCanvas, testScreenSize),
-          returnsNormally);
-    });
+        expect(
+          () => painter.paint(mockCanvas, testScreenSize),
+          returnsNormally,
+        );
+        verify(
+          mockCanvas.drawRawPoints(PointMode.lines, any, any),
+        ).called(greaterThan(0));
+      },
+    );
 
     testWidgets(
-        'alpha distance and safety floor protect connection radius under maxLinesPerFrame',
-        (
-      tester,
-    ) async {
-      await setUpTest(tester);
+      '_drawIndividualConnections triggers candidate buffer growth and covers effectiveDistance fallback (L597, L612, L651)',
+      (tester) async {
+        await setUpTest(tester);
 
-      // Create 500 dense particles in a 100x100 space
-      final particles = List.generate(
-        500,
-        (i) => MockParticle(
-          position: Offset((i % 20) * 5.0, (i ~/ 20) * 5.0),
-        ),
-      );
+        // Individual connections are used when visibleParticles.length < 30.
+        // 1) Test candidate buffer growth (L651):
+        final particles = List.generate(
+          6,
+          (i) => MockParticle(position: Offset(100.0 + i * 2.0, 100.0)),
+        );
 
-      final painter = OptimizedNetworkPainter(
-        drawNetwork: true,
-        fill: false,
-        isComplex: false,
-        particleCount: particles.length,
-        particles: particles,
-        touchPoint: null,
-        lineDistance: 100.0,
-        particleColor: Colors.white,
-        lineColor: Colors.grey,
-        touchColor: Colors.red,
-        touchActivation: false,
-        lineWidth: 1.0,
-        maxLinesPerFrame: 50,
-        lineRenderer: LineRenderer.stroke,
-      );
+        final painter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: false,
+          isComplex: false,
+          particleCount: particles.length,
+          particles: particles,
+          touchPoint: null,
+          lineDistance: 100.0,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          touchColor: Colors.red,
+          touchActivation: false,
+          lineWidth: 1.0,
+        );
 
-      painter.paint(mockCanvas, const Size(100, 100));
+        // Force candidate buffer to be smaller than the number of neighbor candidates
+        painter.setCandidateBufferCapacityForTesting(2);
 
-      // With 500 particles in 100x100, factor would shrink distance to 0.25 * 100 = 25,
-      // and with safety floor protection it never drops below the safety floor (defaultMinSafetyLineDistance).
-      expect(
-        painter.lastFrameLineDistance,
-        greaterThanOrEqualTo(
-            OptimizedNetworkPainter.defaultMinSafetyLineDistance),
-      );
-      expect(painter.lastFrameLineDistance, lessThan(100.0));
-    });
+        expect(
+          () => painter.paint(mockCanvas, testScreenSize),
+          returnsNormally,
+        );
+        verify(mockCanvas.drawLine(any, any, any)).called(greaterThan(0));
+
+        // 2) Also test with maxLinesPerFrame: 10 to verify effectiveDistance is non-null
+        final budgetedPainter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: false,
+          isComplex: false,
+          particleCount: particles.length,
+          particles: particles,
+          touchPoint: null,
+          lineDistance: 100.0,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          touchColor: Colors.red,
+          touchActivation: false,
+          lineWidth: 1.0,
+          maxLinesPerFrame: 10,
+        );
+
+        expect(
+          () => budgetedPainter.paint(mockCanvas, testScreenSize),
+          returnsNormally,
+        );
+      },
+    );
 
     testWidgets(
-        'stepTouchPhysics pre-filters particles avoiding duplicate loop in paint',
-        (
-      tester,
-    ) async {
-      await setUpTest(tester);
+      '_drawBatchedConnections covers effectiveDistance fallback (L694)',
+      (tester) async {
+        await setUpTest(tester);
 
-      final p1 = MockParticle(position: const Offset(10, 10));
-      final p2 = MockParticle(position: const Offset(20, 20));
+        // Batched connections require visibleParticles.length >= 30
+        final particles = List.generate(
+          35,
+          (i) => MockParticle(
+            position: Offset(50.0 + (i % 6) * 10, 50.0 + (i ~/ 6) * 10),
+          ),
+        );
 
-      final painter = OptimizedNetworkPainter(
-        drawNetwork: true,
-        fill: true,
-        particleCount: 2,
-        particles: [p1, p2],
-        touchPoint: const Offset(15, 15),
-        lineDistance: 50.0,
-        particleColor: Colors.white,
-        lineColor: Colors.blue,
-        touchActivation: true,
-        lineWidth: 1.0,
-        simulateTouchInPaint: false,
-      );
+        final painter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: false,
+          isComplex: false,
+          particleCount: particles.length,
+          particles: particles,
+          touchPoint: null,
+          lineDistance: 100.0,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          touchColor: Colors.red,
+          touchActivation: false,
+          lineWidth: 1.0,
+          lineRenderer: LineRenderer.stroke,
+        );
 
-      // stepTouchPhysics populates visible particles and sets flag
-      painter.stepTouchPhysics(1.0);
+        expect(
+          () => painter.paint(mockCanvas, testScreenSize),
+          returnsNormally,
+        );
+        verify(
+          mockCanvas.drawRawPoints(PointMode.lines, any, any),
+        ).called(greaterThan(0));
 
-      // paint runs smoothly without re-filtering
-      expect(() => painter.paint(mockCanvas, testScreenSize), returnsNormally);
-    });
+        // 2) With maxLinesPerFrame: 50 -> effectiveDistance is non-null
+        final budgetedPainter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: false,
+          isComplex: false,
+          particleCount: particles.length,
+          particles: particles,
+          touchPoint: null,
+          lineDistance: 100.0,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          touchColor: Colors.red,
+          touchActivation: false,
+          lineWidth: 1.0,
+          maxLinesPerFrame: 50,
+          lineRenderer: LineRenderer.stroke,
+        );
+
+        expect(
+          () => budgetedPainter.paint(mockCanvas, testScreenSize),
+          returnsNormally,
+        );
+      },
+    );
+
+    testWidgets(
+      'alpha distance and safety floor protect connection radius under maxLinesPerFrame',
+      (tester) async {
+        await setUpTest(tester);
+
+        // Create 500 dense particles in a 100x100 space
+        final particles = List.generate(
+          500,
+          (i) =>
+              MockParticle(position: Offset((i % 20) * 5.0, (i ~/ 20) * 5.0)),
+        );
+
+        final painter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: false,
+          isComplex: false,
+          particleCount: particles.length,
+          particles: particles,
+          touchPoint: null,
+          lineDistance: 100.0,
+          particleColor: Colors.white,
+          lineColor: Colors.grey,
+          touchColor: Colors.red,
+          touchActivation: false,
+          lineWidth: 1.0,
+          maxLinesPerFrame: 50,
+          lineRenderer: LineRenderer.stroke,
+        );
+
+        painter.paint(mockCanvas, const Size(100, 100));
+
+        // With 500 particles in 100x100, factor would shrink distance to 0.25 * 100 = 25,
+        // and with safety floor protection it never drops below the safety floor (defaultMinSafetyLineDistance).
+        expect(
+          painter.lastFrameLineDistance,
+          greaterThanOrEqualTo(
+            OptimizedNetworkPainter.defaultMinSafetyLineDistance,
+          ),
+        );
+        expect(painter.lastFrameLineDistance, lessThan(100.0));
+      },
+    );
+
+    testWidgets(
+      'stepTouchPhysics pre-filters particles avoiding duplicate loop in paint',
+      (tester) async {
+        await setUpTest(tester);
+
+        final p1 = MockParticle(position: const Offset(10, 10));
+        final p2 = MockParticle(position: const Offset(20, 20));
+
+        final painter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: true,
+          particleCount: 2,
+          particles: [p1, p2],
+          touchPoint: const Offset(15, 15),
+          lineDistance: 50.0,
+          particleColor: Colors.white,
+          lineColor: Colors.blue,
+          touchActivation: true,
+          lineWidth: 1.0,
+          simulateTouchInPaint: false,
+        );
+
+        // stepTouchPhysics populates visible particles and sets flag
+        painter.stepTouchPhysics(1.0);
+
+        // paint runs smoothly without re-filtering
+        expect(
+          () => painter.paint(mockCanvas, testScreenSize),
+          returnsNormally,
+        );
+      },
+    );
 
     testWidgets(
       'cappedDistanceFactor does not artificially inflate line budget correction',
@@ -1411,15 +1432,14 @@ void main() {
       },
     );
 
-    testWidgets(
-      'lineRenderer setter updates lineRenderer on painter',
-      (tester) async {
-        await setUpTest(tester);
-        expect(defaultPainter.lineRenderer, equals(LineRenderer.stroke));
-        defaultPainter.lineRenderer = LineRenderer.vertices;
-        expect(defaultPainter.lineRenderer, equals(LineRenderer.vertices));
-      },
-    );
+    testWidgets('lineRenderer setter updates lineRenderer on painter', (
+      tester,
+    ) async {
+      await setUpTest(tester);
+      expect(defaultPainter.lineRenderer, equals(LineRenderer.stroke));
+      defaultPainter.lineRenderer = LineRenderer.vertices;
+      expect(defaultPainter.lineRenderer, equals(LineRenderer.vertices));
+    });
 
     testWidgets(
       'updatePerformance updates isComplex and antiAlias (L1110, L1113)',
@@ -1661,85 +1681,89 @@ void main() {
     });
 
     test(
-        'resolveTouchActivation resolves touchActivation or falls back to touchFeatures.enabled (L41-L42, L45-L46)',
-        () {
-      // 1. Explicit true overrides touchFeatures.enabled (false)
-      expect(
-        LegacyPainterAdapter.resolveTouchActivation(
-          touchActivation: true,
-          touchFeatures: const TouchFeatures(enabled: false),
-        ),
-        isTrue,
-      );
+      'resolveTouchActivation resolves touchActivation or falls back to touchFeatures.enabled (L41-L42, L45-L46)',
+      () {
+        // 1. Explicit true overrides touchFeatures.enabled (false)
+        expect(
+          LegacyPainterAdapter.resolveTouchActivation(
+            touchActivation: true,
+            touchFeatures: const TouchFeatures(enabled: false),
+          ),
+          isTrue,
+        );
 
-      // 2. Explicit false overrides touchFeatures.enabled (true)
-      expect(
-        LegacyPainterAdapter.resolveTouchActivation(
-          touchActivation: false,
+        // 2. Explicit false overrides touchFeatures.enabled (true)
+        expect(
+          LegacyPainterAdapter.resolveTouchActivation(
+            touchActivation: false,
+            touchFeatures: const TouchFeatures(enabled: true),
+          ),
+          isFalse,
+        );
+
+        // 3. Null falls back to touchFeatures.enabled
+        expect(
+          LegacyPainterAdapter.resolveTouchActivation(
+            touchActivation: null,
+            touchFeatures: const TouchFeatures(enabled: true),
+          ),
+          isTrue,
+        );
+        expect(
+          LegacyPainterAdapter.resolveTouchActivation(
+            touchActivation: null,
+            touchFeatures: const TouchFeatures(enabled: false),
+          ),
+          isFalse,
+        );
+      },
+    );
+
+    test(
+      'touchActivation, isComplex, maxConnectionsPerParticle setters and test helpers',
+      () {
+        final painter = OptimizedNetworkPainter(
+          particles: [MockParticle(position: const Offset(10, 10))],
+          particleCount: 1,
           touchFeatures: const TouchFeatures(enabled: true),
-        ),
-        isFalse,
-      );
+          performance: const PerformanceFeatures.balanced(),
+          drawNetwork: true,
+          fill: true,
+          lineColor: Colors.grey,
+          lineDistance: 100,
+          lineWidth: 1.0,
+          particleColor: Colors.white,
+          touchPoint: null,
+        );
 
-      // 3. Null falls back to touchFeatures.enabled
-      expect(
-        LegacyPainterAdapter.resolveTouchActivation(
-          touchActivation: null,
-          touchFeatures: const TouchFeatures(enabled: true),
-        ),
-        isTrue,
-      );
-      expect(
-        LegacyPainterAdapter.resolveTouchActivation(
-          touchActivation: null,
-          touchFeatures: const TouchFeatures(enabled: false),
-        ),
-        isFalse,
-      );
-    });
+        // touchActivation setter (L36-L37)
+        painter.touchActivation = false;
+        expect(painter.touchActivation, isFalse);
+        expect(painter.touchFeatures.enabled, isFalse);
+        painter.touchActivation = true;
+        expect(painter.touchActivation, isTrue);
+        expect(painter.touchFeatures.enabled, isTrue);
 
-    test('touchActivation, isComplex, maxConnectionsPerParticle setters and test helpers', () {
-      final painter = OptimizedNetworkPainter(
-        particles: [MockParticle(position: const Offset(10, 10))],
-        particleCount: 1,
-        touchFeatures: const TouchFeatures(enabled: true),
-        performance: const PerformanceFeatures.balanced(),
-        drawNetwork: true,
-        fill: true,
-        lineColor: Colors.grey,
-        lineDistance: 100,
-        lineWidth: 1.0,
-        particleColor: Colors.white,
-        touchPoint: null,
-      );
+        // isComplex setter (L43-L45)
+        painter.isComplex = true;
+        expect(painter.isComplex, isTrue);
+        expect(painter.performance.isComplex, isTrue);
+        painter.isComplex = false;
+        expect(painter.isComplex, isFalse);
+        expect(painter.performance.isComplex, isFalse);
 
-      // touchActivation setter (L36-L37)
-      painter.touchActivation = false;
-      expect(painter.touchActivation, isFalse);
-      expect(painter.touchFeatures.enabled, isFalse);
-      painter.touchActivation = true;
-      expect(painter.touchActivation, isTrue);
-      expect(painter.touchFeatures.enabled, isTrue);
+        // maxConnectionsPerParticle setter with int and null (L101-L106)
+        painter.maxConnectionsPerParticle = 5;
+        expect(painter.maxConnectionsPerParticle, equals(5));
+        expect(painter.performance.maxConnectionsPerParticle, equals(5));
 
-      // isComplex setter (L43-L45)
-      painter.isComplex = true;
-      expect(painter.isComplex, isTrue);
-      expect(painter.performance.isComplex, isTrue);
-      painter.isComplex = false;
-      expect(painter.isComplex, isFalse);
-      expect(painter.performance.isComplex, isFalse);
+        painter.maxConnectionsPerParticle = null;
+        expect(painter.maxConnectionsPerParticle, isNull);
+        expect(painter.performance.maxConnectionsPerParticle, isNull);
 
-      // maxConnectionsPerParticle setter with int and null (L101-L106)
-      painter.maxConnectionsPerParticle = 5;
-      expect(painter.maxConnectionsPerParticle, equals(5));
-      expect(painter.performance.maxConnectionsPerParticle, equals(5));
-
-      painter.maxConnectionsPerParticle = null;
-      expect(painter.maxConnectionsPerParticle, isNull);
-      expect(painter.performance.maxConnectionsPerParticle, isNull);
-
-      // setUnifiedLineBufferCapacityForTesting (L537-L538)
-      painter.setUnifiedLineBufferCapacityForTesting(128);
-    });
+        // setUnifiedLineBufferCapacityForTesting (L537-L538)
+        painter.setUnifiedLineBufferCapacityForTesting(128);
+      },
+    );
   });
 }

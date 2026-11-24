@@ -19,15 +19,17 @@ void main() {
     test('Draws circles when fill is false', () {
       final particles = [
         Particle(
-            position: const Offset(10, 10),
-            velocity: Offset.zero,
-            size: 2.0,
-            color: const Color(0xFFFFFFFF)),
+          position: const Offset(10, 10),
+          velocity: Offset.zero,
+          size: 2.0,
+          color: const Color(0xFFFFFFFF),
+        ),
         Particle(
-            position: const Offset(20, 20),
-            velocity: Offset.zero,
-            size: 3.0,
-            color: const Color(0xFFFFFFFF)),
+          position: const Offset(20, 20),
+          velocity: Offset.zero,
+          size: 3.0,
+          color: const Color(0xFFFFFFFF),
+        ),
       ];
 
       final paint = Paint();
@@ -45,32 +47,34 @@ void main() {
       expect(canvas.rawPointsCalls.length, equals(0));
     });
 
-    test('Batches points into size buckets when fill is true and count >= 5',
-        () {
-      final particles = List.generate(
-        10,
-        (i) => Particle(
-          position: Offset(i * 10.0, i * 10.0),
-          velocity: Offset.zero,
-          size: 2.0,
-          color: const Color(0xFFFFFFFF),
-        ),
-      );
+    test(
+      'Batches points into size buckets when fill is true and count >= 5',
+      () {
+        final particles = List.generate(
+          10,
+          (i) => Particle(
+            position: Offset(i * 10.0, i * 10.0),
+            velocity: Offset.zero,
+            size: 2.0,
+            color: const Color(0xFFFFFFFF),
+          ),
+        );
 
-      final paint = Paint();
-      renderer.draw(
-        canvas: canvas,
-        particles: particles,
-        visibleParticles: List.generate(10, (i) => i),
-        particlePaint: paint,
-        fill: true,
-        antiAlias: true,
-        particleColor: const Color(0xFFFFFFFF),
-      );
+        final paint = Paint();
+        renderer.draw(
+          canvas: canvas,
+          particles: particles,
+          visibleParticles: List.generate(10, (i) => i),
+          particlePaint: paint,
+          fill: true,
+          antiAlias: true,
+          particleColor: const Color(0xFFFFFFFF),
+        );
 
-      expect(canvas.circleCalls.length, equals(0));
-      expect(canvas.rawPointsCalls.length, greaterThan(0));
-      expect(canvas.rawPointsCalls[0].pointMode, equals(PointMode.points));
-    });
+        expect(canvas.circleCalls.length, equals(0));
+        expect(canvas.rawPointsCalls.length, greaterThan(0));
+        expect(canvas.rawPointsCalls[0].pointMode, equals(PointMode.points));
+      },
+    );
   });
 }

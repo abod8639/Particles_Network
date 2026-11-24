@@ -52,7 +52,7 @@ class SpatialGrid {
 
   /// Creates a [SpatialGrid] with the specified [cellSize].
   SpatialGrid({required this.cellSize})
-      : invCellSize = cellSize > 0 ? 1.0 / cellSize : 0.0 {
+    : invCellSize = cellSize > 0 ? 1.0 / cellSize : 0.0 {
     LegacyDeprecationLogger.warn(
       deprecatedApi: 'SpatialGrid',
       replacement: 'SortedSpatialGrid',

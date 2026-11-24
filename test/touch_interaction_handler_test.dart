@@ -52,40 +52,41 @@ void main() {
     });
 
     test(
-        'clamps velocity to maxTouchSpeed when speedSq > maxTouchSpeedSq (L113-L117)',
-        () {
-      final p = Particle(
-        position: const Offset(90, 90),
-        velocity: Offset.zero,
-        color: Colors.white,
-        size: 2,
-      );
+      'clamps velocity to maxTouchSpeed when speedSq > maxTouchSpeedSq (L113-L117)',
+      () {
+        final p = Particle(
+          position: const Offset(90, 90),
+          velocity: Offset.zero,
+          color: Colors.white,
+          size: 2,
+        );
 
-      const double maxTouchSpeed = 4.0;
-      final handler = TouchInteractionHandler(
-        particles: [p],
-        touchPoint: const Offset(100, 100),
-        lineDistance: 100.0,
-        touchColor: Colors.amber,
-        linePaint: Paint(),
-        touchFeatures: const TouchFeatures(
-          type: TouchType.pull,
-          force: 50.0, // strong force that exceeds terminal velocity
-          maxTouchSpeed: maxTouchSpeed,
-          damping: 1.0,
-        ),
-      );
+        const double maxTouchSpeed = 4.0;
+        final handler = TouchInteractionHandler(
+          particles: [p],
+          touchPoint: const Offset(100, 100),
+          lineDistance: 100.0,
+          touchColor: Colors.amber,
+          linePaint: Paint(),
+          touchFeatures: const TouchFeatures(
+            type: TouchType.pull,
+            force: 50.0, // strong force that exceeds terminal velocity
+            maxTouchSpeed: maxTouchSpeed,
+            damping: 1.0,
+          ),
+        );
 
-      final tracker = AccelerationTracker();
-      handler.applyTouchPhysics([0], tracker);
+        final tracker = AccelerationTracker();
+        handler.applyTouchPhysics([0], tracker);
 
-      // Velocity magnitude must be clamped to maxTouchSpeed
-      expect(p.velocity.distance, closeTo(maxTouchSpeed, 1e-5));
-      // Direction towards (100, 100) is 45 degrees, so vx and vy should be equal
-      expect(p.velocity.dx, closeTo(p.velocity.dy, 1e-5));
-      expect(p.velocity.dx, greaterThan(0));
-      expect(p.velocity.dy, greaterThan(0));
-    });
+        // Velocity magnitude must be clamped to maxTouchSpeed
+        expect(p.velocity.distance, closeTo(maxTouchSpeed, 1e-5));
+        // Direction towards (100, 100) is 45 degrees, so vx and vy should be equal
+        expect(p.velocity.dx, closeTo(p.velocity.dy, 1e-5));
+        expect(p.velocity.dx, greaterThan(0));
+        expect(p.velocity.dy, greaterThan(0));
+      },
+    );
 
     test('returns immediately when touchPoint is null (L83)', () {
       final p = Particle(
@@ -118,74 +119,77 @@ void main() {
     });
 
     test(
-        'applyTouchPhysicsScaled calculates damping with math.pow when timeScale != 1.0 (L93)',
-        () {
-      final p = Particle(
-        position: const Offset(100, 100),
-        velocity: Offset.zero,
-        color: Colors.white,
-        size: 2,
-      );
-
-      const double damping = 0.8;
-      const double forceValue = 1.0;
-      const double timeScale = 2.0;
-
-      final handler = TouchInteractionHandler(
-        particles: [p],
-        touchPoint: const Offset(110, 100),
-        lineDistance: 100.0,
-        touchColor: Colors.amber,
-        linePaint: Paint(),
-        touchFeatures: const TouchFeatures(
-          type: TouchType.pull,
-          force: forceValue,
-          damping: damping,
-          maxTouchSpeed: 20.0,
-        ),
-      );
-
-      final tracker = AccelerationTracker();
-      handler.applyTouchPhysicsScaled([0], tracker, timeScale);
-
-      final double expectedDamping = math.pow(damping, timeScale).toDouble();
-      final double expectedVx =
-          (10.0 * handler.force * timeScale + forceValue * 0.9 * timeScale) *
-              expectedDamping;
-
-      expect(p.wasAccelerated, isTrue);
-      expect(p.velocity.dx, closeTo(expectedVx, 1e-5));
-      expect(p.velocity.dy, closeTo(0.0, 1e-5));
-      expect(tracker.acceleratedParticleCount, equals(1));
-    });
-  });
-
-  group('TouchInteractionHandler', () {
-    test('drawTouchLines returns immediately when touchPoint is null (L136)',
-        () {
-      final mockCanvas = MockCanvas();
-      final particles = [
-        Particle(
+      'applyTouchPhysicsScaled calculates damping with math.pow when timeScale != 1.0 (L93)',
+      () {
+        final p = Particle(
           position: const Offset(100, 100),
           velocity: Offset.zero,
           color: Colors.white,
           size: 2,
-        ),
-      ];
+        );
 
-      final handler = TouchInteractionHandler(
-        particles: particles,
-        touchPoint: null, // touchPoint is null
-        lineDistance: 100.0,
-        touchColor: Colors.amber,
-        linePaint: Paint(),
-      );
+        const double damping = 0.8;
+        const double forceValue = 1.0;
+        const double timeScale = 2.0;
 
-      handler.drawTouchLines(mockCanvas, [0]);
+        final handler = TouchInteractionHandler(
+          particles: [p],
+          touchPoint: const Offset(110, 100),
+          lineDistance: 100.0,
+          touchColor: Colors.amber,
+          linePaint: Paint(),
+          touchFeatures: const TouchFeatures(
+            type: TouchType.pull,
+            force: forceValue,
+            damping: damping,
+            maxTouchSpeed: 20.0,
+          ),
+        );
 
-      // No drawing calls should be made on mockCanvas
-      verifyZeroInteractions(mockCanvas);
-    });
+        final tracker = AccelerationTracker();
+        handler.applyTouchPhysicsScaled([0], tracker, timeScale);
+
+        final double expectedDamping = math.pow(damping, timeScale).toDouble();
+        final double expectedVx =
+            (10.0 * handler.force * timeScale + forceValue * 0.9 * timeScale) *
+            expectedDamping;
+
+        expect(p.wasAccelerated, isTrue);
+        expect(p.velocity.dx, closeTo(expectedVx, 1e-5));
+        expect(p.velocity.dy, closeTo(0.0, 1e-5));
+        expect(tracker.acceleratedParticleCount, equals(1));
+      },
+    );
+  });
+
+  group('TouchInteractionHandler', () {
+    test(
+      'drawTouchLines returns immediately when touchPoint is null (L136)',
+      () {
+        final mockCanvas = MockCanvas();
+        final particles = [
+          Particle(
+            position: const Offset(100, 100),
+            velocity: Offset.zero,
+            color: Colors.white,
+            size: 2,
+          ),
+        ];
+
+        final handler = TouchInteractionHandler(
+          particles: particles,
+          touchPoint: null, // touchPoint is null
+          lineDistance: 100.0,
+          touchColor: Colors.amber,
+          linePaint: Paint(),
+        );
+
+        handler.drawTouchLines(mockCanvas, [0]);
+
+        // No drawing calls should be made on mockCanvas
+        verifyZeroInteractions(mockCanvas);
+      },
+    );
 
     testWidgets('drawTouchLines should draw lines for particles within range', (
       WidgetTester tester,
@@ -304,34 +308,36 @@ void main() {
       expect(features.damping, equals(0.95));
     });
 
-    test('applies custom TouchFeatures to particle acceleration and decayRate',
-        () {
-      final p = Particle(
-        position: const Offset(100, 100),
-        velocity: Offset.zero,
-        color: Colors.white,
-        size: 2,
-      );
-      final handler = TouchInteractionHandler(
-        particles: [p],
-        touchPoint: const Offset(110, 110),
-        lineDistance: 100.0,
-        touchColor: Colors.amber,
-        linePaint: Paint(),
-        touchFeatures: const TouchFeatures(
-          speed: 0.025,
-          force: 1.2,
-          maxTouchSpeed: 8.0,
-        ),
-      );
+    test(
+      'applies custom TouchFeatures to particle acceleration and decayRate',
+      () {
+        final p = Particle(
+          position: const Offset(100, 100),
+          velocity: Offset.zero,
+          color: Colors.white,
+          size: 2,
+        );
+        final handler = TouchInteractionHandler(
+          particles: [p],
+          touchPoint: const Offset(110, 110),
+          lineDistance: 100.0,
+          touchColor: Colors.amber,
+          linePaint: Paint(),
+          touchFeatures: const TouchFeatures(
+            speed: 0.025,
+            force: 1.2,
+            maxTouchSpeed: 8.0,
+          ),
+        );
 
-      final tracker = AccelerationTracker();
-      handler.applyTouchPhysics([0], tracker);
+        final tracker = AccelerationTracker();
+        handler.applyTouchPhysics([0], tracker);
 
-      expect(p.wasAccelerated, isTrue);
-      expect(p.decayRate, equals(0.025));
-      expect(p.velocity.distance, lessThanOrEqualTo(8.0));
-    });
+        expect(p.wasAccelerated, isTrue);
+        expect(p.decayRate, equals(0.025));
+        expect(p.velocity.distance, lessThanOrEqualTo(8.0));
+      },
+    );
 
     test('equality and hashCode work as expected', () {
       const f1 = TouchFeatures(
@@ -409,47 +415,44 @@ void main() {
       expect(str, contains('color: ${const Color(0xFF123456)}'));
     });
 
-    test('distance defaults to null and can be configured (with legacy lineDistance alias)', () {
-      const defaultFeatures = TouchFeatures();
-      expect(defaultFeatures.distance, isNull);
-      expect(defaultFeatures.lineDistance, isNull);
+    test(
+      'distance defaults to null and can be configured (with legacy lineDistance alias)',
+      () {
+        const defaultFeatures = TouchFeatures();
+        expect(defaultFeatures.distance, isNull);
+        expect(defaultFeatures.lineDistance, isNull);
 
-      const customFeatures = TouchFeatures(distance: 150.0);
-      expect(customFeatures.distance, equals(150.0));
-      expect(customFeatures.lineDistance, equals(150.0));
+        const customFeatures = TouchFeatures(distance: 150.0);
+        expect(customFeatures.distance, equals(150.0));
+        expect(customFeatures.lineDistance, equals(150.0));
 
-      const legacyFeatures = TouchFeatures(lineDistance: 175.0);
-      expect(legacyFeatures.distance, equals(175.0));
-      expect(legacyFeatures.lineDistance, equals(175.0));
-    });
+        const legacyFeatures = TouchFeatures(lineDistance: 175.0);
+        expect(legacyFeatures.distance, equals(175.0));
+        expect(legacyFeatures.lineDistance, equals(175.0));
+      },
+    );
 
-    test('maxSpeed defaults to 5.5 and can be configured (with legacy maxTouchSpeed alias)', () {
-      const defaultFeatures = TouchFeatures();
-      expect(defaultFeatures.maxSpeed, equals(5.5));
-      expect(defaultFeatures.maxTouchSpeed, equals(5.5));
+    test(
+      'maxSpeed defaults to 5.5 and can be configured (with legacy maxTouchSpeed alias)',
+      () {
+        const defaultFeatures = TouchFeatures();
+        expect(defaultFeatures.maxSpeed, equals(5.5));
+        expect(defaultFeatures.maxTouchSpeed, equals(5.5));
 
-      const customFeatures = TouchFeatures(maxSpeed: 8.5);
-      expect(customFeatures.maxSpeed, equals(8.5));
-      expect(customFeatures.maxTouchSpeed, equals(8.5));
+        const customFeatures = TouchFeatures(maxSpeed: 8.5);
+        expect(customFeatures.maxSpeed, equals(8.5));
+        expect(customFeatures.maxTouchSpeed, equals(8.5));
 
-      const legacyFeatures = TouchFeatures(maxTouchSpeed: 9.5);
-      expect(legacyFeatures.maxSpeed, equals(9.5));
-      expect(legacyFeatures.maxTouchSpeed, equals(9.5));
-    });
+        const legacyFeatures = TouchFeatures(maxTouchSpeed: 9.5);
+        expect(legacyFeatures.maxSpeed, equals(9.5));
+        expect(legacyFeatures.maxTouchSpeed, equals(9.5));
+      },
+    );
 
     test('TouchFeatures copyWith and equality work correctly', () {
-      const f1 = TouchFeatures(
-        speed: 0.5,
-        force: 0.6,
-      );
-      const f2 = TouchFeatures(
-        speed: 0.5,
-        force: 0.6,
-      );
-      const f3 = TouchFeatures(
-        speed: 0.1,
-        force: 0.2,
-      );
+      const f1 = TouchFeatures(speed: 0.5, force: 0.6);
+      const f2 = TouchFeatures(speed: 0.5, force: 0.6);
+      const f3 = TouchFeatures(speed: 0.1, force: 0.2);
 
       expect(f1, equals(f2));
       expect(f1.hashCode, equals(f2.hashCode));
@@ -509,63 +512,65 @@ void main() {
       expect(defaultFeatures.toString(), contains('show: true'));
     });
 
-    test('TouchType.push repels particles while TouchType.pull attracts them',
-        () {
-      final pPush = Particle(
-        position: const Offset(90, 100),
-        velocity: Offset.zero,
-        color: Colors.white,
-        size: 2,
-      );
-      final handlerPush = TouchInteractionHandler(
-        particles: [pPush],
-        touchPoint: const Offset(100, 100),
-        lineDistance: 50.0,
-        touchColor: Colors.amber,
-        linePaint: Paint(),
-        touchFeatures: const TouchFeatures(
-          type: TouchType.push,
-          force: 1.0,
-          speed: 0.5,
-          maxSpeed: 10.0,
-        ),
-      );
+    test(
+      'TouchType.push repels particles while TouchType.pull attracts them',
+      () {
+        final pPush = Particle(
+          position: const Offset(90, 100),
+          velocity: Offset.zero,
+          color: Colors.white,
+          size: 2,
+        );
+        final handlerPush = TouchInteractionHandler(
+          particles: [pPush],
+          touchPoint: const Offset(100, 100),
+          lineDistance: 50.0,
+          touchColor: Colors.amber,
+          linePaint: Paint(),
+          touchFeatures: const TouchFeatures(
+            type: TouchType.push,
+            force: 1.0,
+            speed: 0.5,
+            maxSpeed: 10.0,
+          ),
+        );
 
-      final tracker1 = AccelerationTracker();
-      handlerPush.applyTouchPhysics([0], tracker1);
+        final tracker1 = AccelerationTracker();
+        handlerPush.applyTouchPhysics([0], tracker1);
 
-      // Particle at (90, 100) with touch at (100, 100).
-      // Push should repel to the left (negative dx velocity).
-      expect(pPush.wasAccelerated, isTrue);
-      expect(pPush.velocity.dx, lessThan(0.0));
+        // Particle at (90, 100) with touch at (100, 100).
+        // Push should repel to the left (negative dx velocity).
+        expect(pPush.wasAccelerated, isTrue);
+        expect(pPush.velocity.dx, lessThan(0.0));
 
-      final pPull = Particle(
-        position: const Offset(90, 100),
-        velocity: Offset.zero,
-        color: Colors.white,
-        size: 2,
-      );
-      final handlerPull = TouchInteractionHandler(
-        particles: [pPull],
-        touchPoint: const Offset(100, 100),
-        lineDistance: 50.0,
-        touchColor: Colors.amber,
-        linePaint: Paint(),
-        touchFeatures: const TouchFeatures(
-          type: TouchType.pull,
-          force: 1.0,
-          speed: 0.5,
-          maxSpeed: 10.0,
-        ),
-      );
+        final pPull = Particle(
+          position: const Offset(90, 100),
+          velocity: Offset.zero,
+          color: Colors.white,
+          size: 2,
+        );
+        final handlerPull = TouchInteractionHandler(
+          particles: [pPull],
+          touchPoint: const Offset(100, 100),
+          lineDistance: 50.0,
+          touchColor: Colors.amber,
+          linePaint: Paint(),
+          touchFeatures: const TouchFeatures(
+            type: TouchType.pull,
+            force: 1.0,
+            speed: 0.5,
+            maxSpeed: 10.0,
+          ),
+        );
 
-      final tracker2 = AccelerationTracker();
-      handlerPull.applyTouchPhysics([0], tracker2);
+        final tracker2 = AccelerationTracker();
+        handlerPull.applyTouchPhysics([0], tracker2);
 
-      // Pull should attract to the right (positive dx velocity toward 100).
-      expect(pPull.wasAccelerated, isTrue);
-      expect(pPull.velocity.dx, greaterThan(0.0));
-    });
+        // Pull should attract to the right (positive dx velocity toward 100).
+        expect(pPull.wasAccelerated, isTrue);
+        expect(pPull.velocity.dx, greaterThan(0.0));
+      },
+    );
   });
 
   group('TouchInteractionHandler - O(K) Spatial Grid & Single Draw Call', () {
@@ -576,437 +581,461 @@ void main() {
     });
 
     test(
-        'drawTouchLines uses single drawRawPoints call when fastLineRendering is true and LineRenderer.stroke',
-        () {
-      final p1 = Particle(
-        position: const Offset(100, 100),
-        velocity: Offset.zero,
-        color: Colors.white,
-        size: 2,
-      );
-      final p2 = Particle(
-        position: const Offset(110, 105),
-        velocity: Offset.zero,
-        color: Colors.white,
-        size: 2,
-      );
-      final pFar = Particle(
-        position: const Offset(450, 450),
-        velocity: Offset.zero,
-        color: Colors.white,
-        size: 2,
-      );
+      'drawTouchLines uses single drawRawPoints call when fastLineRendering is true and LineRenderer.stroke',
+      () {
+        final p1 = Particle(
+          position: const Offset(100, 100),
+          velocity: Offset.zero,
+          color: Colors.white,
+          size: 2,
+        );
+        final p2 = Particle(
+          position: const Offset(110, 105),
+          velocity: Offset.zero,
+          color: Colors.white,
+          size: 2,
+        );
+        final pFar = Particle(
+          position: const Offset(450, 450),
+          velocity: Offset.zero,
+          color: Colors.white,
+          size: 2,
+        );
 
-      final particles = [p1, p2, pFar];
-      final grid = SortedSpatialGrid()
-        ..build(particles, [0, 1, 2], 500, 500, 100);
+        final particles = [p1, p2, pFar];
+        final grid = SortedSpatialGrid()
+          ..build(particles, [0, 1, 2], 500, 500, 100);
 
-      final handler = TouchInteractionHandler(
-        particles: particles,
-        touchPoint: const Offset(105, 105),
-        lineDistance: 50.0,
-        touchColor: Colors.amber,
-        linePaint: Paint()..strokeWidth = 2.0,
-        spatialGrid: grid,
-        renderer: LineRenderer.stroke,
-        fastLineRendering: true,
-      );
+        final handler = TouchInteractionHandler(
+          particles: particles,
+          touchPoint: const Offset(105, 105),
+          lineDistance: 50.0,
+          touchColor: Colors.amber,
+          linePaint: Paint()..strokeWidth = 2.0,
+          spatialGrid: grid,
+          renderer: LineRenderer.stroke,
+          fastLineRendering: true,
+        );
 
-      handler.drawTouchLines(mockCanvas, [0, 1, 2]);
+        handler.drawTouchLines(mockCanvas, [0, 1, 2]);
 
-      // Exactly 1 single draw call for all in-range lines via drawRawPoints
-      verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(1);
-      verifyNever(mockCanvas.drawLine(any, any, any));
-      verifyNever(mockCanvas.drawVertices(any, any, any));
-      expect(handler.lastLineCount, equals(2));
-    });
-
-    test(
-        'drawTouchLines uses single drawVertices call when lineRenderer is LineRenderer.vertices',
-        () {
-      final p1 = Particle(
-        position: const Offset(100, 100),
-        velocity: Offset.zero,
-        color: Colors.white,
-        size: 2,
-      );
-      final p2 = Particle(
-        position: const Offset(115, 110),
-        velocity: Offset.zero,
-        color: Colors.white,
-        size: 2,
-      );
-
-      final particles = [p1, p2];
-      final grid = SortedSpatialGrid()..build(particles, [0, 1], 500, 500, 100);
-
-      final handler = TouchInteractionHandler(
-        particles: particles,
-        touchPoint: const Offset(105, 105),
-        lineDistance: 50.0,
-        touchColor: Colors.amber,
-        linePaint: Paint()..strokeWidth = 2.0,
-        spatialGrid: grid,
-        renderer: LineRenderer.vertices,
-        fastLineRendering: true,
-      );
-
-      handler.drawTouchLines(mockCanvas, [0, 1]);
-
-      // Single drawVertices call via LineVertexBatch
-      verify(mockCanvas.drawVertices(any, any, any)).called(1);
-      verifyNever(mockCanvas.drawRawPoints(any, any, any));
-      verifyNever(mockCanvas.drawLine(any, any, any));
-      expect(handler.lastLineCount, equals(2));
-    });
+        // Exactly 1 single draw call for all in-range lines via drawRawPoints
+        verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(1);
+        verifyNever(mockCanvas.drawLine(any, any, any));
+        verifyNever(mockCanvas.drawVertices(any, any, any));
+        expect(handler.lastLineCount, equals(2));
+      },
+    );
 
     test(
-        'drawTouchLines uses individual drawLine when fastLineRendering is false',
-        () {
-      final p1 = Particle(
-        position: const Offset(100, 100),
-        velocity: Offset.zero,
-        color: Colors.white,
-        size: 2,
-      );
-      final p2 = Particle(
-        position: const Offset(110, 105),
-        velocity: Offset.zero,
-        color: Colors.white,
-        size: 2,
-      );
+      'drawTouchLines uses single drawVertices call when lineRenderer is LineRenderer.vertices',
+      () {
+        final p1 = Particle(
+          position: const Offset(100, 100),
+          velocity: Offset.zero,
+          color: Colors.white,
+          size: 2,
+        );
+        final p2 = Particle(
+          position: const Offset(115, 110),
+          velocity: Offset.zero,
+          color: Colors.white,
+          size: 2,
+        );
 
-      final particles = [p1, p2];
-      final handler = TouchInteractionHandler(
-        particles: particles,
-        touchPoint: const Offset(105, 105),
-        lineDistance: 50.0,
-        touchColor: Colors.amber,
-        linePaint: Paint(),
-        fastLineRendering: false,
-      );
+        final particles = [p1, p2];
+        final grid = SortedSpatialGrid()
+          ..build(particles, [0, 1], 500, 500, 100);
 
-      handler.drawTouchLines(mockCanvas, [0, 1]);
+        final handler = TouchInteractionHandler(
+          particles: particles,
+          touchPoint: const Offset(105, 105),
+          lineDistance: 50.0,
+          touchColor: Colors.amber,
+          linePaint: Paint()..strokeWidth = 2.0,
+          spatialGrid: grid,
+          renderer: LineRenderer.vertices,
+          fastLineRendering: true,
+        );
 
-      verify(mockCanvas.drawLine(any, any, any)).called(2);
-      verifyNever(mockCanvas.drawRawPoints(any, any, any));
-      verifyNever(mockCanvas.drawVertices(any, any, any));
-      expect(handler.lastLineCount, equals(2));
-    });
+        handler.drawTouchLines(mockCanvas, [0, 1]);
+
+        // Single drawVertices call via LineVertexBatch
+        verify(mockCanvas.drawVertices(any, any, any)).called(1);
+        verifyNever(mockCanvas.drawRawPoints(any, any, any));
+        verifyNever(mockCanvas.drawLine(any, any, any));
+        expect(handler.lastLineCount, equals(2));
+      },
+    );
 
     test(
-        'applyTouchPhysics with SortedSpatialGrid produces identical physics to direct loop',
-        () {
-      final pDirect = Particle(
-        position: const Offset(100, 100),
-        velocity: Offset.zero,
-        color: Colors.white,
-        size: 2,
-      );
-      final pGrid = Particle(
-        position: const Offset(100, 100),
-        velocity: Offset.zero,
-        color: Colors.white,
-        size: 2,
-      );
+      'drawTouchLines uses individual drawLine when fastLineRendering is false',
+      () {
+        final p1 = Particle(
+          position: const Offset(100, 100),
+          velocity: Offset.zero,
+          color: Colors.white,
+          size: 2,
+        );
+        final p2 = Particle(
+          position: const Offset(110, 105),
+          velocity: Offset.zero,
+          color: Colors.white,
+          size: 2,
+        );
 
-      final trackerDirect = AccelerationTracker();
-      final trackerGrid = AccelerationTracker();
+        final particles = [p1, p2];
+        final handler = TouchInteractionHandler(
+          particles: particles,
+          touchPoint: const Offset(105, 105),
+          lineDistance: 50.0,
+          touchColor: Colors.amber,
+          linePaint: Paint(),
+          fastLineRendering: false,
+        );
 
-      final grid = SortedSpatialGrid()..build([pGrid], [0], 500, 500, 100);
+        handler.drawTouchLines(mockCanvas, [0, 1]);
 
-      final handlerDirect = TouchInteractionHandler(
-        particles: [pDirect],
-        touchPoint: const Offset(110, 110),
-        lineDistance: 50.0,
-        touchColor: Colors.amber,
-        linePaint: Paint(),
-      );
+        verify(mockCanvas.drawLine(any, any, any)).called(2);
+        verifyNever(mockCanvas.drawRawPoints(any, any, any));
+        verifyNever(mockCanvas.drawVertices(any, any, any));
+        expect(handler.lastLineCount, equals(2));
+      },
+    );
 
-      final handlerGrid = TouchInteractionHandler(
-        particles: [pGrid],
-        touchPoint: const Offset(110, 110),
-        lineDistance: 50.0,
-        touchColor: Colors.amber,
-        linePaint: Paint(),
-        spatialGrid: grid,
-      );
+    test(
+      'applyTouchPhysics with SortedSpatialGrid produces identical physics to direct loop',
+      () {
+        final pDirect = Particle(
+          position: const Offset(100, 100),
+          velocity: Offset.zero,
+          color: Colors.white,
+          size: 2,
+        );
+        final pGrid = Particle(
+          position: const Offset(100, 100),
+          velocity: Offset.zero,
+          color: Colors.white,
+          size: 2,
+        );
 
-      handlerDirect.applyTouchPhysics([0], trackerDirect);
-      handlerGrid.applyTouchPhysics([0], trackerGrid);
+        final trackerDirect = AccelerationTracker();
+        final trackerGrid = AccelerationTracker();
 
-      expect(pGrid.vx, closeTo(pDirect.vx, 1e-6));
-      expect(pGrid.vy, closeTo(pDirect.vy, 1e-6));
-      expect(pGrid.wasAccelerated, isTrue);
-      expect(trackerGrid.acceleratedParticleCount,
-          equals(trackerDirect.acceleratedParticleCount));
-    });
+        final grid = SortedSpatialGrid()..build([pGrid], [0], 500, 500, 100);
 
-    test('drawTouchLines safely falls back when grid is null or uninitialized',
-        () {
-      final p = Particle(
-        position: const Offset(100, 100),
-        velocity: Offset.zero,
-        color: Colors.white,
-        size: 2,
-      );
+        final handlerDirect = TouchInteractionHandler(
+          particles: [pDirect],
+          touchPoint: const Offset(110, 110),
+          lineDistance: 50.0,
+          touchColor: Colors.amber,
+          linePaint: Paint(),
+        );
 
-      final uninitializedGrid = SortedSpatialGrid(); // cols = 0, rows = 0
+        final handlerGrid = TouchInteractionHandler(
+          particles: [pGrid],
+          touchPoint: const Offset(110, 110),
+          lineDistance: 50.0,
+          touchColor: Colors.amber,
+          linePaint: Paint(),
+          spatialGrid: grid,
+        );
 
-      final handler = TouchInteractionHandler(
-        particles: [p],
-        touchPoint: const Offset(105, 105),
-        lineDistance: 50.0,
-        touchColor: Colors.amber,
-        linePaint: Paint(),
-        spatialGrid: uninitializedGrid,
-        fastLineRendering: true,
-      );
+        handlerDirect.applyTouchPhysics([0], trackerDirect);
+        handlerGrid.applyTouchPhysics([0], trackerGrid);
 
-      handler.drawTouchLines(mockCanvas, [0]);
+        expect(pGrid.vx, closeTo(pDirect.vx, 1e-6));
+        expect(pGrid.vy, closeTo(pDirect.vy, 1e-6));
+        expect(pGrid.wasAccelerated, isTrue);
+        expect(
+          trackerGrid.acceleratedParticleCount,
+          equals(trackerDirect.acceleratedParticleCount),
+        );
+      },
+    );
 
-      // Should fall back to direct loop and still draw lines
-      verify(mockCanvas.drawVertices(any, any, any)).called(1);
-      expect(handler.lastLineCount, equals(1));
-    });
+    test(
+      'drawTouchLines safely falls back when grid is null or uninitialized',
+      () {
+        final p = Particle(
+          position: const Offset(100, 100),
+          velocity: Offset.zero,
+          color: Colors.white,
+          size: 2,
+        );
 
-    test('TouchInteractionHandler show property and drawTouchLines suppression', () {
-      final p = Particle(
-        position: const Offset(100, 100),
-        velocity: Offset.zero,
-        color: Colors.white,
-        size: 2,
-      );
-      final handler = TouchInteractionHandler(
-        particles: [p],
-        touchPoint: const Offset(105, 105),
-        lineDistance: 50.0,
-        touchColor: Colors.amber,
-        linePaint: Paint(),
-      );
+        final uninitializedGrid = SortedSpatialGrid(); // cols = 0, rows = 0
 
-      // Default show is true
-      expect(handler.show, isTrue);
-      expect(handler.touchFeatures.show, isTrue);
+        final handler = TouchInteractionHandler(
+          particles: [p],
+          touchPoint: const Offset(105, 105),
+          lineDistance: 50.0,
+          touchColor: Colors.amber,
+          linePaint: Paint(),
+          spatialGrid: uninitializedGrid,
+          fastLineRendering: true,
+        );
 
-      // Explicitly setting show = false suppresses line drawing
-      handler.show = false;
-      expect(handler.show, isFalse);
-      expect(handler.touchFeatures.show, isFalse);
+        handler.drawTouchLines(mockCanvas, [0]);
 
-      handler.drawTouchLines(mockCanvas, [0]);
-      expect(handler.lastLineCount, equals(0));
-      verifyZeroInteractions(mockCanvas);
+        // Should fall back to direct loop and still draw lines
+        verify(mockCanvas.drawVertices(any, any, any)).called(1);
+        expect(handler.lastLineCount, equals(1));
+      },
+    );
 
-      // When show is toggled back to true, lines are drawn
-      handler.show = true;
-      expect(handler.show, isTrue);
-      handler.drawTouchLines(mockCanvas, [0]);
-      expect(handler.lastLineCount, equals(1));
-      verify(mockCanvas.drawVertices(any, any, any)).called(1);
+    test(
+      'TouchInteractionHandler show property and drawTouchLines suppression',
+      () {
+        final p = Particle(
+          position: const Offset(100, 100),
+          velocity: Offset.zero,
+          color: Colors.white,
+          size: 2,
+        );
+        final handler = TouchInteractionHandler(
+          particles: [p],
+          touchPoint: const Offset(105, 105),
+          lineDistance: 50.0,
+          touchColor: Colors.amber,
+          linePaint: Paint(),
+        );
 
-      // When initialized with touchFeatures: TouchFeatures(show: false)
-      final handlerHidden = TouchInteractionHandler(
-        particles: [p],
-        touchPoint: const Offset(105, 105),
-        lineDistance: 50.0,
-        touchColor: Colors.amber,
-        linePaint: Paint(),
-        touchFeatures: const TouchFeatures(show: false),
-      );
-      expect(handlerHidden.show, isFalse);
-      expect(handlerHidden.touchFeatures.show, isFalse);
-      final mockCanvas2 = MockCanvas();
-      handlerHidden.drawTouchLines(mockCanvas2, [0]);
-      expect(handlerHidden.lastLineCount, equals(0));
-      verifyZeroInteractions(mockCanvas2);
+        // Default show is true
+        expect(handler.show, isTrue);
+        expect(handler.touchFeatures.show, isTrue);
 
-      // When initialized with touchFeatures: TouchFeatures(show: false)
-      final handlerFromFeatures = TouchInteractionHandler(
-        particles: [p],
-        touchPoint: const Offset(105, 105),
-        lineDistance: 50.0,
-        touchColor: Colors.amber,
-        linePaint: Paint(),
-        touchFeatures: const TouchFeatures(show: false),
-      );
-      expect(handlerFromFeatures.show, isFalse);
+        // Explicitly setting show = false suppresses line drawing
+        handler.show = false;
+        expect(handler.show, isFalse);
+        expect(handler.touchFeatures.show, isFalse);
 
-      // Even when show is false, touch physics still functions and accelerates particles
-      final tracker = AccelerationTracker();
-      handlerFromFeatures.applyTouchPhysics([0], tracker);
-      expect(p.wasAccelerated, isTrue);
-      expect(tracker.acceleratedParticleCount, greaterThan(0));
-    });
+        handler.drawTouchLines(mockCanvas, [0]);
+        expect(handler.lastLineCount, equals(0));
+        verifyZeroInteractions(mockCanvas);
 
-    test('OptimizedNetworkPainter show property propagates to TouchFeatures and suppresses touch lines', () {
-      final p = Particle(
-        position: const Offset(100, 100),
-        velocity: Offset.zero,
-        color: Colors.white,
-        size: 2,
-      );
-      final painter = OptimizedNetworkPainter(
-        particles: [p],
-        particleCount: 1,
-        touchPoint: const Offset(105, 105),
-        lineDistance: 50.0,
-        particleColor: Colors.white,
-        lineColor: Colors.white,
-        lineWidth: 1.0,
-        fill: true,
-        drawNetwork: true,
-        touchFeatures: const TouchFeatures(show: true),
-        simulateTouchInPaint: false,
-      );
+        // When show is toggled back to true, lines are drawn
+        handler.show = true;
+        expect(handler.show, isTrue);
+        handler.drawTouchLines(mockCanvas, [0]);
+        expect(handler.lastLineCount, equals(1));
+        verify(mockCanvas.drawVertices(any, any, any)).called(1);
 
-      expect(painter.show, isTrue);
-      expect(painter.touchHandler.show, isTrue);
+        // When initialized with touchFeatures: TouchFeatures(show: false)
+        final handlerHidden = TouchInteractionHandler(
+          particles: [p],
+          touchPoint: const Offset(105, 105),
+          lineDistance: 50.0,
+          touchColor: Colors.amber,
+          linePaint: Paint(),
+          touchFeatures: const TouchFeatures(show: false),
+        );
+        expect(handlerHidden.show, isFalse);
+        expect(handlerHidden.touchFeatures.show, isFalse);
+        final mockCanvas2 = MockCanvas();
+        handlerHidden.drawTouchLines(mockCanvas2, [0]);
+        expect(handlerHidden.lastLineCount, equals(0));
+        verifyZeroInteractions(mockCanvas2);
 
-      // Toggle painter.show
-      painter.show = false;
-      expect(painter.show, isFalse);
-      expect(painter.touchFeatures.show, isFalse);
-      expect(painter.touchHandler.show, isFalse);
+        // When initialized with touchFeatures: TouchFeatures(show: false)
+        final handlerFromFeatures = TouchInteractionHandler(
+          particles: [p],
+          touchPoint: const Offset(105, 105),
+          lineDistance: 50.0,
+          touchColor: Colors.amber,
+          linePaint: Paint(),
+          touchFeatures: const TouchFeatures(show: false),
+        );
+        expect(handlerFromFeatures.show, isFalse);
 
-      final recorder = PictureRecorder();
-      final canvas = Canvas(recorder);
-      painter.paint(canvas, const Size(200, 200));
-      recorder.endRecording().dispose();
+        // Even when show is false, touch physics still functions and accelerates particles
+        final tracker = AccelerationTracker();
+        handlerFromFeatures.applyTouchPhysics([0], tracker);
+        expect(p.wasAccelerated, isTrue);
+        expect(tracker.acceleratedParticleCount, greaterThan(0));
+      },
+    );
 
-      expect(painter.touchHandler.lastLineCount, equals(0));
-    });
+    test(
+      'OptimizedNetworkPainter show property propagates to TouchFeatures and suppresses touch lines',
+      () {
+        final p = Particle(
+          position: const Offset(100, 100),
+          velocity: Offset.zero,
+          color: Colors.white,
+          size: 2,
+        );
+        final painter = OptimizedNetworkPainter(
+          particles: [p],
+          particleCount: 1,
+          touchPoint: const Offset(105, 105),
+          lineDistance: 50.0,
+          particleColor: Colors.white,
+          lineColor: Colors.white,
+          lineWidth: 1.0,
+          fill: true,
+          drawNetwork: true,
+          touchFeatures: const TouchFeatures(show: true),
+          simulateTouchInPaint: false,
+        );
 
-    test('TouchInteractionHandler.drawTouchLines supports per-call show override', () {
-      final p = Particle(
-        position: const Offset(100, 100),
-        velocity: Offset.zero,
-        color: Colors.white,
-        size: 2,
-      );
-      final handler = TouchInteractionHandler(
-        particles: [p],
-        touchPoint: const Offset(105, 105),
-        lineDistance: 50.0,
-        touchColor: Colors.amber,
-        linePaint: Paint(),
-      );
+        expect(painter.show, isTrue);
+        expect(painter.touchHandler.show, isTrue);
 
-      // Handler show is true by default
-      expect(handler.show, isTrue);
+        // Toggle painter.show
+        painter.show = false;
+        expect(painter.show, isFalse);
+        expect(painter.touchFeatures.show, isFalse);
+        expect(painter.touchHandler.show, isFalse);
 
-      // Override with show: false suppresses lines
-      final mockCanvas1 = MockCanvas();
-      handler.drawTouchLines(mockCanvas1, [0], show: false);
-      expect(handler.lastLineCount, equals(0));
-      verifyZeroInteractions(mockCanvas1);
+        final recorder = PictureRecorder();
+        final canvas = Canvas(recorder);
+        painter.paint(canvas, const Size(200, 200));
+        recorder.endRecording().dispose();
 
-      // Set handler show to false
-      handler.show = false;
-      expect(handler.show, isFalse);
+        expect(painter.touchHandler.lastLineCount, equals(0));
+      },
+    );
 
-      // Default call without override produces 0 lines
-      final mockCanvas2 = MockCanvas();
-      handler.drawTouchLines(mockCanvas2, [0]);
-      expect(handler.lastLineCount, equals(0));
-      verifyZeroInteractions(mockCanvas2);
+    test(
+      'TouchInteractionHandler.drawTouchLines supports per-call show override',
+      () {
+        final p = Particle(
+          position: const Offset(100, 100),
+          velocity: Offset.zero,
+          color: Colors.white,
+          size: 2,
+        );
+        final handler = TouchInteractionHandler(
+          particles: [p],
+          touchPoint: const Offset(105, 105),
+          lineDistance: 50.0,
+          touchColor: Colors.amber,
+          linePaint: Paint(),
+        );
 
-      // Override with show: true forces lines to be rendered
-      final mockCanvas3 = MockCanvas();
-      handler.drawTouchLines(mockCanvas3, [0], show: true);
-      expect(handler.lastLineCount, equals(1));
-      verify(mockCanvas3.drawVertices(any, any, any)).called(1);
-    });
+        // Handler show is true by default
+        expect(handler.show, isTrue);
 
-    test('OptimizedNetworkPainter touchFeatures.show and updateTouchFeatures', () {
-      final p = Particle(
-        position: const Offset(100, 100),
-        velocity: Offset.zero,
-        color: Colors.white,
-        size: 2,
-      );
-      final painter = OptimizedNetworkPainter(
-        particles: [p],
-        particleCount: 1,
-        touchPoint: const Offset(105, 105),
-        lineDistance: 50.0,
-        particleColor: Colors.white,
-        lineColor: Colors.white,
-        lineWidth: 1.0,
-        fill: true,
-        drawNetwork: true,
-        touchFeatures: const TouchFeatures(show: false),
-        simulateTouchInPaint: false,
-      );
+        // Override with show: false suppresses lines
+        final mockCanvas1 = MockCanvas();
+        handler.drawTouchLines(mockCanvas1, [0], show: false);
+        expect(handler.lastLineCount, equals(0));
+        verifyZeroInteractions(mockCanvas1);
 
-      // Initialized via TouchFeatures(show: false)
-      expect(painter.show, isFalse);
-      expect(painter.touchFeatures.show, isFalse);
-      expect(painter.touchHandler.show, isFalse);
+        // Set handler show to false
+        handler.show = false;
+        expect(handler.show, isFalse);
 
-      // Update via updateTouchFeatures
-      painter.updateTouchFeatures(const TouchFeatures(show: true));
-      expect(painter.show, isTrue);
-      expect(painter.touchFeatures.show, isTrue);
-      expect(painter.touchHandler.show, isTrue);
+        // Default call without override produces 0 lines
+        final mockCanvas2 = MockCanvas();
+        handler.drawTouchLines(mockCanvas2, [0]);
+        expect(handler.lastLineCount, equals(0));
+        verifyZeroInteractions(mockCanvas2);
 
-      // Create oldDelegate to verify shouldRepaint detection
-      final painter2 = OptimizedNetworkPainter(
-        particles: [p],
-        particleCount: 1,
-        touchPoint: const Offset(105, 105),
-        lineDistance: 50.0,
-        particleColor: Colors.white,
-        lineColor: Colors.white,
-        lineWidth: 1.0,
-        fill: true,
-        drawNetwork: true,
-        touchFeatures: const TouchFeatures(show: false),
-        simulateTouchInPaint: false,
-      );
+        // Override with show: true forces lines to be rendered
+        final mockCanvas3 = MockCanvas();
+        handler.drawTouchLines(mockCanvas3, [0], show: true);
+        expect(handler.lastLineCount, equals(1));
+        verify(mockCanvas3.drawVertices(any, any, any)).called(1);
+      },
+    );
 
-      expect(painter.shouldRepaint(painter2), isTrue);
-    });
+    test(
+      'OptimizedNetworkPainter touchFeatures.show and updateTouchFeatures',
+      () {
+        final p = Particle(
+          position: const Offset(100, 100),
+          velocity: Offset.zero,
+          color: Colors.white,
+          size: 2,
+        );
+        final painter = OptimizedNetworkPainter(
+          particles: [p],
+          particleCount: 1,
+          touchPoint: const Offset(105, 105),
+          lineDistance: 50.0,
+          particleColor: Colors.white,
+          lineColor: Colors.white,
+          lineWidth: 1.0,
+          fill: true,
+          drawNetwork: true,
+          touchFeatures: const TouchFeatures(show: false),
+          simulateTouchInPaint: false,
+        );
 
-    test('OptimizedNetworkPainter skips spatial grid build when drawNetwork: false, show: false, simulateTouchInPaint: false', () {
-      final p = Particle(
-        position: const Offset(100, 100),
-        velocity: Offset.zero,
-        color: Colors.white,
-        size: 2,
-      );
-      final painter = OptimizedNetworkPainter(
-        particles: [p],
-        particleCount: 1,
-        touchPoint: const Offset(105, 105),
-        lineDistance: 50.0,
-        particleColor: Colors.white,
-        lineColor: Colors.white,
-        lineWidth: 1.0,
-        fill: true,
-        drawNetwork: false,
-        touchFeatures: const TouchFeatures(show: false),
-        simulateTouchInPaint: false,
-      );
+        // Initialized via TouchFeatures(show: false)
+        expect(painter.show, isFalse);
+        expect(painter.touchFeatures.show, isFalse);
+        expect(painter.touchHandler.show, isFalse);
 
-      final recorder = PictureRecorder();
-      final canvas = Canvas(recorder);
-      painter.paint(canvas, const Size(200, 200));
-      recorder.endRecording().dispose();
+        // Update via updateTouchFeatures
+        painter.updateTouchFeatures(const TouchFeatures(show: true));
+        expect(painter.show, isTrue);
+        expect(painter.touchFeatures.show, isTrue);
+        expect(painter.touchHandler.show, isTrue);
 
-      // Grid was not built because lines and simulation are both off
-      expect(painter.spatialGrid.isInitialized, isFalse);
+        // Create oldDelegate to verify shouldRepaint detection
+        final painter2 = OptimizedNetworkPainter(
+          particles: [p],
+          particleCount: 1,
+          touchPoint: const Offset(105, 105),
+          lineDistance: 50.0,
+          particleColor: Colors.white,
+          lineColor: Colors.white,
+          lineWidth: 1.0,
+          fill: true,
+          drawNetwork: true,
+          touchFeatures: const TouchFeatures(show: false),
+          simulateTouchInPaint: false,
+        );
 
-      // Turn show back on
-      painter.show = true;
-      final recorder2 = PictureRecorder();
-      final canvas2 = Canvas(recorder2);
-      painter.paint(canvas2, const Size(200, 200));
-      recorder2.endRecording().dispose();
+        expect(painter.shouldRepaint(painter2), isTrue);
+      },
+    );
 
-      // Grid is built now because show is true and touch is active
-      expect(painter.spatialGrid.isInitialized, isTrue);
-    });
+    test(
+      'OptimizedNetworkPainter skips spatial grid build when drawNetwork: false, show: false, simulateTouchInPaint: false',
+      () {
+        final p = Particle(
+          position: const Offset(100, 100),
+          velocity: Offset.zero,
+          color: Colors.white,
+          size: 2,
+        );
+        final painter = OptimizedNetworkPainter(
+          particles: [p],
+          particleCount: 1,
+          touchPoint: const Offset(105, 105),
+          lineDistance: 50.0,
+          particleColor: Colors.white,
+          lineColor: Colors.white,
+          lineWidth: 1.0,
+          fill: true,
+          drawNetwork: false,
+          touchFeatures: const TouchFeatures(show: false),
+          simulateTouchInPaint: false,
+        );
+
+        final recorder = PictureRecorder();
+        final canvas = Canvas(recorder);
+        painter.paint(canvas, const Size(200, 200));
+        recorder.endRecording().dispose();
+
+        // Grid was not built because lines and simulation are both off
+        expect(painter.spatialGrid.isInitialized, isFalse);
+
+        // Turn show back on
+        painter.show = true;
+        final recorder2 = PictureRecorder();
+        final canvas2 = Canvas(recorder2);
+        painter.paint(canvas2, const Size(200, 200));
+        recorder2.endRecording().dispose();
+
+        // Grid is built now because show is true and touch is active
+        expect(painter.spatialGrid.isInitialized, isTrue);
+      },
+    );
 
     test('handles out of bounds touch coordinates gracefully', () {
       final p = Particle(
@@ -1036,120 +1065,122 @@ void main() {
       expect(p.wasAccelerated, isFalse);
     });
 
-    test('buffer expands smoothly when line count exceeds initial capacity',
-        () {
-      // 80 particles in range to exceed initial 64 capacity
-      final particles = List.generate(
-        80,
-        (i) => Particle(
-          position: Offset(100.0 + (i % 5), 100.0 + (i ~/ 5)),
+    test(
+      'buffer expands smoothly when line count exceeds initial capacity',
+      () {
+        // 80 particles in range to exceed initial 64 capacity
+        final particles = List.generate(
+          80,
+          (i) => Particle(
+            position: Offset(100.0 + (i % 5), 100.0 + (i ~/ 5)),
+            velocity: Offset.zero,
+            color: Colors.white,
+            size: 2,
+          ),
+        );
+
+        final visible = List.generate(80, (i) => i);
+        final grid = SortedSpatialGrid()
+          ..build(particles, visible, 500, 500, 100);
+
+        final handler = TouchInteractionHandler(
+          particles: particles,
+          touchPoint: const Offset(100, 100),
+          lineDistance: 50.0,
+          touchColor: Colors.amber,
+          linePaint: Paint(),
+          spatialGrid: grid,
+          fastLineRendering: true,
+        );
+
+        expect(
+          () => handler.drawTouchLines(mockCanvas, visible),
+          returnsNormally,
+        );
+        verify(mockCanvas.drawVertices(any, any, any)).called(1);
+        expect(handler.lastLineCount, equals(80));
+      },
+    );
+
+    test(
+      'OptimizedNetworkPainter propagates performance and touch settings to handler',
+      () {
+        final p = Particle(
+          position: const Offset(100, 100),
           velocity: Offset.zero,
           color: Colors.white,
           size: 2,
-        ),
-      );
+        );
 
-      final visible = List.generate(80, (i) => i);
-      final grid = SortedSpatialGrid()
-        ..build(particles, visible, 500, 500, 100);
+        final painter = OptimizedNetworkPainter(
+          drawNetwork: true,
+          fill: true,
+          particleCount: 1,
+          particles: [p],
+          touchPoint: const Offset(105, 105),
+          lineDistance: 50.0,
+          particleColor: Colors.white,
+          lineColor: Colors.blue,
+          touchActivation: true,
+          lineWidth: 1.0,
+          lineRenderer: LineRenderer.vertices,
+        );
 
-      final handler = TouchInteractionHandler(
-        particles: particles,
-        touchPoint: const Offset(100, 100),
-        lineDistance: 50.0,
-        touchColor: Colors.amber,
-        linePaint: Paint(),
-        spatialGrid: grid,
-        fastLineRendering: true,
-      );
+        // With LineRenderer.vertices, painter uses drawVertices for touch
+        painter.paint(mockCanvas, const Size(500, 500));
+        verify(mockCanvas.drawVertices(any, any, any)).called(greaterThan(0));
 
-      expect(
-          () => handler.drawTouchLines(mockCanvas, visible), returnsNormally);
-      verify(mockCanvas.drawVertices(any, any, any)).called(1);
-      expect(handler.lastLineCount, equals(80));
-    });
+        // updatePerformanceOptions updates handler
+        painter.updatePerformanceOptions(lineRenderer: LineRenderer.stroke);
+        reset(mockCanvas);
 
-    test(
-        'OptimizedNetworkPainter propagates performance and touch settings to handler',
-        () {
-      final p = Particle(
-        position: const Offset(100, 100),
-        velocity: Offset.zero,
-        color: Colors.white,
-        size: 2,
-      );
+        // Now with fastLineRendering: false and < 30 particles, it draws via drawLine
+        painter.paint(mockCanvas, const Size(500, 500));
+        verify(mockCanvas.drawLine(any, any, any)).called(greaterThan(0));
 
-      final painter = OptimizedNetworkPainter(
-        drawNetwork: true,
-        fill: true,
-        particleCount: 1,
-        particles: [p],
-        touchPoint: const Offset(105, 105),
-        lineDistance: 50.0,
-        particleColor: Colors.white,
-        lineColor: Colors.blue,
-        touchActivation: true,
-        lineWidth: 1.0,
-        lineRenderer: LineRenderer.vertices,
-      );
+        // updateTouchFeatures updates handler features
+        painter.updateTouchFeatures(const TouchFeatures(enabled: true));
+        reset(mockCanvas);
 
-      // With LineRenderer.vertices, painter uses drawVertices for touch
-      painter.paint(mockCanvas, const Size(500, 500));
-      verify(mockCanvas.drawVertices(any, any, any)).called(greaterThan(0));
-
-      // updatePerformanceOptions updates handler
-      painter.updatePerformanceOptions(
-        lineRenderer: LineRenderer.stroke,
-      );
-      reset(mockCanvas);
-
-      // Now with fastLineRendering: false and < 30 particles, it draws via drawLine
-      painter.paint(mockCanvas, const Size(500, 500));
-      verify(mockCanvas.drawLine(any, any, any)).called(greaterThan(0));
-
-      // updateTouchFeatures updates handler features
-      painter.updateTouchFeatures(const TouchFeatures(
-        enabled: true,
-      ));
-      reset(mockCanvas);
-
-      painter.paint(mockCanvas, const Size(500, 500));
-      verify(mockCanvas.drawLine(any, any, any)).called(greaterThan(0));
-    });
+        painter.paint(mockCanvas, const Size(500, 500));
+        verify(mockCanvas.drawLine(any, any, any)).called(greaterThan(0));
+      },
+    );
 
     test(
-        'handles non-finite touch coordinates (NaN / Infinity) without crashing',
-        () {
-      final p = Particle(
-        position: const Offset(100, 100),
-        velocity: Offset.zero,
-        color: Colors.white,
-        size: 2,
-      );
+      'handles non-finite touch coordinates (NaN / Infinity) without crashing',
+      () {
+        final p = Particle(
+          position: const Offset(100, 100),
+          velocity: Offset.zero,
+          color: Colors.white,
+          size: 2,
+        );
 
-      final grid = SortedSpatialGrid()..build([p], [0], 500, 500, 100);
+        final grid = SortedSpatialGrid()..build([p], [0], 500, 500, 100);
 
-      final handler = TouchInteractionHandler(
-        particles: [p],
-        touchPoint: const Offset(double.nan, double.nan),
-        lineDistance: 50.0,
-        touchColor: Colors.amber,
-        linePaint: Paint(),
-        spatialGrid: grid,
-      );
+        final handler = TouchInteractionHandler(
+          particles: [p],
+          touchPoint: const Offset(double.nan, double.nan),
+          lineDistance: 50.0,
+          touchColor: Colors.amber,
+          linePaint: Paint(),
+          spatialGrid: grid,
+        );
 
-      expect(() => handler.drawTouchLines(mockCanvas, [0]), returnsNormally);
-      expect(handler.lastLineCount, equals(0));
+        expect(() => handler.drawTouchLines(mockCanvas, [0]), returnsNormally);
+        expect(handler.lastLineCount, equals(0));
 
-      final tracker = AccelerationTracker();
-      expect(() => handler.applyTouchPhysics([0], tracker), returnsNormally);
-      expect(p.wasAccelerated, isFalse);
+        final tracker = AccelerationTracker();
+        expect(() => handler.applyTouchPhysics([0], tracker), returnsNormally);
+        expect(p.wasAccelerated, isFalse);
 
-      handler.touchPoint = const Offset(double.infinity, 100);
-      expect(() => handler.drawTouchLines(mockCanvas, [0]), returnsNormally);
-      expect(handler.lastLineCount, equals(0));
-      expect(() => handler.applyTouchPhysics([0], tracker), returnsNormally);
-    });
+        handler.touchPoint = const Offset(double.infinity, 100);
+        expect(() => handler.drawTouchLines(mockCanvas, [0]), returnsNormally);
+        expect(handler.lastLineCount, equals(0));
+        expect(() => handler.applyTouchPhysics([0], tracker), returnsNormally);
+      },
+    );
 
     test('rejection of near-boundary negative coordinates via floor check', () {
       final p = Particle(
@@ -1241,163 +1272,177 @@ void main() {
 
       // index 99 is out of bounds for a list of 1 particle
       expect(
-          () => handler.drawTouchLines(mockCanvas, [0, 99]), returnsNormally);
+        () => handler.drawTouchLines(mockCanvas, [0, 99]),
+        returnsNormally,
+      );
       expect(handler.lastLineCount, equals(1));
 
       final tracker = AccelerationTracker();
       expect(
-          () => handler.applyTouchPhysics([0, 99], tracker), returnsNormally);
+        () => handler.applyTouchPhysics([0, 99], tracker),
+        returnsNormally,
+      );
       expect(p.wasAccelerated, isTrue);
     });
 
     test(
-        'OptimizedNetworkPainter defaults to LineRenderer.vertices for touch lines',
-        () {
-      final p = Particle(
-        position: const Offset(100, 100),
-        velocity: Offset.zero,
-        color: Colors.white,
-        size: 2,
-      );
+      'OptimizedNetworkPainter defaults to LineRenderer.vertices for touch lines',
+      () {
+        final p = Particle(
+          position: const Offset(100, 100),
+          velocity: Offset.zero,
+          color: Colors.white,
+          size: 2,
+        );
 
-      final painter = OptimizedNetworkPainter(
-        drawNetwork: false,
-        fill: true,
-        particleCount: 1,
-        particles: [p],
-        touchPoint: const Offset(105, 105),
-        lineDistance: 50.0,
-        particleColor: Colors.white,
-        lineColor: Colors.blue,
-        touchActivation: true,
-        lineWidth: 1.0,
-        lineRenderer: LineRenderer.stroke, // painter default
-        touchFeatures: const TouchFeatures(),
-      );
+        final painter = OptimizedNetworkPainter(
+          drawNetwork: false,
+          fill: true,
+          particleCount: 1,
+          particles: [p],
+          touchPoint: const Offset(105, 105),
+          lineDistance: 50.0,
+          particleColor: Colors.white,
+          lineColor: Colors.blue,
+          touchActivation: true,
+          lineWidth: 1.0,
+          lineRenderer: LineRenderer.stroke, // painter default
+          touchFeatures: const TouchFeatures(),
+        );
 
-      painter.paint(mockCanvas, const Size(500, 500));
-      // Should draw vertices because touch handler defaults to LineRenderer.vertices
-      verify(mockCanvas.drawVertices(any, any, any)).called(1);
-    });
+        painter.paint(mockCanvas, const Size(500, 500));
+        // Should draw vertices because touch handler defaults to LineRenderer.vertices
+        verify(mockCanvas.drawVertices(any, any, any)).called(1);
+      },
+    );
 
-    group('Edge cases and line buffer expansion (L185-L188, L259-L260, L265-L266, L329-L330)', () {
-      test(
+    group(
+      'Edge cases and line buffer expansion (L185-L188, L259-L260, L265-L266, L329-L330)',
+      () {
+        test(
           'clamps velocity to maxTouchSpeed when speedSq > maxTouchSpeedSq with active grid (L185-L188)',
           () {
-        final p = Particle(
-          position: const Offset(90, 90),
-          velocity: Offset.zero,
-          color: Colors.white,
-          size: 2,
+            final p = Particle(
+              position: const Offset(90, 90),
+              velocity: Offset.zero,
+              color: Colors.white,
+              size: 2,
+            );
+            const double maxTouchSpeed = 4.0;
+            final grid = SortedSpatialGrid()..build([p], [0], 500, 500, 100);
+
+            final handler = TouchInteractionHandler(
+              particles: [p],
+              touchPoint: const Offset(100, 100),
+              lineDistance: 100.0,
+              touchColor: Colors.amber,
+              linePaint: Paint(),
+              spatialGrid: grid,
+              touchFeatures: const TouchFeatures(
+                type: TouchType.pull,
+                force: 50.0,
+                maxTouchSpeed: maxTouchSpeed,
+                damping: 1.0,
+              ),
+            );
+
+            final tracker = AccelerationTracker();
+            handler.applyTouchPhysics([0], tracker);
+
+            expect(p.velocity.distance, closeTo(maxTouchSpeed, 1e-5));
+            expect(p.velocity.dx, greaterThan(0));
+            expect(p.velocity.dy, greaterThan(0));
+          },
         );
-        const double maxTouchSpeed = 4.0;
-        final grid = SortedSpatialGrid()..build([p], [0], 500, 500, 100);
 
-        final handler = TouchInteractionHandler(
-          particles: [p],
-          touchPoint: const Offset(100, 100),
-          lineDistance: 100.0,
-          touchColor: Colors.amber,
-          linePaint: Paint(),
-          spatialGrid: grid,
-          touchFeatures: const TouchFeatures(
-            type: TouchType.pull,
-            force: 50.0,
-            maxTouchSpeed: maxTouchSpeed,
-            damping: 1.0,
-          ),
-        );
-
-        final tracker = AccelerationTracker();
-        handler.applyTouchPhysics([0], tracker);
-
-        expect(p.velocity.distance, closeTo(maxTouchSpeed, 1e-5));
-        expect(p.velocity.dx, greaterThan(0));
-        expect(p.velocity.dy, greaterThan(0));
-      });
-
-      test(
+        test(
           'drawTouchLines returns early when visibleParticles is empty (L259-L260)',
           () {
-        final p = Particle(
-          position: const Offset(100, 100),
-          velocity: Offset.zero,
-          color: Colors.white,
-          size: 2,
+            final p = Particle(
+              position: const Offset(100, 100),
+              velocity: Offset.zero,
+              color: Colors.white,
+              size: 2,
+            );
+            final handler = TouchInteractionHandler(
+              particles: [p],
+              touchPoint: const Offset(105, 105),
+              lineDistance: 50.0,
+              touchColor: Colors.amber,
+              linePaint: Paint(),
+            );
+            handler.drawTouchLines(mockCanvas, []);
+            expect(handler.lastLineCount, equals(0));
+            verifyZeroInteractions(mockCanvas);
+          },
         );
-        final handler = TouchInteractionHandler(
-          particles: [p],
-          touchPoint: const Offset(105, 105),
-          lineDistance: 50.0,
-          touchColor: Colors.amber,
-          linePaint: Paint(),
-        );
-        handler.drawTouchLines(mockCanvas, []);
-        expect(handler.lastLineCount, equals(0));
-        verifyZeroInteractions(mockCanvas);
-      });
 
-      test(
+        test(
           'drawTouchLines returns early when lineDistance is <= 0 or not finite (L265-L266)',
           () {
-        final p = Particle(
-          position: const Offset(100, 100),
-          velocity: Offset.zero,
-          color: Colors.white,
-          size: 2,
-        );
-        final handlerZero = TouchInteractionHandler(
-          particles: [p],
-          touchPoint: const Offset(105, 105),
-          lineDistance: 0.0,
-          touchColor: Colors.amber,
-          linePaint: Paint(),
-        );
-        handlerZero.drawTouchLines(mockCanvas, [0]);
-        expect(handlerZero.lastLineCount, equals(0));
+            final p = Particle(
+              position: const Offset(100, 100),
+              velocity: Offset.zero,
+              color: Colors.white,
+              size: 2,
+            );
+            final handlerZero = TouchInteractionHandler(
+              particles: [p],
+              touchPoint: const Offset(105, 105),
+              lineDistance: 0.0,
+              touchColor: Colors.amber,
+              linePaint: Paint(),
+            );
+            handlerZero.drawTouchLines(mockCanvas, [0]);
+            expect(handlerZero.lastLineCount, equals(0));
 
-        final handlerInf = TouchInteractionHandler(
-          particles: [p],
-          touchPoint: const Offset(105, 105),
-          lineDistance: double.infinity,
-          touchColor: Colors.amber,
-          linePaint: Paint(),
+            final handlerInf = TouchInteractionHandler(
+              particles: [p],
+              touchPoint: const Offset(105, 105),
+              lineDistance: double.infinity,
+              touchColor: Colors.amber,
+              linePaint: Paint(),
+            );
+            handlerInf.drawTouchLines(mockCanvas, [0]);
+            expect(handlerInf.lastLineCount, equals(0));
+            verifyZeroInteractions(mockCanvas);
+          },
         );
-        handlerInf.drawTouchLines(mockCanvas, [0]);
-        expect(handlerInf.lastLineCount, equals(0));
-        verifyZeroInteractions(mockCanvas);
-      });
 
-      test(
+        test(
           'drawTouchLines expands line buffer in fallback loop when line count exceeds initial capacity (L329-L330)',
           () {
-        final particles = List.generate(
-          70,
-          (i) => Particle(
-            position: Offset(100.0 + (i * 0.1), 100.0 + (i * 0.1)),
-            velocity: Offset.zero,
-            color: Colors.white,
-            size: 2,
-          ),
-        );
-        final visible = List.generate(70, (i) => i);
+            final particles = List.generate(
+              70,
+              (i) => Particle(
+                position: Offset(100.0 + (i * 0.1), 100.0 + (i * 0.1)),
+                velocity: Offset.zero,
+                color: Colors.white,
+                size: 2,
+              ),
+            );
+            final visible = List.generate(70, (i) => i);
 
-        final handler = TouchInteractionHandler(
-          particles: particles,
-          touchPoint: const Offset(100, 100),
-          lineDistance: 50.0,
-          touchColor: Colors.amber,
-          linePaint: Paint(),
-          spatialGrid: null,
-          fastLineRendering: true,
-          renderer: LineRenderer.stroke,
-        );
+            final handler = TouchInteractionHandler(
+              particles: particles,
+              touchPoint: const Offset(100, 100),
+              lineDistance: 50.0,
+              touchColor: Colors.amber,
+              linePaint: Paint(),
+              spatialGrid: null,
+              fastLineRendering: true,
+              renderer: LineRenderer.stroke,
+            );
 
-        handler.drawTouchLines(mockCanvas, visible);
-        expect(handler.lastLineCount, equals(70));
-        verify(mockCanvas.drawRawPoints(PointMode.lines, any, any)).called(1);
-      });
-    });
+            handler.drawTouchLines(mockCanvas, visible);
+            expect(handler.lastLineCount, equals(70));
+            verify(
+              mockCanvas.drawRawPoints(PointMode.lines, any, any),
+            ).called(1);
+          },
+        );
+      },
+    );
   });
 }
 

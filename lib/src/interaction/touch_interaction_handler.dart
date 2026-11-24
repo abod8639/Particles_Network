@@ -22,15 +22,14 @@ class TouchInteractionHandler {
   double lineDistance;
 
   /// Effective distance for touch interactions
-  double get effectiveLineDistance =>
-      touchFeatures.distance ?? lineDistance;
+  double get effectiveLineDistance => touchFeatures.distance ?? lineDistance;
 
   /// Whether touch lines connecting the pointer and nearby particles are rendered.
   ///
   /// When `true`, lines are drawn between the touch pointer and nearby particles.
   /// When `false`, touch line rendering is bypassed while touch physics remain active.
   ///
-  /// Defaults to `true` (controlled by [touchFeatures.show]).
+  /// Defaults to `true` (controlled by [TouchFeatures.show]).
   bool get show => touchFeatures.show;
   set show(bool value) {
     touchFeatures = touchFeatures.copyWith(show: value);
@@ -81,9 +80,10 @@ class TouchInteractionHandler {
     this.spatialGrid,
     LineRenderer? renderer,
     bool? fastLineRendering,
-  })  : _touchColor = touchColor,
-        renderer = renderer ?? LineRenderer.vertices,
-        fastLineRendering = fastLineRendering ?? true;
+    // ignore: prefer_initializing_formals
+  }) : _touchColor = touchColor,
+       renderer = renderer ?? LineRenderer.vertices,
+       fastLineRendering = fastLineRendering ?? true;
 
   // Test variable (kept for API compatibility)
   final int test = 0;
@@ -166,7 +166,8 @@ class TouchInteractionHandler {
     final double dirSign = touchFeatures.type == TouchType.push ? -1.0 : 1.0;
 
     final SortedSpatialGrid? activeGrid = grid ?? spatialGrid;
-    final bool useGrid = activeGrid != null &&
+    final bool useGrid =
+        activeGrid != null &&
         activeGrid.isInitialized &&
         activeGrid.count == visibleParticles.length;
 
@@ -294,7 +295,8 @@ class TouchInteractionHandler {
     int totalAlpha = 0;
 
     final SortedSpatialGrid? activeGrid = grid ?? spatialGrid;
-    final bool useGrid = activeGrid != null &&
+    final bool useGrid =
+        activeGrid != null &&
         activeGrid.isInitialized &&
         activeGrid.count == visibleParticles.length;
 

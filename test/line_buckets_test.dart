@@ -62,8 +62,10 @@ void main() {
       );
 
       final strokeCanvas = RecordingCanvas();
-      final strokeLines =
-          buckets.renderStroke(strokeCanvas, palette.lineBucketPaints);
+      final strokeLines = buckets.renderStroke(
+        strokeCanvas,
+        palette.lineBucketPaints,
+      );
       expect(strokeLines, equals(1));
       expect(strokeCanvas.rawPointsCalls.length, equals(1));
 

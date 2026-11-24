@@ -38,11 +38,7 @@ class CircleCall {
   final double radius;
   final Color color;
 
-  CircleCall({
-    required this.center,
-    required this.radius,
-    required this.color,
-  });
+  CircleCall({required this.center, required this.radius, required this.color});
 }
 
 class RecordingCanvas implements Canvas {
@@ -60,31 +56,31 @@ class RecordingCanvas implements Canvas {
 
   @override
   void drawRawPoints(PointMode pointMode, Float32List points, Paint paint) {
-    rawPointsCalls.add(RawPointsCall(
-      pointMode: pointMode,
-      points: Float32List.fromList(points),
-      color: paint.color,
-      strokeWidth: paint.strokeWidth,
-    ));
+    rawPointsCalls.add(
+      RawPointsCall(
+        pointMode: pointMode,
+        points: Float32List.fromList(points),
+        color: paint.color,
+        strokeWidth: paint.strokeWidth,
+      ),
+    );
   }
 
   @override
   void drawLine(Offset p1, Offset p2, Paint paint) {
-    lineCalls.add(LineCall(
-      p1: p1,
-      p2: p2,
-      color: paint.color,
-      strokeWidth: paint.strokeWidth,
-    ));
+    lineCalls.add(
+      LineCall(
+        p1: p1,
+        p2: p2,
+        color: paint.color,
+        strokeWidth: paint.strokeWidth,
+      ),
+    );
   }
 
   @override
   void drawCircle(Offset c, double radius, Paint paint) {
-    circleCalls.add(CircleCall(
-      center: c,
-      radius: radius,
-      color: paint.color,
-    ));
+    circleCalls.add(CircleCall(center: c, radius: radius, color: paint.color));
   }
 
   @override
@@ -143,117 +139,121 @@ void main() {
       expect(canvas.rawPointsCalls.length, greaterThan(0)); // particle points
     });
 
-    test('Batched stroke path (N = 100) uncapped records exact bucket points',
-        () {
-      final particles = _generateFixedParticles(100, 42, size);
-      final canvas = RecordingCanvas();
+    test(
+      'Batched stroke path (N = 100) uncapped records exact bucket points',
+      () {
+        final particles = _generateFixedParticles(100, 42, size);
+        final canvas = RecordingCanvas();
 
-      final painter = OptimizedNetworkPainter(
-        particles: particles,
-        particleCount: particles.length,
-        touchPoint: null,
-        lineDistance: 100.0,
-        particleColor: const Color(0xFFFFFFFF),
-        lineColor: const Color(0x80FFFFFF),
-        lineWidth: 1.0,
-        fill: true,
-        drawNetwork: true,
-        lineRenderer: LineRenderer.stroke,
-      );
+        final painter = OptimizedNetworkPainter(
+          particles: particles,
+          particleCount: particles.length,
+          touchPoint: null,
+          lineDistance: 100.0,
+          particleColor: const Color(0xFFFFFFFF),
+          lineColor: const Color(0x80FFFFFF),
+          lineWidth: 1.0,
+          fill: true,
+          drawNetwork: true,
+          lineRenderer: LineRenderer.stroke,
+        );
 
-      painter.paint(canvas, size);
+        painter.paint(canvas, size);
 
-      final lineCalls = canvas.rawPointsCalls
-          .where((call) => call.pointMode == PointMode.lines)
-          .toList();
+        final lineCalls = canvas.rawPointsCalls
+            .where((call) => call.pointMode == PointMode.lines)
+            .toList();
 
-      int totalSegments = 0;
-      for (final call in lineCalls) {
-        totalSegments += call.points.length ~/ 4;
-      }
+        int totalSegments = 0;
+        for (final call in lineCalls) {
+          totalSegments += call.points.length ~/ 4;
+        }
 
-      expect(totalSegments, equals(painter.lastFrameLineCount));
-      expect(painter.lastFrameLineCount, equals(399));
-    });
-
-    test('Batched vertices path (N = 100) records exact drawVertices calls',
-        () {
-      final particles = _generateFixedParticles(100, 42, size);
-      final canvas = RecordingCanvas();
-
-      final painter = OptimizedNetworkPainter(
-        particles: particles,
-        particleCount: particles.length,
-        touchPoint: null,
-        lineDistance: 100.0,
-        particleColor: const Color(0xFFFFFFFF),
-        lineColor: const Color(0x80FFFFFF),
-        lineWidth: 1.0,
-        fill: true,
-        drawNetwork: true,
-        lineRenderer: LineRenderer.vertices,
-      );
-
-      painter.paint(canvas, size);
-
-      expect(canvas.verticesCallCount, equals(1));
-      expect(painter.lastFrameLineCount, equals(399));
-    });
+        expect(totalSegments, equals(painter.lastFrameLineCount));
+        expect(painter.lastFrameLineCount, equals(399));
+      },
+    );
 
     test(
-        'Capped maxConnectionsPerParticle path reduces line count deterministically',
-        () {
-      final particles = _generateFixedParticles(100, 42, size);
-      final canvas = RecordingCanvas();
+      'Batched vertices path (N = 100) records exact drawVertices calls',
+      () {
+        final particles = _generateFixedParticles(100, 42, size);
+        final canvas = RecordingCanvas();
 
-      final painter = OptimizedNetworkPainter(
-        particles: particles,
-        particleCount: particles.length,
-        touchPoint: null,
-        lineDistance: 100.0,
-        particleColor: const Color(0xFFFFFFFF),
-        lineColor: const Color(0x80FFFFFF),
-        lineWidth: 1.0,
-        fill: true,
-        drawNetwork: true,
-        lineRenderer: LineRenderer.stroke,
-        performance: const PerformanceFeatures(
-          maxConnectionsPerParticle: 3,
-        ),
-      );
+        final painter = OptimizedNetworkPainter(
+          particles: particles,
+          particleCount: particles.length,
+          touchPoint: null,
+          lineDistance: 100.0,
+          particleColor: const Color(0xFFFFFFFF),
+          lineColor: const Color(0x80FFFFFF),
+          lineWidth: 1.0,
+          fill: true,
+          drawNetwork: true,
+          lineRenderer: LineRenderer.vertices,
+        );
 
-      painter.paint(canvas, size);
+        painter.paint(canvas, size);
 
-      expect(painter.lastFrameLineCount, lessThan(399));
-      expect(painter.lastFrameLineCount, equals(130));
-    });
+        expect(canvas.verticesCallCount, equals(1));
+        expect(painter.lastFrameLineCount, equals(399));
+      },
+    );
 
     test(
-        'Complex throttling path reduces dense cluster lines deterministically',
-        () {
-      final particles = _generateFixedParticles(100, 42, size);
-      final canvas = RecordingCanvas();
+      'Capped maxConnectionsPerParticle path reduces line count deterministically',
+      () {
+        final particles = _generateFixedParticles(100, 42, size);
+        final canvas = RecordingCanvas();
 
-      final painter = OptimizedNetworkPainter(
-        particles: particles,
-        particleCount: particles.length,
-        touchPoint: null,
-        lineDistance: 150.0,
-        particleColor: const Color(0xFFFFFFFF),
-        lineColor: const Color(0x80FFFFFF),
-        lineWidth: 1.0,
-        fill: true,
-        drawNetwork: true,
-        lineRenderer: LineRenderer.stroke,
-        performance: const PerformanceFeatures(
-          complex: ComplexConfig(enabled: true),
-        ),
-      );
+        final painter = OptimizedNetworkPainter(
+          particles: particles,
+          particleCount: particles.length,
+          touchPoint: null,
+          lineDistance: 100.0,
+          particleColor: const Color(0xFFFFFFFF),
+          lineColor: const Color(0x80FFFFFF),
+          lineWidth: 1.0,
+          fill: true,
+          drawNetwork: true,
+          lineRenderer: LineRenderer.stroke,
+          performance: const PerformanceFeatures(maxConnectionsPerParticle: 3),
+        );
 
-      painter.paint(canvas, size);
+        painter.paint(canvas, size);
 
-      expect(painter.lastFrameLineCount, equals(812));
-    });
+        expect(painter.lastFrameLineCount, lessThan(399));
+        expect(painter.lastFrameLineCount, equals(130));
+      },
+    );
+
+    test(
+      'Complex throttling path reduces dense cluster lines deterministically',
+      () {
+        final particles = _generateFixedParticles(100, 42, size);
+        final canvas = RecordingCanvas();
+
+        final painter = OptimizedNetworkPainter(
+          particles: particles,
+          particleCount: particles.length,
+          touchPoint: null,
+          lineDistance: 150.0,
+          particleColor: const Color(0xFFFFFFFF),
+          lineColor: const Color(0x80FFFFFF),
+          lineWidth: 1.0,
+          fill: true,
+          drawNetwork: true,
+          lineRenderer: LineRenderer.stroke,
+          performance: const PerformanceFeatures(
+            complex: ComplexConfig(enabled: true),
+          ),
+        );
+
+        painter.paint(canvas, size);
+
+        expect(painter.lastFrameLineCount, equals(812));
+      },
+    );
 
     test('Budgeted line distance automatically adjusts radius', () {
       final particles = _generateFixedParticles(200, 42, size);
@@ -270,9 +270,7 @@ void main() {
         fill: true,
         drawNetwork: true,
         lineRenderer: LineRenderer.stroke,
-        performance: const PerformanceFeatures(
-          maxLinesPerFrame: 50,
-        ),
+        performance: const PerformanceFeatures(maxLinesPerFrame: 50),
       );
 
       // Frame 1
@@ -346,9 +344,7 @@ void main() {
         fill: true,
         drawNetwork: true,
         lineRenderer: LineRenderer.stroke,
-        performance: const PerformanceFeatures(
-          maxConnectionsPerParticle: 4,
-        ),
+        performance: const PerformanceFeatures(maxConnectionsPerParticle: 4),
       );
 
       // Warmup frame 1: initializes/sizes buffers
@@ -368,12 +364,21 @@ void main() {
         painter.paint(canvas, size);
 
         // Verify identical buffer references (no reallocation)
-        expect(identical(grid.xs, xsIdentity), isTrue,
-            reason: 'grid.xs reallocated on frame $f');
-        expect(identical(grid.ys, ysIdentity), isTrue,
-            reason: 'grid.ys reallocated on frame $f');
-        expect(identical(grid.cellStart, cellStartIdentity), isTrue,
-            reason: 'grid.cellStart reallocated on frame $f');
+        expect(
+          identical(grid.xs, xsIdentity),
+          isTrue,
+          reason: 'grid.xs reallocated on frame $f',
+        );
+        expect(
+          identical(grid.ys, ysIdentity),
+          isTrue,
+          reason: 'grid.ys reallocated on frame $f',
+        );
+        expect(
+          identical(grid.cellStart, cellStartIdentity),
+          isTrue,
+          reason: 'grid.cellStart reallocated on frame $f',
+        );
 
         // Verify buffer capacities remain unchanged
         expect(grid.xs.length, equals(xsLength));

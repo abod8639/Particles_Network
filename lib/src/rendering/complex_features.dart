@@ -65,18 +65,15 @@ class ComplexConfig {
     this.ratio,
     this.maxLines,
     this.densityFactor,
-  })  : assert(
-          ratio == null || (ratio >= 0.0 && ratio <= 1.0),
-          'ratio must be between 0.0 and 1.0',
-        ),
-        assert(
-          maxLines == null || maxLines > 0,
-          'maxLines must be positive',
-        ),
-        assert(
-          densityFactor == null || densityFactor > 0.0,
-          'densityFactor must be positive',
-        );
+  }) : assert(
+         ratio == null || (ratio >= 0.0 && ratio <= 1.0),
+         'ratio must be between 0.0 and 1.0',
+       ),
+       assert(maxLines == null || maxLines > 0, 'maxLines must be positive'),
+       assert(
+         densityFactor == null || densityFactor > 0.0,
+         'densityFactor must be positive',
+       );
 
   /// Preconfigured auto-tuning constructor for high-density clustering.
   ///
@@ -88,26 +85,23 @@ class ComplexConfig {
     this.ratio,
     this.maxLines = 3,
     this.densityFactor = 0.60,
-  })  : enabled = true,
-        assert(
-          ratio == null || (ratio >= 0.0 && ratio <= 1.0),
-          'ratio must be between 0.0 and 1.0',
-        ),
-        assert(
-          maxLines == null || maxLines > 0,
-          'maxLines must be positive',
-        ),
-        assert(
-          densityFactor == null || densityFactor > 0.0,
-          'densityFactor must be positive',
-        );
+  }) : enabled = true,
+       assert(
+         ratio == null || (ratio >= 0.0 && ratio <= 1.0),
+         'ratio must be between 0.0 and 1.0',
+       ),
+       assert(maxLines == null || maxLines > 0, 'maxLines must be positive'),
+       assert(
+         densityFactor == null || densityFactor > 0.0,
+         'densityFactor must be positive',
+       );
 
   /// Disabled preset with all parameters cleared.
   const ComplexConfig.disabled()
-      : enabled = false,
-        ratio = null,
-        maxLines = null,
-        densityFactor = null;
+    : enabled = false,
+      ratio = null,
+      maxLines = null,
+      densityFactor = null;
 
   /// Creates a copy of this [ComplexConfig] with updated parameters.
   ComplexConfig copyWith({
@@ -123,7 +117,9 @@ class ComplexConfig {
       enabled: enabled ?? this.enabled,
       ratio: clearRatio ? null : (ratio ?? this.ratio),
       maxLines: clearMaxLines ? null : (maxLines ?? this.maxLines),
-      densityFactor: clearDensityFactor ? null : (densityFactor ?? this.densityFactor),
+      densityFactor: clearDensityFactor
+          ? null
+          : (densityFactor ?? this.densityFactor),
     );
   }
 
@@ -138,12 +134,7 @@ class ComplexConfig {
           densityFactor == other.densityFactor;
 
   @override
-  int get hashCode => Object.hash(
-        enabled,
-        ratio,
-        maxLines,
-        densityFactor,
-      );
+  int get hashCode => Object.hash(enabled, ratio, maxLines, densityFactor);
 
   @override
   String toString() =>
@@ -153,4 +144,3 @@ class ComplexConfig {
 
 /// Compatibility alias for [ComplexConfig].
 typedef ComplexFeatures = ComplexConfig;
-

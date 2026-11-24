@@ -16,8 +16,10 @@ void main() {
     );
 
     const size = Size(1920, 1080);
-    final particles =
-        List<Particle>.generate(500, (_) => factory.createParticle(size));
+    final particles = List<Particle>.generate(
+      500,
+      (_) => factory.createParticle(size),
+    );
     final updater = ParticleUpdater();
 
     // Warm up
@@ -54,7 +56,8 @@ void main() {
     sw1.stop();
     final double avgMs1 = sw1.elapsedMicroseconds / (frames * 1000.0);
     print(
-        'BENCHMARK 1 (500 particles, fill: true): ${avgMs1.toStringAsFixed(3)} ms/frame');
+      'BENCHMARK 1 (500 particles, fill: true): ${avgMs1.toStringAsFixed(3)} ms/frame',
+    );
 
     // Detailed breakdown for 500 particles:
     final swPhysics = Stopwatch();
@@ -87,11 +90,14 @@ void main() {
     print('  - Physics Update: ${p500Physics.toStringAsFixed(3)} ms');
     print('  - Painter Render: ${p500Painter.toStringAsFixed(3)} ms');
     print(
-        '  - Total Frame:    ${p500Total.toStringAsFixed(3)} ms (${(1000 / p500Total).toStringAsFixed(0)} FPS capability)');
+      '  - Total Frame:    ${p500Total.toStringAsFixed(3)} ms (${(1000 / p500Total).toStringAsFixed(0)} FPS capability)',
+    );
 
     // 1000 particles test:
-    final particles1000 =
-        List<Particle>.generate(1000, (_) => factory.createParticle(size));
+    final particles1000 = List<Particle>.generate(
+      1000,
+      (_) => factory.createParticle(size),
+    );
     final painter1000 = OptimizedNetworkPainter(
       particleCount: particles1000.length,
       particles: particles1000,
@@ -135,6 +141,7 @@ void main() {
     print('  - Physics Update: ${p1000Physics.toStringAsFixed(3)} ms');
     print('  - Painter Render: ${p1000Painter.toStringAsFixed(3)} ms');
     print(
-        '  - Total Frame:    ${p1000Total.toStringAsFixed(3)} ms (${(1000 / p1000Total).toStringAsFixed(0)} FPS capability)');
+      '  - Total Frame:    ${p1000Total.toStringAsFixed(3)} ms (${(1000 / p1000Total).toStringAsFixed(0)} FPS capability)',
+    );
   });
 }

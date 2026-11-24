@@ -19,11 +19,11 @@ class ParticleBatchRenderer {
   final Paint _batchedPointPaint = Paint()..strokeCap = StrokeCap.round;
 
   ParticleBatchRenderer()
-      : _particleRawBuckets = List.generate(
-          maxParticleSizeBuckets,
-          (_) => Float32List(256),
-          growable: false,
-        );
+    : _particleRawBuckets = List.generate(
+        maxParticleSizeBuckets,
+        (_) => Float32List(256),
+        growable: false,
+      );
 
   /// Draws the [visibleParticles] onto [canvas] using either batched points or circles.
   void draw({

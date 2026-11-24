@@ -75,29 +75,31 @@ class PerfResult {
   }
 
   Map<String, Object> toJson(Duration window) => {
-        'frames': frames,
-        'refresh_rate': refreshRate,
-        'fps': _round(fps(window)),
-        'jank_ratio': _round(jankRatio),
-        'candidate_checks': candidateChecks,
-        'accepted_pairs': acceptedPairs,
-        'ratio': _round(ratio),
-        'scan_loop_p50_ms': _round(scanLoopP50Ms),
-        'scan_loop_p90_ms': _round(scanLoopP90Ms),
-        'grid_build_ms': _round(gridBuildMs),
-        'physics_ms': _round(physicsMs),
-        'emission_ms': _round(emissionMs),
-        'build_p50_ms': _round(_percentile(buildMs, 50)),
-        'build_p90_ms': _round(_percentile(buildMs, 90)),
-        'build_p99_ms': _round(_percentile(buildMs, 99)),
-        'build_worst_ms':
-            _round(buildMs.isNotEmpty ? buildMs.reduce(math.max) : 0.0),
-        'total_worst_ms':
-            _round(totalMs.isNotEmpty ? totalMs.reduce(math.max) : 0.0),
-        'raster_p50_ms': _round(_percentile(rasterMs, 50)),
-        'raster_p90_ms': _round(_percentile(rasterMs, 90)),
-        'raster_p99_ms': _round(_percentile(rasterMs, 99)),
-      };
+    'frames': frames,
+    'refresh_rate': refreshRate,
+    'fps': _round(fps(window)),
+    'jank_ratio': _round(jankRatio),
+    'candidate_checks': candidateChecks,
+    'accepted_pairs': acceptedPairs,
+    'ratio': _round(ratio),
+    'scan_loop_p50_ms': _round(scanLoopP50Ms),
+    'scan_loop_p90_ms': _round(scanLoopP90Ms),
+    'grid_build_ms': _round(gridBuildMs),
+    'physics_ms': _round(physicsMs),
+    'emission_ms': _round(emissionMs),
+    'build_p50_ms': _round(_percentile(buildMs, 50)),
+    'build_p90_ms': _round(_percentile(buildMs, 90)),
+    'build_p99_ms': _round(_percentile(buildMs, 99)),
+    'build_worst_ms': _round(
+      buildMs.isNotEmpty ? buildMs.reduce(math.max) : 0.0,
+    ),
+    'total_worst_ms': _round(
+      totalMs.isNotEmpty ? totalMs.reduce(math.max) : 0.0,
+    ),
+    'raster_p50_ms': _round(_percentile(rasterMs, 50)),
+    'raster_p90_ms': _round(_percentile(rasterMs, 90)),
+    'raster_p99_ms': _round(_percentile(rasterMs, 99)),
+  };
 }
 
 double _round(double v) => (v * 100).roundToDouble() / 100;
@@ -159,10 +161,12 @@ void runPerfScenarios(List<(String, Widget Function())> scenarios) {
       SchedulerBinding.instance.removeTimingsCallback(onTimings);
 
       final int frames = SortedSpatialGrid.frameCount;
-      final int checks =
-          frames > 0 ? (SortedSpatialGrid.candidateChecks ~/ frames) : 0;
-      final int accepted =
-          frames > 0 ? (SortedSpatialGrid.acceptedPairs ~/ frames) : 0;
+      final int checks = frames > 0
+          ? (SortedSpatialGrid.candidateChecks ~/ frames)
+          : 0;
+      final int accepted = frames > 0
+          ? (SortedSpatialGrid.acceptedPairs ~/ frames)
+          : 0;
       final double ratio = accepted > 0 ? checks / accepted : 0.0;
       final double gridBuildMs = frames > 0
           ? (SortedSpatialGrid.gridBuildMicros / (frames * 1000.0))
@@ -178,8 +182,10 @@ void runPerfScenarios(List<(String, Widget Function())> scenarios) {
         SortedSpatialGrid.frameScanCount,
         SortedSpatialGrid.frameScanTimes.length,
       );
-      final List<double> scanTimes =
-          SortedSpatialGrid.frameScanTimes.sublist(0, scanCount);
+      final List<double> scanTimes = SortedSpatialGrid.frameScanTimes.sublist(
+        0,
+        scanCount,
+      );
       final double scanP50 = _percentile(scanTimes, 50);
       final double scanP90 = _percentile(scanTimes, 90);
 
@@ -206,13 +212,15 @@ void runPerfScenarios(List<(String, Widget Function())> scenarios) {
       report[name] = json;
       (binding.reportData ??= <String, dynamic>{})['scenarios'] = report;
 
-      print('PERF ${name.padRight(28)} '
-          'fps=${json['fps']} '
-          'checks/acc=${json['candidate_checks']}/${json['accepted_pairs']} (${json['ratio']}x) '
-          'scan p50/p90=${json['scan_loop_p50_ms']}/${json['scan_loop_p90_ms']}ms '
-          'build=${json['grid_build_ms']}ms phys=${json['physics_ms']}ms emit=${json['emission_ms']}ms '
-          'UI p50/p90=${json['build_p50_ms']}/${json['build_p90_ms']}ms '
-          'raster p50/p90=${json['raster_p50_ms']}/${json['raster_p90_ms']}ms');
+      print(
+        'PERF ${name.padRight(28)} '
+        'fps=${json['fps']} '
+        'checks/acc=${json['candidate_checks']}/${json['accepted_pairs']} (${json['ratio']}x) '
+        'scan p50/p90=${json['scan_loop_p50_ms']}/${json['scan_loop_p90_ms']}ms '
+        'build=${json['grid_build_ms']}ms phys=${json['physics_ms']}ms emit=${json['emission_ms']}ms '
+        'UI p50/p90=${json['build_p50_ms']}/${json['build_p90_ms']}ms '
+        'raster p50/p90=${json['raster_p50_ms']}/${json['raster_p90_ms']}ms',
+      );
 
       // Tear down so the next scenario starts from a clean slate.
       await tester.pumpWidget(const SizedBox.shrink());

@@ -94,14 +94,14 @@ class Particle {
     required this.color,
     required this.size,
     this.isVisible = true,
-  })  : x = position.dx,
-        y = position.dy,
-        vx = velocity.dx,
-        vy = velocity.dy,
-        defaultVx = velocity.dx,
-        defaultVy = velocity.dy,
-        mass = size * size, // Mass is proportional to area (size^2)
-        _invMass = size > 0 ? 1.0 / (size * size) : 0.0;
+  }) : x = position.dx,
+       y = position.dy,
+       vx = velocity.dx,
+       vy = velocity.dy,
+       defaultVx = velocity.dx,
+       defaultVy = velocity.dy,
+       mass = size * size, // Mass is proportional to area (size^2)
+       _invMass = size > 0 ? 1.0 / (size * size) : 0.0;
 
   /// Applies a force to the particle based on F = ma (a = F/m).
   void applyForce(Offset force) {
@@ -262,7 +262,8 @@ class Particle {
   void updateVisibility(Size bounds) {
     // Include a margin to account for particles near the edges of the viewport.
     const double margin = 50.0;
-    isVisible = x >= -margin &&
+    isVisible =
+        x >= -margin &&
         x <= bounds.width + margin &&
         y >= -margin &&
         y <= bounds.height + margin;

@@ -174,45 +174,46 @@ void main() {
     });
 
     test(
-        'Equality differentiates by strength, direction, and center (L110-L112)',
-        () {
-      const base = GravityFeatures(
-        type: GravityType.point,
-        strength: 0.5,
-        direction: Offset(0, 1),
-        center: Offset(10, 10),
-      );
-      const same = GravityFeatures(
-        type: GravityType.point,
-        strength: 0.5,
-        direction: Offset(0, 1),
-        center: Offset(10, 10),
-      );
-      const diffStrength = GravityFeatures(
-        type: GravityType.point,
-        strength: 0.8,
-        direction: Offset(0, 1),
-        center: Offset(10, 10),
-      );
-      const diffDirection = GravityFeatures(
-        type: GravityType.point,
-        strength: 0.5,
-        direction: Offset(1, 0),
-        center: Offset(10, 10),
-      );
-      const diffCenter = GravityFeatures(
-        type: GravityType.point,
-        strength: 0.5,
-        direction: Offset(0, 1),
-        center: Offset(20, 20),
-      );
+      'Equality differentiates by strength, direction, and center (L110-L112)',
+      () {
+        const base = GravityFeatures(
+          type: GravityType.point,
+          strength: 0.5,
+          direction: Offset(0, 1),
+          center: Offset(10, 10),
+        );
+        const same = GravityFeatures(
+          type: GravityType.point,
+          strength: 0.5,
+          direction: Offset(0, 1),
+          center: Offset(10, 10),
+        );
+        const diffStrength = GravityFeatures(
+          type: GravityType.point,
+          strength: 0.8,
+          direction: Offset(0, 1),
+          center: Offset(10, 10),
+        );
+        const diffDirection = GravityFeatures(
+          type: GravityType.point,
+          strength: 0.5,
+          direction: Offset(1, 0),
+          center: Offset(10, 10),
+        );
+        const diffCenter = GravityFeatures(
+          type: GravityType.point,
+          strength: 0.5,
+          direction: Offset(0, 1),
+          center: Offset(20, 20),
+        );
 
-      expect(base, equals(same));
-      expect(base.hashCode, equals(same.hashCode));
-      expect(base == diffStrength, isFalse);
-      expect(base == diffDirection, isFalse);
-      expect(base == diffCenter, isFalse);
-    });
+        expect(base, equals(same));
+        expect(base.hashCode, equals(same.hashCode));
+        expect(base == diffStrength, isFalse);
+        expect(base == diffDirection, isFalse);
+        expect(base == diffCenter, isFalse);
+      },
+    );
 
     test('Equality, hashCode, and toString work as expected', () {
       const g1 = GravityFeatures(
@@ -225,10 +226,7 @@ void main() {
         strength: 0.5,
         direction: Offset(0, 1),
       );
-      const g3 = GravityFeatures(
-        type: GravityType.point,
-        strength: 0.5,
-      );
+      const g3 = GravityFeatures(type: GravityType.point, strength: 0.5);
 
       expect(g1, equals(g2));
       expect(g1.hashCode, equals(g2.hashCode));
@@ -271,32 +269,35 @@ void main() {
       expect(updatedCenter.center, const Offset(100, 200));
     });
 
-    test('copyWith updates all fields simultaneously and preserves on null', () {
-      const initial = GravityConfig(
-        type: GravityType.global,
-        strength: 0.5,
-        direction: Offset(0, 1),
-        center: Offset(20, 30),
-      );
+    test(
+      'copyWith updates all fields simultaneously and preserves on null',
+      () {
+        const initial = GravityConfig(
+          type: GravityType.global,
+          strength: 0.5,
+          direction: Offset(0, 1),
+          center: Offset(20, 30),
+        );
 
-      final updatedAll = initial.copyWith(
-        type: GravityType.none,
-        strength: 0.8,
-        direction: const Offset(-1, 0),
-        center: const Offset(80, 90),
-      );
-      expect(updatedAll, isA<GravityConfig>());
-      expect(updatedAll.type, GravityType.none);
-      expect(updatedAll.strength, 0.8);
-      expect(updatedAll.direction, const Offset(-1, 0));
-      expect(updatedAll.center, const Offset(80, 90));
+        final updatedAll = initial.copyWith(
+          type: GravityType.none,
+          strength: 0.8,
+          direction: const Offset(-1, 0),
+          center: const Offset(80, 90),
+        );
+        expect(updatedAll, isA<GravityConfig>());
+        expect(updatedAll.type, GravityType.none);
+        expect(updatedAll.strength, 0.8);
+        expect(updatedAll.direction, const Offset(-1, 0));
+        expect(updatedAll.center, const Offset(80, 90));
 
-      final noChange = initial.copyWith();
-      expect(noChange, isA<GravityConfig>());
-      expect(noChange.type, initial.type);
-      expect(noChange.strength, initial.strength);
-      expect(noChange.direction, initial.direction);
-      expect(noChange.center, initial.center);
-    });
+        final noChange = initial.copyWith();
+        expect(noChange, isA<GravityConfig>());
+        expect(noChange.type, initial.type);
+        expect(noChange.strength, initial.strength);
+        expect(noChange.direction, initial.direction);
+        expect(noChange.center, initial.center);
+      },
+    );
   });
 }

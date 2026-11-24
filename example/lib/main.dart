@@ -74,8 +74,9 @@ class _ParticleExamplesScreenState extends State<ParticleExamplesScreen> {
                       selectedColor: const Color(0xFF38BDF8),
                       labelStyle: TextStyle(
                         color: isSelected ? Colors.black : Colors.white,
-                        fontWeight:
-                            isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
                       ),
                     ),
                   );
@@ -111,9 +112,8 @@ class _ParticleExamplesScreenState extends State<ParticleExamplesScreen> {
   }
 }
 
-
 double? getResponsiveLineDistance([BuildContext? context]) {
-  final effectiveContext = context ;
+  final effectiveContext = context;
   if (effectiveContext == null) return null;
   final width = MediaQuery.sizeOf(effectiveContext).width;
   if (width < 600) {
@@ -189,9 +189,7 @@ class CyberpunkMatrixExample extends StatelessWidget {
           maxSpeed: 7.0,
           distance: 200.0,
         ),
-        performance: PerformanceFeatures(
-          frameRateIndependent: true,
-        ),
+        performance: PerformanceFeatures(frameRateIndependent: true),
       ),
     );
   }
@@ -206,7 +204,6 @@ class BlackHoleExample extends StatelessWidget {
     return Container(
       color: const Color(0xFF030107),
       child: const ParticleNetwork(
-        
         particles: ParticleFeatures(
           fill: false,
           count: 400,
@@ -219,9 +216,7 @@ class BlackHoleExample extends StatelessWidget {
           distance: 95.0,
           color: Color(0xFFEC4899),
         ),
-        gravity: GravityFeatures.point(
-          strength: 0.85,
-        ),
+        gravity: GravityFeatures.point(strength: 0.85),
         touch: TouchFeatures(
           color: Color(0xFF8B5CF6),
           force: 1.0,
@@ -259,10 +254,7 @@ class SupernovaExample extends StatelessWidget {
           distance: 85.0,
           color: Color(0xFFF97316),
         ),
-        gravity: GravityFeatures(
-          strength:  -0.9,
-          type: GravityType.point
-        ),
+        gravity: GravityFeatures(strength: -0.9, type: GravityType.point),
         touch: TouchFeatures(
           color: Color(0xFFFDE047),
           force: 0.90,
@@ -308,9 +300,7 @@ class NeuralSynapseExample extends StatelessWidget {
           maxSpeed: 6.0,
           distance: 190.0,
         ),
-        performance: const PerformanceFeatures(
-          frameRateIndependent: true,
-        ),
+        performance: const PerformanceFeatures(frameRateIndependent: true),
       ),
     );
   }
@@ -341,10 +331,10 @@ class QuantumFoamExample extends StatelessWidget {
           speed: 0.45,
           maxSpeed: 7.0,
           distance: 150.0,
-          
         ),
         performance: PerformanceFeatures(
           frameRateIndependent: true,
+          complex: ComplexConfig(enabled: true),
         ),
       ),
     );

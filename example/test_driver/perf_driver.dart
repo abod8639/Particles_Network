@@ -14,7 +14,8 @@ Future<void> main() async {
     driver: await FlutterDriver.connect(),
     responseDataCallback: (Map<String, dynamic>? data) async {
       if (data == null) return;
-      final String label = Platform.environment['PERF_LABEL'] ??
+      final String label =
+          Platform.environment['PERF_LABEL'] ??
           DateTime.now().toIso8601String().replaceAll(':', '-');
       final file = File('build/perf/$label.json');
       await file.parent.create(recursive: true);
@@ -23,12 +24,12 @@ Future<void> main() async {
       );
       stdout.writeln('Perf results written to ${file.path}');
     },
-    onScreenshot: (String name, List<int> bytes,
-        [Map<String, Object?>? _]) async {
-      final file = File('build/perf/shots/$name.png');
-      await file.parent.create(recursive: true);
-      await file.writeAsBytes(bytes);
-      return true;
-    },
+    onScreenshot:
+        (String name, List<int> bytes, [Map<String, Object?>? _]) async {
+          final file = File('build/perf/shots/$name.png');
+          await file.parent.create(recursive: true);
+          await file.writeAsBytes(bytes);
+          return true;
+        },
   );
 }

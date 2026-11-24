@@ -17,77 +17,86 @@ void main() {
       expect(particle.y, equals(678.90));
     });
 
-    test('boundary getter and updateBoundary correctly update and report boundary', () {
-      const initialBoundary = Rectangle(0, 0, 100, 100);
-      final quadTree = CompressedQuadTree(initialBoundary);
-      expect(quadTree.boundary, equals(initialBoundary));
-      expect(quadTree.root.boundary, equals(initialBoundary));
-      expect(quadTree.root.particles, isEmpty);
+    test(
+      'boundary getter and updateBoundary correctly update and report boundary',
+      () {
+        const initialBoundary = Rectangle(0, 0, 100, 100);
+        final quadTree = CompressedQuadTree(initialBoundary);
+        expect(quadTree.boundary, equals(initialBoundary));
+        expect(quadTree.root.boundary, equals(initialBoundary));
+        expect(quadTree.root.particles, isEmpty);
 
-      // 1. Only x differs
-      final root1 = quadTree.root;
-      quadTree.updateBoundary(const Rectangle(10, 0, 100, 100));
-      expect(quadTree.boundary, equals(const Rectangle(10, 0, 100, 100)));
-      expect(quadTree.root, isNot(same(root1)));
-      expect(quadTree.root.boundary.x, equals(10));
+        // 1. Only x differs
+        final root1 = quadTree.root;
+        quadTree.updateBoundary(const Rectangle(10, 0, 100, 100));
+        expect(quadTree.boundary, equals(const Rectangle(10, 0, 100, 100)));
+        expect(quadTree.root, isNot(same(root1)));
+        expect(quadTree.root.boundary.x, equals(10));
 
-      // 2. Only y differs (x is identical, triggers L81)
-      final root2 = quadTree.root;
-      quadTree.updateBoundary(const Rectangle(10, 20, 100, 100));
-      expect(quadTree.boundary, equals(const Rectangle(10, 20, 100, 100)));
-      expect(quadTree.root, isNot(same(root2)));
-      expect(quadTree.root.boundary.y, equals(20));
+        // 2. Only y differs (x is identical, triggers L81)
+        final root2 = quadTree.root;
+        quadTree.updateBoundary(const Rectangle(10, 20, 100, 100));
+        expect(quadTree.boundary, equals(const Rectangle(10, 20, 100, 100)));
+        expect(quadTree.root, isNot(same(root2)));
+        expect(quadTree.root.boundary.y, equals(20));
 
-      // 3. Only width differs (x and y are identical, triggers L82)
-      final root3 = quadTree.root;
-      quadTree.updateBoundary(const Rectangle(10, 20, 150, 100));
-      expect(quadTree.boundary, equals(const Rectangle(10, 20, 150, 100)));
-      expect(quadTree.root, isNot(same(root3)));
-      expect(quadTree.root.boundary.width, equals(150));
+        // 3. Only width differs (x and y are identical, triggers L82)
+        final root3 = quadTree.root;
+        quadTree.updateBoundary(const Rectangle(10, 20, 150, 100));
+        expect(quadTree.boundary, equals(const Rectangle(10, 20, 150, 100)));
+        expect(quadTree.root, isNot(same(root3)));
+        expect(quadTree.root.boundary.width, equals(150));
 
-      // 4. Only height differs (x, y, and width are identical, triggers L83)
-      final root4 = quadTree.root;
-      quadTree.updateBoundary(const Rectangle(10, 20, 150, 250));
-      expect(quadTree.boundary, equals(const Rectangle(10, 20, 150, 250)));
-      expect(quadTree.root, isNot(same(root4)));
-      expect(quadTree.root.boundary.height, equals(250));
+        // 4. Only height differs (x, y, and width are identical, triggers L83)
+        final root4 = quadTree.root;
+        quadTree.updateBoundary(const Rectangle(10, 20, 150, 250));
+        expect(quadTree.boundary, equals(const Rectangle(10, 20, 150, 250)));
+        expect(quadTree.root, isNot(same(root4)));
+        expect(quadTree.root.boundary.height, equals(250));
 
-      // 5. Unchanged boundary (all 4 conditions evaluated and false, root preserved)
-      final root5 = quadTree.root;
-      quadTree.updateBoundary(const Rectangle(10, 20, 150, 250));
-      expect(quadTree.boundary, equals(const Rectangle(10, 20, 150, 250)));
-      expect(identical(quadTree.root, root5), isTrue);
-    });
+        // 5. Unchanged boundary (all 4 conditions evaluated and false, root preserved)
+        final root5 = quadTree.root;
+        quadTree.updateBoundary(const Rectangle(10, 20, 150, 250));
+        expect(quadTree.boundary, equals(const Rectangle(10, 20, 150, 250)));
+        expect(identical(quadTree.root, root5), isTrue);
+      },
+    );
 
     test(
-        'exact 1.9.6 README architecture snippet executes correctly without crashing',
-        () {
-      const width = 500.0;
-      const height = 500.0;
+      'exact 1.9.6 README architecture snippet executes correctly without crashing',
+      () {
+        const width = 500.0;
+        const height = 500.0;
 
-      // 1.9.6 README syntax:
-      final quadTree = CompressedQuadTree(const Rectangle(0, 0, width, height));
+        // 1.9.6 README syntax:
+        final quadTree = CompressedQuadTree(
+          const Rectangle(0, 0, width, height),
+        );
 
-      final mockParticles = [
-        const QuadTreeParticle(0, 50.0, 50.0),
-        const QuadTreeParticle(1, 60.0, 60.0),
-        const QuadTreeParticle(2, 400.0, 400.0),
-      ];
+        final mockParticles = [
+          const QuadTreeParticle(0, 50.0, 50.0),
+          const QuadTreeParticle(1, 60.0, 60.0),
+          const QuadTreeParticle(2, 400.0, 400.0),
+        ];
 
-      for (int i = 0; i < mockParticles.length; i++) {
-        quadTree.insert(mockParticles[i]);
-      }
+        for (int i = 0; i < mockParticles.length; i++) {
+          quadTree.insert(mockParticles[i]);
+        }
 
-      const touchX = 55.0;
-      const touchY = 55.0;
-      const radius = 20.0;
+        const touchX = 55.0;
+        const touchY = 55.0;
+        const radius = 20.0;
 
-      final nearbyParticleIndices =
-          quadTree.queryCircle(touchX, touchY, radius);
+        final nearbyParticleIndices = quadTree.queryCircle(
+          touchX,
+          touchY,
+          radius,
+        );
 
-      expect(nearbyParticleIndices, containsAll([0, 1]));
-      expect(nearbyParticleIndices, isNot(contains(2)));
-    });
+        expect(nearbyParticleIndices, containsAll([0, 1]));
+        expect(nearbyParticleIndices, isNot(contains(2)));
+      },
+    );
 
     test('findNearbyParticles queries particles within search radius', () {
       final quadTree = CompressedQuadTree(const Rectangle(0, 0, 500, 500));
@@ -100,41 +109,50 @@ void main() {
       expect(nearby, isNot(contains(2)));
     });
 
-    test('buildFromParticles populates tree from particle list and filters out-of-bounds indices', () {
-      final quadTree = CompressedQuadTree(const Rectangle(0, 0, 500, 500));
-      quadTree.insert(const QuadTreeParticle(999, 1.0, 1.0));
+    test(
+      'buildFromParticles populates tree from particle list and filters out-of-bounds indices',
+      () {
+        final quadTree = CompressedQuadTree(const Rectangle(0, 0, 500, 500));
+        quadTree.insert(const QuadTreeParticle(999, 1.0, 1.0));
 
-      final particles = [
-        const _MockParticlePoint(10.0, 10.0),
-        const _MockParticlePoint(20.0, 20.0),
-        const _MockParticlePoint(30.0, 30.0),
-      ];
+        final particles = [
+          const _MockParticlePoint(10.0, 10.0),
+          const _MockParticlePoint(20.0, 20.0),
+          const _MockParticlePoint(30.0, 30.0),
+        ];
 
-      // visibleParticles contains indices 0, 2, and an out-of-bounds index 50
-      quadTree.buildFromParticles(particles, [0, 2, 50]);
+        // visibleParticles contains indices 0, 2, and an out-of-bounds index 50
+        quadTree.buildFromParticles(particles, [0, 2, 50]);
 
-      expect(quadTree.getAllParticleIndices(), equals([0, 2]));
-    });
+        expect(quadTree.getAllParticleIndices(), equals([0, 2]));
+      },
+    );
 
-    test('rebuild delegates to buildFromParticles and replaces existing particles', () {
-      final quadTree = CompressedQuadTree(const Rectangle(0, 0, 500, 500));
-      quadTree.insert(const QuadTreeParticle(888, 5.0, 5.0));
+    test(
+      'rebuild delegates to buildFromParticles and replaces existing particles',
+      () {
+        final quadTree = CompressedQuadTree(const Rectangle(0, 0, 500, 500));
+        quadTree.insert(const QuadTreeParticle(888, 5.0, 5.0));
 
-      final particles = [
-        const _MockParticlePoint(100.0, 100.0),
-        const _MockParticlePoint(200.0, 200.0),
-      ];
+        final particles = [
+          const _MockParticlePoint(100.0, 100.0),
+          const _MockParticlePoint(200.0, 200.0),
+        ];
 
-      quadTree.rebuild(particles, [1]);
+        quadTree.rebuild(particles, [1]);
 
-      expect(quadTree.getAllParticleIndices(), equals([1]));
-      final nearby = quadTree.findNearbyParticles(200.0, 200.0, 5.0);
-      expect(nearby, equals([1]));
-    });
+        expect(quadTree.getAllParticleIndices(), equals([1]));
+        final nearby = quadTree.findNearbyParticles(200.0, 200.0, 5.0);
+        expect(nearby, equals([1]));
+      },
+    );
 
     test('getStats reports accurate particle count and deprecated flag', () {
       final quadTree = CompressedQuadTree(const Rectangle(0, 0, 200, 200));
-      expect(quadTree.getStats(), equals({'totalParticles': 0, 'deprecated': true}));
+      expect(
+        quadTree.getStats(),
+        equals({'totalParticles': 0, 'deprecated': true}),
+      );
 
       quadTree.insert(const QuadTreeParticle(0, 10, 10));
       quadTree.insert(const QuadTreeParticle(1, 20, 20));
@@ -144,14 +162,17 @@ void main() {
       expect(stats['deprecated'], isTrue);
     });
 
-    test('optimize, rebalance, and needsRebalancing compatibility no-op stubs', () {
-      final quadTree = CompressedQuadTree(const Rectangle(0, 0, 200, 200));
-      quadTree.insert(const QuadTreeParticle(0, 50, 50));
+    test(
+      'optimize, rebalance, and needsRebalancing compatibility no-op stubs',
+      () {
+        final quadTree = CompressedQuadTree(const Rectangle(0, 0, 200, 200));
+        quadTree.insert(const QuadTreeParticle(0, 50, 50));
 
-      expect(() => quadTree.optimize(), returnsNormally);
-      expect(() => quadTree.rebalance(), returnsNormally);
-      expect(quadTree.needsRebalancing(), isFalse);
-    });
+        expect(() => quadTree.optimize(), returnsNormally);
+        expect(() => quadTree.rebalance(), returnsNormally);
+        expect(quadTree.needsRebalancing(), isFalse);
+      },
+    );
 
     test('queryRange and buffer output helpers function properly', () {
       final quadTree = CompressedQuadTree(const Rectangle(0, 0, 300, 300));
@@ -220,7 +241,10 @@ void main() {
       // Insert in NW, NE, SW, SE
       expect(node.insert(const QuadTreeParticle(0, 20, 20)), isTrue); // NW
       expect(node.insert(const QuadTreeParticle(1, 80, 20)), isTrue); // NE
-      expect(node.insert(const QuadTreeParticle(2, 20, 80)), isTrue); // SW (triggers subdivision)
+      expect(
+        node.insert(const QuadTreeParticle(2, 20, 80)),
+        isTrue,
+      ); // SW (triggers subdivision)
       expect(node.insert(const QuadTreeParticle(3, 80, 80)), isTrue); // SE
 
       expect(node.isLeaf, isFalse);
@@ -254,7 +278,10 @@ void main() {
         node.particles.add(QuadTreeParticle(2, base.dx + 3, base.dy + 3));
 
         // 4th particle in exact same sub-quadrant triggers compression for this quadrant
-        expect(node.insert(QuadTreeParticle(3, base.dx + 4, base.dy + 4)), isTrue);
+        expect(
+          node.insert(QuadTreeParticle(3, base.dx + 4, base.dy + 4)),
+          isTrue,
+        );
         expect(node.children[quad], isNotNull);
         expect(node.children[quad]!.isCompressed, isTrue);
         expect(node.children[quad]!.compressedPath, isNotNull);
@@ -275,36 +302,39 @@ void main() {
       expect(node.particles.length, equals(3));
     });
 
-    test('queryRange, queryCircle, and queryCircleIndices query particles correctly', () {
-      final node = CompressedQuadTreeNode(const Rectangle(0, 0, 200, 200));
-      node.insert(const QuadTreeParticle(0, 20, 20));
-      node.insert(const QuadTreeParticle(1, 30, 30));
-      node.insert(const QuadTreeParticle(2, 180, 180));
+    test(
+      'queryRange, queryCircle, and queryCircleIndices query particles correctly',
+      () {
+        final node = CompressedQuadTreeNode(const Rectangle(0, 0, 200, 200));
+        node.insert(const QuadTreeParticle(0, 20, 20));
+        node.insert(const QuadTreeParticle(1, 30, 30));
+        node.insert(const QuadTreeParticle(2, 180, 180));
 
-      // queryRange
-      final rangeResult = node.queryRange(const Rectangle(0, 0, 50, 50));
-      expect(rangeResult.map((p) => p.index), containsAll([0, 1]));
-      expect(rangeResult.map((p) => p.index), isNot(contains(2)));
+        // queryRange
+        final rangeResult = node.queryRange(const Rectangle(0, 0, 50, 50));
+        expect(rangeResult.map((p) => p.index), containsAll([0, 1]));
+        expect(rangeResult.map((p) => p.index), isNot(contains(2)));
 
-      // queryRange with non-intersecting range
-      final emptyRange = node.queryRange(const Rectangle(300, 300, 50, 50));
-      expect(emptyRange, isEmpty);
+        // queryRange with non-intersecting range
+        final emptyRange = node.queryRange(const Rectangle(300, 300, 50, 50));
+        expect(emptyRange, isEmpty);
 
-      // queryCircle
-      final circleResult = node.queryCircle(25, 25, 15);
-      expect(circleResult.map((p) => p.index), containsAll([0, 1]));
-      expect(circleResult.map((p) => p.index), isNot(contains(2)));
+        // queryCircle
+        final circleResult = node.queryCircle(25, 25, 15);
+        expect(circleResult.map((p) => p.index), containsAll([0, 1]));
+        expect(circleResult.map((p) => p.index), isNot(contains(2)));
 
-      // queryCircle outside boundary
-      final emptyCircle = node.queryCircle(500, 500, 10);
-      expect(emptyCircle, isEmpty);
+        // queryCircle outside boundary
+        final emptyCircle = node.queryCircle(500, 500, 10);
+        expect(emptyCircle, isEmpty);
 
-      // queryCircleIndices directly into output list
-      final indicesOutput = <int>[];
-      node.queryCircleIndices(25, 25, 15, indicesOutput);
-      expect(indicesOutput, containsAll([0, 1]));
-      expect(indicesOutput, isNot(contains(2)));
-    });
+        // queryCircleIndices directly into output list
+        final indicesOutput = <int>[];
+        node.queryCircleIndices(25, 25, 15, indicesOutput);
+        expect(indicesOutput, containsAll([0, 1]));
+        expect(indicesOutput, isNot(contains(2)));
+      },
+    );
 
     test('getStats, optimizeMemory, rebalance, and clear work as expected', () {
       final node = CompressedQuadTreeNode(const Rectangle(0, 0, 200, 200));

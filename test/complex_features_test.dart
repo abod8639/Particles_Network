@@ -77,24 +77,24 @@ void main() {
       expect(() => ComplexConfig(densityFactor: 0.60), returnsNormally);
     });
 
-    test('copyWith updates specified fields and preserves untouched fields', () {
-      const original = ComplexConfig(
-        enabled: false,
-        ratio: 0.2,
-        maxLines: 4,
-        densityFactor: 0.5,
-      );
+    test(
+      'copyWith updates specified fields and preserves untouched fields',
+      () {
+        const original = ComplexConfig(
+          enabled: false,
+          ratio: 0.2,
+          maxLines: 4,
+          densityFactor: 0.5,
+        );
 
-      final updated = original.copyWith(
-        enabled: true,
-        ratio: 0.6,
-      );
+        final updated = original.copyWith(enabled: true, ratio: 0.6);
 
-      expect(updated.enabled, isTrue);
-      expect(updated.ratio, equals(0.6));
-      expect(updated.maxLines, equals(4));
-      expect(updated.densityFactor, equals(0.5));
-    });
+        expect(updated.enabled, isTrue);
+        expect(updated.ratio, equals(0.6));
+        expect(updated.maxLines, equals(4));
+        expect(updated.densityFactor, equals(0.5));
+      },
+    );
 
     test('copyWith allows clearing nullable fields with clear flags', () {
       const original = ComplexConfig(

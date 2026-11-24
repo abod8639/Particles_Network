@@ -46,31 +46,32 @@ final List<PerfScenario> _baseScenarios = [
   PerfScenario(
     'lines_500',
     (r) => ParticleNetwork(
-        network: NetworkFeatures(renderer: r),
-        particles: const ParticleFeatures(count: 500),
-        touch: const TouchFeatures(enabled: false)),
+      network: NetworkFeatures(renderer: r),
+      particles: const ParticleFeatures(count: 500),
+      touch: const TouchFeatures(enabled: false),
+    ),
   ),
   PerfScenario(
     'lines_1000',
     (r) => ParticleNetwork(
-        network: NetworkFeatures(renderer: r),
-        particles: const ParticleFeatures(count: 1000),
-        touch: const TouchFeatures(enabled: false)),
+      network: NetworkFeatures(renderer: r),
+      particles: const ParticleFeatures(count: 1000),
+      touch: const TouchFeatures(enabled: false),
+    ),
   ),
   PerfScenario(
     'lines_2000',
     (r) => ParticleNetwork(
-        network: NetworkFeatures(renderer: r),
-        particles: const ParticleFeatures(count: 2000),
-        touch: const TouchFeatures(enabled: false)),
+      network: NetworkFeatures(renderer: r),
+      particles: const ParticleFeatures(count: 2000),
+      touch: const TouchFeatures(enabled: false),
+    ),
   ),
   PerfScenario(
     'lines_2000_maxconn5',
     (r) => ParticleNetwork(
       network: NetworkFeatures(renderer: r),
-      performance: const PerformanceFeatures(
-        maxConnectionsPerParticle: 5,
-      ),
+      performance: const PerformanceFeatures(maxConnectionsPerParticle: 5),
       particles: const ParticleFeatures(count: 2000),
       touch: const TouchFeatures(enabled: false),
     ),
@@ -88,9 +89,7 @@ final List<PerfScenario> _baseScenarios = [
     (r) => ParticleNetwork(
       network: NetworkFeatures(renderer: r),
       particles: const ParticleFeatures(count: 500),
-      performance: const PerformanceFeatures(
-        maxLinesPerFrame: 2000,
-      ),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 2000),
       touch: const TouchFeatures(enabled: false),
     ),
   ),
@@ -99,9 +98,7 @@ final List<PerfScenario> _baseScenarios = [
     (r) => ParticleNetwork(
       network: NetworkFeatures(renderer: r),
       particles: const ParticleFeatures(count: 5000),
-      performance: const PerformanceFeatures(
-        maxLinesPerFrame: 4000,
-      ),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 4000),
       touch: const TouchFeatures(enabled: false),
     ),
   ),
@@ -110,9 +107,7 @@ final List<PerfScenario> _baseScenarios = [
     (r) => ParticleNetwork(
       network: NetworkFeatures(renderer: r),
       particles: const ParticleFeatures(count: 5000),
-      performance: const PerformanceFeatures(
-        maxLinesPerFrame: 15000,
-      ),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 15000),
       touch: const TouchFeatures(enabled: false),
     ),
   ),
@@ -121,9 +116,7 @@ final List<PerfScenario> _baseScenarios = [
     (r) => ParticleNetwork(
       network: NetworkFeatures(renderer: r),
       particles: const ParticleFeatures(count: 1000),
-      performance: const PerformanceFeatures(
-        maxLinesPerFrame: 15000,
-      ),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 15000),
       touch: const TouchFeatures(enabled: false),
     ),
   ),
@@ -132,9 +125,7 @@ final List<PerfScenario> _baseScenarios = [
     (r) => ParticleNetwork(
       network: NetworkFeatures(renderer: r),
       particles: const ParticleFeatures(count: 20000),
-      performance: const PerformanceFeatures(
-        maxLinesPerFrame: 15000,
-      ),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 15000),
       touch: const TouchFeatures(enabled: false),
     ),
   ),
@@ -155,19 +146,14 @@ final List<PerfScenario> _baseScenarios = [
     (r) => ParticleNetwork(
       network: NetworkFeatures(renderer: r),
       particles: const ParticleFeatures(count: 500),
-      performance: const PerformanceFeatures(
-        autoBoost: true,
-      ),
+      performance: const PerformanceFeatures(autoBoost: true),
       touch: const TouchFeatures(enabled: false),
     ),
   ),
   PerfScenario(
     'points_5000',
     (r) => ParticleNetwork(
-      network: NetworkFeatures(
-        renderer: r,
-        enabled: false,
-      ),
+      network: NetworkFeatures(renderer: r, enabled: false),
       particles: const ParticleFeatures(count: 5000),
       touch: const TouchFeatures(enabled: false),
     ),
@@ -175,10 +161,7 @@ final List<PerfScenario> _baseScenarios = [
   PerfScenario(
     'points_20000',
     (r) => ParticleNetwork(
-      network: NetworkFeatures(
-        renderer: r,
-        enabled: false,
-      ),
+      network: NetworkFeatures(renderer: r, enabled: false),
       particles: const ParticleFeatures(count: 20000),
       touch: const TouchFeatures(enabled: false),
     ),
@@ -186,10 +169,7 @@ final List<PerfScenario> _baseScenarios = [
   PerfScenario(
     'points_50000',
     (r) => ParticleNetwork(
-      network: NetworkFeatures(
-        renderer: r,
-        enabled: false,
-      ),
+      network: NetworkFeatures(renderer: r, enabled: false),
       particles: const ParticleFeatures(count: 50000),
       touch: const TouchFeatures(enabled: false),
     ),

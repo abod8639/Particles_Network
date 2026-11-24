@@ -7,34 +7,28 @@ library;
 // Generic object pool for recycling objects
 class ObjectPool<T> {
   final List<T> _available = [];
-  final T Function() _factory;
-  final void Function(T)? _resetFn;
-  final int _maxPoolSize;
+  final T Function() factory;
+  final void Function(T)? resetFn;
+  final int maxPoolSize;
 
   // Creates a new object pool
   // [factory]: Function to create new instances
   // [resetFn]: Optional function to reset object state for reuse
   // [maxPoolSize]: Maximum objects to keep in pool (default: 1000)
-  ObjectPool({
-    required T Function() factory,
-    void Function(T)? resetFn,
-    int maxPoolSize = 1000,
-  })  : _factory = factory,
-        _resetFn = resetFn,
-        _maxPoolSize = maxPoolSize;
+  ObjectPool({required this.factory, this.resetFn, this.maxPoolSize = 1000});
 
   // Acquire an object from the pool or create a new one
   T acquire() {
     if (_available.isNotEmpty) {
       return _available.removeLast();
     }
-    return _factory();
+    return factory();
   }
 
   // Release an object back to the pool for reuse
   void release(T object) {
-    if (_available.length < _maxPoolSize) {
-      _resetFn?.call(object);
+    if (_available.length < maxPoolSize) {
+      resetFn?.call(object);
       _available.add(object);
     }
   }
@@ -51,9 +45,9 @@ class ObjectPool<T> {
 // Specialized pool for List<int> objects
 class IntListPool {
   final List<List<int>> _available = [];
-  final int _maxPoolSize;
+  final int maxPoolSize;
 
-  IntListPool({int maxPoolSize = 500}) : _maxPoolSize = maxPoolSize;
+  IntListPool({this.maxPoolSize = 500});
 
   // Acquire a list from the pool, clearing it if it was previously used
   List<int> acquire() {
@@ -65,7 +59,7 @@ class IntListPool {
 
   // Release a list back to the pool
   void release(List<int> list) {
-    if (_available.length < _maxPoolSize) {
+    if (_available.length < maxPoolSize) {
       list.clear();
       _available.add(list);
     }
@@ -83,9 +77,9 @@ class IntListPool {
 // Specialized pool for ConnectionData objects
 class ConnectionDataPool {
   final List<ConnectionData> _available = [];
-  final int _maxPoolSize;
+  final int maxPoolSize;
 
-  ConnectionDataPool({int maxPoolSize = 1000}) : _maxPoolSize = maxPoolSize;
+  ConnectionDataPool({this.maxPoolSize = 1000});
 
   // Acquire a connection data object from the pool
   ConnectionData acquire({required int index, required double distance}) {
@@ -100,7 +94,7 @@ class ConnectionDataPool {
 
   // Release a connection data object back to the pool
   void release(ConnectionData data) {
-    if (_available.length < _maxPoolSize) {
+    if (_available.length < maxPoolSize) {
       _available.add(data);
     }
   }

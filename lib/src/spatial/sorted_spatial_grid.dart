@@ -30,7 +30,7 @@ class SortedSpatialGrid {
 
   /// Creates a spatial grid with optional [tuning] configuration.
   SortedSpatialGrid({GridTuning? tuning})
-      : tuning = tuning ?? const GridTuning();
+    : tuning = tuning ?? const GridTuning();
 
   /// Edge length of a cell; always >= the query radius passed to [build].
   double cellSize = 0;
@@ -184,10 +184,12 @@ class SortedSpatialGrid {
         ? tuning.cellMultiplierK
         : GridTuning.defaultCellMultiplierK;
     final double densityCell = math.sqrt(area / (rawCount * k));
-    final double minCell =
-        densityCell > tuning.minCellFloor ? densityCell : tuning.minCellFloor;
+    final double minCell = densityCell > tuning.minCellFloor
+        ? densityCell
+        : tuning.minCellFloor;
     final double baseCell = radius > minCell ? radius : minCell;
-    final double mult = (cellMultiplier != null &&
+    final double mult =
+        (cellMultiplier != null &&
             cellMultiplier.isFinite &&
             cellMultiplier > 0)
         ? cellMultiplier
@@ -344,7 +346,7 @@ class SortedSpatialGrid {
     double y,
     double radius,
     void Function(int particleIndex, double px, double py, double distSq)
-        visitor,
+    visitor,
   ) {
     if (!isInitialized ||
         !x.isFinite ||
@@ -522,23 +524,47 @@ class SortedSpatialGrid {
 
         // Neighbor cell 1: East (cx + 1, cy)
         if (cx + 1 < cCols) {
-          _pairWithCell(cellBegin, cellEnd, rowOffset + cx + 1, maxDistance,
-              maxDistSq, visitor);
+          _pairWithCell(
+            cellBegin,
+            cellEnd,
+            rowOffset + cx + 1,
+            maxDistance,
+            maxDistSq,
+            visitor,
+          );
         }
 
         if (hasSouth) {
           // Neighbor cell 2: South-West (cx - 1, cy + 1)
           if (cx > 0) {
-            _pairWithCell(cellBegin, cellEnd, southRowOffset + cx - 1,
-                maxDistance, maxDistSq, visitor);
+            _pairWithCell(
+              cellBegin,
+              cellEnd,
+              southRowOffset + cx - 1,
+              maxDistance,
+              maxDistSq,
+              visitor,
+            );
           }
           // Neighbor cell 3: South (cx, cy + 1)
-          _pairWithCell(cellBegin, cellEnd, southRowOffset + cx, maxDistance,
-              maxDistSq, visitor);
+          _pairWithCell(
+            cellBegin,
+            cellEnd,
+            southRowOffset + cx,
+            maxDistance,
+            maxDistSq,
+            visitor,
+          );
           // Neighbor cell 4: South-East (cx + 1, cy + 1)
           if (cx + 1 < cCols) {
-            _pairWithCell(cellBegin, cellEnd, southRowOffset + cx + 1,
-                maxDistance, maxDistSq, visitor);
+            _pairWithCell(
+              cellBegin,
+              cellEnd,
+              southRowOffset + cx + 1,
+              maxDistance,
+              maxDistSq,
+              visitor,
+            );
           }
         }
       }
@@ -589,7 +615,8 @@ class SortedSpatialGrid {
 
   /// Iterates all particles currently stored in the grid in contiguous SoA memory order.
   void forEachParticle(
-      void Function(int particleIndex, double px, double py) visitor) {
+    void Function(int particleIndex, double px, double py) visitor,
+  ) {
     if (!isInitialized) return;
     final int n = count;
     final Float64List pXs = xs;

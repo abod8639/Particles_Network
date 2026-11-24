@@ -17,11 +17,11 @@ class LineBuckets {
   final Int32List _rawOffsets = Int32List(numBuckets);
 
   LineBuckets({int initialSegmentCapacityPerBucket = 512})
-      : _rawBuckets = List.generate(
-          numBuckets,
-          (_) => Float32List(initialSegmentCapacityPerBucket * 4),
-          growable: false,
-        );
+    : _rawBuckets = List.generate(
+        numBuckets,
+        (_) => Float32List(initialSegmentCapacityPerBucket * 4),
+        growable: false,
+      );
 
   /// Raw coordinate buffers for each alpha bucket.
   List<Float32List> get rawBuckets => _rawBuckets;

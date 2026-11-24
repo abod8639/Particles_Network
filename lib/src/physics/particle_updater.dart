@@ -29,10 +29,12 @@ class ParticleUpdater implements ITimeScaledParticleController {
     final bool hasGlobalGravity =
         gravity.type == GravityType.global && gravity.strength != 0;
     final double gStrength = gravity.strength;
-    final double gfx =
-        hasGlobalGravity ? gravity.direction.dx * gStrength : 0.0;
-    final double gfy =
-        hasGlobalGravity ? gravity.direction.dy * gStrength : 0.0;
+    final double gfx = hasGlobalGravity
+        ? gravity.direction.dx * gStrength
+        : 0.0;
+    final double gfy = hasGlobalGravity
+        ? gravity.direction.dy * gStrength
+        : 0.0;
     final bool isPointGravity =
         gravity.type == GravityType.point && gStrength != 0;
     final Offset center = gravity.center ?? Offset.zero;

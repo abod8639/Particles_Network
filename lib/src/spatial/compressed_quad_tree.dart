@@ -94,10 +94,7 @@ class CompressedQuadTree {
   }
 
   /// Bulk builds the tree from a list of particles and visible indices.
-  void buildFromParticles(
-    List<dynamic> particles,
-    List<int> visibleParticles,
-  ) {
+  void buildFromParticles(List<dynamic> particles, List<int> visibleParticles) {
     clear();
     for (final i in visibleParticles) {
       if (i < particles.length) {
@@ -163,10 +160,7 @@ class CompressedQuadTree {
 
   /// Returns legacy performance and node statistics.
   Map<String, dynamic> getStats() {
-    return {
-      'totalParticles': _particles.length,
-      'deprecated': true,
-    };
+    return {'totalParticles': _particles.length, 'deprecated': true};
   }
 
   /// Compatibility no-op for memory optimization.

@@ -12,8 +12,8 @@ class CandidateBuffer {
   Int32List _connectionCounts = Int32List(0);
 
   CandidateBuffer({int initialCapacity = 128})
-      : _indices = Int32List(initialCapacity),
-        _distSq = Float64List(initialCapacity);
+    : _indices = Int32List(initialCapacity),
+      _distSq = Float64List(initialCapacity);
 
   /// Candidate particle index array.
   Int32List get indices => _indices;
@@ -31,8 +31,9 @@ class CandidateBuffer {
   @pragma('vm:prefer-inline')
   Int32List getClearedConnectionCounts(int minSize) {
     if (_connectionCounts.length < minSize) {
-      _connectionCounts =
-          Int32List(math.max(minSize, _connectionCounts.length * 2));
+      _connectionCounts = Int32List(
+        math.max(minSize, _connectionCounts.length * 2),
+      );
     }
     _connectionCounts.fillRange(0, minSize, 0);
     return _connectionCounts;

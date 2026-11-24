@@ -84,7 +84,7 @@ class PerformanceFeatures {
   /// Throttles candidate connections in dense particle clusters, optimizes spatial grid rebuilds,
   /// and prevents visual clutter and frame drops in congested areas.
   ///
-  /// Forwarded from [complex.enabled].
+  /// Forwarded from [ComplexConfig.enabled].
   bool get isComplex => complex.enabled;
 
   /// Connection reduction ratio for dense clusters when complex mode or density throttling is active.
@@ -92,7 +92,7 @@ class PerformanceFeatures {
   /// Controls the fraction of candidate connections pruned in dense clusters (value between `0.0` and `1.0`).
   /// For example, `0.4` eliminates 40% of cluster lines (keeping 60%), while `0.7` eliminates 70% (keeping 30%).
   ///
-  /// Forwarded from [complex.ratio].
+  /// Forwarded from [ComplexConfig.ratio].
   double? get complexReductionRatio => complex.ratio;
 
   /// Maximum number of connection lines an individual particle can emit when located in a dense cluster.
@@ -100,7 +100,7 @@ class PerformanceFeatures {
   /// When `null`, automatically defaults to 3 lines (in individual mode) or 5 lines (in batched mode)
   /// when [isComplex] is `true`.
   ///
-  /// Forwarded from [complex.maxLines].
+  /// Forwarded from [ComplexConfig.maxLines].
   int? get maxComplexLines => complex.maxLines;
 
   /// Distance multiplier factor used to identify whether a particle is inside a dense cluster.
@@ -108,7 +108,7 @@ class PerformanceFeatures {
   /// When `null`, defaults to `0.60` (`dist ~/ (1.0 / 0.60)`) when [isComplex] is `true`,
   /// or approximately `0.67` (`dist ~/ 1.5`) otherwise.
   ///
-  /// Forwarded from [complex.densityFactor].
+  /// Forwarded from [ComplexConfig.densityFactor].
   double? get complexDensityFactor => complex.densityFactor;
 
   /// Proximity distance ratio threshold applied when [maxConnectionsPerParticle] is active.
@@ -165,22 +165,22 @@ class PerformanceFeatures {
     this.antiAlias = true,
     this.spatialCellMultiplier,
     this.autoBoost = false,
-  })  : assert(
-          maxConnectionsPerParticle == null || maxConnectionsPerParticle > 0,
-          'maxConnectionsPerParticle must be greater than 0',
-        ),
-        assert(
-          maxLinesPerFrame == null || maxLinesPerFrame > 0,
-          'maxLinesPerFrame must be greater than 0',
-        ),
-        assert(
-          cappedDistanceFactor > 0.0 && cappedDistanceFactor <= 1.0,
-          'cappedDistanceFactor must be between 0.0 (exclusive) and 1.0 (inclusive)',
-        ),
-        assert(
-          spatialCellMultiplier == null || spatialCellMultiplier > 0.0,
-          'spatialCellMultiplier must be greater than 0.0',
-        );
+  }) : assert(
+         maxConnectionsPerParticle == null || maxConnectionsPerParticle > 0,
+         'maxConnectionsPerParticle must be greater than 0',
+       ),
+       assert(
+         maxLinesPerFrame == null || maxLinesPerFrame > 0,
+         'maxLinesPerFrame must be greater than 0',
+       ),
+       assert(
+         cappedDistanceFactor > 0.0 && cappedDistanceFactor <= 1.0,
+         'cappedDistanceFactor must be between 0.0 (exclusive) and 1.0 (inclusive)',
+       ),
+       assert(
+         spatialCellMultiplier == null || spatialCellMultiplier > 0.0,
+         'spatialCellMultiplier must be greater than 0.0',
+       );
 
   /// High-performance preset tuned for high particle counts (300+ to 1,000+ particles) and rock-solid 60/120 FPS.
   ///
@@ -204,22 +204,22 @@ class PerformanceFeatures {
     this.antiAlias = true,
     this.spatialCellMultiplier,
     this.autoBoost = false,
-  })  : assert(
-          maxConnectionsPerParticle == null || maxConnectionsPerParticle > 0,
-          'maxConnectionsPerParticle must be greater than 0',
-        ),
-        assert(
-          maxLinesPerFrame == null || maxLinesPerFrame > 0,
-          'maxLinesPerFrame must be greater than 0',
-        ),
-        assert(
-          cappedDistanceFactor > 0.0 && cappedDistanceFactor <= 1.0,
-          'cappedDistanceFactor must be between 0.0 (exclusive) and 1.0 (inclusive)',
-        ),
-        assert(
-          spatialCellMultiplier == null || spatialCellMultiplier > 0.0,
-          'spatialCellMultiplier must be greater than 0.0',
-        );
+  }) : assert(
+         maxConnectionsPerParticle == null || maxConnectionsPerParticle > 0,
+         'maxConnectionsPerParticle must be greater than 0',
+       ),
+       assert(
+         maxLinesPerFrame == null || maxLinesPerFrame > 0,
+         'maxLinesPerFrame must be greater than 0',
+       ),
+       assert(
+         cappedDistanceFactor > 0.0 && cappedDistanceFactor <= 1.0,
+         'cappedDistanceFactor must be between 0.0 (exclusive) and 1.0 (inclusive)',
+       ),
+       assert(
+         spatialCellMultiplier == null || spatialCellMultiplier > 0.0,
+         'spatialCellMultiplier must be greater than 0.0',
+       );
 
   /// Flexible complex preset for fine-grained control over dense cluster line reduction.
   ///
@@ -244,22 +244,22 @@ class PerformanceFeatures {
     this.antiAlias = true,
     this.spatialCellMultiplier,
     this.autoBoost = false,
-  })  : assert(
-          maxConnectionsPerParticle == null || maxConnectionsPerParticle > 0,
-          'maxConnectionsPerParticle must be greater than 0',
-        ),
-        assert(
-          maxLinesPerFrame == null || maxLinesPerFrame > 0,
-          'maxLinesPerFrame must be greater than 0',
-        ),
-        assert(
-          cappedDistanceFactor > 0.0 && cappedDistanceFactor <= 1.0,
-          'cappedDistanceFactor must be between 0.0 (exclusive) and 1.0 (inclusive)',
-        ),
-        assert(
-          spatialCellMultiplier == null || spatialCellMultiplier > 0.0,
-          'spatialCellMultiplier must be greater than 0.0',
-        );
+  }) : assert(
+         maxConnectionsPerParticle == null || maxConnectionsPerParticle > 0,
+         'maxConnectionsPerParticle must be greater than 0',
+       ),
+       assert(
+         maxLinesPerFrame == null || maxLinesPerFrame > 0,
+         'maxLinesPerFrame must be greater than 0',
+       ),
+       assert(
+         cappedDistanceFactor > 0.0 && cappedDistanceFactor <= 1.0,
+         'cappedDistanceFactor must be between 0.0 (exclusive) and 1.0 (inclusive)',
+       ),
+       assert(
+         spatialCellMultiplier == null || spatialCellMultiplier > 0.0,
+         'spatialCellMultiplier must be greater than 0.0',
+       );
 
   /// Auto-performance preset that dynamically adapts parameters based on device frame rates.
   ///
@@ -282,22 +282,22 @@ class PerformanceFeatures {
     this.antiAlias = true,
     this.spatialCellMultiplier,
     this.autoBoost = true,
-  })  : assert(
-          maxConnectionsPerParticle == null || maxConnectionsPerParticle > 0,
-          'maxConnectionsPerParticle must be greater than 0',
-        ),
-        assert(
-          maxLinesPerFrame == null || maxLinesPerFrame > 0,
-          'maxLinesPerFrame must be greater than 0',
-        ),
-        assert(
-          cappedDistanceFactor > 0.0 && cappedDistanceFactor <= 1.0,
-          'cappedDistanceFactor must be between 0.0 (exclusive) and 1.0 (inclusive)',
-        ),
-        assert(
-          spatialCellMultiplier == null || spatialCellMultiplier > 0.0,
-          'spatialCellMultiplier must be greater than 0.0',
-        );
+  }) : assert(
+         maxConnectionsPerParticle == null || maxConnectionsPerParticle > 0,
+         'maxConnectionsPerParticle must be greater than 0',
+       ),
+       assert(
+         maxLinesPerFrame == null || maxLinesPerFrame > 0,
+         'maxLinesPerFrame must be greater than 0',
+       ),
+       assert(
+         cappedDistanceFactor > 0.0 && cappedDistanceFactor <= 1.0,
+         'cappedDistanceFactor must be between 0.0 (exclusive) and 1.0 (inclusive)',
+       ),
+       assert(
+         spatialCellMultiplier == null || spatialCellMultiplier > 0.0,
+         'spatialCellMultiplier must be greater than 0.0',
+       );
 
   /// Balanced preset that maintains rich visual density with sensible performance limits.
   ///
@@ -320,22 +320,22 @@ class PerformanceFeatures {
     this.antiAlias = true,
     this.spatialCellMultiplier,
     this.autoBoost = false,
-  })  : assert(
-          maxConnectionsPerParticle == null || maxConnectionsPerParticle > 0,
-          'maxConnectionsPerParticle must be greater than 0',
-        ),
-        assert(
-          maxLinesPerFrame == null || maxLinesPerFrame > 0,
-          'maxLinesPerFrame must be greater than 0',
-        ),
-        assert(
-          cappedDistanceFactor > 0.0 && cappedDistanceFactor <= 1.0,
-          'cappedDistanceFactor must be between 0.0 (exclusive) and 1.0 (inclusive)',
-        ),
-        assert(
-          spatialCellMultiplier == null || spatialCellMultiplier > 0.0,
-          'spatialCellMultiplier must be greater than 0.0',
-        );
+  }) : assert(
+         maxConnectionsPerParticle == null || maxConnectionsPerParticle > 0,
+         'maxConnectionsPerParticle must be greater than 0',
+       ),
+       assert(
+         maxLinesPerFrame == null || maxLinesPerFrame > 0,
+         'maxLinesPerFrame must be greater than 0',
+       ),
+       assert(
+         cappedDistanceFactor > 0.0 && cappedDistanceFactor <= 1.0,
+         'cappedDistanceFactor must be between 0.0 (exclusive) and 1.0 (inclusive)',
+       ),
+       assert(
+         spatialCellMultiplier == null || spatialCellMultiplier > 0.0,
+         'spatialCellMultiplier must be greater than 0.0',
+       );
 
   /// Creates a copy of this [PerformanceFeatures] configuration with updated parameters.
   ///
@@ -423,15 +423,15 @@ class PerformanceFeatures {
 
   @override
   int get hashCode => Object.hash(
-        maxConnectionsPerParticle,
-        maxLinesPerFrame,
-        frameRateIndependent,
-        complex,
-        cappedDistanceFactor,
-        antiAlias,
-        spatialCellMultiplier,
-        autoBoost,
-      );
+    maxConnectionsPerParticle,
+    maxLinesPerFrame,
+    frameRateIndependent,
+    complex,
+    cappedDistanceFactor,
+    antiAlias,
+    spatialCellMultiplier,
+    autoBoost,
+  );
 
   @override
   String toString() {

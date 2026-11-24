@@ -39,16 +39,19 @@ void main() {
       expect(perf.autoBoost, isTrue);
     });
 
-    test('complex preset has fine-grained dense cluster controls (L181-L182)', () {
-      final perf = PerformanceFeatures.complex();
+    test(
+      'complex preset has fine-grained dense cluster controls (L181-L182)',
+      () {
+        final perf = PerformanceFeatures.complex();
 
-      expect(perf.isComplex, isTrue);
-      expect(perf.complexReductionRatio, equals(0.5));
-      expect(perf.maxComplexLines, equals(3));
-      expect(perf.complexDensityFactor, equals(0.60));
-      expect(perf.cappedDistanceFactor, equals(0.75));
-      expect(perf.autoBoost, isFalse);
-    });
+        expect(perf.isComplex, isTrue);
+        expect(perf.complexReductionRatio, equals(0.5));
+        expect(perf.maxComplexLines, equals(3));
+        expect(perf.complexDensityFactor, equals(0.60));
+        expect(perf.cappedDistanceFactor, equals(0.75));
+        expect(perf.autoBoost, isFalse);
+      },
+    );
 
     test('balanced preset has sensible performance and fidelity limits', () {
       const perf = PerformanceFeatures.balanced();
@@ -66,10 +69,7 @@ void main() {
         frameRateIndependent: false,
       );
 
-      final updated = initial.copyWith(
-        maxLinesPerFrame: 3000,
-        isComplex: true,
-      );
+      final updated = initial.copyWith(maxLinesPerFrame: 3000, isComplex: true);
 
       expect(updated.maxConnectionsPerParticle, equals(5));
       expect(updated.maxLinesPerFrame, equals(3000));
@@ -118,15 +118,17 @@ void main() {
       expect(perf1, isNot(equals(perf3)));
     });
 
-    test('complex preset has optimized values for dense cluster throttling',
-        () {
-      final perf = const PerformanceFeatures.complex();
+    test(
+      'complex preset has optimized values for dense cluster throttling',
+      () {
+        final perf = const PerformanceFeatures.complex();
 
-      expect(perf.isComplex, isTrue);
-      expect(perf.complexReductionRatio, equals(0.5));
-      expect(perf.maxComplexLines, equals(3));
-      expect(perf.complexDensityFactor, equals(0.60));
-    });
+        expect(perf.isComplex, isTrue);
+        expect(perf.complexReductionRatio, equals(0.5));
+        expect(perf.maxComplexLines, equals(3));
+        expect(perf.complexDensityFactor, equals(0.60));
+      },
+    );
 
     test('complex preset allows overriding throttling parameters', () {
       const perf = PerformanceFeatures.complex(
@@ -145,130 +147,113 @@ void main() {
     });
 
     test(
-        'validates assertion for ratio, maxLines, and densityFactor in ComplexConfig',
-        () {
-      expect(
-        () => ComplexConfig(ratio: -0.1),
-        throwsAssertionError,
-      );
-      expect(
-        () => ComplexConfig(ratio: 1.1),
-        throwsAssertionError,
-      );
-      expect(
-        () => ComplexConfig(maxLines: 0),
-        throwsAssertionError,
-      );
-      expect(
-        () => ComplexConfig(densityFactor: 0.0),
-        throwsAssertionError,
-      );
-    });
+      'validates assertion for ratio, maxLines, and densityFactor in ComplexConfig',
+      () {
+        expect(() => ComplexConfig(ratio: -0.1), throwsAssertionError);
+        expect(() => ComplexConfig(ratio: 1.1), throwsAssertionError);
+        expect(() => ComplexConfig(maxLines: 0), throwsAssertionError);
+        expect(() => ComplexConfig(densityFactor: 0.0), throwsAssertionError);
+      },
+    );
 
     test(
-        'validates assertion errors for PerformanceFeatures.complex (L195-L221)',
-        () {
-      expect(
-        () => PerformanceFeatures.complex(maxConnectionsPerParticle: 0),
-        throwsAssertionError,
-      );
-      expect(
-        () => PerformanceFeatures.complex(maxLinesPerFrame: 0),
-        throwsAssertionError,
-      );
-      expect(
-        () => PerformanceFeatures.complex(cappedDistanceFactor: 0.0),
-        throwsAssertionError,
-      );
-      expect(
-        () => PerformanceFeatures.complex(spatialCellMultiplier: 0.0),
-        throwsAssertionError,
-      );
-    });
+      'validates assertion errors for PerformanceFeatures.complex (L195-L221)',
+      () {
+        expect(
+          () => PerformanceFeatures.complex(maxConnectionsPerParticle: 0),
+          throwsAssertionError,
+        );
+        expect(
+          () => PerformanceFeatures.complex(maxLinesPerFrame: 0),
+          throwsAssertionError,
+        );
+        expect(
+          () => PerformanceFeatures.complex(cappedDistanceFactor: 0.0),
+          throwsAssertionError,
+        );
+        expect(
+          () => PerformanceFeatures.complex(spatialCellMultiplier: 0.0),
+          throwsAssertionError,
+        );
+      },
+    );
 
     test(
-        'validates assertion errors for PerformanceFeatures.auto (L245-L267)',
-        () {
-      expect(
-        () => PerformanceFeatures.auto(maxConnectionsPerParticle: 0),
-        throwsAssertionError,
-      );
-      expect(
-        () => PerformanceFeatures.auto(maxLinesPerFrame: 0),
-        throwsAssertionError,
-      );
-      expect(
-        () => PerformanceFeatures.auto(cappedDistanceFactor: 0.0),
-        throwsAssertionError,
-      );
-      expect(
-        () => PerformanceFeatures.auto(spatialCellMultiplier: 0.0),
-        throwsAssertionError,
-      );
-    });
+      'validates assertion errors for PerformanceFeatures.auto (L245-L267)',
+      () {
+        expect(
+          () => PerformanceFeatures.auto(maxConnectionsPerParticle: 0),
+          throwsAssertionError,
+        );
+        expect(
+          () => PerformanceFeatures.auto(maxLinesPerFrame: 0),
+          throwsAssertionError,
+        );
+        expect(
+          () => PerformanceFeatures.auto(cappedDistanceFactor: 0.0),
+          throwsAssertionError,
+        );
+        expect(
+          () => PerformanceFeatures.auto(spatialCellMultiplier: 0.0),
+          throwsAssertionError,
+        );
+      },
+    );
 
     test(
-        'validates assertion errors for PerformanceFeatures.balanced (L297-L311)',
-        () {
-      expect(
-        () => PerformanceFeatures.balanced(maxConnectionsPerParticle: 0),
-        throwsAssertionError,
-      );
-      expect(
-        () => PerformanceFeatures.balanced(maxLinesPerFrame: 0),
-        throwsAssertionError,
-      );
-      expect(
-        () => PerformanceFeatures.balanced(cappedDistanceFactor: 0.0),
-        throwsAssertionError,
-      );
-      expect(
-        () => PerformanceFeatures.balanced(spatialCellMultiplier: 0.0),
-        throwsAssertionError,
-      );
-    });
+      'validates assertion errors for PerformanceFeatures.balanced (L297-L311)',
+      () {
+        expect(
+          () => PerformanceFeatures.balanced(maxConnectionsPerParticle: 0),
+          throwsAssertionError,
+        );
+        expect(
+          () => PerformanceFeatures.balanced(maxLinesPerFrame: 0),
+          throwsAssertionError,
+        );
+        expect(
+          () => PerformanceFeatures.balanced(cappedDistanceFactor: 0.0),
+          throwsAssertionError,
+        );
+        expect(
+          () => PerformanceFeatures.balanced(spatialCellMultiplier: 0.0),
+          throwsAssertionError,
+        );
+      },
+    );
 
     test(
-        'copyWith updates and clears complexReductionRatio, maxComplexLines, and complexDensityFactor',
-        () {
-      const initial = PerformanceFeatures(
-        complex: ComplexConfig(
-          ratio: 0.5,
-          maxLines: 4,
-          densityFactor: 0.3,
-        ),
-      );
+      'copyWith updates and clears complexReductionRatio, maxComplexLines, and complexDensityFactor',
+      () {
+        const initial = PerformanceFeatures(
+          complex: ComplexConfig(ratio: 0.5, maxLines: 4, densityFactor: 0.3),
+        );
 
-      final updated = initial.copyWith(
-        complexReductionRatio: 0.75,
-        maxComplexLines: 2,
-        complexDensityFactor: 0.5,
-      );
+        final updated = initial.copyWith(
+          complexReductionRatio: 0.75,
+          maxComplexLines: 2,
+          complexDensityFactor: 0.5,
+        );
 
-      expect(updated.complexReductionRatio, equals(0.75));
-      expect(updated.maxComplexLines, equals(2));
-      expect(updated.complexDensityFactor, equals(0.5));
+        expect(updated.complexReductionRatio, equals(0.75));
+        expect(updated.maxComplexLines, equals(2));
+        expect(updated.complexDensityFactor, equals(0.5));
 
-      final cleared = updated.copyWith(
-        clearcomplexReductionRatio: true,
-        clearMaxComplexLines: true,
-        clearcomplexDensityFactor: true,
-      );
+        final cleared = updated.copyWith(
+          clearcomplexReductionRatio: true,
+          clearMaxComplexLines: true,
+          clearcomplexDensityFactor: true,
+        );
 
-      expect(cleared.complexReductionRatio, isNull);
-      expect(cleared.maxComplexLines, isNull);
-      expect(cleared.complexDensityFactor, isNull);
-    });
+        expect(cleared.complexReductionRatio, isNull);
+        expect(cleared.maxComplexLines, isNull);
+        expect(cleared.complexDensityFactor, isNull);
+      },
+    );
 
-    test(
-        'toString contains ComplexConfig representation',
-        () {
+    test('toString contains ComplexConfig representation', () {
       const perf = PerformanceFeatures(
-        complex: ComplexConfig(
-          ratio: 0.6,
-          maxLines: 3,
-          densityFactor: 0.2,
-        ),
+        complex: ComplexConfig(ratio: 0.6, maxLines: 3, densityFactor: 0.2),
       );
 
       final str = perf.toString();
@@ -340,8 +325,9 @@ void main() {
         matching: find.byType(CustomPaint),
       );
 
-      var painter = tester.widget<CustomPaint>(customPaintFinder).painter
-          as OptimizedNetworkPainter;
+      var painter =
+          tester.widget<CustomPaint>(customPaintFinder).painter
+              as OptimizedNetworkPainter;
       expect(painter.maxConnectionsPerParticle, equals(2));
       expect(painter.isComplex, isFalse);
 
@@ -362,67 +348,68 @@ void main() {
         ),
       );
 
-      painter = tester.widget<CustomPaint>(customPaintFinder).painter
-          as OptimizedNetworkPainter;
+      painter =
+          tester.widget<CustomPaint>(customPaintFinder).painter
+              as OptimizedNetworkPainter;
       expect(painter.maxConnectionsPerParticle, equals(8));
       expect(painter.lineRenderer, equals(LineRenderer.vertices));
       expect(painter.isComplex, isTrue);
     });
 
     testWidgets(
-        'legacy isComplex parameter falls back to painter and logs deprecation',
-        (
-      WidgetTester tester,
-    ) async {
-      LegacyDeprecationLogger.resetWarned();
+      'legacy isComplex parameter falls back to painter and logs deprecation',
+      (WidgetTester tester) async {
+        LegacyDeprecationLogger.resetWarned();
 
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 300,
-              height: 300,
-              child: ParticleNetwork(
-                isComplex: true,
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                width: 300,
+                height: 300,
+                child: ParticleNetwork(isComplex: true),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      final customPaintFinder = find.descendant(
-        of: find.byType(ParticleNetwork),
-        matching: find.byType(CustomPaint),
-      );
+        final customPaintFinder = find.descendant(
+          of: find.byType(ParticleNetwork),
+          matching: find.byType(CustomPaint),
+        );
 
-      final painter = tester.widget<CustomPaint>(customPaintFinder).painter
-          as OptimizedNetworkPainter;
-      expect(painter.isComplex, isTrue);
-      expect(
-        LegacyDeprecationLogger.hasWarned('ParticleNetwork(isComplex)'),
-        isTrue,
-      );
-    });
+        final painter =
+            tester.widget<CustomPaint>(customPaintFinder).painter
+                as OptimizedNetworkPainter;
+        expect(painter.isComplex, isTrue);
+        expect(
+          LegacyDeprecationLogger.hasWarned('ParticleNetwork(isComplex)'),
+          isTrue,
+        );
+      },
+    );
 
-    test('LegacyDeprecationLogger logs once and ignores duplicate warnings',
-        () {
-      LegacyDeprecationLogger.resetWarned();
-      const api = 'TestDeprecatedApi';
-      expect(LegacyDeprecationLogger.hasWarned(api), isFalse);
+    test(
+      'LegacyDeprecationLogger logs once and ignores duplicate warnings',
+      () {
+        LegacyDeprecationLogger.resetWarned();
+        const api = 'TestDeprecatedApi';
+        expect(LegacyDeprecationLogger.hasWarned(api), isFalse);
 
-      LegacyDeprecationLogger.warn(
-        deprecatedApi: api,
-        replacement: 'TestReplacement',
-      );
-      expect(LegacyDeprecationLogger.hasWarned(api), isTrue);
+        LegacyDeprecationLogger.warn(
+          deprecatedApi: api,
+          replacement: 'TestReplacement',
+        );
+        expect(LegacyDeprecationLogger.hasWarned(api), isTrue);
 
-      // Second call triggers duplicate check early return (L34)
-      LegacyDeprecationLogger.warn(
-        deprecatedApi: api,
-        replacement: 'TestReplacement',
-      );
-      expect(LegacyDeprecationLogger.hasWarned(api), isTrue);
-    });
+        // Second call triggers duplicate check early return (L34)
+        LegacyDeprecationLogger.warn(
+          deprecatedApi: api,
+          replacement: 'TestReplacement',
+        );
+        expect(LegacyDeprecationLogger.hasWarned(api), isTrue);
+      },
+    );
 
     testWidgets(
       'isComplex reduces lines at dense cluster while keeping sparse connections',
@@ -462,7 +449,9 @@ void main() {
           particleColor: Colors.white,
           lineColor: Colors.grey,
           lineWidth: 1.0,
-          performance: const PerformanceFeatures(complex: ComplexConfig(enabled: false)),
+          performance: const PerformanceFeatures(
+            complex: ComplexConfig(enabled: false),
+          ),
         );
 
         final complexPainter = OptimizedNetworkPainter(
@@ -475,7 +464,9 @@ void main() {
           particleColor: Colors.white,
           lineColor: Colors.grey,
           lineWidth: 1.0,
-          performance: const PerformanceFeatures(complex: ComplexConfig(enabled: true)),
+          performance: const PerformanceFeatures(
+            complex: ComplexConfig(enabled: true),
+          ),
         );
 
         final recorder = PictureRecorder();
@@ -493,63 +484,62 @@ void main() {
       },
     );
 
-    testWidgets(
-      'isComplex throttles dense clusters',
-      (WidgetTester tester) async {
-        final denseParticles = List.generate(
-          35,
-          (i) => Particle(
-            position: Offset(100.0 + (i % 6) * 2.0, 100.0 + (i ~/ 6) * 2.0),
-            velocity: Offset.zero,
-            color: Colors.white,
-            size: 2.0,
-          ),
-        );
+    testWidgets('isComplex throttles dense clusters', (
+      WidgetTester tester,
+    ) async {
+      final denseParticles = List.generate(
+        35,
+        (i) => Particle(
+          position: Offset(100.0 + (i % 6) * 2.0, 100.0 + (i ~/ 6) * 2.0),
+          velocity: Offset.zero,
+          color: Colors.white,
+          size: 2.0,
+        ),
+      );
 
-        final normalFastPainter = OptimizedNetworkPainter(
-          drawNetwork: true,
-          fill: false,
-          particleCount: denseParticles.length,
-          particles: denseParticles,
-          touchPoint: null,
-          lineDistance: 50.0,
-          particleColor: Colors.white,
-          lineColor: Colors.grey,
-          lineWidth: 1.0,
-          performance: const PerformanceFeatures(
-            complex: ComplexConfig(enabled: false),
-          ),
-        );
+      final normalFastPainter = OptimizedNetworkPainter(
+        drawNetwork: true,
+        fill: false,
+        particleCount: denseParticles.length,
+        particles: denseParticles,
+        touchPoint: null,
+        lineDistance: 50.0,
+        particleColor: Colors.white,
+        lineColor: Colors.grey,
+        lineWidth: 1.0,
+        performance: const PerformanceFeatures(
+          complex: ComplexConfig(enabled: false),
+        ),
+      );
 
-        final complexFastPainter = OptimizedNetworkPainter(
-          drawNetwork: true,
-          fill: false,
-          particleCount: denseParticles.length,
-          particles: denseParticles,
-          touchPoint: null,
-          lineDistance: 50.0,
-          particleColor: Colors.white,
-          lineColor: Colors.grey,
-          lineWidth: 1.0,
-          performance: const PerformanceFeatures(
-            complex: ComplexConfig(enabled: true),
-          ),
-        );
+      final complexFastPainter = OptimizedNetworkPainter(
+        drawNetwork: true,
+        fill: false,
+        particleCount: denseParticles.length,
+        particles: denseParticles,
+        touchPoint: null,
+        lineDistance: 50.0,
+        particleColor: Colors.white,
+        lineColor: Colors.grey,
+        lineWidth: 1.0,
+        performance: const PerformanceFeatures(
+          complex: ComplexConfig(enabled: true),
+        ),
+      );
 
-        final recorder = PictureRecorder();
-        final canvas = Canvas(recorder);
-        const size = Size(500, 500);
+      final recorder = PictureRecorder();
+      final canvas = Canvas(recorder);
+      const size = Size(500, 500);
 
-        normalFastPainter.paint(canvas, size);
-        complexFastPainter.paint(canvas, size);
+      normalFastPainter.paint(canvas, size);
+      complexFastPainter.paint(canvas, size);
 
-        expect(
-          complexFastPainter.lastFrameLineCount,
-          lessThan(normalFastPainter.lastFrameLineCount),
-        );
-        expect(complexFastPainter.lastFrameLineCount, greaterThan(0));
-      },
-    );
+      expect(
+        complexFastPainter.lastFrameLineCount,
+        lessThan(normalFastPainter.lastFrameLineCount),
+      );
+      expect(complexFastPainter.lastFrameLineCount, greaterThan(0));
+    });
 
     test(
       'maxConnectionsPerParticle connects closest neighbors across spatial cell boundaries',
@@ -615,9 +605,7 @@ void main() {
           particleColor: Colors.white,
           lineColor: Colors.grey,
           lineWidth: 1.0,
-          performance: const PerformanceFeatures(
-            maxConnectionsPerParticle: 1,
-          ),
+          performance: const PerformanceFeatures(maxConnectionsPerParticle: 1),
         );
 
         final recorder = PictureRecorder();
@@ -760,10 +748,7 @@ void main() {
           lineColor: Colors.grey,
           lineWidth: 1.0,
           performance: const PerformanceFeatures(
-            complex: ComplexConfig(
-              enabled: true,
-              ratio: 0.4,
-            ),
+            complex: ComplexConfig(enabled: true, ratio: 0.4),
           ),
         );
 
@@ -778,10 +763,7 @@ void main() {
           lineColor: Colors.grey,
           lineWidth: 1.0,
           performance: const PerformanceFeatures(
-            complex: ComplexConfig(
-              enabled: true,
-              ratio: 0.8,
-            ),
+            complex: ComplexConfig(enabled: true, ratio: 0.8),
           ),
         );
 

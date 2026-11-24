@@ -334,12 +334,12 @@ class TouchFeatures {
       'This parameter will be removed in particles_network 2.0.0.',
     )
     bool? hoverEffect,
-  })  : enabled = enabled ?? touchActivation ?? true,
-        speed = speed ?? decayRate ?? 0.42,
-        force = force ?? pullForce ?? 0.42,
-        maxSpeed = maxSpeed ?? maxTouchSpeed ?? 5.5,
-        distance = distance ?? lineDistance,
-        hover = hover ?? hoverEffect ?? false;
+  }) : enabled = enabled ?? touchActivation ?? true,
+       speed = speed ?? decayRate ?? 0.42,
+       force = force ?? pullForce ?? 0.42,
+       maxSpeed = maxSpeed ?? maxTouchSpeed ?? 5.5,
+       distance = distance ?? lineDistance,
+       hover = hover ?? hoverEffect ?? false;
 
   /// Creates a copy of this [TouchFeatures] configuration with updated parameters.
   ///
@@ -443,17 +443,17 @@ class TouchFeatures {
 
   @override
   int get hashCode => Object.hash(
-        type,
-        show,
-        enabled,
-        speed,
-        force,
-        maxSpeed,
-        damping,
-        distance,
-        color,
-        hover,
-      );
+    type,
+    show,
+    enabled,
+    speed,
+    force,
+    maxSpeed,
+    damping,
+    distance,
+    color,
+    hover,
+  );
 
   @override
   String toString() =>

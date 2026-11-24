@@ -4,8 +4,9 @@ import 'dart:typed_data';
 ///
 /// When building without `--dart-define=PARTICLES_NETWORK_PROFILE=true`,
 /// the compiler strips all profiling blocks as dead code in AOT builds.
-const bool kParticlesProfile =
-    bool.fromEnvironment('PARTICLES_NETWORK_PROFILE');
+const bool kParticlesProfile = bool.fromEnvironment(
+  'PARTICLES_NETWORK_PROFILE',
+);
 
 /// Profiling statistics container for spatial grid neighbor scans.
 class ScanStats {

@@ -118,380 +118,279 @@ final List<(String, Widget Function())> gate1bScenarios = [
   (
     'gate1b_baseline_uniform_5k_b4k_stroke',
     () => _wrapTuned(
-          safetyFloor: 20.0,
-          k: 1.0,
-          child: ParticleNetwork(
-            particleCount: 5000,
-            particleFactory: DefaultParticleFactory(
-              random: math.Random(42),
-              maxSpeed: 0.5,
-              maxSize: 1.5,
-              color: Colors.white,
-            ),
-            performance: const PerformanceFeatures(
-              maxLinesPerFrame: 4000,
-            ),
-            network: const NetworkFeatures(
-              renderer: LineRenderer.stroke,
-            ),
-            touchFeatures: const TouchFeatures(enabled: false),
-          ),
+      safetyFloor: 20.0,
+      k: 1.0,
+      child: ParticleNetwork(
+        particleCount: 5000,
+        particleFactory: DefaultParticleFactory(
+          random: math.Random(42),
+          maxSpeed: 0.5,
+          maxSize: 1.5,
+          color: Colors.white,
         ),
+        performance: const PerformanceFeatures(maxLinesPerFrame: 4000),
+        network: const NetworkFeatures(renderer: LineRenderer.stroke),
+        touchFeatures: const TouchFeatures(enabled: false),
+      ),
+    ),
   ),
   (
     'gate1b_baseline_uniform_5k_b15k_vtx',
     () => _wrapTuned(
-          safetyFloor: 20.0,
-          k: 1.0,
-          child: ParticleNetwork(
-            particleCount: 5000,
-            particleFactory: DefaultParticleFactory(
-              random: math.Random(42),
-              maxSpeed: 0.5,
-              maxSize: 1.5,
-              color: Colors.white,
-            ),
-            performance: const PerformanceFeatures(
-              maxLinesPerFrame: 15000,
-            ),
-            network: const NetworkFeatures(
-              renderer: LineRenderer.vertices,
-            ),
-            touchFeatures: const TouchFeatures(enabled: false),
-          ),
+      safetyFloor: 20.0,
+      k: 1.0,
+      child: ParticleNetwork(
+        particleCount: 5000,
+        particleFactory: DefaultParticleFactory(
+          random: math.Random(42),
+          maxSpeed: 0.5,
+          maxSize: 1.5,
+          color: Colors.white,
         ),
+        performance: const PerformanceFeatures(maxLinesPerFrame: 15000),
+        network: const NetworkFeatures(renderer: LineRenderer.vertices),
+        touchFeatures: const TouchFeatures(enabled: false),
+      ),
+    ),
   ),
   (
     'gate1b_baseline_cluster_5k_b4k_stroke',
     () => _wrapTuned(
-          safetyFloor: 20.0,
-          k: 1.0,
-          child: ParticleNetwork(
-            particleCount: 5000,
-            particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-            gravity: const GravityFeatures(
-              type: GravityType.point,
-              strength: 5.0,
-            ),
-            performance: const PerformanceFeatures(
-              maxLinesPerFrame: 4000,
-            ),
-            network: const NetworkFeatures(
-              renderer: LineRenderer.stroke,
-            ),
-            touchFeatures: const TouchFeatures(enabled: false),
-          ),
-        ),
+      safetyFloor: 20.0,
+      k: 1.0,
+      child: ParticleNetwork(
+        particleCount: 5000,
+        particleFactory: ClusteredParticleFactory(random: math.Random(42)),
+        gravity: const GravityFeatures(type: GravityType.point, strength: 5.0),
+        performance: const PerformanceFeatures(maxLinesPerFrame: 4000),
+        network: const NetworkFeatures(renderer: LineRenderer.stroke),
+        touchFeatures: const TouchFeatures(enabled: false),
+      ),
+    ),
   ),
   (
     'gate1b_baseline_cluster_5k_b15k_vtx',
     () => _wrapTuned(
-          safetyFloor: 20.0,
-          k: 1.0,
-          child: ParticleNetwork(
-            particleCount: 5000,
-            particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-            gravity: const GravityFeatures(
-              type: GravityType.point,
-              strength: 5.0,
-            ),
-            performance: const PerformanceFeatures(
-              maxLinesPerFrame: 15000,
-            ),
-            network: const NetworkFeatures(
-              renderer: LineRenderer.vertices,
-            ),
-            touchFeatures: const TouchFeatures(enabled: false),
-          ),
-        ),
+      safetyFloor: 20.0,
+      k: 1.0,
+      child: ParticleNetwork(
+        particleCount: 5000,
+        particleFactory: ClusteredParticleFactory(random: math.Random(42)),
+        gravity: const GravityFeatures(type: GravityType.point, strength: 5.0),
+        performance: const PerformanceFeatures(maxLinesPerFrame: 15000),
+        network: const NetworkFeatures(renderer: LineRenderer.vertices),
+        touchFeatures: const TouchFeatures(enabled: false),
+      ),
+    ),
   ),
 
   // --- OPTION A (safetyFloor = 4.0, k = 4.0) ---
   (
     'gate1b_optA_k4_uniform_5k_b4k_stroke',
     () => _wrapTuned(
-          safetyFloor: 4.0,
-          k: 4.0,
-          child: ParticleNetwork(
-            particleCount: 5000,
-            particleFactory: DefaultParticleFactory(
-              random: math.Random(42),
-              maxSpeed: 0.5,
-              maxSize: 1.5,
-              color: Colors.white,
-            ),
-            performance: const PerformanceFeatures(
-              maxLinesPerFrame: 4000,
-            ),
-            network: const NetworkFeatures(
-              renderer: LineRenderer.stroke,
-            ),
-            touchFeatures: const TouchFeatures(enabled: false),
-          ),
+      safetyFloor: 4.0,
+      k: 4.0,
+      child: ParticleNetwork(
+        particleCount: 5000,
+        particleFactory: DefaultParticleFactory(
+          random: math.Random(42),
+          maxSpeed: 0.5,
+          maxSize: 1.5,
+          color: Colors.white,
         ),
+        performance: const PerformanceFeatures(maxLinesPerFrame: 4000),
+        network: const NetworkFeatures(renderer: LineRenderer.stroke),
+        touchFeatures: const TouchFeatures(enabled: false),
+      ),
+    ),
   ),
   (
     'gate1b_optA_k4_uniform_5k_b15k_vtx',
     () => _wrapTuned(
-          safetyFloor: 4.0,
-          k: 4.0,
-          child: ParticleNetwork(
-            particleCount: 5000,
-            particleFactory: DefaultParticleFactory(
-              random: math.Random(42),
-              maxSpeed: 0.5,
-              maxSize: 1.5,
-              color: Colors.white,
-            ),
-            performance: const PerformanceFeatures(
-              maxLinesPerFrame: 15000,
-            ),
-            network: const NetworkFeatures(
-              renderer: LineRenderer.vertices,
-            ),
-            touchFeatures: const TouchFeatures(enabled: false),
-          ),
+      safetyFloor: 4.0,
+      k: 4.0,
+      child: ParticleNetwork(
+        particleCount: 5000,
+        particleFactory: DefaultParticleFactory(
+          random: math.Random(42),
+          maxSpeed: 0.5,
+          maxSize: 1.5,
+          color: Colors.white,
         ),
+        performance: const PerformanceFeatures(maxLinesPerFrame: 15000),
+        network: const NetworkFeatures(renderer: LineRenderer.vertices),
+        touchFeatures: const TouchFeatures(enabled: false),
+      ),
+    ),
   ),
   (
     'gate1b_optA_k4_cluster_5k_b4k_stroke',
     () => _wrapTuned(
-          safetyFloor: 4.0,
-          k: 4.0,
-          child: ParticleNetwork(
-            particleCount: 5000,
-            particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-            gravity: const GravityFeatures(
-              type: GravityType.point,
-              strength: 5.0,
-            ),
-            performance: const PerformanceFeatures(
-              maxLinesPerFrame: 4000,
-            ),
-            network: const NetworkFeatures(
-              renderer: LineRenderer.stroke,
-            ),
-            touchFeatures: const TouchFeatures(enabled: false),
-          ),
-        ),
+      safetyFloor: 4.0,
+      k: 4.0,
+      child: ParticleNetwork(
+        particleCount: 5000,
+        particleFactory: ClusteredParticleFactory(random: math.Random(42)),
+        gravity: const GravityFeatures(type: GravityType.point, strength: 5.0),
+        performance: const PerformanceFeatures(maxLinesPerFrame: 4000),
+        network: const NetworkFeatures(renderer: LineRenderer.stroke),
+        touchFeatures: const TouchFeatures(enabled: false),
+      ),
+    ),
   ),
   (
     'gate1b_optA_k4_cluster_5k_b15k_vtx',
     () => _wrapTuned(
-          safetyFloor: 4.0,
-          k: 4.0,
-          child: ParticleNetwork(
-            particleCount: 5000,
-            particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-            gravity: const GravityFeatures(
-              type: GravityType.point,
-              strength: 5.0,
-            ),
-            performance: const PerformanceFeatures(
-              maxLinesPerFrame: 15000,
-            ),
-            network: const NetworkFeatures(
-              renderer: LineRenderer.vertices,
-            ),
-            touchFeatures: const TouchFeatures(enabled: false),
-          ),
-        ),
+      safetyFloor: 4.0,
+      k: 4.0,
+      child: ParticleNetwork(
+        particleCount: 5000,
+        particleFactory: ClusteredParticleFactory(random: math.Random(42)),
+        gravity: const GravityFeatures(type: GravityType.point, strength: 5.0),
+        performance: const PerformanceFeatures(maxLinesPerFrame: 15000),
+        network: const NetworkFeatures(renderer: LineRenderer.vertices),
+        touchFeatures: const TouchFeatures(enabled: false),
+      ),
+    ),
   ),
 
   // --- QUESTION 2 VARIATIONS: k in {2, 8}, floor ~4px, and bounding box ---
   (
     'gate1b_q2_k2_cluster_5k_b4k_stroke',
     () => _wrapTuned(
-          safetyFloor: 4.0,
-          k: 2.0,
-          child: ParticleNetwork(
-            particleCount: 5000,
-            particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-            gravity: const GravityFeatures(
-              type: GravityType.point,
-              strength: 5.0,
-            ),
-            performance: const PerformanceFeatures(
-              maxLinesPerFrame: 4000,
-            ),
-            network: const NetworkFeatures(
-              renderer: LineRenderer.stroke,
-            ),
-            touchFeatures: const TouchFeatures(enabled: false),
-          ),
-        ),
+      safetyFloor: 4.0,
+      k: 2.0,
+      child: ParticleNetwork(
+        particleCount: 5000,
+        particleFactory: ClusteredParticleFactory(random: math.Random(42)),
+        gravity: const GravityFeatures(type: GravityType.point, strength: 5.0),
+        performance: const PerformanceFeatures(maxLinesPerFrame: 4000),
+        network: const NetworkFeatures(renderer: LineRenderer.stroke),
+        touchFeatures: const TouchFeatures(enabled: false),
+      ),
+    ),
   ),
   (
     'gate1b_q2_k2_cluster_5k_b15k_vtx',
     () => _wrapTuned(
-          safetyFloor: 4.0,
-          k: 2.0,
-          child: ParticleNetwork(
-            particleCount: 5000,
-            particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-            gravity: const GravityFeatures(
-              type: GravityType.point,
-              strength: 5.0,
-            ),
-            performance: const PerformanceFeatures(
-              maxLinesPerFrame: 15000,
-            ),
-            network: const NetworkFeatures(
-              renderer: LineRenderer.vertices,
-            ),
-            touchFeatures: const TouchFeatures(enabled: false),
-          ),
-        ),
+      safetyFloor: 4.0,
+      k: 2.0,
+      child: ParticleNetwork(
+        particleCount: 5000,
+        particleFactory: ClusteredParticleFactory(random: math.Random(42)),
+        gravity: const GravityFeatures(type: GravityType.point, strength: 5.0),
+        performance: const PerformanceFeatures(maxLinesPerFrame: 15000),
+        network: const NetworkFeatures(renderer: LineRenderer.vertices),
+        touchFeatures: const TouchFeatures(enabled: false),
+      ),
+    ),
   ),
   (
     'gate1b_q2_k8_cluster_5k_b4k_stroke',
     () => _wrapTuned(
-          safetyFloor: 4.0,
-          k: 8.0,
-          child: ParticleNetwork(
-            particleCount: 5000,
-            particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-            gravity: const GravityFeatures(
-              type: GravityType.point,
-              strength: 5.0,
-            ),
-            performance: const PerformanceFeatures(
-              maxLinesPerFrame: 4000,
-            ),
-            network: const NetworkFeatures(
-              renderer: LineRenderer.stroke,
-            ),
-            touchFeatures: const TouchFeatures(enabled: false),
-          ),
-        ),
+      safetyFloor: 4.0,
+      k: 8.0,
+      child: ParticleNetwork(
+        particleCount: 5000,
+        particleFactory: ClusteredParticleFactory(random: math.Random(42)),
+        gravity: const GravityFeatures(type: GravityType.point, strength: 5.0),
+        performance: const PerformanceFeatures(maxLinesPerFrame: 4000),
+        network: const NetworkFeatures(renderer: LineRenderer.stroke),
+        touchFeatures: const TouchFeatures(enabled: false),
+      ),
+    ),
   ),
   (
     'gate1b_q2_k8_cluster_5k_b15k_vtx',
     () => _wrapTuned(
-          safetyFloor: 4.0,
-          k: 8.0,
-          child: ParticleNetwork(
-            particleCount: 5000,
-            particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-            gravity: const GravityFeatures(
-              type: GravityType.point,
-              strength: 5.0,
-            ),
-            performance: const PerformanceFeatures(
-              maxLinesPerFrame: 15000,
-            ),
-            network: const NetworkFeatures(
-              renderer: LineRenderer.vertices,
-            ),
-            touchFeatures: const TouchFeatures(enabled: false),
-          ),
-        ),
+      safetyFloor: 4.0,
+      k: 8.0,
+      child: ParticleNetwork(
+        particleCount: 5000,
+        particleFactory: ClusteredParticleFactory(random: math.Random(42)),
+        gravity: const GravityFeatures(type: GravityType.point, strength: 5.0),
+        performance: const PerformanceFeatures(maxLinesPerFrame: 15000),
+        network: const NetworkFeatures(renderer: LineRenderer.vertices),
+        touchFeatures: const TouchFeatures(enabled: false),
+      ),
+    ),
   ),
   (
     'gate1b_q2_floor4_cluster_5k_b4k_stroke',
     () => _wrapTuned(
-          safetyFloor: 4.0,
-          minFloor: 4.0,
-          child: ParticleNetwork(
-            particleCount: 5000,
-            particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-            gravity: const GravityFeatures(
-              type: GravityType.point,
-              strength: 5.0,
-            ),
-            performance: const PerformanceFeatures(
-              maxLinesPerFrame: 4000,
-            ),
-            network: const NetworkFeatures(
-              renderer: LineRenderer.stroke,
-            ),
-            touchFeatures: const TouchFeatures(enabled: false),
-          ),
-        ),
+      safetyFloor: 4.0,
+      minFloor: 4.0,
+      child: ParticleNetwork(
+        particleCount: 5000,
+        particleFactory: ClusteredParticleFactory(random: math.Random(42)),
+        gravity: const GravityFeatures(type: GravityType.point, strength: 5.0),
+        performance: const PerformanceFeatures(maxLinesPerFrame: 4000),
+        network: const NetworkFeatures(renderer: LineRenderer.stroke),
+        touchFeatures: const TouchFeatures(enabled: false),
+      ),
+    ),
   ),
   (
     'gate1b_q2_floor4_cluster_5k_b15k_vtx',
     () => _wrapTuned(
-          safetyFloor: 4.0,
-          minFloor: 4.0,
-          child: ParticleNetwork(
-            particleCount: 5000,
-            particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-            gravity: const GravityFeatures(
-              type: GravityType.point,
-              strength: 5.0,
-            ),
-            performance: const PerformanceFeatures(
-              maxLinesPerFrame: 15000,
-            ),
-            network: const NetworkFeatures(
-              renderer: LineRenderer.vertices,
-            ),
-            touchFeatures: const TouchFeatures(enabled: false),
-          ),
-        ),
+      safetyFloor: 4.0,
+      minFloor: 4.0,
+      child: ParticleNetwork(
+        particleCount: 5000,
+        particleFactory: ClusteredParticleFactory(random: math.Random(42)),
+        gravity: const GravityFeatures(type: GravityType.point, strength: 5.0),
+        performance: const PerformanceFeatures(maxLinesPerFrame: 15000),
+        network: const NetworkFeatures(renderer: LineRenderer.vertices),
+        touchFeatures: const TouchFeatures(enabled: false),
+      ),
+    ),
   ),
   (
     'gate1b_q2_bb_cluster_5k_b4k_stroke',
     () => _wrapTuned(
-          safetyFloor: 4.0,
-          k: 4.0,
-          fitBoundingBox: true,
-          child: ParticleNetwork(
-            particleCount: 5000,
-            particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-            gravity: const GravityFeatures(
-              type: GravityType.point,
-              strength: 5.0,
-            ),
-            performance: const PerformanceFeatures(
-              maxLinesPerFrame: 4000,
-            ),
-            network: const NetworkFeatures(
-              renderer: LineRenderer.stroke,
-            ),
-            touchFeatures: const TouchFeatures(enabled: false),
-          ),
-        ),
+      safetyFloor: 4.0,
+      k: 4.0,
+      fitBoundingBox: true,
+      child: ParticleNetwork(
+        particleCount: 5000,
+        particleFactory: ClusteredParticleFactory(random: math.Random(42)),
+        gravity: const GravityFeatures(type: GravityType.point, strength: 5.0),
+        performance: const PerformanceFeatures(maxLinesPerFrame: 4000),
+        network: const NetworkFeatures(renderer: LineRenderer.stroke),
+        touchFeatures: const TouchFeatures(enabled: false),
+      ),
+    ),
   ),
   (
     'gate1b_q2_bb_cluster_5k_b15k_vtx',
     () => _wrapTuned(
-          safetyFloor: 4.0,
-          k: 4.0,
-          fitBoundingBox: true,
-          child: ParticleNetwork(
-            particleCount: 5000,
-            particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-            gravity: const GravityFeatures(
-              type: GravityType.point,
-              strength: 5.0,
-            ),
-            performance: const PerformanceFeatures(
-              maxLinesPerFrame: 15000,
-            ),
-            network: const NetworkFeatures(
-              renderer: LineRenderer.vertices,
-            ),
-            touchFeatures: const TouchFeatures(enabled: false),
-          ),
-        ),
+      safetyFloor: 4.0,
+      k: 4.0,
+      fitBoundingBox: true,
+      child: ParticleNetwork(
+        particleCount: 5000,
+        particleFactory: ClusteredParticleFactory(random: math.Random(42)),
+        gravity: const GravityFeatures(type: GravityType.point, strength: 5.0),
+        performance: const PerformanceFeatures(maxLinesPerFrame: 15000),
+        network: const NetworkFeatures(renderer: LineRenderer.vertices),
+        touchFeatures: const TouchFeatures(enabled: false),
+      ),
+    ),
   ),
   // Scenario 1: Uniform, default settings (lineDistance: 100, maxLines: null)
   (
     'S1_uniform_500_default',
     () => ParticleNetwork(
-          particleCount: 500,
-          particleFactory: DefaultParticleFactory(
-            random: math.Random(42),
-            maxSpeed: 0.5,
-            maxSize: 1.5,
-            color: Colors.white,
-          ),
-          network:
-              const NetworkFeatures(renderer: LineRenderer.stroke),
-          touchFeatures: const TouchFeatures(enabled: false),
-        ),
+      particleCount: 500,
+      particleFactory: DefaultParticleFactory(
+        random: math.Random(42),
+        maxSpeed: 0.5,
+        maxSize: 1.5,
+        color: Colors.white,
+      ),
+      network: const NetworkFeatures(renderer: LineRenderer.stroke),
+      touchFeatures: const TouchFeatures(enabled: false),
+    ),
   ),
   // Note: S1 uniform default (r=100) at 5k and 20k without maxLinesPerFrame generates
   // 177k and 2.85M lines, exceeding mobile GPU display list memory and causing Android OOM.
@@ -501,396 +400,277 @@ final List<(String, Widget Function())> gate1bScenarios = [
   (
     'S2_uniform_500_b4k_stroke',
     () => ParticleNetwork(
-          particleCount: 500,
-          particleFactory: DefaultParticleFactory(
-            random: math.Random(42),
-            maxSpeed: 0.5,
-            maxSize: 1.5,
-            color: Colors.white,
-          ),
-          performance: const PerformanceFeatures(
-            maxLinesPerFrame: 4000,
-          ),
-          network: const NetworkFeatures(
-            renderer: LineRenderer.stroke,
-          ),
-          touchFeatures: const TouchFeatures(enabled: false),
-        ),
+      particleCount: 500,
+      particleFactory: DefaultParticleFactory(
+        random: math.Random(42),
+        maxSpeed: 0.5,
+        maxSize: 1.5,
+        color: Colors.white,
+      ),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 4000),
+      network: const NetworkFeatures(renderer: LineRenderer.stroke),
+      touchFeatures: const TouchFeatures(enabled: false),
+    ),
   ),
   (
     'S2_uniform_500_b15k_vtx',
     () => ParticleNetwork(
-          particleCount: 500,
-          particleFactory: DefaultParticleFactory(
-            random: math.Random(42),
-            maxSpeed: 0.5,
-            maxSize: 1.5,
-            color: Colors.white,
-          ),
-          performance: const PerformanceFeatures(
-            maxLinesPerFrame: 15000,
-          ),
-          network: const NetworkFeatures(
-            renderer: LineRenderer.vertices,
-          ),
-          touchFeatures: const TouchFeatures(enabled: false),
-        ),
+      particleCount: 500,
+      particleFactory: DefaultParticleFactory(
+        random: math.Random(42),
+        maxSpeed: 0.5,
+        maxSize: 1.5,
+        color: Colors.white,
+      ),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 15000),
+      network: const NetworkFeatures(renderer: LineRenderer.vertices),
+      touchFeatures: const TouchFeatures(enabled: false),
+    ),
   ),
   (
     'S2_uniform_5k_b4k_stroke',
     () => ParticleNetwork(
-          particleCount: 5000,
-          particleFactory: DefaultParticleFactory(
-            random: math.Random(42),
-            maxSpeed: 0.5,
-            maxSize: 1.5,
-            color: Colors.white,
-          ),
-          performance: const PerformanceFeatures(
-            maxLinesPerFrame: 4000,
-          ),
-          network: const NetworkFeatures(
-            renderer: LineRenderer.stroke,
-          ),
-          touchFeatures: const TouchFeatures(enabled: false),
-        ),
+      particleCount: 5000,
+      particleFactory: DefaultParticleFactory(
+        random: math.Random(42),
+        maxSpeed: 0.5,
+        maxSize: 1.5,
+        color: Colors.white,
+      ),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 4000),
+      network: const NetworkFeatures(renderer: LineRenderer.stroke),
+      touchFeatures: const TouchFeatures(enabled: false),
+    ),
   ),
   (
     'S2_uniform_5k_b15k_vtx',
     () => ParticleNetwork(
-          particleCount: 5000,
-          particleFactory: DefaultParticleFactory(
-            random: math.Random(42),
-            maxSpeed: 0.5,
-            maxSize: 1.5,
-            color: Colors.white,
-          ),
-          performance: const PerformanceFeatures(
-            maxLinesPerFrame: 15000,
-          ),
-          network: const NetworkFeatures(
-            renderer: LineRenderer.vertices,
-          ),
-          touchFeatures: const TouchFeatures(enabled: false),
-        ),
+      particleCount: 5000,
+      particleFactory: DefaultParticleFactory(
+        random: math.Random(42),
+        maxSpeed: 0.5,
+        maxSize: 1.5,
+        color: Colors.white,
+      ),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 15000),
+      network: const NetworkFeatures(renderer: LineRenderer.vertices),
+      touchFeatures: const TouchFeatures(enabled: false),
+    ),
   ),
   (
     'S2_uniform_20k_b4k_stroke',
     () => ParticleNetwork(
-          particleCount: 20000,
-          particleFactory: DefaultParticleFactory(
-            random: math.Random(42),
-            maxSpeed: 0.5,
-            maxSize: 1.5,
-            color: Colors.white,
-          ),
-          performance: const PerformanceFeatures(
-            maxLinesPerFrame: 4000,
-          ),
-          network: const NetworkFeatures(
-            renderer: LineRenderer.stroke,
-          ),
-          touchFeatures: const TouchFeatures(enabled: false),
-        ),
+      particleCount: 20000,
+      particleFactory: DefaultParticleFactory(
+        random: math.Random(42),
+        maxSpeed: 0.5,
+        maxSize: 1.5,
+        color: Colors.white,
+      ),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 4000),
+      network: const NetworkFeatures(renderer: LineRenderer.stroke),
+      touchFeatures: const TouchFeatures(enabled: false),
+    ),
   ),
   (
     'S2_uniform_20k_b15k_vtx',
     () => ParticleNetwork(
-          particleCount: 20000,
-          particleFactory: DefaultParticleFactory(
-            random: math.Random(42),
-            maxSpeed: 0.5,
-            maxSize: 1.5,
-            color: Colors.white,
-          ),
-          performance: const PerformanceFeatures(
-            maxLinesPerFrame: 15000,
-          ),
-          network: const NetworkFeatures(
-            renderer: LineRenderer.vertices,
-          ),
-          touchFeatures: const TouchFeatures(enabled: false),
-        ),
+      particleCount: 20000,
+      particleFactory: DefaultParticleFactory(
+        random: math.Random(42),
+        maxSpeed: 0.5,
+        maxSize: 1.5,
+        color: Colors.white,
+      ),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 15000),
+      network: const NetworkFeatures(renderer: LineRenderer.vertices),
+      touchFeatures: const TouchFeatures(enabled: false),
+    ),
   ),
 
   // Scenario 3: Strong clustering (point gravity 5.0) with maxLines 4000 and 15000
   (
     'S3_cluster_500_b4k_stroke',
     () => ParticleNetwork(
-          particleCount: 500,
-          particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-          gravity: const GravityFeatures(
-            type: GravityType.point,
-            strength: 5.0,
-          ),
-          performance: const PerformanceFeatures(
-            maxLinesPerFrame: 4000,
-          ),
-          network: const NetworkFeatures(
-            renderer: LineRenderer.stroke,
-          ),
-          touchFeatures: const TouchFeatures(enabled: false),
-        ),
+      particleCount: 500,
+      particleFactory: ClusteredParticleFactory(random: math.Random(42)),
+      gravity: const GravityFeatures(type: GravityType.point, strength: 5.0),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 4000),
+      network: const NetworkFeatures(renderer: LineRenderer.stroke),
+      touchFeatures: const TouchFeatures(enabled: false),
+    ),
   ),
   (
     'S3_cluster_500_b15k_vtx',
     () => ParticleNetwork(
-          particleCount: 500,
-          particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-          gravity: const GravityFeatures(
-            type: GravityType.point,
-            strength: 5.0,
-          ),
-          performance: const PerformanceFeatures(
-            maxLinesPerFrame: 15000,
-          ),
-          network: const NetworkFeatures(
-            renderer: LineRenderer.vertices,
-          ),
-          touchFeatures: const TouchFeatures(enabled: false),
-        ),
+      particleCount: 500,
+      particleFactory: ClusteredParticleFactory(random: math.Random(42)),
+      gravity: const GravityFeatures(type: GravityType.point, strength: 5.0),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 15000),
+      network: const NetworkFeatures(renderer: LineRenderer.vertices),
+      touchFeatures: const TouchFeatures(enabled: false),
+    ),
   ),
   (
     'S3_cluster_5k_b4k_stroke',
     () => ParticleNetwork(
-          particleCount: 5000,
-          particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-          gravity: const GravityFeatures(
-            type: GravityType.point,
-            strength: 5.0,
-          ),
-          performance: const PerformanceFeatures(
-            maxLinesPerFrame: 4000,
-          ),
-          network: const NetworkFeatures(
-            renderer: LineRenderer.stroke,
-          ),
-          touchFeatures: const TouchFeatures(enabled: false),
-        ),
+      particleCount: 5000,
+      particleFactory: ClusteredParticleFactory(random: math.Random(42)),
+      gravity: const GravityFeatures(type: GravityType.point, strength: 5.0),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 4000),
+      network: const NetworkFeatures(renderer: LineRenderer.stroke),
+      touchFeatures: const TouchFeatures(enabled: false),
+    ),
   ),
   (
     'S3_cluster_5k_b15k_vtx',
     () => ParticleNetwork(
-          particleCount: 5000,
-          particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-          gravity: const GravityFeatures(
-            type: GravityType.point,
-            strength: 5.0,
-          ),
-          performance: const PerformanceFeatures(
-            maxLinesPerFrame: 15000,
-          ),
-          network: const NetworkFeatures(
-            renderer: LineRenderer.vertices,
-          ),
-          touchFeatures: const TouchFeatures(enabled: false),
-        ),
+      particleCount: 5000,
+      particleFactory: ClusteredParticleFactory(random: math.Random(42)),
+      gravity: const GravityFeatures(type: GravityType.point, strength: 5.0),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 15000),
+      network: const NetworkFeatures(renderer: LineRenderer.vertices),
+      touchFeatures: const TouchFeatures(enabled: false),
+    ),
   ),
   (
     'S3_cluster_20k_b4k_stroke',
     () => ParticleNetwork(
-          particleCount: 20000,
-          particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-          gravity: const GravityFeatures(
-            type: GravityType.point,
-            strength: 5.0,
-          ),
-          performance: const PerformanceFeatures(
-            maxLinesPerFrame: 4000,
-          ),
-          network: const NetworkFeatures(
-            renderer: LineRenderer.stroke,
-          ),
-          touchFeatures: const TouchFeatures(enabled: false),
-        ),
+      particleCount: 20000,
+      particleFactory: ClusteredParticleFactory(random: math.Random(42)),
+      gravity: const GravityFeatures(type: GravityType.point, strength: 5.0),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 4000),
+      network: const NetworkFeatures(renderer: LineRenderer.stroke),
+      touchFeatures: const TouchFeatures(enabled: false),
+    ),
   ),
   (
     'S3_cluster_20k_b15k_vtx',
     () => ParticleNetwork(
-          particleCount: 20000,
-          particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-          gravity: const GravityFeatures(
-            type: GravityType.point,
-            strength: 5.0,
-          ),
-          performance: const PerformanceFeatures(
-            maxLinesPerFrame: 15000,
-          ),
-          network: const NetworkFeatures(
-            renderer: LineRenderer.vertices,
-          ),
-          touchFeatures: const TouchFeatures(enabled: false),
-        ),
+      particleCount: 20000,
+      particleFactory: ClusteredParticleFactory(random: math.Random(42)),
+      gravity: const GravityFeatures(type: GravityType.point, strength: 5.0),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 15000),
+      network: const NetworkFeatures(renderer: LineRenderer.vertices),
+      touchFeatures: const TouchFeatures(enabled: false),
+    ),
   ),
 
   // Scenario 4: Gaussian distribution with maxLines 4000 and 15000
   (
     'S4_gaussian_500_b4k_stroke',
     () => ParticleNetwork(
-          particleCount: 500,
-          particleFactory: GaussianParticleFactory(random: math.Random(42)),
-          performance: const PerformanceFeatures(
-            maxLinesPerFrame: 4000,
-          ),
-          network: const NetworkFeatures(
-            renderer: LineRenderer.stroke,
-          ),
-          touchFeatures: const TouchFeatures(enabled: false),
-        ),
+      particleCount: 500,
+      particleFactory: GaussianParticleFactory(random: math.Random(42)),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 4000),
+      network: const NetworkFeatures(renderer: LineRenderer.stroke),
+      touchFeatures: const TouchFeatures(enabled: false),
+    ),
   ),
   (
     'S4_gaussian_500_b15k_vtx',
     () => ParticleNetwork(
-          particleCount: 500,
-          particleFactory: GaussianParticleFactory(random: math.Random(42)),
-          performance: const PerformanceFeatures(
-            maxLinesPerFrame: 15000,
-          ),
-          network: const NetworkFeatures(
-            renderer: LineRenderer.vertices,
-          ),
-          touchFeatures: const TouchFeatures(enabled: false),
-        ),
+      particleCount: 500,
+      particleFactory: GaussianParticleFactory(random: math.Random(42)),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 15000),
+      network: const NetworkFeatures(renderer: LineRenderer.vertices),
+      touchFeatures: const TouchFeatures(enabled: false),
+    ),
   ),
   (
     'S4_gaussian_5k_b4k_stroke',
     () => ParticleNetwork(
-          particleCount: 5000,
-          particleFactory: GaussianParticleFactory(random: math.Random(42)),
-          performance: const PerformanceFeatures(
-            maxLinesPerFrame: 4000,
-          ),
-          network: const NetworkFeatures(
-            renderer: LineRenderer.stroke,
-          ),
-          touchFeatures: const TouchFeatures(enabled: false),
-        ),
+      particleCount: 5000,
+      particleFactory: GaussianParticleFactory(random: math.Random(42)),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 4000),
+      network: const NetworkFeatures(renderer: LineRenderer.stroke),
+      touchFeatures: const TouchFeatures(enabled: false),
+    ),
   ),
   (
     'S4_gaussian_5k_b15k_vtx',
     () => ParticleNetwork(
-          particleCount: 5000,
-          particleFactory: GaussianParticleFactory(random: math.Random(42)),
-          performance: const PerformanceFeatures(
-            maxLinesPerFrame: 15000,
-          ),
-          network: const NetworkFeatures(
-            renderer: LineRenderer.vertices,
-          ),
-          touchFeatures: const TouchFeatures(enabled: false),
-        ),
+      particleCount: 5000,
+      particleFactory: GaussianParticleFactory(random: math.Random(42)),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 15000),
+      network: const NetworkFeatures(renderer: LineRenderer.vertices),
+      touchFeatures: const TouchFeatures(enabled: false),
+    ),
   ),
   (
     'S4_gaussian_20k_b4k_stroke',
     () => ParticleNetwork(
-          particleCount: 20000,
-          particleFactory: GaussianParticleFactory(random: math.Random(42)),
-          performance: const PerformanceFeatures(
-            maxLinesPerFrame: 4000,
-          ),
-          network: const NetworkFeatures(
-            renderer: LineRenderer.stroke,
-          ),
-          touchFeatures: const TouchFeatures(enabled: false),
-        ),
+      particleCount: 20000,
+      particleFactory: GaussianParticleFactory(random: math.Random(42)),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 4000),
+      network: const NetworkFeatures(renderer: LineRenderer.stroke),
+      touchFeatures: const TouchFeatures(enabled: false),
+    ),
   ),
   (
     'S4_gaussian_20k_b15k_vtx',
     () => ParticleNetwork(
-          particleCount: 20000,
-          particleFactory: GaussianParticleFactory(random: math.Random(42)),
-          performance: const PerformanceFeatures(
-            maxLinesPerFrame: 15000,
-          ),
-          network: const NetworkFeatures(
-            renderer: LineRenderer.vertices,
-          ),
-          touchFeatures: const TouchFeatures(enabled: false),
-        ),
+      particleCount: 20000,
+      particleFactory: GaussianParticleFactory(random: math.Random(42)),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 15000),
+      network: const NetworkFeatures(renderer: LineRenderer.vertices),
+      touchFeatures: const TouchFeatures(enabled: false),
+    ),
   ),
 
   // Scenario 5: Extreme (maxLines: 500)
   (
     'S5_cluster_5k_b500_extreme',
     () => ParticleNetwork(
-          particleCount: 5000,
-          particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-          gravity: const GravityFeatures(
-            type: GravityType.point,
-            strength: 5.0,
-          ),
-          performance: const PerformanceFeatures(
-            maxLinesPerFrame: 500,
-          ),
-          network: const NetworkFeatures(
-            renderer: LineRenderer.stroke,
-          ),
-          touchFeatures: const TouchFeatures(enabled: false),
-        ),
+      particleCount: 5000,
+      particleFactory: ClusteredParticleFactory(random: math.Random(42)),
+      gravity: const GravityFeatures(type: GravityType.point, strength: 5.0),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 500),
+      network: const NetworkFeatures(renderer: LineRenderer.stroke),
+      touchFeatures: const TouchFeatures(enabled: false),
+    ),
   ),
   (
     'S5_cluster_20k_b500_extreme',
     () => ParticleNetwork(
-          particleCount: 20000,
-          particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-          gravity: const GravityFeatures(
-            type: GravityType.point,
-            strength: 5.0,
-          ),
-          performance: const PerformanceFeatures(
-            maxLinesPerFrame: 500,
-          ),
-          network: const NetworkFeatures(
-            renderer: LineRenderer.stroke,
-          ),
-          touchFeatures: const TouchFeatures(enabled: false),
-        ),
+      particleCount: 20000,
+      particleFactory: ClusteredParticleFactory(random: math.Random(42)),
+      gravity: const GravityFeatures(type: GravityType.point, strength: 5.0),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 500),
+      network: const NetworkFeatures(renderer: LineRenderer.stroke),
+      touchFeatures: const TouchFeatures(enabled: false),
+    ),
   ),
   (
     'S5_cluster_20k_b4000_extreme',
     () => ParticleNetwork(
-          particleCount: 20000,
-          particleFactory: ClusteredParticleFactory(random: math.Random(42)),
-          gravity: const GravityFeatures(
-            type: GravityType.point,
-            strength: 5.0,
-          ),
-          performance: const PerformanceFeatures(
-            maxLinesPerFrame: 4000,
-          ),
-          network: const NetworkFeatures(
-            renderer: LineRenderer.stroke,
-          ),
-          touchFeatures: const TouchFeatures(enabled: false),
-        ),
+      particleCount: 20000,
+      particleFactory: ClusteredParticleFactory(random: math.Random(42)),
+      gravity: const GravityFeatures(type: GravityType.point, strength: 5.0),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 4000),
+      network: const NetworkFeatures(renderer: LineRenderer.stroke),
+      touchFeatures: const TouchFeatures(enabled: false),
+    ),
   ),
   (
     'S5_gaussian_5k_b500_extreme',
     () => ParticleNetwork(
-          particleCount: 5000,
-          particleFactory: GaussianParticleFactory(random: math.Random(42)),
-          performance: const PerformanceFeatures(
-            maxLinesPerFrame: 500,
-          ),
-          network: const NetworkFeatures(
-            renderer: LineRenderer.stroke,
-          ),
-          touchFeatures: const TouchFeatures(enabled: false),
-        ),
+      particleCount: 5000,
+      particleFactory: GaussianParticleFactory(random: math.Random(42)),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 500),
+      network: const NetworkFeatures(renderer: LineRenderer.stroke),
+      touchFeatures: const TouchFeatures(enabled: false),
+    ),
   ),
   (
     'S5_gaussian_20k_b500_extreme',
     () => ParticleNetwork(
-          particleCount: 20000,
-          particleFactory: GaussianParticleFactory(random: math.Random(42)),
-          performance: const PerformanceFeatures(
-            maxLinesPerFrame: 500,
-          ),
-          network: const NetworkFeatures(
-            renderer: LineRenderer.stroke,
-          ),
-          touchFeatures: const TouchFeatures(enabled: false),
-        ),
+      particleCount: 20000,
+      particleFactory: GaussianParticleFactory(random: math.Random(42)),
+      performance: const PerformanceFeatures(maxLinesPerFrame: 500),
+      network: const NetworkFeatures(renderer: LineRenderer.stroke),
+      touchFeatures: const TouchFeatures(enabled: false),
+    ),
   ),
 ];
 

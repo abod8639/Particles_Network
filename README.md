@@ -412,7 +412,6 @@ const ParticleNetwork(
     maxConnectionsPerParticle: 4,
     maxLinesPerFrame: 15000,
     frameRateIndependent: true,
-    autoBoost: true,
   ),
 )
 ```
@@ -566,7 +565,6 @@ const ParticleNetwork(
     color: Color(0xFF64FFB4),
   ),
   touch: TouchFeatures(
-    enabled: true,
     hover: true,
   ),
 )
@@ -848,7 +846,7 @@ ParticleNetwork(
   performance: const PerformanceFeatures(
     maxLinesPerFrame: 15000,
     frameRateIndependent: true,
-    complex: ComplexConfig.auto(),
+    complex: ComplexConfig(enabled: true), // <-- more complex features for high performance 
   ),
 )
 ```

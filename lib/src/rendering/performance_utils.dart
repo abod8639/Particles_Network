@@ -49,7 +49,7 @@ class AdaptiveQuadTreeManager {
 
   /// Creates an [AdaptiveQuadTreeManager] with given [rebuildInterval].
   AdaptiveQuadTreeManager({this.rebuildInterval = 3})
-      : _frameSinceLastRebuild = rebuildInterval {
+    : _frameSinceLastRebuild = rebuildInterval {
     LegacyDeprecationLogger.warn(
       deprecatedApi: 'AdaptiveQuadTreeManager',
       replacement: 'SortedSpatialGrid',
@@ -211,14 +211,14 @@ class AdaptivePerformanceController {
     this.maxScale = 1.0,
     double? emaWeight,
     PerformanceMonitor? monitor,
-  })  : monitor = monitor ?? PerformanceMonitor(),
-        _targetFrameTimeMs =
-            (targetFrameTimeMs > 0 && targetFrameTimeMs.isFinite)
-                ? targetFrameTimeMs
-                : 16.67,
-        _emaFrameTimeMs = (targetFrameTimeMs > 0 && targetFrameTimeMs.isFinite)
-            ? targetFrameTimeMs
-            : 16.67;
+  }) : monitor = monitor ?? PerformanceMonitor(),
+       _targetFrameTimeMs =
+           (targetFrameTimeMs > 0 && targetFrameTimeMs.isFinite)
+           ? targetFrameTimeMs
+           : 16.67,
+       _emaFrameTimeMs = (targetFrameTimeMs > 0 && targetFrameTimeMs.isFinite)
+           ? targetFrameTimeMs
+           : 16.67;
 
   /// Records a frame timing duration and adapts the line budget and emergency tier.
   void recordFrame({required double frameTimeMs, required int visibleCount}) {
@@ -250,8 +250,10 @@ class AdaptivePerformanceController {
     if (_emergencyTierIndex > 0) {
       _smoothedDynamicLines = minFloor.toDouble();
     } else if (frameTimeMs > 2.0 * _targetFrameTimeMs) {
-      _smoothedDynamicLines =
-          math.max(minFloor.toDouble(), _smoothedDynamicLines * 0.5);
+      _smoothedDynamicLines = math.max(
+        minFloor.toDouble(),
+        _smoothedDynamicLines * 0.5,
+      );
     } else {
       final double headroomRatio =
           _targetFrameTimeMs / math.max(_emaFrameTimeMs, 1.0);
@@ -327,17 +329,18 @@ class AdaptivePerformanceController {
 
   /// Returns the maximum connection count scaled by the current performance factor.
   int getAdjustedMaxConnections(int baseMaxConnections) {
-    return (baseMaxConnections * currentScale)
-        .round()
-        .clamp(1, baseMaxConnections);
+    return (baseMaxConnections * currentScale).round().clamp(
+      1,
+      baseMaxConnections,
+    );
   }
 
   /// Resets controller state and re-initializes EMA with target frame time.
   void reset({double targetFrameTimeMs = 16.67}) {
     final double safeTarget =
         (targetFrameTimeMs > 0 && targetFrameTimeMs.isFinite)
-            ? targetFrameTimeMs
-            : 16.67;
+        ? targetFrameTimeMs
+        : 16.67;
     _targetFrameTimeMs = safeTarget;
     _emaFrameTimeMs = safeTarget;
     _smoothedDynamicLines = initialDynamicLines;

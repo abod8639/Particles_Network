@@ -26,8 +26,9 @@ class ClusterThrottler {
     if (performance.isComplex) {
       return distance > 0 ? (distance ~/ kDefaultDenseDivisor) : 0;
     }
-    final double divisor =
-        isIndividual ? kIndividualDenseDivisor : kDefaultDenseDivisor;
+    final double divisor = isIndividual
+        ? kIndividualDenseDivisor
+        : kDefaultDenseDivisor;
     return distance > 0 ? (distance ~/ divisor) : 0;
   }
 

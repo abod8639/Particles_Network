@@ -9,12 +9,16 @@ import 'package:particles_network/particles_network.dart';
 enum BenchmarkScenarioType {
   lowDensity500('Scenario 1: Low Density (500 particles)', 500, false),
   mediumDensity2000(
-      'Scenario 2: Medium Density (2,000 particles)', 2000, false),
+    'Scenario 2: Medium Density (2,000 particles)',
+    2000,
+    false,
+  ),
   highPressure5000('Scenario 3: High Pressure (5,000 particles)', 5000, false),
   clusteringWorstCase(
-      'Scenario 4: Clustering Worst-Case (2,000 particles, 80% in corner)',
-      2000,
-      true);
+    'Scenario 4: Clustering Worst-Case (2,000 particles, 80% in corner)',
+    2000,
+    true,
+  );
 
   final String title;
   final int particleCount;
@@ -79,28 +83,28 @@ class BenchmarkResult {
   });
 
   Map<String, dynamic> toJson() => {
-        'algorithm': algorithm.displayName,
-        'scenario': scenario.title,
-        'particleCount': scenario.particleCount,
-        'isClustered': scenario.isClustered,
-        'measuredFrames': measuredFrames,
-        'avgTotalMs': _round(avgTotalMs),
-        'minTotalMs': _round(minTotalMs),
-        'maxTotalMs': _round(maxTotalMs),
-        'p50TotalMs': _round(p50TotalMs),
-        'p90TotalMs': _round(p90TotalMs),
-        'p99TotalMs': _round(p99TotalMs),
-        'effectiveFps': _round(effectiveFps),
-        'avgBuildMs': _round(avgBuildMs),
-        'avgQueryMs': _round(avgQueryMs),
-        'avgPhysicsMs': _round(avgPhysicsMs),
-        'buildPercent': _round(buildPercent),
-        'queryPercent': _round(queryPercent),
-        'rssBeforeMB': _round(rssBeforeBytes / (1024 * 1024)),
-        'rssAfterMB': _round(rssAfterBytes / (1024 * 1024)),
-        'rssDeltaMB': _round(rssDeltaBytes / (1024 * 1024)),
-        'totalMatchesSampled': totalMatchesSampled,
-      };
+    'algorithm': algorithm.displayName,
+    'scenario': scenario.title,
+    'particleCount': scenario.particleCount,
+    'isClustered': scenario.isClustered,
+    'measuredFrames': measuredFrames,
+    'avgTotalMs': _round(avgTotalMs),
+    'minTotalMs': _round(minTotalMs),
+    'maxTotalMs': _round(maxTotalMs),
+    'p50TotalMs': _round(p50TotalMs),
+    'p90TotalMs': _round(p90TotalMs),
+    'p99TotalMs': _round(p99TotalMs),
+    'effectiveFps': _round(effectiveFps),
+    'avgBuildMs': _round(avgBuildMs),
+    'avgQueryMs': _round(avgQueryMs),
+    'avgPhysicsMs': _round(avgPhysicsMs),
+    'buildPercent': _round(buildPercent),
+    'queryPercent': _round(queryPercent),
+    'rssBeforeMB': _round(rssBeforeBytes / (1024 * 1024)),
+    'rssAfterMB': _round(rssAfterBytes / (1024 * 1024)),
+    'rssDeltaMB': _round(rssDeltaBytes / (1024 * 1024)),
+    'totalMatchesSampled': totalMatchesSampled,
+  };
 
   static double _round(double val) => (val * 1000).roundToDouble() / 1000;
 }
@@ -120,8 +124,10 @@ class SpatialBenchmarkEngine {
   });
 
   /// Generates particles according to the scenario.
-  List<Particle> generateParticles(BenchmarkScenarioType scenario,
-      [int seed = 42]) {
+  List<Particle> generateParticles(
+    BenchmarkScenarioType scenario, [
+    int seed = 42,
+  ]) {
     final rng = math.Random(seed);
     final count = scenario.particleCount;
     final particles = <Particle>[];
@@ -148,12 +154,14 @@ class SpatialBenchmarkEngine {
       final vx = (rng.nextDouble() * 2.0 - 1.0) * 1.5;
       final vy = (rng.nextDouble() * 2.0 - 1.0) * 1.5;
 
-      particles.add(Particle(
-        position: Offset(x, y),
-        velocity: Offset(vx, vy),
-        color: Colors.white,
-        size: 2.0,
-      ));
+      particles.add(
+        Particle(
+          position: Offset(x, y),
+          velocity: Offset(vx, vy),
+          color: Colors.white,
+          size: 2.0,
+        ),
+      );
     }
     return particles;
   }
@@ -260,8 +268,12 @@ class SpatialBenchmarkEngine {
       int matchesInFrame = 0;
       for (int i = 0; i < count; i++) {
         final p = particles[i];
-        sortedGrid.queryRadius(p.x, p.y, queryRadius,
-            (otherIdx, px, py, distSq) {
+        sortedGrid.queryRadius(p.x, p.y, queryRadius, (
+          otherIdx,
+          px,
+          py,
+          distSq,
+        ) {
           if (otherIdx != i) matchesInFrame++;
         });
       }
@@ -285,7 +297,7 @@ class SpatialBenchmarkEngine {
 
     // Calculate statistical metrics
     final List<double> totalMsList = <double>[
-      for (int i = 0; i < measuredFrames; i++) totalTimesUs[i] / 1000.0
+      for (int i = 0; i < measuredFrames; i++) totalTimesUs[i] / 1000.0,
     ];
     totalMsList.sort();
 
@@ -313,10 +325,12 @@ class SpatialBenchmarkEngine {
     final p99TotalMs = _percentile(totalMsList, 99);
     final effectiveFps = avgTotalMs > 0 ? (1000.0 / avgTotalMs) : 0.0;
 
-    final buildPercent =
-        avgTotalMs > 0 ? (avgBuildMs / avgTotalMs * 100.0) : 0.0;
-    final queryPercent =
-        avgTotalMs > 0 ? (avgQueryMs / avgTotalMs * 100.0) : 0.0;
+    final buildPercent = avgTotalMs > 0
+        ? (avgBuildMs / avgTotalMs * 100.0)
+        : 0.0;
+    final queryPercent = avgTotalMs > 0
+        ? (avgQueryMs / avgTotalMs * 100.0)
+        : 0.0;
 
     return BenchmarkResult(
       algorithm: algorithm,

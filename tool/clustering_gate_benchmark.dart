@@ -27,13 +27,20 @@ class ScenarioBenchmarkResult {
 }
 
 List<Particle> _generateUniformParticles(
-    int count, Size size, math.Random rng) {
+  int count,
+  Size size,
+  math.Random rng,
+) {
   return List<Particle>.generate(count, (i) {
     return Particle(
-      position:
-          Offset(rng.nextDouble() * size.width, rng.nextDouble() * size.height),
+      position: Offset(
+        rng.nextDouble() * size.width,
+        rng.nextDouble() * size.height,
+      ),
       velocity: Offset(
-          (rng.nextDouble() * 2 - 1) * 1.0, (rng.nextDouble() * 2 - 1) * 1.0),
+        (rng.nextDouble() * 2 - 1) * 1.0,
+        (rng.nextDouble() * 2 - 1) * 1.0,
+      ),
       color: Colors.white,
       size: 2.0,
     );
@@ -41,7 +48,10 @@ List<Particle> _generateUniformParticles(
 }
 
 List<Particle> _generateClusteredParticles(
-    int count, Size size, math.Random rng) {
+  int count,
+  Size size,
+  math.Random rng,
+) {
   final center = Offset(size.width / 2, size.height / 2);
   return List<Particle>.generate(count, (i) {
     double x, y;
@@ -57,7 +67,9 @@ List<Particle> _generateClusteredParticles(
     return Particle(
       position: Offset(x, y),
       velocity: Offset(
-          (rng.nextDouble() * 2 - 1) * 0.5, (rng.nextDouble() * 2 - 1) * 0.5),
+        (rng.nextDouble() * 2 - 1) * 0.5,
+        (rng.nextDouble() * 2 - 1) * 0.5,
+      ),
       color: Colors.white,
       size: 2.0,
     );
@@ -65,7 +77,10 @@ List<Particle> _generateClusteredParticles(
 }
 
 List<Particle> _generateGaussianParticles(
-    int count, Size size, math.Random rng) {
+  int count,
+  Size size,
+  math.Random rng,
+) {
   final sigmaX = size.width / 10.0;
   final sigmaY = size.height / 10.0;
   final meanX = size.width / 2.0;
@@ -88,7 +103,9 @@ List<Particle> _generateGaussianParticles(
     return Particle(
       position: Offset(x, y),
       velocity: Offset(
-          (rng.nextDouble() * 2 - 1) * 0.5, (rng.nextDouble() * 2 - 1) * 0.5),
+        (rng.nextDouble() * 2 - 1) * 0.5,
+        (rng.nextDouble() * 2 - 1) * 0.5,
+      ),
       color: Colors.white,
       size: 2.0,
     );
@@ -208,12 +225,12 @@ void main() {
     final scenarios = [
       (
         1,
-        'Scenario 1: Uniform Distribution (default, lineDist=100, maxLines=null)'
+        'Scenario 1: Uniform Distribution (default, lineDist=100, maxLines=null)',
       ),
       (2, 'Scenario 2: Strong Clustering (point gravity, r from maxLines=500)'),
       (
         3,
-        'Scenario 3: Normal Distribution (Gaussian sigma=dim/10, maxLines=500)'
+        'Scenario 3: Normal Distribution (Gaussian sigma=dim/10, maxLines=500)',
       ),
     ];
 
@@ -242,11 +259,14 @@ void main() {
     }
 
     print(
-        '\n========================================================================================================');
+      '\n========================================================================================================',
+    );
     print(
-        '                              MILESTONE 2: DECISION GATE REPORT TABLE                                   ');
+      '                              MILESTONE 2: DECISION GATE REPORT TABLE                                   ',
+    );
     print(
-        '========================================================================================================');
+      '========================================================================================================',
+    );
     print(
       '| Scenario                                | Particles | Candidate Checks/frame | Accepted Pairs/frame | Ratio (Checks/Accepted) | CPU Paint Time (ms) |',
     );
@@ -269,18 +289,22 @@ void main() {
       final tStr = ('${r.cpuPaintTimeMs.toStringAsFixed(3)} ms').padLeft(19);
 
       print(
-          '| ${scenarioShort.padRight(39)} | $pStr | $cStr | $aStr | $rStr | $tStr |');
+        '| ${scenarioShort.padRight(39)} | $pStr | $cStr | $aStr | $rStr | $tStr |',
+      );
     }
     print(
-        '========================================================================================================\n');
+      '========================================================================================================\n',
+    );
 
     print('Decision Gate Evaluation:');
     if (allRatiosLt4) {
       print(
-          '>>> GATE RESULT: STOP (all scenarios ratio < ~4.0, two-level sub-grid NOT justified)');
+        '>>> GATE RESULT: STOP (all scenarios ratio < ~4.0, two-level sub-grid NOT justified)',
+      );
     } else if (maxRatioGte10) {
       print(
-          '>>> GATE RESULT: GATE CONFIRMED (Scenario 2/3 ratio >= 10.0, two-level sub-grid IS justified)');
+        '>>> GATE RESULT: GATE CONFIRMED (Scenario 2/3 ratio >= 10.0, two-level sub-grid IS justified)',
+      );
     } else {
       print('>>> GATE RESULT: INCONCLUSIVE (ratio between 4.0 and 10.0)');
     }

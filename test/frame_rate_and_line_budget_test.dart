@@ -110,12 +110,13 @@ void main() {
     });
 
     test('post-touch speed decay converges at the same rate per second', () {
-      Particle accelerated() => Particle(
-            position: const Offset(500, 500),
-            velocity: const Offset(1, 0),
-            color: Colors.white,
-            size: 1,
-          )
+      Particle accelerated() =>
+          Particle(
+              position: const Offset(500, 500),
+              velocity: const Offset(1, 0),
+              color: Colors.white,
+              size: 1,
+            )
             ..vx = 10
             ..wasAccelerated = true
             ..decayRate = 0.1;
@@ -180,7 +181,7 @@ void main() {
 
     for (final LineRenderer renderer in [
       LineRenderer.stroke,
-      LineRenderer.vertices
+      LineRenderer.vertices,
     ]) {
       test('converges near the budget (lineRenderer: $renderer)', () {
         final particles = _uniformParticles(1500, size);
@@ -272,16 +273,19 @@ void main() {
 
     testWidgets('forwards maxLinesPerFrame to the painter', (tester) async {
       await tester.pumpWidget(network(budget: 500));
-      final state =
-          tester.state<ParticleNetworkState>(find.byType(ParticleNetwork));
-      final painter = tester
-          .widget<CustomPaint>(
-            find.descendant(
-              of: find.byType(ParticleNetwork),
-              matching: find.byType(CustomPaint),
-            ),
-          )
-          .painter as OptimizedNetworkPainter;
+      final state = tester.state<ParticleNetworkState>(
+        find.byType(ParticleNetwork),
+      );
+      final painter =
+          tester
+                  .widget<CustomPaint>(
+                    find.descendant(
+                      of: find.byType(ParticleNetwork),
+                      matching: find.byType(CustomPaint),
+                    ),
+                  )
+                  .painter
+              as OptimizedNetworkPainter;
       expect(painter.maxLinesPerFrame, 500);
       expect(painter.simulateTouchInPaint, isFalse);
 
@@ -290,13 +294,15 @@ void main() {
       expect(state.mounted, isTrue);
     });
 
-    testWidgets('frameRateIndependent halves per-tick motion at 120 Hz',
-        (tester) async {
+    testWidgets('frameRateIndependent halves per-tick motion at 120 Hz', (
+      tester,
+    ) async {
       Future<double> distanceOverTicks(bool fri) async {
         await tester.pumpWidget(const SizedBox());
         await tester.pumpWidget(network(count: 1, fri: fri));
-        final state =
-            tester.state<ParticleNetworkState>(find.byType(ParticleNetwork));
+        final state = tester.state<ParticleNetworkState>(
+          find.byType(ParticleNetwork),
+        );
         await tester.pump(const Duration(microseconds: 8333));
         final p = state.particles.first
           ..x = 200
@@ -318,8 +324,9 @@ void main() {
       expect(perTime, closeTo(5, 0.01));
     });
 
-    testWidgets('shrinking particleCount during touch does not throw',
-        (tester) async {
+    testWidgets('shrinking particleCount during touch does not throw', (
+      tester,
+    ) async {
       await tester.pumpWidget(network(count: 300));
       final gesture = await tester.startGesture(const Offset(200, 200));
       await tester.pump(const Duration(milliseconds: 16));

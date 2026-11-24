@@ -93,8 +93,10 @@ class LineVertexBatch {
 
   void _ensureCapacity(int lines) {
     if (lines * _floatsPerLine > _positions.length) {
-      final int newLines =
-          math.max(lines, (_positions.length ~/ _floatsPerLine) * 2);
+      final int newLines = math.max(
+        lines,
+        (_positions.length ~/ _floatsPerLine) * 2,
+      );
       final Float32List positions = Float32List(newLines * _floatsPerLine);
       positions.setRange(0, _lineCount * _floatsPerLine, _positions);
       _positions = positions;
@@ -180,8 +182,9 @@ class LineVertexBatch {
             col[cp + 3] = colors[srcIdx + 3];
           } else if (perSegment) {
             final int segIdx = i ~/ 4;
-            final int segColor =
-                segIdx < colors.length ? colors[segIdx] : singleColor;
+            final int segColor = segIdx < colors.length
+                ? colors[segIdx]
+                : singleColor;
             col[cp] = segColor;
             col[cp + 1] = segColor;
             col[cp + 2] = segColor;
@@ -214,8 +217,9 @@ class LineVertexBatch {
     int first = 0;
     while (first < _lineCount) {
       final int remaining = _lineCount - first;
-      final int quads =
-          remaining < maxQuadsPerDraw ? remaining : maxQuadsPerDraw;
+      final int quads = remaining < maxQuadsPerDraw
+          ? remaining
+          : maxQuadsPerDraw;
       final Vertices vertices = Vertices.raw(
         VertexMode.triangles,
         Float32List.sublistView(

@@ -40,30 +40,32 @@ void main() {
       }
     });
 
-    test('returns immediately and does not log when not in debug mode (L33)',
-        () {
-      final List<String> printedMessages = [];
-      final originalDebugPrint = debugPrint;
-      debugPrint = (String? message, {int? wrapWidth}) {
-        if (message != null) printedMessages.add(message);
-      };
+    test(
+      'returns immediately and does not log when not in debug mode (L33)',
+      () {
+        final List<String> printedMessages = [];
+        final originalDebugPrint = debugPrint;
+        debugPrint = (String? message, {int? wrapWidth}) {
+          if (message != null) printedMessages.add(message);
+        };
 
-      try {
-        LegacyDeprecationLogger.isDebugMode = false;
-        const api = 'ParticleNetwork(nonDebugParam)';
-        const replacement = 'ParticleNetwork(replacement: ...)';
+        try {
+          LegacyDeprecationLogger.isDebugMode = false;
+          const api = 'ParticleNetwork(nonDebugParam)';
+          const replacement = 'ParticleNetwork(replacement: ...)';
 
-        LegacyDeprecationLogger.warn(
-          deprecatedApi: api,
-          replacement: replacement,
-        );
+          LegacyDeprecationLogger.warn(
+            deprecatedApi: api,
+            replacement: replacement,
+          );
 
-        expect(LegacyDeprecationLogger.hasWarned(api), isFalse);
-        expect(printedMessages, isEmpty);
-      } finally {
-        debugPrint = originalDebugPrint;
-      }
-    });
+          expect(LegacyDeprecationLogger.hasWarned(api), isFalse);
+          expect(printedMessages, isEmpty);
+        } finally {
+          debugPrint = originalDebugPrint;
+        }
+      },
+    );
 
     test('returns immediately and ignores duplicate warnings (L34)', () {
       final List<String> printedMessages = [];
