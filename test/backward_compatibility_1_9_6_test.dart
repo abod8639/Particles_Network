@@ -147,11 +147,25 @@ void main() {
       expect(config.center, equals(Offset.zero)); // Verified non-nullable Offset.zero
       expect(config, isA<GravityFeatures>());
 
-      // Verify copyWith returns GravityConfig
-      final copied = config.copyWith(strength: 0.8);
+      // Verify copyWith returns GravityConfig and supports all parameters
+      final copied = config.copyWith(
+        type: GravityType.point,
+        strength: 0.8,
+        direction: const Offset(1, 0),
+        center: const Offset(50, 50),
+      );
       expect(copied, isA<GravityConfig>());
+      expect(copied.type, equals(GravityType.point));
       expect(copied.strength, equals(0.8));
-      expect(copied.center, equals(Offset.zero));
+      expect(copied.direction, equals(const Offset(1, 0)));
+      expect(copied.center, equals(const Offset(50, 50)));
+
+      // Verify copyWith defaults to current values when parameters omitted
+      final unmodifiedCopy = copied.copyWith();
+      expect(unmodifiedCopy.type, equals(GravityType.point));
+      expect(unmodifiedCopy.strength, equals(0.8));
+      expect(unmodifiedCopy.direction, equals(const Offset(1, 0)));
+      expect(unmodifiedCopy.center, equals(const Offset(50, 50)));
     });
 
     test('TouchFeatures parameter precedence and copyWith', () {

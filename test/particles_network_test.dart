@@ -1820,4 +1820,116 @@ void main() {
       expect(defaultFactory.color, equals(Colors.green));
     });
   });
+
+  group('ParticleNetwork Compatibility Getters and Deprecation Warnings', () {
+    test('particleFeatures and networkFeatures getters return effective features', () {
+      const widget = ParticleNetwork(
+        particles: ParticleFeatures(count: 77),
+        network: NetworkFeatures(width: 2.2),
+      );
+
+      // ignore: deprecated_member_use_from_same_package
+      expect(widget.particleFeatures, equals(widget.effectiveParticleFeatures));
+      // ignore: deprecated_member_use_from_same_package
+      expect(widget.particleFeatures.count, equals(77));
+
+      // ignore: deprecated_member_use_from_same_package
+      expect(widget.networkFeatures, equals(widget.effectiveNetworkFeatures));
+      // ignore: deprecated_member_use_from_same_package
+      expect(widget.networkFeatures.width, equals(2.2));
+    });
+
+    test('fastLineRendering infers from effectiveNetworkFeatures.renderer when not explicitly set', () {
+      const widgetVertices = ParticleNetwork(
+        network: NetworkFeatures(renderer: LineRenderer.vertices),
+      );
+      // ignore: deprecated_member_use_from_same_package
+      expect(widgetVertices.fastLineRendering, isTrue);
+
+      const widgetStroke = ParticleNetwork(
+        network: NetworkFeatures(renderer: LineRenderer.stroke),
+      );
+      // ignore: deprecated_member_use_from_same_package
+      expect(widgetStroke.fastLineRendering, isFalse);
+    });
+
+    testWidgets('initState logs deprecation warnings for networkFeatures, adaptiveDensity, enableAdaptivePerformance', (
+      WidgetTester tester,
+    ) async {
+      LegacyDeprecationLogger.resetWarned();
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              // ignore: deprecated_member_use_from_same_package
+              child: ParticleNetwork(
+                networkFeatures: NetworkFeatures(width: 1.5),
+                adaptiveDensity: true,
+                enableAdaptivePerformance: true,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(LegacyDeprecationLogger.hasWarned('ParticleNetwork(networkFeatures)'), isTrue);
+      expect(LegacyDeprecationLogger.hasWarned('ParticleNetwork(adaptiveDensity)'), isTrue);
+      expect(LegacyDeprecationLogger.hasWarned('ParticleNetwork(enableAdaptivePerformance)'), isTrue);
+    });
+
+    testWidgets('didUpdateWidget logs deprecation warnings for updated legacy parameters', (
+      WidgetTester tester,
+    ) async {
+      LegacyDeprecationLogger.resetWarned();
+
+      // Step 1: mount clean widget
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleNetwork(),
+            ),
+          ),
+        ),
+      );
+
+      // Reset so we only record didUpdateWidget warnings
+      LegacyDeprecationLogger.resetWarned();
+
+      // Step 2: update with legacy parameters
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              // ignore: deprecated_member_use_from_same_package
+              child: ParticleNetwork(
+                particleFeatures: ParticleFeatures(count: 30),
+                hoverEffect: true,
+                networkFeatures: NetworkFeatures(width: 1.2),
+                maxConnectionsPerParticle: 8,
+                adaptiveDensity: true,
+                fastLineRendering: true,
+                enableAdaptivePerformance: true,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(LegacyDeprecationLogger.hasWarned('ParticleNetwork(particleFeatures)'), isTrue);
+      expect(LegacyDeprecationLogger.hasWarned('ParticleNetwork(hoverEffect)'), isTrue);
+      expect(LegacyDeprecationLogger.hasWarned('ParticleNetwork(networkFeatures)'), isTrue);
+      expect(LegacyDeprecationLogger.hasWarned('ParticleNetwork(maxConnectionsPerParticle)'), isTrue);
+      expect(LegacyDeprecationLogger.hasWarned('ParticleNetwork(adaptiveDensity)'), isTrue);
+      expect(LegacyDeprecationLogger.hasWarned('ParticleNetwork(fastLineRendering, useVerticesRendering)'), isTrue);
+      expect(LegacyDeprecationLogger.hasWarned('ParticleNetwork(enableAdaptivePerformance)'), isTrue);
+    });
+  });
 }

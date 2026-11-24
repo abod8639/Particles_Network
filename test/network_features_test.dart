@@ -58,6 +58,108 @@ void main() {
       expect(updated.renderer, equals(LineRenderer.stroke));
     });
 
+    test('legacy compatibility getters map correctly to canonical properties', () {
+      const net = NetworkFeatures(
+        enabled: false,
+        width: 2.5,
+        distance: 120.0,
+        color: Colors.green,
+        renderer: LineRenderer.stroke,
+      );
+
+      // ignore: deprecated_member_use_from_same_package
+      expect(net.lineWidth, equals(net.width));
+      // ignore: deprecated_member_use_from_same_package
+      expect(net.lineWidth, equals(2.5));
+
+      // ignore: deprecated_member_use_from_same_package
+      expect(net.lineDistance, equals(net.distance));
+      // ignore: deprecated_member_use_from_same_package
+      expect(net.lineDistance, equals(120.0));
+
+      // ignore: deprecated_member_use_from_same_package
+      expect(net.lineColor, equals(net.color));
+      // ignore: deprecated_member_use_from_same_package
+      expect(net.lineColor, equals(Colors.green));
+
+      // ignore: deprecated_member_use_from_same_package
+      expect(net.drawNetwork, equals(net.enabled));
+      // ignore: deprecated_member_use_from_same_package
+      expect(net.drawNetwork, isFalse);
+
+      // ignore: deprecated_member_use_from_same_package
+      expect(net.lineRenderer, equals(net.renderer));
+      // ignore: deprecated_member_use_from_same_package
+      expect(net.lineRenderer, equals(LineRenderer.stroke));
+    });
+
+    test('copyWith precedence: canonical parameters take precedence over legacy aliases', () {
+      const base = NetworkFeatures(
+        enabled: true,
+        width: 1.0,
+        distance: 100.0,
+        color: Colors.blue,
+        renderer: LineRenderer.vertices,
+      );
+
+      // 1. renderer takes precedence over lineRenderer (L202-L203)
+      // ignore: deprecated_member_use_from_same_package
+      final withBothRenderers = base.copyWith(
+        renderer: LineRenderer.stroke,
+        lineRenderer: LineRenderer.vertices,
+      );
+      expect(withBothRenderers.renderer, equals(LineRenderer.stroke));
+      // ignore: deprecated_member_use_from_same_package
+      expect(withBothRenderers.lineRenderer, equals(LineRenderer.stroke));
+
+      // 2. lineRenderer used when renderer is omitted
+      // ignore: deprecated_member_use_from_same_package
+      final withLegacyRendererOnly = base.copyWith(
+        lineRenderer: LineRenderer.stroke,
+      );
+      expect(withLegacyRendererOnly.renderer, equals(LineRenderer.stroke));
+
+      // 3. this.renderer preserved when neither renderer nor lineRenderer passed
+      final withNoRenderer = withLegacyRendererOnly.copyWith(width: 3.0);
+      expect(withNoRenderer.renderer, equals(LineRenderer.stroke));
+      expect(withNoRenderer.width, equals(3.0));
+
+      // 4. Precedence for all other aliases: enabled vs drawNetwork, width vs lineWidth, etc.
+      // ignore: deprecated_member_use_from_same_package
+      final fullPrecedence = base.copyWith(
+        enabled: false,
+        drawNetwork: true,
+        width: 4.0,
+        lineWidth: 1.5,
+        distance: 200.0,
+        lineDistance: 50.0,
+        color: Colors.red,
+        lineColor: Colors.yellow,
+        renderer: LineRenderer.stroke,
+        lineRenderer: LineRenderer.vertices,
+      );
+      expect(fullPrecedence.enabled, isFalse);
+      expect(fullPrecedence.width, equals(4.0));
+      expect(fullPrecedence.distance, equals(200.0));
+      expect(fullPrecedence.color, equals(Colors.red));
+      expect(fullPrecedence.renderer, equals(LineRenderer.stroke));
+
+      // 5. Fallback to legacy alias when canonical is null
+      // ignore: deprecated_member_use_from_same_package
+      final legacyOnly = base.copyWith(
+        drawNetwork: false,
+        lineWidth: 3.5,
+        lineDistance: 70.0,
+        lineColor: Colors.teal,
+        lineRenderer: LineRenderer.stroke,
+      );
+      expect(legacyOnly.enabled, isFalse);
+      expect(legacyOnly.width, equals(3.5));
+      expect(legacyOnly.distance, equals(70.0));
+      expect(legacyOnly.color, equals(Colors.teal));
+      expect(legacyOnly.renderer, equals(LineRenderer.stroke));
+    });
+
     test('operator == and hashCode differentiate by each property', () {
       const n1 = NetworkFeatures(
         enabled: true,

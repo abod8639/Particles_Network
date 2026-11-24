@@ -236,4 +236,67 @@ void main() {
       expect(g1.toString(), contains('GravityFeatures('));
     });
   });
+
+  group('GravityConfig copyWith Unit Tests', () {
+    test('copyWith updates individual fields and preserves others', () {
+      const initial = GravityConfig(
+        type: GravityType.global,
+        strength: 0.4,
+        direction: Offset(0, 1),
+        center: Offset(50, 50),
+      );
+
+      final updatedType = initial.copyWith(type: GravityType.point);
+      expect(updatedType.type, GravityType.point);
+      expect(updatedType.strength, 0.4);
+      expect(updatedType.direction, const Offset(0, 1));
+      expect(updatedType.center, const Offset(50, 50));
+
+      final updatedStrength = initial.copyWith(strength: 1.2);
+      expect(updatedStrength.type, GravityType.global);
+      expect(updatedStrength.strength, 1.2);
+      expect(updatedStrength.direction, const Offset(0, 1));
+      expect(updatedStrength.center, const Offset(50, 50));
+
+      final updatedDirection = initial.copyWith(direction: const Offset(1, 0));
+      expect(updatedDirection.type, GravityType.global);
+      expect(updatedDirection.strength, 0.4);
+      expect(updatedDirection.direction, const Offset(1, 0));
+      expect(updatedDirection.center, const Offset(50, 50));
+
+      final updatedCenter = initial.copyWith(center: const Offset(100, 200));
+      expect(updatedCenter.type, GravityType.global);
+      expect(updatedCenter.strength, 0.4);
+      expect(updatedCenter.direction, const Offset(0, 1));
+      expect(updatedCenter.center, const Offset(100, 200));
+    });
+
+    test('copyWith updates all fields simultaneously and preserves on null', () {
+      const initial = GravityConfig(
+        type: GravityType.global,
+        strength: 0.5,
+        direction: Offset(0, 1),
+        center: Offset(20, 30),
+      );
+
+      final updatedAll = initial.copyWith(
+        type: GravityType.none,
+        strength: 0.8,
+        direction: const Offset(-1, 0),
+        center: const Offset(80, 90),
+      );
+      expect(updatedAll, isA<GravityConfig>());
+      expect(updatedAll.type, GravityType.none);
+      expect(updatedAll.strength, 0.8);
+      expect(updatedAll.direction, const Offset(-1, 0));
+      expect(updatedAll.center, const Offset(80, 90));
+
+      final noChange = initial.copyWith();
+      expect(noChange, isA<GravityConfig>());
+      expect(noChange.type, initial.type);
+      expect(noChange.strength, initial.strength);
+      expect(noChange.direction, initial.direction);
+      expect(noChange.center, initial.center);
+    });
+  });
 }

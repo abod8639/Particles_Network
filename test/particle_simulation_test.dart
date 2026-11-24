@@ -1,8 +1,25 @@
 import 'dart:ui';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:particles_network/src/core/particle.dart';
 import 'package:particles_network/src/factory/default_particle_factory.dart';
 import 'package:particles_network/src/physics/gravity_config.dart';
+import 'package:particles_network/src/physics/particle_controller.dart';
 import 'package:particles_network/src/simulation/particle_simulation.dart';
+
+class _LegacyTestController implements IParticleController {
+  GravityFeatures? receivedGravity;
+  int updateCallCount = 0;
+
+  @override
+  void updateParticles(
+    List<Particle> particles,
+    Size bounds, {
+    covariant GravityFeatures gravity = const GravityFeatures(),
+  }) {
+    updateCallCount++;
+    receivedGravity = gravity;
+  }
+}
 
 void main() {
   group('ParticleSimulation Tests', () {
@@ -160,6 +177,54 @@ void main() {
       sim.clear();
       sim.buildSpatialGrid();
       expect(sim.spatialGrid.count, equals(0));
+    });
+
+    test(
+        'step converts GravityFeatures to GravityConfig for non-timescaled controllers (L83-L84)',
+        () {
+      final legacyController = _LegacyTestController();
+
+      // Case 1 (L84): gravityConfig is a canonical GravityFeatures (not GravityConfig)
+      final sim = ParticleSimulation(
+        particleCount: 5,
+        controller: legacyController,
+        gravityConfig: const GravityFeatures(
+          type: GravityType.point,
+          strength: 1.5,
+          direction: Offset(1, 0),
+          center: Offset(50, 50),
+        ),
+      );
+      sim.updateSize(const Size(200, 200));
+
+      sim.step(1.0);
+      expect(legacyController.updateCallCount, equals(1));
+      expect(legacyController.receivedGravity, isA<GravityConfig>());
+      expect(legacyController.receivedGravity!.type, equals(GravityType.point));
+      expect(legacyController.receivedGravity!.strength, equals(1.5));
+      expect(
+        legacyController.receivedGravity!.direction,
+        equals(const Offset(1, 0)),
+      );
+      expect(
+        legacyController.receivedGravity!.center,
+        equals(const Offset(50, 50)),
+      );
+
+      // Case 2 (L83): gravityConfig is already a GravityConfig instance
+      const existingConfig = GravityConfig(
+        type: GravityType.global,
+        strength: 0.8,
+        direction: Offset(0, 1),
+      );
+      sim.updateGravity(existingConfig);
+
+      sim.step(1.0);
+      expect(legacyController.updateCallCount, equals(2));
+      expect(
+        identical(legacyController.receivedGravity, existingConfig),
+        isTrue,
+      );
     });
   });
 }

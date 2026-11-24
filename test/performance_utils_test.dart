@@ -238,4 +238,149 @@ void main() {
       expect(monitor.isDroppingFrames(), isFalse); // Single spike not enough
     });
   });
+
+  group('AdaptiveQuadTreeManager', () {
+    test('initializes with default rebuildInterval and frame counter', () {
+      final manager = AdaptiveQuadTreeManager();
+      expect(manager.rebuildInterval, equals(3));
+      expect(manager.frameSinceLastRebuild, equals(3));
+    });
+
+    test('rebuildInterval can be configured', () {
+      final manager = AdaptiveQuadTreeManager(rebuildInterval: 5);
+      expect(manager.rebuildInterval, equals(5));
+      expect(manager.frameSinceLastRebuild, equals(5));
+    });
+
+    test('shouldRebuild returns true initially and follows intervals', () {
+      final manager = AdaptiveQuadTreeManager(rebuildInterval: 3);
+
+      // Initial call: frameSinceLastRebuild starts at 3, increments to 4 (>= 3), resets to 0, returns true
+      expect(manager.shouldRebuild(), isTrue);
+      expect(manager.frameSinceLastRebuild, equals(0));
+
+      // Frame 1: increments to 1 (< 3) -> false
+      expect(manager.shouldRebuild(), isFalse);
+      expect(manager.frameSinceLastRebuild, equals(1));
+
+      // Frame 2: increments to 2 (< 3) -> false
+      expect(manager.shouldRebuild(), isFalse);
+      expect(manager.frameSinceLastRebuild, equals(2));
+
+      // Frame 3: increments to 3 (>= 3) -> resets to 0, returns true
+      expect(manager.shouldRebuild(), isTrue);
+      expect(manager.frameSinceLastRebuild, equals(0));
+    });
+
+    test('forceRebuild triggers immediate rebuild on next shouldRebuild call', () {
+      final manager = AdaptiveQuadTreeManager(rebuildInterval: 5);
+
+      // Consume initial rebuild
+      expect(manager.shouldRebuild(), isTrue);
+      expect(manager.frameSinceLastRebuild, equals(0));
+
+      // Advance one frame
+      expect(manager.shouldRebuild(), isFalse);
+      expect(manager.frameSinceLastRebuild, equals(1));
+
+      // Force rebuild
+      manager.forceRebuild();
+
+      // Next call must rebuild immediately regardless of interval
+      expect(manager.shouldRebuild(), isTrue);
+      expect(manager.frameSinceLastRebuild, equals(0));
+
+      // Subsequent frame resumes normal counting
+      expect(manager.shouldRebuild(), isFalse);
+      expect(manager.frameSinceLastRebuild, equals(1));
+    });
+
+    test('reset restores frameSinceLastRebuild and clears force flag', () {
+      final manager = AdaptiveQuadTreeManager(rebuildInterval: 4);
+
+      // Advance frames
+      manager.shouldRebuild(); // Initial true, resets to 0
+      manager.shouldRebuild(); // false, frame 1
+      manager.forceRebuild();
+
+      // Reset
+      manager.reset();
+      expect(manager.frameSinceLastRebuild, equals(4));
+
+      // Next shouldRebuild should rebuild because counter is at interval
+      expect(manager.shouldRebuild(), isTrue);
+      expect(manager.frameSinceLastRebuild, equals(0));
+    });
+  });
+
+  group('AdaptivePerformanceController scaling and adjustment tests', () {
+    test('currentScale reflects scaleFactor initially and under degradation', () {
+      final controller = AdaptivePerformanceController(
+        targetFrameTimeMs: 16.67,
+        minScale: 0.4,
+        maxScale: 1.0,
+      );
+
+      // Initial scale is 1.0
+      expect(controller.currentScale, equals(1.0));
+      expect(controller.currentScale, equals(controller.scaleFactor));
+
+      // Simulate heavy load to degrade performance
+      for (int i = 0; i < 20; i++) {
+        controller.recordFrame(frameTimeMs: 40.0, visibleCount: 100);
+      }
+
+      expect(controller.currentScale, lessThan(1.0));
+      expect(controller.currentScale, equals(controller.scaleFactor));
+      expect(controller.currentScale, greaterThanOrEqualTo(controller.minScale));
+    });
+
+    test('getAdjustedLineDistance scales base distance by currentScale', () {
+      final controller = AdaptivePerformanceController(
+        targetFrameTimeMs: 16.67,
+        minScale: 0.4,
+        maxScale: 1.0,
+      );
+
+      // At scale 1.0
+      expect(controller.getAdjustedLineDistance(100.0), closeTo(100.0, 0.001));
+      expect(controller.getAdjustedLineDistance(50.0), closeTo(50.0, 0.001));
+
+      // Degrade scale
+      for (int i = 0; i < 25; i++) {
+        controller.recordFrame(frameTimeMs: 50.0, visibleCount: 100);
+      }
+
+      final expected = 100.0 * controller.currentScale;
+      expect(controller.getAdjustedLineDistance(100.0), closeTo(expected, 0.001));
+    });
+
+    test('getAdjustedMaxConnections scales and clamps properly', () {
+      final controller = AdaptivePerformanceController(
+        targetFrameTimeMs: 16.67,
+        minScale: 0.4,
+        maxScale: 1.0,
+      );
+
+      // At scale 1.0
+      expect(controller.getAdjustedMaxConnections(10), equals(10));
+      expect(controller.getAdjustedMaxConnections(20), equals(20));
+
+      // Degrade scale to minScale (0.4)
+      for (int i = 0; i < 30; i++) {
+        controller.recordFrame(frameTimeMs: 50.0, visibleCount: 100);
+      }
+
+      final scaledConnections = controller.getAdjustedMaxConnections(10);
+      expect(
+        scaledConnections,
+        equals((10 * controller.currentScale).round().clamp(1, 10)),
+      );
+      expect(scaledConnections, lessThanOrEqualTo(10));
+      expect(scaledConnections, greaterThanOrEqualTo(1));
+
+      // Clamping: minimum must never be below 1 even for small base values
+      expect(controller.getAdjustedMaxConnections(1), equals(1));
+    });
+  });
 }

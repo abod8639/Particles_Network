@@ -57,6 +57,112 @@ void main() {
       expect(cosmic.fill, isTrue);
     });
 
+    test('Presets accept custom overrides for count, speed, size, color, and fill', () {
+      const customSubtle = ParticleFeatures.subtle(
+        count: 40,
+        maxSpeed: 0.4,
+        maxSize: 1.5,
+        color: Color(0xFF00FF00),
+        fill: false,
+      );
+      expect(customSubtle.count, equals(40));
+      expect(customSubtle.maxSpeed, equals(0.4));
+      expect(customSubtle.maxSize, equals(1.5));
+      expect(customSubtle.color, equals(const Color(0xFF00FF00)));
+      expect(customSubtle.fill, isFalse);
+
+      const customDense = ParticleFeatures.dense(
+        count: 150,
+        maxSpeed: 1.0,
+        maxSize: 3.0,
+        color: Color(0xFFFF0000),
+        fill: false,
+      );
+      expect(customDense.count, equals(150));
+      expect(customDense.maxSpeed, equals(1.0));
+      expect(customDense.maxSize, equals(3.0));
+      expect(customDense.color, equals(const Color(0xFFFF0000)));
+      expect(customDense.fill, isFalse);
+
+      const customCosmic = ParticleFeatures.cosmic(
+        count: 100,
+        maxSpeed: 2.0,
+        maxSize: 4.0,
+        color: Color(0xFF0000FF),
+        fill: false,
+      );
+      expect(customCosmic.count, equals(100));
+      expect(customCosmic.maxSpeed, equals(2.0));
+      expect(customCosmic.maxSize, equals(4.0));
+      expect(customCosmic.color, equals(const Color(0xFF0000FF)));
+      expect(customCosmic.fill, isFalse);
+    });
+
+    test('Presets redirecting constructors forward all parameters into canonical instance', () {
+      // 1. Subtle (L127-L128, L133-L134)
+      final runtimeSubtle = ParticleFeatures.subtle(
+        count: 42,
+        maxSpeed: 0.25,
+        maxSize: 1.1,
+        color: const Color(0xFF123456),
+        fill: false,
+      );
+      expect(runtimeSubtle.count, equals(42));
+      expect(runtimeSubtle.maxSpeed, equals(0.25));
+      expect(runtimeSubtle.maxSize, equals(1.1));
+      expect(runtimeSubtle.color, equals(const Color(0xFF123456)));
+      expect(runtimeSubtle.fill, isFalse);
+
+      final defaultRuntimeSubtle = ParticleFeatures.subtle();
+      expect(defaultRuntimeSubtle.count, equals(35));
+      expect(defaultRuntimeSubtle.maxSpeed, equals(0.3));
+      expect(defaultRuntimeSubtle.maxSize, equals(1.2));
+      expect(defaultRuntimeSubtle.color, equals(const Color(0xFFFFFFFF)));
+      expect(defaultRuntimeSubtle.fill, isTrue);
+
+      // 2. Dense (L151-L152, L157-L158)
+      final runtimeDense = ParticleFeatures.dense(
+        count: 140,
+        maxSpeed: 0.95,
+        maxSize: 2.2,
+        color: const Color(0xFF654321),
+        fill: false,
+      );
+      expect(runtimeDense.count, equals(140));
+      expect(runtimeDense.maxSpeed, equals(0.95));
+      expect(runtimeDense.maxSize, equals(2.2));
+      expect(runtimeDense.color, equals(const Color(0xFF654321)));
+      expect(runtimeDense.fill, isFalse);
+
+      final defaultRuntimeDense = ParticleFeatures.dense();
+      expect(defaultRuntimeDense.count, equals(120));
+      expect(defaultRuntimeDense.maxSpeed, equals(0.8));
+      expect(defaultRuntimeDense.maxSize, equals(2.0));
+      expect(defaultRuntimeDense.color, equals(const Color(0xFFFFFFFF)));
+      expect(defaultRuntimeDense.fill, isTrue);
+
+      // 3. Cosmic (L173-L174, L179-L180)
+      final runtimeCosmic = ParticleFeatures.cosmic(
+        count: 95,
+        maxSpeed: 1.35,
+        maxSize: 2.8,
+        color: const Color(0xFFABCDEF),
+        fill: false,
+      );
+      expect(runtimeCosmic.count, equals(95));
+      expect(runtimeCosmic.maxSpeed, equals(1.35));
+      expect(runtimeCosmic.maxSize, equals(2.8));
+      expect(runtimeCosmic.color, equals(const Color(0xFFABCDEF)));
+      expect(runtimeCosmic.fill, isFalse);
+
+      final defaultRuntimeCosmic = ParticleFeatures.cosmic();
+      expect(defaultRuntimeCosmic.count, equals(90));
+      expect(defaultRuntimeCosmic.maxSpeed, equals(1.2));
+      expect(defaultRuntimeCosmic.maxSize, equals(2.5));
+      expect(defaultRuntimeCosmic.color, equals(const Color(0xFFFFFFFF)));
+      expect(defaultRuntimeCosmic.fill, isTrue);
+    });
+
     test('copyWith creates modified copy and preserves existing properties', () {
       const original = ParticleFeatures(
         count: 80,
