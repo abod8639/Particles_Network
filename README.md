@@ -820,54 +820,72 @@ Version 1.9.7 introduces a modular, declarative configuration architecture while
 3. **Complex Cluster Optimization**:
    - Dense cluster connection pruning is encapsulated in `ComplexConfig` (or `ComplexFeatures`) via `performance: PerformanceFeatures(complex: ComplexConfig.auto())`.
 
-### Recommended 1.9.7 Syntax
+### 1.9.6 Legacy Syntax (Backward Compatible)
+
+All Version 1.9.6 code runs seamlessly in 1.9.7 without any modification:
 
 ```dart
-ParticleNetwork(
-  particles: const ParticleFeatures(
-    count: 300,
+// 1.9.6 Legacy Syntax:
+const ParticleNetwork(
+  // 1. Particles
+  particleCount: 200,
+  maxSpeed: 0.8,
+  maxSize: 2.0,
+  particleColor: Colors.white,
+  fill: true,
+
+  // 2. Network Lines
+  drawNetwork: true,
+  lineWidth: 0.8,
+  lineDistance: 120.0,
+  lineColor: Color(0xFF64FFB4),
+
+  // 3. Touch Interactions
+  touchActivation: true,
+  touchColor: Colors.amber,
+  hoverEffect: true,
+
+  // 4. Performance & Clusters
+  isComplex: true,
+)
+```
+
+### Recommended 1.9.7 Modern Syntax
+
+Clean, modular, and GPU-accelerated configuration matching the exact same settings in order:
+
+```dart
+// 1.9.7 Modern Syntax (Recommended):
+const ParticleNetwork(
+  // 1. Particles -> ParticleFeatures
+  particles: ParticleFeatures(
+    count: 200,
     maxSpeed: 0.8,
     maxSize: 2.0,
     color: Colors.white,
     fill: true,
   ),
-  network: const NetworkFeatures(
+
+  // 2. Network Lines -> NetworkFeatures
+  network: NetworkFeatures(
+    enabled: true,
     width: 0.8,
-    distance: 100.0,
+    distance: 120.0,
     color: Color(0xFF64FFB4),
     renderer: LineRenderer.vertices, // 10x–20x GPU raster acceleration
   ),
-  touch: const TouchFeatures(
+
+  // 3. Touch Interactions -> TouchFeatures
+  touch: TouchFeatures(
     enabled: true,
+    color: Colors.amber,
     hover: true,
-    force: 0.42,
-    speed: 0.42,
   ),
-  performance: const PerformanceFeatures(
-    maxLinesPerFrame: 15000,
-    frameRateIndependent: true,
+
+  // 4. Performance & Clusters -> PerformanceFeatures
+  performance: PerformanceFeatures(
     complex: ComplexConfig(enabled: true), // <-- more complex features for high performance 
   ),
-)
-```
-
-### 1.9.6 Backward Compatibility Guarantee
-
-All Version 1.9.6 code continues to work without any modification:
-
-```dart
-// This 1.9.6 code runs seamlessly in 1.9.7 without breaking changes:
-const ParticleNetwork(
-  particleCount: 200,
-  maxSpeed: 0.8,
-  lineDistance: 120.0,
-  lineWidth: 1.0,
-  particleColor: Colors.white,
-  lineColor: Colors.cyan,
-  touchActivation: true,
-  touchColor: Colors.amber,
-  hoverEffect: true,
-  isComplex: true,
 )
 ```
 
